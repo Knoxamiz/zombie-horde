@@ -1,0 +1,6 @@
+.godot/
+export_credentials.cfg
+*.tmp
+*.log
+EO
+*.log
