@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/main_menu/main_menu_controller.gd" id="1_controller"]
 [ext_resource type="Theme" path="res://assets/ui/main_menu_theme.tres" id="2_theme"]
@@ -13,7 +13,6 @@
 [ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficCone_1.gltf" id="11_traffic_cone"]
 [ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Vehicles/Vehicle_Pickup_Armored.gltf" id="12_pickup"]
 [ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Container_Red.gltf" id="13_container_red"]
-[ext_resource type="Resource" path="res://resources/config/feature_access_config.tres" id="14_feature_config"]
 [sub_resource type="BoxMesh" id="BoxMesh_base_sign"]
 size = Vector3(6, 2.2, 0.28)
 
@@ -31,7 +30,6 @@ menu_zombies_path = NodePath("CinematicWorld/MenuZombies")
 cage_light_path = NodePath("CageGreenLight")
 base_light_path = NodePath("BaseAmberLight")
 road_sweep_light_path = NodePath("RoadSweepLight")
-feature_config = ExtResource("14_feature_config")
 camera_idle_strength = 0.28
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]

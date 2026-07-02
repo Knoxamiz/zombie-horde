@@ -1,0 +1,48 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/music_controller.gd" id="1_music_controller"]
+[ext_resource type="AudioStream" path="res://assets/Music/hitslab-gaming-game-minecraft-background-music-278382.mp3" id="2_menu_lobby"]
+[ext_resource type="AudioStream" path="res://assets/Music/hitslab-retro-retro-synthwave-gaming-music-270173.mp3" id="3_race"]
+[ext_resource type="Script" path="res://scripts/audio/sfx_controller.gd" id="4_sfx_controller"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/ui_select.wav" id="5_ui_select"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/participant_join.wav" id="6_participant_join"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/countdown_tick.wav" id="7_countdown_tick"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/round_start.wav" id="8_round_start"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/base_win.wav" id="9_base_win"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/base_breach.wav" id="10_base_breach"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/mine_explosion.wav" id="11_mine_explosion"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/minigun_shot.wav" id="12_minigun_shot"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/defender_shot.wav" id="13_defender_shot"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/defender_down.wav" id="14_defender_down"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/obstacle_hit.wav" id="15_obstacle_hit"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/boost_pad.wav" id="16_boost_pad"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/zombie_crawler.wav" id="17_zombie_crawler"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/zombie_die.wav" id="18_zombie_die"]
+
+[node name="AudioManager" type="Node"]
+script = ExtResource("1_music_controller")
+menu_lobby_stream = ExtResource("2_menu_lobby")
+race_stream = ExtResource("3_race")
+
+[node name="PrimaryPlayer" type="AudioStreamPlayer" parent="."]
+bus = &"Music"
+
+[node name="SecondaryPlayer" type="AudioStreamPlayer" parent="."]
+bus = &"Music"
+
+[node name="SfxController" type="Node" parent="."]
+script = ExtResource("4_sfx_controller")
+ui_select_stream = ExtResource("5_ui_select")
+participant_join_stream = ExtResource("6_participant_join")
+countdown_tick_stream = ExtResource("7_countdown_tick")
+round_start_stream = ExtResource("8_round_start")
+base_win_stream = ExtResource("9_base_win")
+base_breach_stream = ExtResource("10_base_breach")
+mine_explosion_stream = ExtResource("11_mine_explosion")
+minigun_shot_stream = ExtResource("12_minigun_shot")
+defender_shot_stream = ExtResource("13_defender_shot")
+defender_down_stream = ExtResource("14_defender_down")
+obstacle_hit_stream = ExtResource("15_obstacle_hit")
+boost_pad_stream = ExtResource("16_boost_pad")
+zombie_crawler_stream = ExtResource("17_zombie_crawler")
+zombie_die_stream = ExtResource("18_zombie_die")

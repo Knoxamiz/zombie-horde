@@ -1,0 +1,267 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/settings/game_settings_controller.gd" id="1_script"]
+[ext_resource type="Theme" path="res://assets/ui/zombie_horde_theme.tres" id="2_theme"]
+
+[node name="GameSettings" type="CanvasLayer"]
+layer = 220
+script = ExtResource("1_script")
+
+[node name="Root" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+theme = ExtResource("2_theme")
+
+[node name="Dim" type="ColorRect" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.004, 0.006, 0.004, 0.72)
+
+[node name="Panel" type="PanelContainer" parent="Root"]
+custom_minimum_size = Vector2(760, 640)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -320.0
+offset_right = 380.0
+offset_bottom = 320.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="Root/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="Root/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Root/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="Root/Panel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
+theme_override_font_sizes/font_size = 26
+text = "Game Settings"
+
+[node name="CloseButton" type="Button" parent="Root/Panel/Margin/VBox/Header"]
+custom_minimum_size = Vector2(104, 38)
+layout_mode = 2
+text = "Close"
+
+[node name="Tabs" type="TabContainer" parent="Root/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 500)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Audio" type="MarginContainer" parent="Root/Panel/Margin/VBox/Tabs"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="AudioControls" type="VBoxContainer" parent="Root/Panel/Margin/VBox/Tabs/Audio"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="MasterRow" type="HBoxContainer" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MasterLabel" type="Label" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls/MasterRow"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "Master"
+
+[node name="MasterSlider" type="HSlider" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls/MasterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 100.0
+step = 1.0
+value = 100.0
+
+[node name="MasterValueLabel" type="Label" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls/MasterRow"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "100%"
+horizontal_alignment = 2
+
+[node name="MusicRow" type="HBoxContainer" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MusicLabel" type="Label" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls/MusicRow"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "Music"
+
+[node name="MusicSlider" type="HSlider" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls/MusicRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 100.0
+step = 1.0
+value = 90.0
+
+[node name="MusicValueLabel" type="Label" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls/MusicRow"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "90%"
+horizontal_alignment = 2
+
+[node name="SfxRow" type="HBoxContainer" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SfxLabel" type="Label" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls/SfxRow"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "SFX"
+
+[node name="SfxSlider" type="HSlider" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls/SfxRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.0
+max_value = 100.0
+step = 1.0
+value = 95.0
+
+[node name="SfxValueLabel" type="Label" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls/SfxRow"]
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+text = "95%"
+horizontal_alignment = 2
+
+[node name="MuteCheck" type="CheckBox" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls"]
+layout_mode = 2
+text = "Mute Audio"
+
+[node name="TestSfxButton" type="Button" parent="Root/Panel/Margin/VBox/Tabs/Audio/AudioControls"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Test SFX"
+
+[node name="Graphics" type="MarginContainer" parent="Root/Panel/Margin/VBox/Tabs"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="GraphicsControls" type="VBoxContainer" parent="Root/Panel/Margin/VBox/Tabs/Graphics"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="QualityRow" type="HBoxContainer" parent="Root/Panel/Margin/VBox/Tabs/Graphics/GraphicsControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="QualityLabel" type="Label" parent="Root/Panel/Margin/VBox/Tabs/Graphics/GraphicsControls/QualityRow"]
+custom_minimum_size = Vector2(190, 0)
+layout_mode = 2
+text = "Graphics Quality"
+
+[node name="QualityOption" type="OptionButton" parent="Root/Panel/Margin/VBox/Tabs/Graphics/GraphicsControls/QualityRow"]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="DisplayModeRow" type="HBoxContainer" parent="Root/Panel/Margin/VBox/Tabs/Graphics/GraphicsControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="DisplayModeLabel" type="Label" parent="Root/Panel/Margin/VBox/Tabs/Graphics/GraphicsControls/DisplayModeRow"]
+custom_minimum_size = Vector2(190, 0)
+layout_mode = 2
+text = "Display Mode"
+
+[node name="DisplayModeOption" type="OptionButton" parent="Root/Panel/Margin/VBox/Tabs/Graphics/GraphicsControls/DisplayModeRow"]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="VsyncCheck" type="CheckBox" parent="Root/Panel/Margin/VBox/Tabs/Graphics/GraphicsControls"]
+layout_mode = 2
+text = "VSync"
+
+[node name="FpsCapRow" type="HBoxContainer" parent="Root/Panel/Margin/VBox/Tabs/Graphics/GraphicsControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="FpsCapLabel" type="Label" parent="Root/Panel/Margin/VBox/Tabs/Graphics/GraphicsControls/FpsCapRow"]
+custom_minimum_size = Vector2(190, 0)
+layout_mode = 2
+text = "Frame Rate Cap"
+
+[node name="FpsCapOption" type="OptionButton" parent="Root/Panel/Margin/VBox/Tabs/Graphics/GraphicsControls/FpsCapRow"]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+
+[node name="Controls" type="MarginContainer" parent="Root/Panel/Margin/VBox/Tabs"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="ControlsMargin" type="VBoxContainer" parent="Root/Panel/Margin/VBox/Tabs/Controls"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ControlsScroll" type="ScrollContainer" parent="Root/Panel/Margin/VBox/Tabs/Controls/ControlsMargin"]
+custom_minimum_size = Vector2(0, 386)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ControlsList" type="VBoxContainer" parent="Root/Panel/Margin/VBox/Tabs/Controls/ControlsMargin/ControlsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="ControlsStatusLabel" type="Label" parent="Root/Panel/Margin/VBox/Tabs/Controls/ControlsMargin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 1, 0.45, 1)
+text = "Ready"
+
+[node name="ResetControlsButton" type="Button" parent="Root/Panel/Margin/VBox/Tabs/Controls/ControlsMargin"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Reset Controls"
+
+[node name="Footer" type="HBoxContainer" parent="Root/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ResetAllButton" type="Button" parent="Root/Panel/Margin/VBox/Footer"]
+custom_minimum_size = Vector2(150, 38)
+layout_mode = 2
+text = "Reset All"
+
+[node name="Spacer" type="Control" parent="Root/Panel/Margin/VBox/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StreamerControlsButton" type="Button" parent="Root/Panel/Margin/VBox/Footer"]
+custom_minimum_size = Vector2(190, 38)
+layout_mode = 2
+text = "Streamer Controls"

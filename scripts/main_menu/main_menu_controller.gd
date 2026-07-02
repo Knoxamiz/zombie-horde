@@ -8,7 +8,6 @@ extends Node3D
 @export var cage_light_path: NodePath
 @export var base_light_path: NodePath
 @export var road_sweep_light_path: NodePath
-@export var feature_config: FeatureAccessConfig
 @export_range(1, 24, 1) var debug_joins_per_click: int = 1
 @export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.32
 
@@ -32,6 +31,9 @@ var _road_sweep_light_energy: float = 0.0
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	var music_controller: MusicController = _get_music_controller()
+	if music_controller != null:
+		music_controller.play_menu_music()
 	_cache_cinematic_nodes()
 	if _camera != null:
 		_camera.look_at(camera_focus, Vector3.UP)
@@ -55,9 +57,9 @@ func _on_add_join_pressed() -> void:
 	_launch_lobby(debug_joins_per_click, false)
 
 func _on_settings_pressed() -> void:
-	if not _can_open_settings():
-		return
-	_launch_lobby(0, true)
+	var game_settings: GameSettingsController = _get_game_settings()
+	if game_settings != null:
+		game_settings.open_settings()
 
 func _on_exit_pressed() -> void:
 	get_tree().quit()
@@ -78,16 +80,19 @@ func _launch_lobby(debug_joins_to_seed: int, open_settings: bool) -> void:
 func _set_buttons_enabled(enabled: bool) -> void:
 	_open_lobby_button.disabled = not enabled
 	_add_join_button.disabled = not enabled
-	_settings_button.disabled = not enabled or not _can_open_settings()
+	_settings_button.disabled = not enabled
 	_exit_button.disabled = not enabled
 
 func _refresh_feature_buttons() -> void:
 	if _settings_button != null:
-		_settings_button.visible = _can_open_settings()
-		_settings_button.disabled = not _can_open_settings()
+		_settings_button.visible = true
+		_settings_button.disabled = false
 
-func _can_open_settings() -> bool:
-	return feature_config != null and feature_config.can_use_streamer_settings()
+func _get_music_controller() -> MusicController:
+	return get_node_or_null("/root/AudioManager") as MusicController
+
+func _get_game_settings() -> GameSettingsController:
+	return get_node_or_null("/root/GameSettings") as GameSettingsController
 
 func _cache_cinematic_nodes() -> void:
 	if _camera != null:

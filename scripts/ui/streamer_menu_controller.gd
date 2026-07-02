@@ -126,6 +126,9 @@ func open_menu() -> void:
 
 	_set_menu_open(true)
 
+func can_open_menu() -> bool:
+	return _has_premium_access()
+
 func close_menu() -> void:
 	_set_menu_open(false)
 

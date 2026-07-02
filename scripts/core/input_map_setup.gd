@@ -25,6 +25,8 @@ func _ready() -> void:
 func _ensure_key_action(action_name: StringName, key_codes: Array) -> void:
 	if not InputMap.has_action(action_name):
 		InputMap.add_action(action_name)
+	elif not InputMap.action_get_events(action_name).is_empty():
+		return
 
 	for key_code in key_codes:
 		var physical_keycode: int = int(key_code)

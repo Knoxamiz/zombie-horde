@@ -48,6 +48,7 @@ var _streamer_menu: CanvasLayer
 var _pre_round_ui: PreRoundUIController
 var _world_environment: WorldEnvironment
 var _transition_overlay: ColorRect
+var _music_controller: MusicController
 var _intro_active: bool = true
 var _current_phase: String = ""
 var _transition_token: int = 0
@@ -72,6 +73,7 @@ func _initialize_flow() -> void:
 	_pre_round_ui = get_node_or_null(pre_round_ui_path) as PreRoundUIController
 	_world_environment = get_node_or_null(world_environment_path) as WorldEnvironment
 	_transition_overlay = get_node_or_null(transition_overlay_path) as ColorRect
+	_music_controller = get_node_or_null("/root/AudioManager") as MusicController
 
 	if _pre_round_ui != null:
 		_pre_round_ui.ready_requested.connect(_on_ready_requested)
@@ -100,7 +102,7 @@ func _on_ready_requested() -> void:
 		_round_manager.start_round()
 
 func _on_settings_requested() -> void:
-	_open_streamer_settings()
+	_open_game_settings()
 
 func _on_round_state_changed(state_text: String) -> void:
 	match state_text:
@@ -149,6 +151,7 @@ func _apply_phase_if_current(phase_name: String, token: int) -> void:
 
 func _apply_phase(phase_name: String) -> void:
 	_current_phase = phase_name
+	_apply_music_for_phase(phase_name)
 	match phase_name:
 		"intro":
 			_intro_active = true
@@ -201,6 +204,16 @@ func _apply_launch_request() -> void:
 	if bool(request.get("open_settings", false)):
 		call_deferred("_open_streamer_settings")
 
+func _apply_music_for_phase(phase_name: String) -> void:
+	if _music_controller == null:
+		return
+
+	match phase_name:
+		"intro", "lobby":
+			_music_controller.play_lobby_music()
+		"race":
+			_music_controller.play_race_music()
+
 func _seed_launch_debug_joins(debug_joins_to_seed: int) -> void:
 	if _debug_join_source == null:
 		return
@@ -212,6 +225,11 @@ func _open_streamer_settings() -> void:
 	var streamer_menu_controller: StreamerMenuController = _streamer_menu as StreamerMenuController
 	if streamer_menu_controller != null:
 		streamer_menu_controller.open_menu()
+
+func _open_game_settings() -> void:
+	var game_settings: GameSettingsController = get_node_or_null("/root/GameSettings") as GameSettingsController
+	if game_settings != null:
+		game_settings.open_settings()
 
 func _set_node_visible(node: Node, visible: bool) -> void:
 	if node == null:

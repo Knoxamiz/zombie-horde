@@ -81,8 +81,6 @@ func _on_add_join_pressed() -> void:
 		debug_source.request_random_join()
 
 func _on_settings_pressed() -> void:
-	if not _can_open_settings():
-		return
 	settings_requested.emit()
 
 func _on_participant_queue_changed(display_names: PackedStringArray) -> void:
@@ -197,8 +195,8 @@ func _refresh_ready_button() -> void:
 	else:
 		_ready_button.text = "Ready (%d)" % _queued_names.size()
 	if _settings_button != null:
-		_settings_button.visible = _can_open_settings()
-		_settings_button.disabled = not _can_open_settings()
+		_settings_button.visible = true
+		_settings_button.disabled = false
 
 func _join_strings(values: Array[String], separator: String) -> String:
 	var result: String = ""
@@ -221,4 +219,4 @@ func _refresh_chat_status_from_source() -> void:
 	_on_chat_connection_status_changed(status_text, detail_text)
 
 func _can_open_settings() -> bool:
-	return feature_config != null and feature_config.can_use_streamer_settings()
+	return true
