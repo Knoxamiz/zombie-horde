@@ -1,18 +1,23 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=30 format=3 uid="uid://bl7b03v3qe672"]
 
-[ext_resource type="Script" path="res://scripts/main_menu/main_menu_controller.gd" id="1_controller"]
-[ext_resource type="Theme" path="res://assets/ui/main_menu_theme.tres" id="2_theme"]
+[ext_resource type="Script" uid="uid://cqk4hcw17svdm" path="res://scripts/main_menu/main_menu_controller.gd" id="1_controller"]
+[ext_resource type="Theme" uid="uid://dipqo44ax4dyr" path="res://assets/ui/main_menu_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_menu_button.tscn" id="3_menu_button"]
 [ext_resource type="Environment" path="res://resources/environment/main_menu_environment.tres" id="4_environment"]
-[ext_resource type="PackedScene" path="res://scenes/main/road_arena.tscn" id="5_road_arena"]
-[ext_resource type="PackedScene" path="res://scenes/base/streamer_base.tscn" id="6_streamer_base"]
-[ext_resource type="PackedScene" path="res://scenes/base/minigun.tscn" id="7_minigun"]
+[ext_resource type="PackedScene" uid="uid://degy2yw827pd" path="res://scenes/main/road_arena.tscn" id="5_road_arena"]
+[ext_resource type="PackedScene" uid="uid://bo8iicgk6ee38" path="res://scenes/base/streamer_base.tscn" id="6_streamer_base"]
+[ext_resource type="PackedScene" uid="uid://ip7abt8ye5m0" path="res://scenes/base/minigun.tscn" id="7_minigun"]
 [ext_resource type="PackedScene" path="res://scenes/lobby/join_lobby.tscn" id="8_join_lobby"]
 [ext_resource type="PackedScene" path="res://scenes/zombies/visuals/zombie_basic_visual.tscn" id="9_zombie_visual"]
-[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficBarrier_1.gltf" id="10_traffic_barrier"]
-[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficCone_1.gltf" id="11_traffic_cone"]
-[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Vehicles/Vehicle_Pickup_Armored.gltf" id="12_pickup"]
-[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Container_Red.gltf" id="13_container_red"]
+[ext_resource type="PackedScene" uid="uid://biaidpiwl56ht" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficBarrier_1.gltf" id="10_traffic_barrier"]
+[ext_resource type="PackedScene" uid="uid://bjgquw8gbj7u1" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficCone_1.gltf" id="11_traffic_cone"]
+[ext_resource type="PackedScene" uid="uid://bwy0roj4bxink" path="res://assets/third_party/zombie_apocalypse_kit/imported/Vehicles/Vehicle_Pickup_Armored.gltf" id="12_pickup"]
+[ext_resource type="PackedScene" uid="uid://bgmh37sipwt7q" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Container_Red.gltf" id="13_container_red"]
+[ext_resource type="PackedScene" uid="uid://dsp71g0nh1cdx" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficBarrier_2.gltf" id="14_traffic_barrier_2"]
+[ext_resource type="PackedScene" uid="uid://dtex6ax55h1oc" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Container_Green.gltf" id="15_container_green"]
+[ext_resource type="Texture2D" uid="uid://ny0xsakqx7e8" path="res://assets/ui/main_menu/zombie_chat_horde_menu_art.png" id="16_menu_art"]
+[ext_resource type="Texture2D" uid="uid://oaei4jilx35y" path="res://assets/ui/main_menu/zombie_chat_horde_logo.png" id="17_menu_logo"]
+
 [sub_resource type="BoxMesh" id="BoxMesh_base_sign"]
 size = Vector3(6, 2.2, 0.28)
 
@@ -21,6 +26,186 @@ albedo_color = Color(0.025, 0.06, 0.03, 1)
 emission_enabled = true
 emission = Color(0.08, 0.75, 0.15, 1)
 emission_energy_multiplier = 0.45
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_start_button_hover"]
+content_margin_left = 30.0
+content_margin_top = 16.0
+content_margin_right = 30.0
+content_margin_bottom = 16.0
+bg_color = Color(0.58, 0.82, 0.22, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.93, 1, 0.48, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0.18, 0.95, 0.1, 0.42)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_start_button"]
+content_margin_left = 30.0
+content_margin_top = 16.0
+content_margin_right = 30.0
+content_margin_bottom = 16.0
+bg_color = Color(0.46, 0.68, 0.16, 0.96)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.82, 1, 0.34, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_streamer_button_hover"]
+content_margin_left = 30.0
+content_margin_top = 16.0
+content_margin_right = 30.0
+content_margin_bottom = 16.0
+bg_color = Color(0.46, 0.24, 0.78, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.9, 0.62, 1, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0.58, 0.22, 1, 0.38)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_streamer_button"]
+content_margin_left = 30.0
+content_margin_top = 16.0
+content_margin_right = 30.0
+content_margin_bottom = 16.0
+bg_color = Color(0.34, 0.17, 0.62, 0.96)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.78, 0.46, 1, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_leaderboard_button_hover"]
+content_margin_left = 30.0
+content_margin_top = 16.0
+content_margin_right = 30.0
+content_margin_bottom = 16.0
+bg_color = Color(0.18, 0.58, 0.88, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.6, 0.96, 1, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0.14, 0.7, 1, 0.35)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_leaderboard_button"]
+content_margin_left = 30.0
+content_margin_top = 16.0
+content_margin_right = 30.0
+content_margin_bottom = 16.0
+bg_color = Color(0.12, 0.45, 0.72, 0.96)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.42, 0.86, 1, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_settings_button_hover"]
+content_margin_left = 30.0
+content_margin_top = 16.0
+content_margin_right = 30.0
+content_margin_bottom = 16.0
+bg_color = Color(1, 0.46, 0.1, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.36, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(1, 0.42, 0.08, 0.36)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_settings_button"]
+content_margin_left = 30.0
+content_margin_top = 16.0
+content_margin_right = 30.0
+content_margin_bottom = 16.0
+bg_color = Color(0.82, 0.36, 0.07, 0.96)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.68, 0.22, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_exit_button_hover"]
+content_margin_left = 30.0
+content_margin_top = 12.0
+content_margin_right = 30.0
+content_margin_bottom = 12.0
+bg_color = Color(0.22, 0.15, 0.08, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.65, 0.2, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(1, 0.42, 0.08, 0.24)
+shadow_size = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_exit_button"]
+content_margin_left = 30.0
+content_margin_top = 12.0
+content_margin_right = 30.0
+content_margin_bottom = 12.0
+bg_color = Color(0.09, 0.075, 0.055, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.53, 0.12, 0.9)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 9
 
 [node name="MainMenu" type="Node3D"]
 script = ExtResource("1_controller")
@@ -52,9 +237,9 @@ surface_material_override/0 = SubResource("StandardMaterial3D_base_sign")
 
 [node name="StreamerBaseLabel" type="Label3D" parent="CinematicWorld"]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 5.35, 41)
+modulate = Color(0.54, 1, 0.34, 1)
 text = "STREAMER BASE"
 font_size = 44
-modulate = Color(0.54, 1, 0.34, 1)
 outline_size = 8
 
 [node name="JoinLobby" parent="CinematicWorld" instance=ExtResource("8_join_lobby")]
@@ -97,6 +282,21 @@ transform = Transform3D(0, 0, -1.25, 0, 1.25, 0, 1.25, 0, 0, -10.8, 0, -24.5)
 [node name="RedContainerHero" parent="CinematicWorld/ForegroundProps" instance=ExtResource("13_container_red")]
 transform = Transform3D(1.18, 0, 0, 0, 1.18, 0, 0, 0, 1.18, 12.4, 0, 30.5)
 
+[node name="GreenContainerStack" parent="CinematicWorld/ForegroundProps" instance=ExtResource("15_container_green")]
+transform = Transform3D(0, 0, -1.08, 0, 1.08, 0, 1.08, 0, 0, 11.2, 0, 15.8)
+
+[node name="RoadBlockCenterA" parent="CinematicWorld/ForegroundProps" instance=ExtResource("14_traffic_barrier_2")]
+transform = Transform3D(0.72, 0, 0, 0, 0.72, 0, 0, 0, 0.72, -0.95, 0, -12.8)
+
+[node name="RoadBlockCenterB" parent="CinematicWorld/ForegroundProps" instance=ExtResource("14_traffic_barrier_2")]
+transform = Transform3D(0.72, 0, 0, 0, 0.72, 0, 0, 0, 0.72, 1.45, 0, -10.2)
+
+[node name="ConeC" parent="CinematicWorld/ForegroundProps" instance=ExtResource("11_traffic_cone")]
+transform = Transform3D(0.82, 0, 0, 0, 0.82, 0, 0, 0, 0.82, -1.8, 0, -9.4)
+
+[node name="ConeD" parent="CinematicWorld/ForegroundProps" instance=ExtResource("11_traffic_cone")]
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 2.6, 0, -7.6)
+
 [node name="MenuKeyLight" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.824126, -0.204874, 0.528807, 0, 0.93237, 0.361506, -0.566406, -0.297925, 0.768385, 0, 24, -24)
 light_color = Color(0.48, 0.77, 0.56, 1)
@@ -107,15 +307,15 @@ shadow_enabled = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 5.2, -28.8)
 light_color = Color(0.39, 1, 0.24, 1)
 light_energy = 4.35
-omni_range = 20.0
 shadow_enabled = true
+omni_range = 20.0
 
 [node name="BaseAmberLight" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 6.4, 37.5)
 light_color = Color(1, 0.62, 0.16, 1)
 light_energy = 3.2
-omni_range = 26.0
 shadow_enabled = true
+omni_range = 26.0
 
 [node name="RoadSweepLight" type="SpotLight3D" parent="."]
 transform = Transform3D(-0.965926, -0.0990458, -0.239118, 0, 0.92388, -0.382683, 0.258819, -0.369644, -0.892399, -5.8, 8.6, -24)
@@ -134,6 +334,7 @@ fov = 64.0
 [node name="MenuLayer" type="CanvasLayer" parent="."]
 
 [node name="Root" type="Control" parent="MenuLayer"]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -141,8 +342,19 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("2_theme")
 
+[node name="MenuArtBackground" type="TextureRect" parent="MenuLayer/Root"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("16_menu_art")
+expand_mode = 1
+stretch_mode = 6
+
 [node name="Vignette" type="ColorRect" parent="MenuLayer/Root"]
-anchors_preset = 15
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -151,20 +363,81 @@ mouse_filter = 2
 color = Color(0, 0, 0, 0.08)
 
 [node name="LeftShade" type="ColorRect" parent="MenuLayer/Root"]
-anchor_right = 0.39
+layout_mode = 0
+anchor_right = 0.36
 anchor_bottom = 1.0
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0, 0, 0, 0.3)
+color = Color(0, 0, 0, 0.42)
+
+[node name="BottomShade" type="ColorRect" parent="MenuLayer/Root"]
+layout_mode = 0
+anchor_top = 0.73
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+color = Color(0, 0, 0, 0.18)
+
+[node name="HeroTitle" type="TextureRect" parent="MenuLayer/Root"]
+layout_mode = 0
+offset_left = 346.0
+offset_top = 8.0
+offset_right = 1272.0
+offset_bottom = 342.0
+mouse_filter = 2
+texture = ExtResource("17_menu_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ChatActivityPanel" type="PanelContainer" parent="MenuLayer/Root"]
+layout_mode = 0
+offset_left = 1226.0
+offset_top = 62.0
+offset_right = 1538.0
+offset_bottom = 260.0
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="MenuLayer/Root/ChatActivityPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 14
+
+[node name="VBox" type="VBoxContainer" parent="MenuLayer/Root/ChatActivityPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="MenuLayer/Root/ChatActivityPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.32, 0.22, 1)
+theme_override_colors/font_outline_color = Color(0.1, 0.01, 0.01, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 22
+text = "CHAT ACTIVITY"
+
+[node name="ActivityLines" type="Label" parent="MenuLayer/Root/ChatActivityPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.83, 1, 0.38, 1)
+theme_override_font_sizes/font_size = 18
+text = "TacoKing: !BRAINS
+PixelPunk: !CHAOS
+NotSleepy: !NUKE
+HexHunger: !SLOWMO
+>>> TOO MANY BRAINS!"
 
 [node name="Nav" type="VBoxContainer" parent="MenuLayer/Root"]
-offset_left = 72.0
-offset_top = 48.0
-offset_right = 646.0
-offset_bottom = 812.0
-theme_override_constants/separation = 12
+layout_mode = 0
+offset_left = 70.0
+offset_top = 342.0
+offset_right = 558.0
+offset_bottom = 792.0
+theme_override_constants/separation = 10
 
 [node name="LogoLockup" type="VBoxContainer" parent="MenuLayer/Root/Nav"]
+visible = false
 custom_minimum_size = Vector2(540, 252)
 layout_mode = 2
 theme_override_constants/separation = -10
@@ -172,22 +445,22 @@ theme_override_constants/separation = -10
 [node name="ZombieTitle" type="Label" parent="MenuLayer/Root/Nav/LogoLockup"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.46, 1, 0.19, 1)
-theme_override_colors/font_outline_color = Color(0.015, 0.04, 0.01, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.96)
-theme_override_constants/outline_size = 8
+theme_override_colors/font_outline_color = Color(0.015, 0.04, 0.01, 1)
 theme_override_constants/shadow_offset_x = 5
 theme_override_constants/shadow_offset_y = 5
+theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 86
 text = "ZOMBIE"
 
 [node name="HordeTitle" type="Label" parent="MenuLayer/Root/Nav/LogoLockup"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.62, 0.1, 1)
-theme_override_colors/font_outline_color = Color(0.055, 0.032, 0.006, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.96)
-theme_override_constants/outline_size = 8
+theme_override_colors/font_outline_color = Color(0.055, 0.032, 0.006, 1)
 theme_override_constants/shadow_offset_x = 5
 theme_override_constants/shadow_offset_y = 5
+theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 94
 text = "HORDE"
 
@@ -197,34 +470,121 @@ layout_mode = 2
 color = Color(1, 0.62, 0.12, 0.92)
 
 [node name="Tagline" type="Label" parent="MenuLayer/Root/Nav"]
-text = "DIRTY ARCADE CHAT LOTTO"
+visible = false
+layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.75, 0.34, 1)
 theme_override_font_sizes/font_size = 20
+text = "DIRTY ARCADE CHAT LOTTO"
 
 [node name="CommandLabel" type="Label" parent="MenuLayer/Root/Nav"]
-text = "TYPE !BRAINS TO JOIN"
+visible = false
+layout_mode = 2
 theme_override_colors/font_color = Color(0.81, 1, 0.52, 1)
 theme_override_font_sizes/font_size = 23
+text = "TYPE !BRAINS TO JOIN"
 
 [node name="SpacerA" type="Control" parent="MenuLayer/Root/Nav"]
 custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
 
 [node name="OpenLobbyButton" parent="MenuLayer/Root/Nav" instance=ExtResource("3_menu_button")]
-text = "OPEN LOBBY    >"
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(1, 1, 0.9, 1)
+theme_override_colors/font_color = Color(1, 0.96, 0.82, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 0.9, 1)
+theme_override_font_sizes/font_size = 31
+theme_override_styles/hover = SubResource("StyleBox_start_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_start_button_hover")
+theme_override_styles/normal = SubResource("StyleBox_start_button")
+text = "> START"
 
 [node name="AddJoinButton" parent="MenuLayer/Root/Nav" instance=ExtResource("3_menu_button")]
-text = "ADD JOIN      >"
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(1, 1, 0.93, 1)
+theme_override_colors/font_color = Color(1, 0.95, 0.86, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 0.93, 1)
+theme_override_font_sizes/font_size = 30
+theme_override_styles/hover = SubResource("StyleBox_streamer_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_streamer_button_hover")
+theme_override_styles/normal = SubResource("StyleBox_streamer_button")
+text = "> STREAMER MODE"
+
+[node name="LeaderboardButton" parent="MenuLayer/Root/Nav" instance=ExtResource("3_menu_button")]
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(1, 1, 0.93, 1)
+theme_override_colors/font_color = Color(1, 0.95, 0.86, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 0.93, 1)
+theme_override_font_sizes/font_size = 30
+theme_override_styles/hover = SubResource("StyleBox_leaderboard_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_leaderboard_button_hover")
+theme_override_styles/normal = SubResource("StyleBox_leaderboard_button")
+text = "> LEADERBOARD"
 
 [node name="SettingsButton" parent="MenuLayer/Root/Nav" instance=ExtResource("3_menu_button")]
-text = "SETTINGS      >"
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(1, 1, 0.93, 1)
+theme_override_colors/font_color = Color(1, 0.95, 0.86, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 0.93, 1)
+theme_override_font_sizes/font_size = 30
+theme_override_styles/hover = SubResource("StyleBox_settings_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_settings_button_hover")
+theme_override_styles/normal = SubResource("StyleBox_settings_button")
+text = "> SETTINGS"
 
 [node name="ExitButton" parent="MenuLayer/Root/Nav" instance=ExtResource("3_menu_button")]
-text = "EXIT GAME     >"
+custom_minimum_size = Vector2(470, 52)
+layout_mode = 2
+theme_override_colors/font_hover_color = Color(1, 0.9, 0.72, 1)
+theme_override_colors/font_color = Color(0.9, 0.78, 0.58, 1)
+theme_override_colors/font_pressed_color = Color(1, 0.9, 0.72, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/hover = SubResource("StyleBox_exit_button_hover")
+theme_override_styles/pressed = SubResource("StyleBox_exit_button_hover")
+theme_override_styles/normal = SubResource("StyleBox_exit_button")
+text = "> EXIT GAME"
 
 [node name="SpacerB" type="Control" parent="MenuLayer/Root/Nav"]
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
 
 [node name="Footer" type="Label" parent="MenuLayer/Root/Nav"]
-text = "SURVIVE. WIN. TAKE IT ALL."
+visible = false
+layout_mode = 2
 theme_override_colors/font_color = Color(0.93, 0.71, 0.34, 1)
 theme_override_font_sizes/font_size = 18
+text = "SURVIVE. WIN. TAKE IT ALL."
+
+[node name="JoinPromptPanel" type="PanelContainer" parent="MenuLayer/Root"]
+modulate = Color(0.74, 0.48, 1, 1)
+layout_mode = 0
+offset_left = 72.0
+offset_top = 806.0
+offset_right = 472.0
+offset_bottom = 870.0
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="MenuLayer/Root/JoinPromptPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 12
+
+[node name="Prompt" type="Label" parent="MenuLayer/Root/JoinPromptPanel/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.96, 0.8, 1)
+theme_override_colors/font_outline_color = Color(0.06, 0.025, 0.09, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 24
+text = "TYPE !BRAINS TO JOIN"
+
+[node name="VersionLabel" type="Label" parent="MenuLayer/Root"]
+layout_mode = 0
+offset_left = 1480.0
+offset_top = 848.0
+offset_right = 1560.0
+offset_bottom = 880.0
+theme_override_colors/font_color = Color(1, 0.96, 0.86, 0.92)
+theme_override_font_sizes/font_size = 20
+text = "v1.0.0"
+horizontal_alignment = 2

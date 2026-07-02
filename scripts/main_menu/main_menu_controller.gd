@@ -1,6 +1,14 @@
 class_name MainMenuController
 extends Node3D
 
+const AUDIO_MANAGER_SCENE: PackedScene = preload("res://scenes/audio/audio_manager.tscn")
+const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_settings_menu.tscn")
+const CHAT_ACTIVITY_FEED: Array[String] = [
+	"TacoKing: !BRAINS\nPixelPunk: !CHAOS\nNotSleepy: !NUKE\nHexHunger: !SLOWMO\n>>> TOO MANY BRAINS!",
+	"ByteBiter: !BRAINS\nGraveShift: !CHAOS\nNeonRot: !BRAINS\nVanDad: !SLOWMO\n>>> HORDE GROWING",
+	"RoadRage: !NUKE\nSnackStack: !BRAINS\nMoldMode: !CHAOS\nCrateLord: !BRAINS\n>>> CHAT IS LOUD",
+]
+
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/main/main_game.tscn"
 @export var camera_path: NodePath
 @export var camera_focus: Vector3 = Vector3(0.0, 1.8, 4.0)
@@ -22,16 +30,20 @@ var _road_sweep_light: Light3D
 var _cage_light_energy: float = 0.0
 var _base_light_energy: float = 0.0
 var _road_sweep_light_energy: float = 0.0
+var _chat_activity_index: int = 0
+var _chat_activity_elapsed: float = 0.0
 
 @onready var _camera: Camera3D = get_node_or_null(camera_path) as Camera3D
 @onready var _open_lobby_button: Button = get_node("MenuLayer/Root/Nav/OpenLobbyButton") as Button
 @onready var _add_join_button: Button = get_node("MenuLayer/Root/Nav/AddJoinButton") as Button
+@onready var _leaderboard_button: Button = get_node("MenuLayer/Root/Nav/LeaderboardButton") as Button
 @onready var _settings_button: Button = get_node("MenuLayer/Root/Nav/SettingsButton") as Button
 @onready var _exit_button: Button = get_node("MenuLayer/Root/Nav/ExitButton") as Button
+@onready var _chat_activity_label: Label = get_node_or_null("MenuLayer/Root/ChatActivityPanel/Margin/VBox/ActivityLines") as Label
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	var music_controller: MusicController = _get_music_controller()
+	var music_controller: MusicController = _get_or_create_music_controller()
 	if music_controller != null:
 		music_controller.play_menu_music()
 	_cache_cinematic_nodes()
@@ -40,8 +52,10 @@ func _ready() -> void:
 
 	_open_lobby_button.pressed.connect(_on_open_lobby_pressed)
 	_add_join_button.pressed.connect(_on_add_join_pressed)
+	_leaderboard_button.pressed.connect(_on_leaderboard_pressed)
 	_settings_button.pressed.connect(_on_settings_pressed)
 	_exit_button.pressed.connect(_on_exit_pressed)
+	_refresh_chat_activity()
 	_refresh_feature_buttons()
 
 func _process(delta: float) -> void:
@@ -49,15 +63,19 @@ func _process(delta: float) -> void:
 	_update_camera_idle()
 	_update_menu_zombies()
 	_update_menu_lights()
+	_update_chat_activity(delta)
 
 func _on_open_lobby_pressed() -> void:
 	_launch_lobby(0, false)
 
 func _on_add_join_pressed() -> void:
-	_launch_lobby(debug_joins_per_click, false)
+	_launch_lobby(0, true)
+
+func _on_leaderboard_pressed() -> void:
+	_launch_lobby(0, false)
 
 func _on_settings_pressed() -> void:
-	var game_settings: GameSettingsController = _get_game_settings()
+	var game_settings: GameSettingsController = _get_or_create_game_settings()
 	if game_settings != null:
 		game_settings.open_settings()
 
@@ -80,6 +98,7 @@ func _launch_lobby(debug_joins_to_seed: int, open_settings: bool) -> void:
 func _set_buttons_enabled(enabled: bool) -> void:
 	_open_lobby_button.disabled = not enabled
 	_add_join_button.disabled = not enabled
+	_leaderboard_button.disabled = not enabled
 	_settings_button.disabled = not enabled
 	_exit_button.disabled = not enabled
 
@@ -88,11 +107,31 @@ func _refresh_feature_buttons() -> void:
 		_settings_button.visible = true
 		_settings_button.disabled = false
 
-func _get_music_controller() -> MusicController:
-	return get_node_or_null("/root/AudioManager") as MusicController
+func _get_or_create_music_controller() -> MusicController:
+	var music_controller: MusicController = get_node_or_null("/root/AudioManager") as MusicController
+	if music_controller != null:
+		return music_controller
 
-func _get_game_settings() -> GameSettingsController:
-	return get_node_or_null("/root/GameSettings") as GameSettingsController
+	music_controller = AUDIO_MANAGER_SCENE.instantiate() as MusicController
+	if music_controller == null:
+		return null
+
+	music_controller.name = "AudioManager"
+	get_tree().root.add_child(music_controller)
+	return music_controller
+
+func _get_or_create_game_settings() -> GameSettingsController:
+	var game_settings: GameSettingsController = get_node_or_null("/root/GameSettings") as GameSettingsController
+	if game_settings != null:
+		return game_settings
+
+	game_settings = GAME_SETTINGS_SCENE.instantiate() as GameSettingsController
+	if game_settings == null:
+		return null
+
+	game_settings.name = "GameSettings"
+	get_tree().root.add_child(game_settings)
+	return game_settings
 
 func _cache_cinematic_nodes() -> void:
 	if _camera != null:
@@ -148,3 +187,21 @@ func _update_menu_lights() -> void:
 		_base_light.light_energy = _base_light_energy * (1.0 + sin(_time * 1.15 + 1.3) * 0.06)
 	if _road_sweep_light != null:
 		_road_sweep_light.light_energy = _road_sweep_light_energy * (1.0 + sin(_time * 0.9 + 0.6) * 0.09)
+
+func _update_chat_activity(delta: float) -> void:
+	if _chat_activity_label == null:
+		return
+
+	_chat_activity_elapsed += delta
+	if _chat_activity_elapsed < 1.9:
+		return
+
+	_chat_activity_elapsed = 0.0
+	_chat_activity_index = (_chat_activity_index + 1) % CHAT_ACTIVITY_FEED.size()
+	_refresh_chat_activity()
+
+func _refresh_chat_activity() -> void:
+	if _chat_activity_label == null:
+		return
+
+	_chat_activity_label.text = CHAT_ACTIVITY_FEED[_chat_activity_index]

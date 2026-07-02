@@ -1,6 +1,9 @@
 class_name GameFlowController
 extends Node
 
+const AUDIO_MANAGER_SCENE: PackedScene = preload("res://scenes/audio/audio_manager.tscn")
+const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_settings_menu.tscn")
+
 const META_COLLISION_LAYER := "_zh_saved_collision_layer"
 const META_COLLISION_MASK := "_zh_saved_collision_mask"
 const META_COLLISION_SHAPE_DISABLED := "_zh_saved_collision_shape_disabled"
@@ -23,6 +26,7 @@ const META_PROCESS_MODE := "_zh_saved_process_mode"
 @export var pre_round_ui_path: NodePath
 @export var world_environment_path: NodePath
 @export var transition_overlay_path: NodePath
+@export_file("*.tscn") var main_menu_scene_path: String = "res://scenes/main_menu/main_menu.tscn"
 @export var lobby_environment: Environment
 @export var race_environment: Environment
 @export var fade_seconds: float = 0.22
@@ -53,6 +57,7 @@ var _intro_active: bool = true
 var _current_phase: String = ""
 var _transition_token: int = 0
 var _transition_tween: Tween
+var _returning_to_main_menu: bool = false
 
 func _ready() -> void:
 	call_deferred("_initialize_flow")
@@ -73,11 +78,12 @@ func _initialize_flow() -> void:
 	_pre_round_ui = get_node_or_null(pre_round_ui_path) as PreRoundUIController
 	_world_environment = get_node_or_null(world_environment_path) as WorldEnvironment
 	_transition_overlay = get_node_or_null(transition_overlay_path) as ColorRect
-	_music_controller = get_node_or_null("/root/AudioManager") as MusicController
+	_music_controller = _get_or_create_music_controller()
 
 	if _pre_round_ui != null:
 		_pre_round_ui.ready_requested.connect(_on_ready_requested)
 		_pre_round_ui.settings_requested.connect(_on_settings_requested)
+		_pre_round_ui.main_menu_requested.connect(_on_main_menu_requested)
 	if _race_map_controller != null:
 		_race_map_controller.active_map_changed.connect(_on_active_map_changed)
 
@@ -103,6 +109,18 @@ func _on_ready_requested() -> void:
 
 func _on_settings_requested() -> void:
 	_open_game_settings()
+
+func _on_main_menu_requested() -> void:
+	if _returning_to_main_menu:
+		return
+
+	_returning_to_main_menu = true
+	LaunchState.request_intro()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	var error: Error = get_tree().change_scene_to_file(main_menu_scene_path)
+	if error != OK:
+		_returning_to_main_menu = false
+		push_error("Unable to return to main menu: %s" % main_menu_scene_path)
 
 func _on_round_state_changed(state_text: String) -> void:
 	match state_text:
@@ -227,9 +245,35 @@ func _open_streamer_settings() -> void:
 		streamer_menu_controller.open_menu()
 
 func _open_game_settings() -> void:
-	var game_settings: GameSettingsController = get_node_or_null("/root/GameSettings") as GameSettingsController
+	var game_settings: GameSettingsController = _get_or_create_game_settings()
 	if game_settings != null:
 		game_settings.open_settings()
+
+func _get_or_create_music_controller() -> MusicController:
+	var music_controller: MusicController = get_node_or_null("/root/AudioManager") as MusicController
+	if music_controller != null:
+		return music_controller
+
+	music_controller = AUDIO_MANAGER_SCENE.instantiate() as MusicController
+	if music_controller == null:
+		return null
+
+	music_controller.name = "AudioManager"
+	get_tree().root.add_child(music_controller)
+	return music_controller
+
+func _get_or_create_game_settings() -> GameSettingsController:
+	var game_settings: GameSettingsController = get_node_or_null("/root/GameSettings") as GameSettingsController
+	if game_settings != null:
+		return game_settings
+
+	game_settings = GAME_SETTINGS_SCENE.instantiate() as GameSettingsController
+	if game_settings == null:
+		return null
+
+	game_settings.name = "GameSettings"
+	get_tree().root.add_child(game_settings)
+	return game_settings
 
 func _set_node_visible(node: Node, visible: bool) -> void:
 	if node == null:

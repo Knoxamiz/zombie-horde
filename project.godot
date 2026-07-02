@@ -22,10 +22,6 @@ LaunchState="*res://scripts/core/launch_state.gd"
 GameSettings="*res://scenes/settings/game_settings_menu.tscn"
 AudioManager="*res://scenes/audio/audio_manager.tscn"
 
-[audio]
-
-buses/default_bus_layout="res://default_bus_layout.tres"
-
 [display]
 
 window/size/viewport_width=1600

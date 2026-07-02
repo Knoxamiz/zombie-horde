@@ -3,6 +3,7 @@ extends CanvasLayer
 
 signal ready_requested()
 signal settings_requested()
+signal main_menu_requested()
 
 @export var round_manager_path: NodePath
 @export var join_source_path: NodePath
@@ -26,7 +27,8 @@ var _state_text: String = "Joining"
 @onready var _ready_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ButtonRow/ReadyButton") as Button
 @onready var _reset_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ButtonRow/ResetButton") as Button
 @onready var _lobby_join_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ButtonRow/AddJoinButton") as Button
-@onready var _settings_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ButtonRow/SettingsButton") as Button
+@onready var _settings_button: Button = get_node("Root/LobbyPanel/Margin/VBox/MenuRow/SettingsButton") as Button
+@onready var _main_menu_button: Button = get_node("Root/LobbyPanel/Margin/VBox/MenuRow/MainMenuButton") as Button
 @onready var _cage_board_panel: PanelContainer = get_node("Root/CageBoardPanel") as PanelContainer
 @onready var _fastest_label: Label = get_node("Root/CageBoardPanel/Margin/VBox/FastestLabel") as Label
 @onready var _recent_winners_label: Label = get_node("Root/CageBoardPanel/Margin/VBox/RecentWinnersLabel") as Label
@@ -41,6 +43,7 @@ func _ready() -> void:
 	_ready_button.pressed.connect(_on_ready_pressed)
 	_reset_button.pressed.connect(_on_reset_pressed)
 	_settings_button.pressed.connect(_on_settings_pressed)
+	_main_menu_button.pressed.connect(_on_main_menu_pressed)
 
 	GameEvents.participant_queue_changed.connect(_on_participant_queue_changed)
 	GameEvents.command_text_changed.connect(_on_command_text_changed)
@@ -82,6 +85,9 @@ func _on_add_join_pressed() -> void:
 
 func _on_settings_pressed() -> void:
 	settings_requested.emit()
+
+func _on_main_menu_pressed() -> void:
+	main_menu_requested.emit()
 
 func _on_participant_queue_changed(display_names: PackedStringArray) -> void:
 	_queued_names = display_names
@@ -197,6 +203,8 @@ func _refresh_ready_button() -> void:
 	if _settings_button != null:
 		_settings_button.visible = true
 		_settings_button.disabled = false
+	if _main_menu_button != null:
+		_main_menu_button.disabled = _state_text != "Joining"
 
 func _join_strings(values: Array[String], separator: String) -> String:
 	var result: String = ""
