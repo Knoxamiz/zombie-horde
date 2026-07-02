@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu_3d_button.gd" id="1_script"]
+
+[node name="MainMenu3DButton" type="Area3D"]
+script = ExtResource("1_script")
+
+[node name="Block" type="MeshInstance3D" parent="."]
+
+[node name="Accent" type="MeshInstance3D" parent="."]
+
+[node name="Label" type="Label3D" parent="."]
+texture_filter = 4
+billboard = 0
+modulate = Color(1, 0.96, 0.82, 1)
+outline_modulate = Color(0, 0, 0, 1)
+text = "BUTTON"
+font_size = 44
+outline_size = 8
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]

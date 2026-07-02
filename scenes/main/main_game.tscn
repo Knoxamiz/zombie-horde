@@ -1,4 +1,4 @@
-[gd_scene load_steps=49 format=3 uid="uid://cpckbkq2isxty"]
+[gd_scene load_steps=51 format=3 uid="uid://cpckbkq2isxty"]
 
 [ext_resource type="Script" uid="uid://bdrcas6cpq4y0" path="res://scripts/core/input_map_setup.gd" id="1_input"]
 [ext_resource type="Script" uid="uid://ddgxum5bath7f" path="res://scripts/core/debug_join_source.gd" id="2_join"]
@@ -48,6 +48,8 @@
 [ext_resource type="Resource" path="res://resources/maps/suburban_evac_route.tres" id="46_map_suburban"]
 [ext_resource type="Resource" path="res://resources/maps/tunnel_checkpoint.tres" id="47_map_tunnel"]
 [ext_resource type="Resource" path="res://resources/maps/rooftop_causeway.tres" id="48_map_rooftop"]
+[ext_resource type="Script" path="res://scripts/ui/world_text_board.gd" id="49_world_board"]
+[ext_resource type="PackedScene" path="res://scenes/ui/main_menu_3d_button.tscn" id="50_3d_button"]
 
 [node name="MainGame" type="Node3D"]
 
@@ -195,12 +197,359 @@ feedback_label_scene = ExtResource("23_feedback_label")
 
 [node name="SpectatorCamera" parent="." instance=ExtResource("17_camera_scene")]
 
+[node name="WorldMenus3D" type="Node3D" parent="SpectatorCamera/Camera3D"]
+
+[node name="LobbyBoards" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D"]
+visible = false
+
+[node name="LobbyInfoBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards"]
+transform = Transform3D(0.985, 0, 0.174, 0, 1, 0, -0.174, 0, 0.985, -2.35, 0.82, -5.52)
+script = ExtResource("49_world_board")
+title_text = "LOTTO CAGE"
+body_text = "Waiting for !brains"
+board_size = Vector2(4.0, 2.3)
+title_font_size = 34
+body_font_size = 21
+face_color = Color(0.012, 0.018, 0.012, 0.96)
+frame_color = Color(0.95, 0.48, 0.08, 1)
+
+[node name="CageTimesBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards"]
+transform = Transform3D(0.985, 0, -0.174, 0, 1, 0, 0.174, 0, 0.985, 2.45, 0.18, -5.55)
+script = ExtResource("49_world_board")
+title_text = "CAGE RECORDS"
+body_text = "Fastest Times\n-\n\nLast 10 Winners\n-"
+board_size = Vector2(3.55, 3.25)
+title_font_size = 29
+body_font_size = 17
+face_color = Color(0.012, 0.018, 0.012, 0.96)
+frame_color = Color(0.95, 0.48, 0.08, 1)
+
+[node name="LobbyReadyButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -3.25, -1.45, -5.18)
+action_id = &"ready"
+text = "READY"
+base_color = Color(0.42, 0.68, 0.12, 1)
+hover_color = Color(0.62, 0.92, 0.18, 1)
+accent_color = Color(0.9, 1, 0.28, 1)
+block_size = Vector3(1.75, 0.42, 0.24)
+font_size = 20
+outline_size = 4
+
+[node name="LobbyResetButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -1.45, -1.45, -5.16)
+action_id = &"reset"
+text = "RESET"
+base_color = Color(0.15, 0.12, 0.08, 1)
+hover_color = Color(0.32, 0.19, 0.08, 1)
+accent_color = Color(0.95, 0.5, 0.12, 1)
+block_size = Vector3(1.65, 0.42, 0.24)
+font_size = 19
+outline_size = 4
+
+[node name="LobbyJoinButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -3.25, -2.02, -5.12)
+action_id = &"add_join"
+text = "ADD JOIN"
+base_color = Color(0.13, 0.46, 0.72, 1)
+hover_color = Color(0.2, 0.65, 0.95, 1)
+accent_color = Color(0.42, 0.88, 1, 1)
+block_size = Vector3(1.75, 0.42, 0.24)
+font_size = 18
+outline_size = 4
+
+[node name="LobbySettingsButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -1.45, -2.02, -5.1)
+action_id = &"settings"
+text = "SETTINGS"
+base_color = Color(0.86, 0.36, 0.04, 1)
+hover_color = Color(1, 0.5, 0.08, 1)
+accent_color = Color(1, 0.75, 0.22, 1)
+block_size = Vector3(1.75, 0.42, 0.24)
+font_size = 18
+outline_size = 4
+
+[node name="LobbyBackButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -2.35, -2.6, -5.06)
+action_id = &"main_menu"
+text = "BACK TO MENU"
+base_color = Color(0.1, 0.08, 0.05, 1)
+hover_color = Color(0.25, 0.13, 0.05, 1)
+accent_color = Color(0.95, 0.5, 0.12, 1)
+text_color = Color(0.95, 0.82, 0.58, 1)
+block_size = Vector3(2.25, 0.42, 0.24)
+font_size = 17
+outline_size = 4
+
+[node name="RaceBoards" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D"]
+visible = false
+
+[node name="RaceStatusBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
+transform = Transform3D(0.985, 0, 0.174, 0, 1, 0, -0.174, 0, 0.985, -3.15, 1.68, -5.42)
+script = ExtResource("49_world_board")
+title_text = "RACE STATUS"
+body_text = "State: Idle"
+board_size = Vector2(3.15, 1.5)
+title_font_size = 27
+body_font_size = 17
+face_color = Color(0.012, 0.018, 0.012, 0.94)
+frame_color = Color(0.95, 0.48, 0.08, 1)
+
+[node name="RaceFeedBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
+transform = Transform3D(0.985, 0, -0.174, 0, 1, 0, 0.174, 0, 0.985, 3.15, 1.35, -5.48)
+script = ExtResource("49_world_board")
+title_text = "LIVE FEED"
+body_text = "Lotto: waiting for !brains\n\nKills:\n-"
+board_size = Vector2(3.25, 2.0)
+title_font_size = 27
+body_font_size = 17
+face_color = Color(0.012, 0.018, 0.012, 0.94)
+frame_color = Color(0.95, 0.48, 0.08, 1)
+
+[node name="RaceLeadersBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
+transform = Transform3D(0.985, 0, -0.174, 0, 1, 0, 0.174, 0, 0.985, 3.15, -1.1, -5.48)
+script = ExtResource("49_world_board")
+title_text = "FASTEST WINNERS"
+body_text = "-"
+board_size = Vector2(3.25, 2.1)
+title_font_size = 25
+body_font_size = 16
+face_color = Color(0.012, 0.018, 0.012, 0.94)
+frame_color = Color(0.95, 0.48, 0.08, 1)
+
+[node name="RaceCommandBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -0.15, -2.62, -5.2)
+script = ExtResource("49_world_board")
+title_text = "CHAT COMMAND"
+body_text = "Type !brains to join."
+board_size = Vector2(4.65, 0.78)
+title_font_size = 19
+body_font_size = 17
+face_color = Color(0.03, 0.018, 0.045, 0.94)
+frame_color = Color(0.74, 0.34, 1, 1)
+title_color = Color(0.86, 0.52, 1, 1)
+body_color = Color(1, 0.92, 0.76, 1)
+
+[node name="RaceCountdownBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
+visible = false
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 0, 0.42, -4.82)
+script = ExtResource("49_world_board")
+title_text = "COUNTDOWN"
+body_text = "3"
+board_size = Vector2(1.62, 0.95)
+title_font_size = 22
+body_font_size = 52
+face_color = Color(0.02, 0.012, 0.008, 0.98)
+frame_color = Color(1, 0.72, 0.16, 1)
+
+[node name="RaceResultsBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
+visible = false
+transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, 0, 0.25, -5.0)
+script = ExtResource("49_world_board")
+title_text = "ROUND RESULTS"
+body_text = "Winner: -"
+board_size = Vector2(5.15, 2.9)
+title_font_size = 32
+body_font_size = 18
+face_color = Color(0.012, 0.018, 0.012, 0.97)
+frame_color = Color(0.95, 0.48, 0.08, 1)
+
+[node name="RaceResultResetButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards" instance=ExtResource("50_3d_button")]
+visible = false
+transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, 0, -1.75, -4.85)
+action_id = &"reset"
+text = "RETURN TO LOBBY"
+base_color = Color(0.42, 0.68, 0.12, 1)
+hover_color = Color(0.62, 0.92, 0.18, 1)
+accent_color = Color(0.9, 1, 0.28, 1)
+block_size = Vector3(2.6, 0.48, 0.26)
+font_size = 18
+outline_size = 4
+
+[node name="StreamerSettingsBoards" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D"]
+visible = false
+
+[node name="StreamerSummaryBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards"]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 0, 0.5, -5.08)
+script = ExtResource("49_world_board")
+title_text = "STREAMER SETTINGS"
+body_text = "Settings loaded"
+board_size = Vector2(4.75, 2.75)
+title_font_size = 34
+body_font_size = 19
+title_outline_size = 8
+body_outline_size = 6
+face_color = Color(0.012, 0.018, 0.012, 0.98)
+frame_color = Color(0.74, 0.34, 1, 1)
+title_color = Color(0.86, 0.52, 1, 1)
+
+[node name="StreamerCloseButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 1.95, -2.65, -4.66)
+action_id = &"close"
+text = "DONE"
+base_color = Color(0.1, 0.08, 0.05, 1)
+hover_color = Color(0.25, 0.13, 0.05, 1)
+accent_color = Color(0.95, 0.5, 0.12, 1)
+block_size = Vector3(1.05, 0.36, 0.22)
+font_size = 15
+outline_size = 4
+
+[node name="StreamerMapButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -1.95, -1.15, -4.7)
+action_id = &"map_next"
+text = "MAP"
+base_color = Color(0.13, 0.46, 0.72, 1)
+hover_color = Color(0.2, 0.65, 0.95, 1)
+accent_color = Color(0.42, 0.88, 1, 1)
+block_size = Vector3(1.15, 0.36, 0.22)
+font_size = 15
+outline_size = 4
+
+[node name="StreamerBalanceDownButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -0.65, -1.15, -4.7)
+action_id = &"balance_down"
+text = "BAL -"
+base_color = Color(0.34, 0.15, 0.62, 1)
+hover_color = Color(0.52, 0.24, 0.9, 1)
+accent_color = Color(0.82, 0.48, 1, 1)
+block_size = Vector3(1.05, 0.36, 0.22)
+font_size = 15
+outline_size = 4
+
+[node name="StreamerBalanceUpButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 0.65, -1.15, -4.7)
+action_id = &"balance_up"
+text = "BAL +"
+base_color = Color(0.34, 0.15, 0.62, 1)
+hover_color = Color(0.52, 0.24, 0.9, 1)
+accent_color = Color(0.82, 0.48, 1, 1)
+block_size = Vector3(1.05, 0.36, 0.22)
+font_size = 15
+outline_size = 4
+
+[node name="StreamerLightingButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 1.95, -1.15, -4.7)
+action_id = &"lighting_next"
+text = "LIGHT"
+base_color = Color(0.86, 0.36, 0.04, 1)
+hover_color = Color(1, 0.5, 0.08, 1)
+accent_color = Color(1, 0.75, 0.22, 1)
+block_size = Vector3(1.15, 0.36, 0.22)
+font_size = 15
+outline_size = 4
+
+[node name="StreamerBackdropButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -1.95, -1.65, -4.68)
+action_id = &"backdrop_next"
+text = "BACKDROP"
+base_color = Color(0.13, 0.46, 0.72, 1)
+hover_color = Color(0.2, 0.65, 0.95, 1)
+accent_color = Color(0.42, 0.88, 1, 1)
+block_size = Vector3(1.32, 0.36, 0.22)
+font_size = 13
+outline_size = 4
+
+[node name="StreamerAvatarButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -0.65, -1.65, -4.68)
+action_id = &"avatar_next"
+text = "AVATAR"
+base_color = Color(0.42, 0.68, 0.12, 1)
+hover_color = Color(0.62, 0.92, 0.18, 1)
+accent_color = Color(0.9, 1, 0.28, 1)
+block_size = Vector3(1.18, 0.36, 0.22)
+font_size = 14
+outline_size = 4
+
+[node name="StreamerRerollButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 0.65, -1.65, -4.68)
+action_id = &"reroll"
+text = "REROLL"
+base_color = Color(0.86, 0.36, 0.04, 1)
+hover_color = Color(1, 0.5, 0.08, 1)
+accent_color = Color(1, 0.75, 0.22, 1)
+block_size = Vector3(1.18, 0.36, 0.22)
+font_size = 14
+outline_size = 4
+
+[node name="StreamerSaveButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 1.95, -1.65, -4.68)
+action_id = &"save"
+text = "SAVE"
+base_color = Color(0.42, 0.68, 0.12, 1)
+hover_color = Color(0.62, 0.92, 0.18, 1)
+accent_color = Color(0.9, 1, 0.28, 1)
+block_size = Vector3(1.0, 0.36, 0.22)
+font_size = 15
+outline_size = 4
+
+[node name="StreamerPreset1Button3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -1.95, -2.15, -4.66)
+action_id = &"preset_1"
+text = "P1"
+base_color = Color(0.34, 0.15, 0.62, 1)
+hover_color = Color(0.52, 0.24, 0.9, 1)
+accent_color = Color(0.82, 0.48, 1, 1)
+block_size = Vector3(0.9, 0.34, 0.2)
+font_size = 14
+outline_size = 4
+
+[node name="StreamerPreset2Button3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -0.65, -2.15, -4.66)
+action_id = &"preset_2"
+text = "P2"
+base_color = Color(0.34, 0.15, 0.62, 1)
+hover_color = Color(0.52, 0.24, 0.9, 1)
+accent_color = Color(0.82, 0.48, 1, 1)
+block_size = Vector3(0.9, 0.34, 0.2)
+font_size = 14
+outline_size = 4
+
+[node name="StreamerPreset3Button3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 0.65, -2.15, -4.66)
+action_id = &"preset_3"
+text = "P3"
+base_color = Color(0.34, 0.15, 0.62, 1)
+hover_color = Color(0.52, 0.24, 0.9, 1)
+accent_color = Color(0.82, 0.48, 1, 1)
+block_size = Vector3(0.9, 0.34, 0.2)
+font_size = 14
+outline_size = 4
+
+[node name="StreamerPreset4Button3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 1.95, -2.15, -4.66)
+action_id = &"preset_4"
+text = "P4"
+base_color = Color(0.34, 0.15, 0.62, 1)
+hover_color = Color(0.52, 0.24, 0.9, 1)
+accent_color = Color(0.82, 0.48, 1, 1)
+block_size = Vector3(0.9, 0.34, 0.2)
+font_size = 14
+outline_size = 4
+
+[node name="StreamerResetButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("50_3d_button")]
+transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -1.95, -2.65, -4.66)
+action_id = &"reset_defaults"
+text = "DEFAULTS"
+base_color = Color(0.1, 0.08, 0.05, 1)
+hover_color = Color(0.25, 0.13, 0.05, 1)
+accent_color = Color(0.95, 0.5, 0.12, 1)
+block_size = Vector3(1.55, 0.36, 0.22)
+font_size = 13
+outline_size = 4
+
 [node name="HUD" parent="." instance=ExtResource("18_hud_scene")]
 visible = false
 round_manager_path = NodePath("../Systems/RoundManager")
 join_source_path = NodePath("../Systems/DebugJoinSource")
 twitch_join_source_path = NodePath("../Systems/TwitchJoinSource")
 leaderboard_store_path = NodePath("../Systems/LeaderboardStore")
+world_status_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceStatusBoard")
+world_feed_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceFeedBoard")
+world_leaders_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceLeadersBoard")
+world_command_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceCommandBoard")
+world_countdown_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceCountdownBoard")
+world_results_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceResultsBoard")
+world_results_reset_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceResultResetButton3D")
+world_boards_root_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards")
 
 [node name="StreamerMenu" parent="." instance=ExtResource("30_streamer_menu")]
 visible = false
@@ -216,6 +565,22 @@ hazard_manager_path = NodePath("../Systems/HazardManager")
 powerup_manager_path = NodePath("../Systems/PowerupManager")
 race_map_controller_path = NodePath("../Systems/RaceMapController")
 visual_settings_controller_path = NodePath("../Systems/VisualSettingsController")
+world_menu_root_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards")
+world_summary_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerSummaryBoard")
+world_close_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerCloseButton3D")
+world_map_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerMapButton3D")
+world_balance_down_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerBalanceDownButton3D")
+world_balance_up_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerBalanceUpButton3D")
+world_lighting_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerLightingButton3D")
+world_backdrop_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerBackdropButton3D")
+world_avatar_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerAvatarButton3D")
+world_reroll_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerRerollButton3D")
+world_save_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerSaveButton3D")
+world_preset_1_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerPreset1Button3D")
+world_preset_2_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerPreset2Button3D")
+world_preset_3_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerPreset3Button3D")
+world_preset_4_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerPreset4Button3D")
+world_reset_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards/StreamerResetButton3D")
 
 [node name="PreRoundUI" parent="." instance=ExtResource("31_pre_round_ui")]
 round_manager_path = NodePath("../Systems/RoundManager")
@@ -223,6 +588,14 @@ join_source_path = NodePath("../Systems/DebugJoinSource")
 twitch_join_source_path = NodePath("../Systems/TwitchJoinSource")
 leaderboard_store_path = NodePath("../Systems/LeaderboardStore")
 feature_config = ExtResource("42_feature_config")
+world_lobby_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/LobbyInfoBoard")
+world_scores_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/CageTimesBoard")
+world_ready_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/LobbyReadyButton3D")
+world_reset_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/LobbyResetButton3D")
+world_join_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/LobbyJoinButton3D")
+world_settings_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/LobbySettingsButton3D")
+world_main_menu_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/LobbyBackButton3D")
+world_boards_root_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards")
 
 [node name="TransitionLayer" type="CanvasLayer" parent="."]
 layer = 100

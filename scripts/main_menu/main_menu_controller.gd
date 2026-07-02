@@ -32,14 +32,18 @@ var _base_light_energy: float = 0.0
 var _road_sweep_light_energy: float = 0.0
 var _chat_activity_index: int = 0
 var _chat_activity_elapsed: float = 0.0
+var _menu_3d_buttons: Array[MainMenu3DButton] = []
+var _logo_rig_base_position: Vector3 = Vector3.ZERO
 
 @onready var _camera: Camera3D = get_node_or_null(camera_path) as Camera3D
-@onready var _open_lobby_button: Button = get_node("MenuLayer/Root/Nav/OpenLobbyButton") as Button
-@onready var _add_join_button: Button = get_node("MenuLayer/Root/Nav/AddJoinButton") as Button
-@onready var _leaderboard_button: Button = get_node("MenuLayer/Root/Nav/LeaderboardButton") as Button
-@onready var _settings_button: Button = get_node("MenuLayer/Root/Nav/SettingsButton") as Button
-@onready var _exit_button: Button = get_node("MenuLayer/Root/Nav/ExitButton") as Button
+@onready var _open_lobby_button: Button = get_node_or_null("MenuLayer/Root/Nav/OpenLobbyButton") as Button
+@onready var _add_join_button: Button = get_node_or_null("MenuLayer/Root/Nav/AddJoinButton") as Button
+@onready var _leaderboard_button: Button = get_node_or_null("MenuLayer/Root/Nav/LeaderboardButton") as Button
+@onready var _settings_button: Button = get_node_or_null("MenuLayer/Root/Nav/SettingsButton") as Button
+@onready var _exit_button: Button = get_node_or_null("MenuLayer/Root/Nav/ExitButton") as Button
 @onready var _chat_activity_label: Label = get_node_or_null("MenuLayer/Root/ChatActivityPanel/Margin/VBox/ActivityLines") as Label
+@onready var _chat_activity_label_3d: Label3D = get_node_or_null("CinematicCamera/Menu3DOverlay/ChatRoadSign/ChatFeedLabel3D") as Label3D
+@onready var _logo_rig: Node3D = get_node_or_null("CinematicCamera/Menu3DOverlay/LogoRig") as Node3D
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -50,11 +54,8 @@ func _ready() -> void:
 	if _camera != null:
 		_camera.look_at(camera_focus, Vector3.UP)
 
-	_open_lobby_button.pressed.connect(_on_open_lobby_pressed)
-	_add_join_button.pressed.connect(_on_add_join_pressed)
-	_leaderboard_button.pressed.connect(_on_leaderboard_pressed)
-	_settings_button.pressed.connect(_on_settings_pressed)
-	_exit_button.pressed.connect(_on_exit_pressed)
+	_connect_canvas_buttons()
+	_connect_3d_buttons()
 	_refresh_chat_activity()
 	_refresh_feature_buttons()
 
@@ -63,6 +64,7 @@ func _process(delta: float) -> void:
 	_update_camera_idle()
 	_update_menu_zombies()
 	_update_menu_lights()
+	_update_logo_rig()
 	_update_chat_activity(delta)
 
 func _on_open_lobby_pressed() -> void:
@@ -73,6 +75,19 @@ func _on_add_join_pressed() -> void:
 
 func _on_leaderboard_pressed() -> void:
 	_launch_lobby(0, false)
+
+func _on_menu_3d_button_pressed(action_id: StringName) -> void:
+	match action_id:
+		&"start":
+			_on_open_lobby_pressed()
+		&"streamer":
+			_on_add_join_pressed()
+		&"leaderboard":
+			_on_leaderboard_pressed()
+		&"settings":
+			_on_settings_pressed()
+		&"exit":
+			_on_exit_pressed()
 
 func _on_settings_pressed() -> void:
 	var game_settings: GameSettingsController = _get_or_create_game_settings()
@@ -96,16 +111,48 @@ func _launch_lobby(debug_joins_to_seed: int, open_settings: bool) -> void:
 		push_error("Unable to load game scene: %s" % game_scene_path)
 
 func _set_buttons_enabled(enabled: bool) -> void:
-	_open_lobby_button.disabled = not enabled
-	_add_join_button.disabled = not enabled
-	_leaderboard_button.disabled = not enabled
-	_settings_button.disabled = not enabled
-	_exit_button.disabled = not enabled
+	if _open_lobby_button != null:
+		_open_lobby_button.disabled = not enabled
+	if _add_join_button != null:
+		_add_join_button.disabled = not enabled
+	if _leaderboard_button != null:
+		_leaderboard_button.disabled = not enabled
+	if _settings_button != null:
+		_settings_button.disabled = not enabled
+	if _exit_button != null:
+		_exit_button.disabled = not enabled
+	for button in _menu_3d_buttons:
+		if button != null and is_instance_valid(button):
+			button.set_interactable(enabled)
 
 func _refresh_feature_buttons() -> void:
 	if _settings_button != null:
 		_settings_button.visible = true
 		_settings_button.disabled = false
+
+func _connect_canvas_buttons() -> void:
+	if _open_lobby_button != null:
+		_open_lobby_button.pressed.connect(_on_open_lobby_pressed)
+	if _add_join_button != null:
+		_add_join_button.pressed.connect(_on_add_join_pressed)
+	if _leaderboard_button != null:
+		_leaderboard_button.pressed.connect(_on_leaderboard_pressed)
+	if _settings_button != null:
+		_settings_button.pressed.connect(_on_settings_pressed)
+	if _exit_button != null:
+		_exit_button.pressed.connect(_on_exit_pressed)
+
+func _connect_3d_buttons() -> void:
+	var button_rack: Node = get_node_or_null("CinematicCamera/Menu3DOverlay/ButtonRack")
+	if button_rack == null:
+		return
+
+	for child in button_rack.get_children():
+		var button: MainMenu3DButton = child as MainMenu3DButton
+		if button == null:
+			continue
+		_menu_3d_buttons.append(button)
+		button.pressed.connect(_on_menu_3d_button_pressed)
 
 func _get_or_create_music_controller() -> MusicController:
 	var music_controller: MusicController = get_node_or_null("/root/AudioManager") as MusicController
@@ -155,6 +202,8 @@ func _cache_cinematic_nodes() -> void:
 		_base_light_energy = _base_light.light_energy
 	if _road_sweep_light != null:
 		_road_sweep_light_energy = _road_sweep_light.light_energy
+	if _logo_rig != null:
+		_logo_rig_base_position = _logo_rig.position
 
 func _update_camera_idle() -> void:
 	if _camera == null or camera_idle_strength <= 0.0:
@@ -188,8 +237,19 @@ func _update_menu_lights() -> void:
 	if _road_sweep_light != null:
 		_road_sweep_light.light_energy = _road_sweep_light_energy * (1.0 + sin(_time * 0.9 + 0.6) * 0.09)
 
+func _update_logo_rig() -> void:
+	if _logo_rig == null:
+		return
+
+	_logo_rig.position = _logo_rig_base_position + Vector3(
+		sin(_time * 0.82) * 0.035,
+		sin(_time * 0.68 + 0.9) * 0.045,
+		0.0
+	)
+	_logo_rig.rotation.z = sin(_time * 0.55) * 0.012
+
 func _update_chat_activity(delta: float) -> void:
-	if _chat_activity_label == null:
+	if _chat_activity_label == null and _chat_activity_label_3d == null:
 		return
 
 	_chat_activity_elapsed += delta
@@ -201,7 +261,8 @@ func _update_chat_activity(delta: float) -> void:
 	_refresh_chat_activity()
 
 func _refresh_chat_activity() -> void:
-	if _chat_activity_label == null:
-		return
-
-	_chat_activity_label.text = CHAT_ACTIVITY_FEED[_chat_activity_index]
+	var feed_text: String = CHAT_ACTIVITY_FEED[_chat_activity_index]
+	if _chat_activity_label != null:
+		_chat_activity_label.text = feed_text
+	if _chat_activity_label_3d != null:
+		_chat_activity_label_3d.text = feed_text

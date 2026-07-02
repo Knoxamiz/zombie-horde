@@ -13,16 +13,51 @@ extends CanvasLayer
 @export var powerup_manager_path: NodePath
 @export var race_map_controller_path: NodePath
 @export var visual_settings_controller_path: NodePath
+@export var world_menu_root_path: NodePath
+@export var world_summary_board_path: NodePath
+@export var world_close_button_path: NodePath
+@export var world_map_button_path: NodePath
+@export var world_balance_down_button_path: NodePath
+@export var world_balance_up_button_path: NodePath
+@export var world_lighting_button_path: NodePath
+@export var world_backdrop_button_path: NodePath
+@export var world_avatar_button_path: NodePath
+@export var world_reroll_button_path: NodePath
+@export var world_save_button_path: NodePath
+@export var world_preset_1_button_path: NodePath
+@export var world_preset_2_button_path: NodePath
+@export var world_preset_3_button_path: NodePath
+@export var world_preset_4_button_path: NodePath
+@export var world_reset_button_path: NodePath
 
 var _round_manager: RoundManager
 var _hazard_manager: HazardManager
 var _powerup_manager: PowerupManager
 var _race_map_controller: RaceMapController
 var _visual_settings_controller: VisualSettingsController
+var _world_menu_root: Node3D
+var _world_summary_board: WorldTextBoard
+var _world_close_button: MainMenu3DButton
+var _world_map_button: MainMenu3DButton
+var _world_balance_down_button: MainMenu3DButton
+var _world_balance_up_button: MainMenu3DButton
+var _world_lighting_button: MainMenu3DButton
+var _world_backdrop_button: MainMenu3DButton
+var _world_avatar_button: MainMenu3DButton
+var _world_reroll_button: MainMenu3DButton
+var _world_save_button: MainMenu3DButton
+var _world_preset_1_button: MainMenu3DButton
+var _world_preset_2_button: MainMenu3DButton
+var _world_preset_3_button: MainMenu3DButton
+var _world_preset_4_button: MainMenu3DButton
+var _world_reset_button: MainMenu3DButton
+var _hidden_world_roots: Dictionary = {}
 var _profile: StreamerSettingsProfile = StreamerSettingsProfile.new()
 var _is_refreshing: bool = false
 var _active_preset_slot: int = 0
+var _status_text: String = "Settings loaded"
 
+@onready var _root: Control = get_node("Root") as Control
 @onready var _toggle_button: Button = get_node("Root/ToggleButton") as Button
 @onready var _menu_panel: PanelContainer = get_node("Root/MenuPanel") as PanelContainer
 @onready var _edition_value_label: Label = get_node("Root/MenuPanel/Margin/VBox/MenuTierRow/EditionValueLabel") as Label
@@ -73,6 +108,24 @@ func _ready() -> void:
 	_powerup_manager = get_node_or_null(powerup_manager_path) as PowerupManager
 	_race_map_controller = get_node_or_null(race_map_controller_path) as RaceMapController
 	_visual_settings_controller = get_node_or_null(visual_settings_controller_path) as VisualSettingsController
+	_world_menu_root = get_node_or_null(world_menu_root_path) as Node3D
+	_world_summary_board = get_node_or_null(world_summary_board_path) as WorldTextBoard
+	_world_close_button = get_node_or_null(world_close_button_path) as MainMenu3DButton
+	_world_map_button = get_node_or_null(world_map_button_path) as MainMenu3DButton
+	_world_balance_down_button = get_node_or_null(world_balance_down_button_path) as MainMenu3DButton
+	_world_balance_up_button = get_node_or_null(world_balance_up_button_path) as MainMenu3DButton
+	_world_lighting_button = get_node_or_null(world_lighting_button_path) as MainMenu3DButton
+	_world_backdrop_button = get_node_or_null(world_backdrop_button_path) as MainMenu3DButton
+	_world_avatar_button = get_node_or_null(world_avatar_button_path) as MainMenu3DButton
+	_world_reroll_button = get_node_or_null(world_reroll_button_path) as MainMenu3DButton
+	_world_save_button = get_node_or_null(world_save_button_path) as MainMenu3DButton
+	_world_preset_1_button = get_node_or_null(world_preset_1_button_path) as MainMenu3DButton
+	_world_preset_2_button = get_node_or_null(world_preset_2_button_path) as MainMenu3DButton
+	_world_preset_3_button = get_node_or_null(world_preset_3_button_path) as MainMenu3DButton
+	_world_preset_4_button = get_node_or_null(world_preset_4_button_path) as MainMenu3DButton
+	_world_reset_button = get_node_or_null(world_reset_button_path) as MainMenu3DButton
+	if _root != null:
+		_root.visible = false
 
 	_profile = StreamerSettingsProfile.load_from_disk()
 	_populate_options()
@@ -109,6 +162,20 @@ func _ready() -> void:
 	_cone_weight_spin.value_changed.connect(_on_premium_control_changed)
 	_barrier_weight_spin.value_changed.connect(_on_premium_control_changed)
 	GameEvents.round_ended.connect(_on_round_ended)
+	_connect_world_button(_world_close_button)
+	_connect_world_button(_world_map_button)
+	_connect_world_button(_world_balance_down_button)
+	_connect_world_button(_world_balance_up_button)
+	_connect_world_button(_world_lighting_button)
+	_connect_world_button(_world_backdrop_button)
+	_connect_world_button(_world_avatar_button)
+	_connect_world_button(_world_reroll_button)
+	_connect_world_button(_world_save_button)
+	_connect_world_button(_world_preset_1_button)
+	_connect_world_button(_world_preset_2_button)
+	_connect_world_button(_world_preset_3_button)
+	_connect_world_button(_world_preset_4_button)
+	_connect_world_button(_world_reset_button)
 
 	_sanitize_character_previews()
 	_refresh_controls()
@@ -133,9 +200,10 @@ func close_menu() -> void:
 	_set_menu_open(false)
 
 func _set_menu_open(open: bool) -> void:
-	_menu_panel.visible = open
-	_toggle_button.visible = open
+	_menu_panel.visible = false
+	_toggle_button.visible = false
 	_toggle_button.text = "Close"
+	_set_world_menu_visible(open)
 	if not open:
 		_set_character_select_open(false)
 
@@ -161,6 +229,7 @@ func _refresh_controls() -> void:
 	_refresh_avatar_labels()
 	_refresh_preset_buttons()
 	_is_refreshing = false
+	_refresh_world_menu()
 
 func _on_balance_changed(value: float) -> void:
 	if _is_refreshing:
@@ -395,9 +464,9 @@ func _refresh_preset_buttons() -> void:
 
 func _set_character_select_open(open: bool) -> void:
 	if _character_overlay_wash != null:
-		_character_overlay_wash.visible = open
+		_character_overlay_wash.visible = false
 	if _character_select_panel != null:
-		_character_select_panel.visible = open
+		_character_select_panel.visible = false
 
 func _sanitize_character_previews() -> void:
 	var grid: Control = get_node_or_null("Root/CharacterSelectPanel/Margin/VBox/CharacterGrid") as Control
@@ -412,8 +481,10 @@ func _sanitize_character_previews() -> void:
 		KitCharacterVisuals.set_weapon_nodes_visible(model)
 
 func _set_status(status_text: String) -> void:
+	_status_text = status_text
 	if _status_label != null:
 		_status_label.text = status_text
+	_refresh_world_menu()
 
 func _populate_options() -> void:
 	_set_option_items(_time_of_day_option, PackedStringArray(["Night", "Day"]))
@@ -501,3 +572,188 @@ func _get_selected_map_name() -> String:
 
 func _has_premium_access() -> bool:
 	return feature_config != null and feature_config.has_premium_access()
+
+func _connect_world_button(button: MainMenu3DButton) -> void:
+	if button == null:
+		return
+	if not button.pressed.is_connected(_on_world_button_pressed):
+		button.pressed.connect(_on_world_button_pressed)
+
+func _on_world_button_pressed(action_id: StringName) -> void:
+	match action_id:
+		&"close":
+			close_menu()
+		&"map_next":
+			_cycle_world_map()
+		&"balance_down":
+			_adjust_world_balance(-20)
+		&"balance_up":
+			_adjust_world_balance(20)
+		&"lighting_next":
+			_cycle_world_lighting()
+		&"backdrop_next":
+			_cycle_world_backdrop()
+		&"avatar_next":
+			_cycle_world_avatar()
+		&"reroll":
+			_on_reroll_pressed()
+		&"save":
+			_on_save_preset_pressed()
+		&"preset_1":
+			_on_preset_button_pressed(0)
+		&"preset_2":
+			_on_preset_button_pressed(1)
+		&"preset_3":
+			_on_preset_button_pressed(2)
+		&"preset_4":
+			_on_preset_button_pressed(3)
+		&"reset_defaults":
+			_on_reset_defaults_pressed()
+
+func _set_world_menu_visible(open: bool) -> void:
+	if open:
+		_hide_peer_world_roots()
+	if _world_menu_root != null:
+		_world_menu_root.visible = open
+	_set_world_buttons_interactable(open)
+	if open:
+		_refresh_world_menu()
+	else:
+		_restore_peer_world_roots()
+
+func _refresh_world_menu() -> void:
+	if _world_summary_board != null:
+		_world_summary_board.set_board_text("STREAMER SETTINGS", _format_world_settings_body())
+	_refresh_world_preset_button_text()
+
+func _format_world_settings_body() -> String:
+	var edition_text: String = _profile.get_menu_tier_name(feature_config)
+	var map_text: String = _get_selected_map_name()
+	var balance_text: String = _profile.get_balance_name()
+	var time_text: String = _profile.get_time_of_day_name()
+	var backdrop_text: String = _get_backdrop_name()
+	var avatar_text: String = _profile.get_avatar_name()
+	var street_text_a: String = "Mines %d | Props %d | Boosts %d" % [
+		_profile.premium_mine_count,
+		_profile.premium_obstacle_count,
+		_profile.premium_boost_pad_count
+	]
+	var street_text_b: String = "Sewers %d | Defenders %d" % [
+		_profile.premium_sewer_hole_count,
+		_profile.premium_defender_count
+	]
+	return "Edition  %s\nMap  %s\nPreset  %d\nBalance  %s\nLighting  %s  Backdrop  %s\nStreamer  %s  Avatar  %s\n%s\n%s\nStatus  %s" % [
+		edition_text,
+		map_text,
+		_active_preset_slot + 1,
+		balance_text,
+		time_text,
+		backdrop_text,
+		_profile.get_clean_streamer_name(),
+		avatar_text,
+		street_text_a,
+		street_text_b,
+		_status_text
+	]
+
+func _hide_peer_world_roots() -> void:
+	_hidden_world_roots.clear()
+	for root in _collect_peer_world_roots():
+		_hidden_world_roots[str(root.get_path())] = root.visible
+		root.visible = false
+
+func _restore_peer_world_roots() -> void:
+	for root_path in _hidden_world_roots.keys():
+		var root: Node3D = get_node_or_null(NodePath(str(root_path))) as Node3D
+		if root != null:
+			root.visible = bool(_hidden_world_roots[root_path])
+	_hidden_world_roots.clear()
+
+func _collect_peer_world_roots() -> Array[Node3D]:
+	var roots: Array[Node3D] = []
+	var camera: Camera3D = get_viewport().get_camera_3d()
+	if camera == null:
+		return roots
+
+	var root_paths: Array[String] = [
+		"WorldMenus3D/LobbyBoards",
+		"WorldMenus3D/RaceBoards",
+		"GameSettings3D",
+	]
+	for root_path in root_paths:
+		var root: Node3D = camera.get_node_or_null(root_path) as Node3D
+		if root != null and root != _world_menu_root:
+			roots.append(root)
+	return roots
+
+func _refresh_world_preset_button_text() -> void:
+	var buttons: Array[MainMenu3DButton] = [
+		_world_preset_1_button,
+		_world_preset_2_button,
+		_world_preset_3_button,
+		_world_preset_4_button,
+	]
+	for index in range(buttons.size()):
+		if buttons[index] == null:
+			continue
+		var suffix: String = "*" if index == _active_preset_slot else ""
+		buttons[index].set_button_text("P%d%s" % [index + 1, suffix])
+
+func _set_world_buttons_interactable(enabled: bool) -> void:
+	var buttons: Array[MainMenu3DButton] = [
+		_world_close_button,
+		_world_map_button,
+		_world_balance_down_button,
+		_world_balance_up_button,
+		_world_lighting_button,
+		_world_backdrop_button,
+		_world_avatar_button,
+		_world_reroll_button,
+		_world_save_button,
+		_world_preset_1_button,
+		_world_preset_2_button,
+		_world_preset_3_button,
+		_world_preset_4_button,
+		_world_reset_button,
+	]
+	for button in buttons:
+		if button != null:
+			button.set_interactable(enabled)
+
+func _cycle_world_map() -> void:
+	if not _has_premium_access():
+		_set_status("Premium required")
+		return
+	if _map_option == null or _map_option.get_item_count() <= 0:
+		return
+	var next_index: int = (_map_option.selected + 1) % _map_option.get_item_count()
+	_on_map_selected(next_index)
+
+func _adjust_world_balance(delta: int) -> void:
+	_profile.audience_balance = int(clamp(_profile.audience_balance + delta, 0, 100))
+	_apply_profile_to_game(true)
+	_refresh_controls()
+	_save_profile("Saved: %s" % _profile.get_balance_name())
+
+func _cycle_world_lighting() -> void:
+	_profile.time_of_day = (_profile.time_of_day + 1) % 2
+	_apply_profile_to_game(false)
+	_refresh_controls()
+	_save_profile("Saved: %s lighting" % _profile.get_time_of_day_name())
+
+func _cycle_world_backdrop() -> void:
+	_profile.backdrop_style = (_profile.backdrop_style + 1) % 3
+	_apply_profile_to_game(false)
+	_refresh_controls()
+	_save_profile("Saved backdrop")
+
+func _cycle_world_avatar() -> void:
+	_profile.streamer_avatar = (_profile.streamer_avatar + 1) % 4
+	_apply_profile_to_game(false)
+	_refresh_controls()
+	_save_profile("Saved streamer avatar")
+
+func _get_backdrop_name() -> String:
+	var names: PackedStringArray = PackedStringArray(["City", "Industrial", "Skyline"])
+	var index: int = int(clamp(_profile.backdrop_style, 0, names.size() - 1))
+	return names[index]

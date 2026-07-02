@@ -10,11 +10,27 @@ signal main_menu_requested()
 @export var twitch_join_source_path: NodePath
 @export var leaderboard_store_path: NodePath
 @export var feature_config: FeatureAccessConfig
+@export var world_lobby_board_path: NodePath
+@export var world_scores_board_path: NodePath
+@export var world_ready_button_path: NodePath
+@export var world_reset_button_path: NodePath
+@export var world_join_button_path: NodePath
+@export var world_settings_button_path: NodePath
+@export var world_main_menu_button_path: NodePath
+@export var world_boards_root_path: NodePath
 
 var _round_manager: RoundManager
 var _join_source: JoinSource
 var _twitch_join_source: TwitchJoinSource
 var _leaderboard_store: LeaderboardStore
+var _world_lobby_board: WorldTextBoard
+var _world_scores_board: WorldTextBoard
+var _world_ready_button: MainMenu3DButton
+var _world_reset_button: MainMenu3DButton
+var _world_join_button: MainMenu3DButton
+var _world_settings_button: MainMenu3DButton
+var _world_main_menu_button: MainMenu3DButton
+var _world_boards_root: Node3D
 var _queued_names: PackedStringArray = PackedStringArray()
 var _command_text: String = "Type !brains to join."
 var _state_text: String = "Joining"
@@ -38,12 +54,28 @@ func _ready() -> void:
 	_join_source = get_node_or_null(join_source_path) as JoinSource
 	_twitch_join_source = get_node_or_null(twitch_join_source_path) as TwitchJoinSource
 	_leaderboard_store = get_node_or_null(leaderboard_store_path) as LeaderboardStore
+	_world_lobby_board = get_node_or_null(world_lobby_board_path) as WorldTextBoard
+	_world_scores_board = get_node_or_null(world_scores_board_path) as WorldTextBoard
+	_world_ready_button = get_node_or_null(world_ready_button_path) as MainMenu3DButton
+	_world_reset_button = get_node_or_null(world_reset_button_path) as MainMenu3DButton
+	_world_join_button = get_node_or_null(world_join_button_path) as MainMenu3DButton
+	_world_settings_button = get_node_or_null(world_settings_button_path) as MainMenu3DButton
+	_world_main_menu_button = get_node_or_null(world_main_menu_button_path) as MainMenu3DButton
+	_world_boards_root = get_node_or_null(world_boards_root_path) as Node3D
+
+	if _root != null:
+		_root.visible = false
 
 	_lobby_join_button.pressed.connect(_on_add_join_pressed)
 	_ready_button.pressed.connect(_on_ready_pressed)
 	_reset_button.pressed.connect(_on_reset_pressed)
 	_settings_button.pressed.connect(_on_settings_pressed)
 	_main_menu_button.pressed.connect(_on_main_menu_pressed)
+	_connect_world_button(_world_ready_button)
+	_connect_world_button(_world_reset_button)
+	_connect_world_button(_world_join_button)
+	_connect_world_button(_world_settings_button)
+	_connect_world_button(_world_main_menu_button)
 
 	GameEvents.participant_queue_changed.connect(_on_participant_queue_changed)
 	GameEvents.command_text_changed.connect(_on_command_text_changed)
@@ -61,13 +93,14 @@ func _ready() -> void:
 
 func set_screen_mode(mode: String) -> void:
 	var should_show: bool = mode != "hidden"
-	visible = should_show
+	visible = true
 	if _root != null:
-		_root.visible = should_show
+		_root.visible = false
 	if _lobby_panel != null:
-		_lobby_panel.visible = should_show
+		_lobby_panel.visible = false
 	if _cage_board_panel != null:
-		_cage_board_panel.visible = should_show
+		_cage_board_panel.visible = false
+	_set_world_visible(should_show)
 	if should_show:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
@@ -123,13 +156,19 @@ func _refresh_labels() -> void:
 		_lobby_names_label.text = _format_lobby_names()
 	if _lobby_chat_label != null:
 		_lobby_chat_label.text = command_text
+	if _world_lobby_board != null:
+		_world_lobby_board.set_board_text("LOTTO CAGE", _format_world_lobby_body(queue_summary, command_text))
 	_refresh_ready_button()
 
 func _refresh_scoreboards() -> void:
+	var fastest_text: String = _format_fastest_times()
+	var recent_text: String = _format_recent_winners()
 	if _fastest_label != null:
-		_fastest_label.text = _format_fastest_times()
+		_fastest_label.text = fastest_text
 	if _recent_winners_label != null:
-		_recent_winners_label.text = _format_recent_winners()
+		_recent_winners_label.text = recent_text
+	if _world_scores_board != null:
+		_world_scores_board.set_board_text("CAGE RECORDS", "%s\n\n%s" % [_format_world_fastest_times(), _format_world_recent_winners()])
 
 func _format_fastest_times() -> String:
 	if _leaderboard_store == null:
@@ -195,16 +234,28 @@ func _refresh_ready_button() -> void:
 	if _ready_button == null:
 		return
 
-	_ready_button.disabled = _state_text != "Joining" or _queued_names.is_empty()
+	var can_ready: bool = _state_text == "Joining" and not _queued_names.is_empty()
+	_ready_button.disabled = not can_ready
 	if _queued_names.is_empty():
 		_ready_button.text = "Ready"
 	else:
 		_ready_button.text = "Ready (%d)" % _queued_names.size()
+	if _world_ready_button != null:
+		_world_ready_button.set_button_text(_ready_button.text.to_upper())
+		_world_ready_button.set_interactable(can_ready)
 	if _settings_button != null:
 		_settings_button.visible = true
 		_settings_button.disabled = false
+	if _world_settings_button != null:
+		_world_settings_button.set_interactable(true)
 	if _main_menu_button != null:
 		_main_menu_button.disabled = _state_text != "Joining"
+	if _world_main_menu_button != null:
+		_world_main_menu_button.set_interactable(_state_text == "Joining")
+	if _world_reset_button != null:
+		_world_reset_button.set_interactable(true)
+	if _world_join_button != null:
+		_world_join_button.set_interactable(true)
 
 func _join_strings(values: Array[String], separator: String) -> String:
 	var result: String = ""
@@ -228,3 +279,106 @@ func _refresh_chat_status_from_source() -> void:
 
 func _can_open_settings() -> bool:
 	return true
+
+func _connect_world_button(button: MainMenu3DButton) -> void:
+	if button == null:
+		return
+	if not button.pressed.is_connected(_on_world_button_pressed):
+		button.pressed.connect(_on_world_button_pressed)
+
+func _on_world_button_pressed(action_id: StringName) -> void:
+	match action_id:
+		&"ready":
+			_on_ready_pressed()
+		&"reset":
+			_on_reset_pressed()
+		&"add_join":
+			_on_add_join_pressed()
+		&"settings":
+			_on_settings_pressed()
+		&"main_menu":
+			_on_main_menu_pressed()
+
+func _set_world_visible(should_show: bool) -> void:
+	if _world_boards_root != null:
+		_world_boards_root.visible = should_show
+	_set_world_buttons_interactable(should_show)
+	if should_show:
+		_refresh_labels()
+		_refresh_scoreboards()
+
+func _format_world_lobby_body(queue_summary: String, command_text: String) -> String:
+	var names_text: String = _format_world_lobby_names()
+	if names_text == "-":
+		names_text = "No runners in the cage yet."
+	return "%s\n\n%s\n\n%s" % [queue_summary, names_text, command_text]
+
+func _set_world_buttons_interactable(enabled: bool) -> void:
+	var buttons: Array[MainMenu3DButton] = [
+		_world_ready_button,
+		_world_reset_button,
+		_world_join_button,
+		_world_settings_button,
+		_world_main_menu_button,
+	]
+	for button in buttons:
+		if button != null:
+			button.set_interactable(enabled)
+
+func _format_world_lobby_names() -> String:
+	if _queued_names.is_empty():
+		return "-"
+
+	var lines: Array[String] = []
+	var max_names: int = mini(_queued_names.size(), 8)
+	for index in range(0, max_names, 2):
+		var line_names: Array[String] = [str(_queued_names[index])]
+		if index + 1 < max_names:
+			line_names.append(str(_queued_names[index + 1]))
+		lines.append(_join_strings(line_names, ", "))
+	if _queued_names.size() > max_names:
+		lines.append("+%d more" % (_queued_names.size() - max_names))
+	return _join_strings(lines, "\n")
+
+func _format_world_fastest_times() -> String:
+	if _leaderboard_store == null:
+		return "Fastest Times\n-"
+
+	var entries: Array = _leaderboard_store.get_entries()
+	if entries.is_empty():
+		return "Fastest Times\n-"
+
+	var lines: Array[String] = ["Fastest Times"]
+	var max_entries: int = mini(entries.size(), 5)
+	for index in range(max_entries):
+		if typeof(entries[index]) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entries[index]
+		lines.append("%d. %s  %s" % [
+			index + 1,
+			str(entry.get("display_name", "Zombie")),
+			_format_finish_time(float(entry.get("elapsed_seconds", 0.0)))
+		])
+	return _join_strings(lines, "\n")
+
+func _format_world_recent_winners() -> String:
+	if _leaderboard_store == null:
+		return "Last Winners\n-"
+
+	var entries: Array = _leaderboard_store.get_recent_winners()
+	if entries.is_empty():
+		return "Last Winners\n-"
+
+	var lines: Array[String] = ["Last Winners"]
+	var max_entries: int = mini(entries.size(), 5)
+	for index in range(max_entries):
+		if typeof(entries[index]) != TYPE_DICTIONARY:
+			continue
+		var entry: Dictionary = entries[index]
+		var display_name: String = "Streamer Base" if bool(entry.get("base_won", false)) else str(entry.get("display_name", "Zombie"))
+		lines.append("%d. %s  %s" % [
+			index + 1,
+			display_name,
+			_format_finish_time(float(entry.get("elapsed_seconds", 0.0)))
+		])
+	return _join_strings(lines, "\n")
