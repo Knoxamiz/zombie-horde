@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="RoundConfig" load_steps=2 format=3 uid="uid://xw0ay3acrx46"]
+
+[ext_resource type="Script" uid="uid://8r75oexgop3j" path="res://scripts/core/round_config.gd" id="1_round"]
+
+[resource]
+script = ExtResource("1_round")
+min_participants_to_start = 1
+max_pending_participants = 128
+countdown_seconds = 5
+command_text = "Type !brains to join."
+auto_seed_debug_roster = true
+default_debug_names = PackedStringArray("Ada", "ByteBiter", "CaptainDecay", "DoomSprint", "EchoRot", "GlitchGnaw", "HexHunger", "PixelMunch")

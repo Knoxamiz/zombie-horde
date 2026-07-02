@@ -1,0 +1,36 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/effects/road_mark.gd" id="1_script"]
+[ext_resource type="Material" path="res://assets/materials/road_mark_blood.tres" id="2_blood"]
+[ext_resource type="Material" path="res://assets/materials/road_mark_scorch.tres" id="3_scorch"]
+[ext_resource type="Material" path="res://assets/materials/road_mark_scuff.tres" id="4_scuff"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Blood_1.gltf" id="5_blood_a"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Blood_2.gltf" id="6_blood_b"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Blood_3.gltf" id="7_blood_c"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_mark"]
+top_radius = 1.0
+bottom_radius = 1.0
+height = 0.018
+radial_segments = 18
+
+[node name="RoadMark" type="Node3D"]
+script = ExtResource("1_script")
+blood_material = ExtResource("2_blood")
+scorch_material = ExtResource("3_scorch")
+scuff_material = ExtResource("4_scuff")
+
+[node name="MarkMesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("CylinderMesh_mark")
+
+[node name="BloodModels" type="Node3D" parent="."]
+transform = Transform3D(0.92, 0, 0, 0, 0.92, 0, 0, 0, 0.92, 0, -0.01, 0)
+
+[node name="BloodModelA" parent="BloodModels" instance=ExtResource("5_blood_a")]
+visible = false
+
+[node name="BloodModelB" parent="BloodModels" instance=ExtResource("6_blood_b")]
+visible = false
+
+[node name="BloodModelC" parent="BloodModels" instance=ExtResource("7_blood_c")]
+visible = false

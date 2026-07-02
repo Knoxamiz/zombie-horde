@@ -1,0 +1,37 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/lobby/lobby_zombie.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://scenes/zombies/visuals/zombie_basic_visual.tscn" id="2_zombie_basic"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_bouncy"]
+bounce = 0.72
+friction = 0.16
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape_body"]
+radius = 0.34
+height = 1.18
+
+[node name="LobbyZombie" type="RigidBody3D"]
+collision_layer = 8
+collision_mask = 9
+mass = 0.72
+gravity_scale = 1.0
+linear_damp = 0.16
+angular_damp = 0.24
+physics_material_override = SubResource("PhysicsMaterial_bouncy")
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape_body")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+transform = Transform3D(0.82, 0, 0, 0, 0.82, 0, 0, 0, 0.82, 0, -0.62, 0)
+
+[node name="ZombieBasicModel" parent="VisualRoot" instance=ExtResource("2_zombie_basic")]
+
+[node name="NameLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.98, 0)
+billboard = 1
+text = "Zombie"
+font_size = 20
+outline_size = 5

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PowerupConfig" load_steps=2 format=3 uid="uid://dra4husd3g7uo"]
+
+[ext_resource type="Script" uid="uid://b342iyeqsm6v3" path="res://scripts/powerups/powerup_config.gd" id="1_powerup"]
+
+[resource]
+script = ExtResource("1_powerup")
+boost_pad_count = 3
+placement_half_width = 5.6
+placement_min_z = -24.0
+placement_max_z = 32.0
+hazard_clearance_radius = 3.0
+boost_pad_min_spacing = 4.0
+activation_radius = 1.5
+boost_multiplier = 1.85
+boost_duration = 2.2
+per_zombie_cooldown = 1.0

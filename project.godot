@@ -11,5 +11,16 @@ config_version=5
 [application]
 
 config/name="Zombie Horde"
+run/main_scene="res://scenes/main_menu/main_menu.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="res://assets/icon.svg"
+
+[autoload]
+
+GameEvents="*res://scripts/core/game_events.gd"
+LaunchState="*res://scripts/core/launch_state.gd"
+
+[display]
+
+window/size/viewport_width=1600
+window/size/viewport_height=900

@@ -1,0 +1,74 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Material" path="res://assets/materials/obstacle_concrete.tres" id="1_concrete"]
+[ext_resource type="Material" path="res://assets/materials/obstacle_warning.tres" id="2_warning"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficBarrier_1.gltf" id="3_barrier_model"]
+[ext_resource type="Script" path="res://scripts/hazards/bounce_obstacle.gd" id="4_bounce_script"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficBarrier_2.gltf" id="5_barrier_model_b"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/PlasticBarrier.gltf" id="6_plastic_barrier"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+size = Vector3(2.6, 0.9, 1.0)
+
+[sub_resource type="BoxMesh" id="BoxMesh_stripe"]
+size = Vector3(0.18, 0.94, 1.04)
+
+[sub_resource type="BoxMesh" id="BoxMesh_cap"]
+size = Vector3(2.9, 0.14, 1.12)
+
+[sub_resource type="BoxShape3D" id="BoxShape_trigger"]
+size = Vector3(3.4, 1.5, 2.0)
+
+[node name="RoadObstacle" type="Node3D"]
+script = ExtResource("4_bounce_script")
+launch_strength = 4.8
+upward_strength = 1.2
+stun_duration = 0.16
+hit_cooldown = 0.82
+feedback_text = "BARRIER!"
+feedback_color = Color(1, 0.78, 0.18, 1)
+
+[node name="Body" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_body")
+surface_material_override/0 = ExtResource("1_concrete")
+
+[node name="TopCap" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.52, 0)
+mesh = SubResource("BoxMesh_cap")
+surface_material_override/0 = ExtResource("2_warning")
+
+[node name="StripeA" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, 0, 0)
+mesh = SubResource("BoxMesh_stripe")
+surface_material_override/0 = ExtResource("2_warning")
+
+[node name="StripeB" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("BoxMesh_stripe")
+surface_material_override/0 = ExtResource("2_warning")
+
+[node name="StripeC" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, 0, 0)
+mesh = SubResource("BoxMesh_stripe")
+surface_material_override/0 = ExtResource("2_warning")
+
+[node name="ArtRoot" type="Node3D" parent="."]
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 0, -0.43, 0)
+
+[node name="VariantModels" type="Node3D" parent="ArtRoot"]
+
+[node name="TrafficBarrierModelA" parent="ArtRoot/VariantModels" instance=ExtResource("3_barrier_model")]
+
+[node name="TrafficBarrierModelB" parent="ArtRoot/VariantModels" instance=ExtResource("5_barrier_model_b")]
+visible = false
+
+[node name="PlasticBarrierModel" parent="ArtRoot/VariantModels" instance=ExtResource("6_plastic_barrier")]
+visible = false
+
+[node name="Trigger" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="TriggerShape" type="CollisionShape3D" parent="Trigger"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+shape = SubResource("BoxShape_trigger")

@@ -1,0 +1,102 @@
+[gd_scene load_steps=14 format=3 uid="uid://ip7abt8ye5m0"]
+
+[ext_resource type="Script" uid="uid://dstkh82qjsys1" path="res://scripts/base/base_minigun.gd" id="1_script"]
+[ext_resource type="Resource" uid="uid://bcr34x5f4lvl6" path="res://resources/config/minigun_config.tres" id="2_config"]
+[ext_resource type="Material" path="res://assets/materials/minigun_metal.tres" id="3_metal"]
+[ext_resource type="Material" path="res://assets/materials/tracer_round.tres" id="4_tracer"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Weapons/SMG.gltf" id="5_smg"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Matt.gltf" id="6_matt"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Lis.gltf" id="7_lis"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Sam.gltf" id="8_sam"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Shaun.gltf" id="9_shaun"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_pedestal"]
+size = Vector3(1.2, 1.1, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_housing"]
+size = Vector3(1.1, 0.55, 1.05)
+
+[sub_resource type="BoxMesh" id="BoxMesh_barrel"]
+size = Vector3(0.24, 0.24, 2.2)
+
+[sub_resource type="SphereMesh" id="SphereMesh_flash"]
+radius = 0.3
+height = 0.6
+
+[node name="BaseMinigun" type="Node3D"]
+script = ExtResource("1_script")
+config = ExtResource("2_config")
+tracer_material = ExtResource("4_tracer")
+
+[node name="Pedestal" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+mesh = SubResource("BoxMesh_pedestal")
+surface_material_override/0 = ExtResource("3_metal")
+
+[node name="AvatarRoot" type="Node3D" parent="."]
+transform = Transform3D(1.05, 0, 0, 0, 1.05, 0, 0, 0, 1.05, -1.65, 0, -0.7)
+
+[node name="Variants" type="Node3D" parent="AvatarRoot"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)
+
+[node name="Matt" parent="AvatarRoot/Variants" instance=ExtResource("6_matt")]
+
+[node name="Lis" parent="AvatarRoot/Variants" instance=ExtResource("7_lis")]
+visible = false
+
+[node name="Sam" parent="AvatarRoot/Variants" instance=ExtResource("8_sam")]
+visible = false
+
+[node name="Shaun" parent="AvatarRoot/Variants" instance=ExtResource("9_shaun")]
+visible = false
+
+[node name="StreamerNameLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.65, 2.55, -0.7)
+billboard = 1
+text = "STREAMER"
+font_size = 44
+modulate = Color(1, 0.78, 0.28, 1)
+outline_size = 8
+
+[node name="TurretYaw" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0)
+
+[node name="Housing" type="MeshInstance3D" parent="TurretYaw"]
+mesh = SubResource("BoxMesh_housing")
+surface_material_override/0 = ExtResource("3_metal")
+
+[node name="Barrel" type="MeshInstance3D" parent="TurretYaw"]
+visible = false
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.35)
+mesh = SubResource("BoxMesh_barrel")
+surface_material_override/0 = ExtResource("3_metal")
+
+[node name="WeaponArt" parent="TurretYaw" instance=ExtResource("5_smg")]
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 0, -0.22, -0.45)
+
+[node name="BarrelCluster" type="Node3D" parent="TurretYaw"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.35)
+
+[node name="UpperBarrel" type="MeshInstance3D" parent="TurretYaw/BarrelCluster"]
+transform = Transform3D(0.62, 0, 0, 0, 0.62, 0, 0, 0, 0.72, 0, 0.18, 0)
+mesh = SubResource("BoxMesh_barrel")
+surface_material_override/0 = ExtResource("3_metal")
+
+[node name="LowerLeftBarrel" type="MeshInstance3D" parent="TurretYaw/BarrelCluster"]
+transform = Transform3D(0.62, 0, 0, 0, 0.62, 0, 0, 0, 0.72, -0.16, -0.1, 0)
+mesh = SubResource("BoxMesh_barrel")
+surface_material_override/0 = ExtResource("3_metal")
+
+[node name="LowerRightBarrel" type="MeshInstance3D" parent="TurretYaw/BarrelCluster"]
+transform = Transform3D(0.62, 0, 0, 0, 0.62, 0, 0, 0, 0.72, 0.16, -0.1, 0)
+mesh = SubResource("BoxMesh_barrel")
+surface_material_override/0 = ExtResource("3_metal")
+
+[node name="Muzzle" type="Marker3D" parent="TurretYaw"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.45)
+
+[node name="MuzzleFlash" type="MeshInstance3D" parent="TurretYaw"]
+visible = false
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.55)
+mesh = SubResource("SphereMesh_flash")
+surface_material_override/0 = ExtResource("4_tracer")

@@ -1,0 +1,44 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/hazards/sewer_hole_trap.gd" id="1_script"]
+[ext_resource type="Material" path="res://assets/materials/road_mark_scorch.tres" id="2_hole_material"]
+[ext_resource type="Material" path="res://assets/materials/mine_spent.tres" id="3_cover_material"]
+[ext_resource type="Material" path="res://assets/materials/obstacle_warning.tres" id="4_warning_material"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_trigger"]
+height = 1.2
+radius = 1.1
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_disc"]
+top_radius = 1.15
+bottom_radius = 1.15
+height = 0.06
+
+[node name="SewerHoleTrap" type="Area3D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("CylinderShape3D_trigger")
+
+[node name="Hole" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.08, 0, 0, 0, 1, 0, 0.05, 0)
+mesh = SubResource("CylinderMesh_disc")
+surface_material_override/0 = ExtResource("2_hole_material")
+
+[node name="Cover" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.65, 0, -0.45, 0, 0.8, 0, 0.45, 0, 0.65, 0.9, 0.11, -0.35)
+mesh = SubResource("CylinderMesh_disc")
+surface_material_override/0 = ExtResource("3_cover_material")
+
+[node name="RimA" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.42, 0, 0, 0, 0.05, 0, 0, 0, 0.06, -0.36, 0.13, 0)
+mesh = SubResource("CylinderMesh_disc")
+surface_material_override/0 = ExtResource("4_warning_material")
+
+[node name="RimB" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.42, 0, 0, 0, 0.05, 0, 0, 0, 0.06, 0.36, 0.13, 0)
+mesh = SubResource("CylinderMesh_disc")
+surface_material_override/0 = ExtResource("4_warning_material")

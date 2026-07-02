@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="ZombieConfig" load_steps=2 format=3 uid="uid://bougddnnf1ab1"]
+
+[ext_resource type="Script" uid="uid://ci6ogjerprjob" path="res://scripts/zombies/zombie_config.gd" id="1_zombie"]
+
+[resource]
+script = ExtResource("1_zombie")
+max_health = 100.0
+runner_speed = 3.9
+crawler_speed_multiplier = 0.38
+acceleration = 12.0
+drift_strength = 0.55
+drift_change_interval = 0.75
+crowd_separation_radius = 1.05
+crowd_separation_strength = 0.9
+crowd_separation_max_neighbors = 10
+lane_half_width = 6.1
+edge_recovery_strength = 1.15
+crowd_bump_radius = 0.82
+crowd_bump_strength = 1.55
+crowd_bump_upward_strength = 0.28
+crowd_bump_forward_bias = 0.18
+crowd_bump_cooldown = 0.28
+gravity = 24.0
+launch_damping = 6.5
+body_settle_damping = 10.0
+crawler_visual_scale = Vector3(1, 1, 1)
+boost_decay_buffer = 0.05
+lethal_dismember_chance = 0.42
+dismember_survivor_health = 28.0
+dismemberment_causes = PackedStringArray("mine", "obstacle", "minigun")
+out_of_bounds_enabled = true
+out_of_bounds_half_width = 10.2
+out_of_bounds_min_z = -48.0
+out_of_bounds_max_z = 48.0
+out_of_bounds_min_y = -3.0

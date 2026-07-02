@@ -1,0 +1,51 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/defense/human_defender.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/config/human_defender_config.tres" id="2_config"]
+[ext_resource type="Material" path="res://assets/materials/tracer_round.tres" id="3_tracer"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Matt.gltf" id="4_matt"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Lis.gltf" id="5_lis"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Sam.gltf" id="6_sam"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Shaun.gltf" id="7_shaun"]
+[sub_resource type="SphereShape3D" id="SphereShape3D_contact"]
+radius = 0.85
+
+[sub_resource type="SphereMesh" id="SphereMesh_flash"]
+radius = 0.22
+height = 0.44
+
+[node name="HumanDefender" type="Area3D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+config = ExtResource("2_config")
+tracer_material = ExtResource("3_tracer")
+
+[node name="ContactShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.82, 0)
+shape = SubResource("SphereShape3D_contact")
+
+[node name="Pivot" type="Node3D" parent="."]
+
+[node name="VariantModels" type="Node3D" parent="Pivot"]
+transform = Transform3D(-0.92, 0, 0, 0, 0.92, 0, 0, 0, -0.92, 0, 0, 0)
+
+[node name="Matt" parent="Pivot/VariantModels" instance=ExtResource("4_matt")]
+
+[node name="Lis" parent="Pivot/VariantModels" instance=ExtResource("5_lis")]
+visible = false
+
+[node name="Sam" parent="Pivot/VariantModels" instance=ExtResource("6_sam")]
+visible = false
+
+[node name="Shaun" parent="Pivot/VariantModels" instance=ExtResource("7_shaun")]
+visible = false
+
+[node name="Muzzle" type="Marker3D" parent="Pivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34, 1.08, -1.1)
+
+[node name="MuzzleFlash" type="MeshInstance3D" parent="Pivot"]
+visible = false
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34, 1.08, -1.18)
+mesh = SubResource("SphereMesh_flash")
+surface_material_override/0 = ExtResource("3_tracer")

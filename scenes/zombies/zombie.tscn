@@ -1,0 +1,47 @@
+[gd_scene load_steps=9 format=3 uid="uid://c0xi8ko8w3cfk"]
+
+[ext_resource type="Script" uid="uid://chu2kqu1rknu" path="res://scripts/zombies/zombie.gd" id="1_script"]
+[ext_resource type="Resource" uid="uid://bougddnnf1ab1" path="res://resources/config/zombie_config.tres" id="2_config"]
+[ext_resource type="Material" path="res://assets/materials/zombie_living.tres" id="3_living"]
+[ext_resource type="Material" path="res://assets/materials/zombie_crawler.tres" id="4_crawler"]
+[ext_resource type="Material" path="res://assets/materials/zombie_dead.tres" id="5_dead"]
+[ext_resource type="PackedScene" path="res://scenes/zombies/visuals/zombie_basic_visual.tscn" id="6_zombie_basic"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.36
+height = 1.45
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
+radius = 0.34
+height = 1.45
+
+[node name="Zombie" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_script")
+config = ExtResource("2_config")
+runner_material = ExtResource("3_living")
+crawler_material = ExtResource("4_crawler")
+dead_material = ExtResource("5_dead")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="VisualRoot" type="Node3D" parent="."]
+
+[node name="BodyMesh" type="MeshInstance3D" parent="VisualRoot"]
+visible = false
+mesh = SubResource("CapsuleMesh_body")
+surface_material_override/0 = ExtResource("3_living")
+
+[node name="VariantModels" type="Node3D" parent="VisualRoot"]
+transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, 0, -0.78, 0)
+
+[node name="ZombieBasicModel" parent="VisualRoot/VariantModels" instance=ExtResource("6_zombie_basic")]
+
+[node name="NameLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0)
+billboard = 1
+text = "Zombie"
+font_size = 28
+outline_size = 6

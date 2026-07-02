@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="HazardConfig" load_steps=2 format=3 uid="uid://bupic2xlh7b2r"]
+
+[ext_resource type="Script" uid="uid://b6d2xxvjc1j26" path="res://scripts/hazards/hazard_config.gd" id="1_hazard"]
+
+[resource]
+script = ExtResource("1_hazard")
+mine_count = 6
+obstacle_count = 12
+placement_half_width = 6.2
+placement_min_z = -30.0
+placement_max_z = 26.0
+obstacle_half_width = 5.8
+obstacle_min_z = -32.0
+obstacle_max_z = 31.0
+obstacle_min_spacing = 2.6
+obstacle_lane_count = 3
+obstacle_lane_jitter = 0.45
+obstacle_segment_length = 4.4
+max_obstacles_per_segment = 2
+guaranteed_open_lanes_per_segment = 1
+max_large_obstacles_per_segment = 1
+mine_hazard_clearance = 2.4
+mine_min_spacing = 2.6
+sewer_hole_count = 2
+sewer_hole_radius = 1.05
+sewer_hole_clearance = 3.0
+sewer_hole_min_spacing = 4.4
+obstacle_rotation_degrees = 32.0
+barrier_obstacle_weight = 42
+cone_obstacle_weight = 40
+vehicle_obstacle_weight = 18
+mine_activation_radius = 1.35
+mine_blast_radius = 4.25
+mine_launch_strength = 18.0
+mine_vertical_launch_multiplier = 1.05
+mine_damage = 36.0
+stun_duration = 0.7
+crawler_chance = 0.35
+damage_chance = 0.55

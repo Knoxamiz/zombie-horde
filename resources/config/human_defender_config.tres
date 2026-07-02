@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="HumanDefenderConfig" load_steps=2 format=3 uid="uid://dltqqa505wwe4"]
+
+[ext_resource type="Script" uid="uid://ck4wpsdooiogl" path="res://scripts/defense/human_defender_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+defender_count = 2
+gun_type = 0
+show_weapon_visuals = true
+left_spawn_x = -6.25
+right_spawn_x = 6.25
+placement_half_width = 5.25
+placement_min_z = -24.0
+placement_max_z = 28.0
+position_jitter = 0.65
+defender_min_spacing = 6.0
+reserved_position_clearance = 3.0
+range = 13.5
+seconds_between_shots = 1.05
+damage_per_hit = 26.0
+hit_chance = 0.78
+turn_speed = 8.0
+tracer_lifetime = 0.07

@@ -1,0 +1,76 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/main/road_arena.tscn" id="1_core"]
+[ext_resource type="Script" path="res://scripts/core/visual_collision_sanitizer.gd" id="2_sanitizer"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Couch.gltf" id="3_couch"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrashBag_1.gltf" id="4_trash"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/FireHydrant.gltf" id="5_hydrant"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Pallet.gltf" id="6_pallet"]
+[ext_resource type="Material" path="res://assets/materials/city_building_mid.tres" id="7_mid"]
+[ext_resource type="Material" path="res://assets/materials/city_window_glow.tres" id="8_glow"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_house_block"]
+size = Vector3(6.5, 4.2, 7.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_roof"]
+size = Vector3(7.2, 0.42, 8.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_porch_light"]
+size = Vector3(1.4, 0.14, 0.14)
+
+[node name="RoadArena" type="Node3D"]
+
+[node name="CoreRoad" parent="." instance=ExtResource("1_core")]
+
+[node name="MapDressing" type="Node3D" parent="."]
+
+[node name="VisualCollisionSanitizer" type="Node" parent="MapDressing"]
+script = ExtResource("2_sanitizer")
+
+[node name="LeftHouseA" type="MeshInstance3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.2, 2.0, -20)
+mesh = SubResource("BoxMesh_house_block")
+surface_material_override/0 = ExtResource("7_mid")
+
+[node name="LeftHouseARoof" type="MeshInstance3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 0.82, 0.22, 0, -0.22, 0.82, -17.2, 4.35, -20)
+mesh = SubResource("BoxMesh_roof")
+surface_material_override/0 = ExtResource("7_mid")
+
+[node name="RightHouseB" type="MeshInstance3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.2, 2.0, 18)
+mesh = SubResource("BoxMesh_house_block")
+surface_material_override/0 = ExtResource("7_mid")
+
+[node name="RightHouseBRoof" type="MeshInstance3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 0.82, -0.22, 0, 0.22, 0.82, 17.2, 4.35, 18)
+mesh = SubResource("BoxMesh_roof")
+surface_material_override/0 = ExtResource("7_mid")
+
+[node name="LeftPorchGlow" type="MeshInstance3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.7, 2.65, -20)
+mesh = SubResource("BoxMesh_porch_light")
+surface_material_override/0 = ExtResource("8_glow")
+
+[node name="RightPorchGlow" type="MeshInstance3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.7, 2.65, 18)
+mesh = SubResource("BoxMesh_porch_light")
+surface_material_override/0 = ExtResource("8_glow")
+
+[node name="AbandonedCouch" parent="MapDressing" instance=ExtResource("3_couch")]
+transform = Transform3D(0, 0, -1.25, 0, 1.25, 0, 1.25, 0, 0, -12.6, 0, -4)
+
+[node name="TrashPileA" parent="MapDressing" instance=ExtResource("4_trash")]
+transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, 12.8, 0, 3)
+
+[node name="HydrantA" parent="MapDressing" instance=ExtResource("5_hydrant")]
+transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, -9.7, 0, 20)
+
+[node name="PalletBarricade" parent="MapDressing" instance=ExtResource("6_pallet")]
+transform = Transform3D(0, 0, 1.35, 0, 1.35, 0, -1.35, 0, 0, 11.4, 0, -24)
+
+[node name="WarmPorchLight" type="OmniLight3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12.8, 4.4, -12)
+light_color = Color(1, 0.54, 0.22, 1)
+light_energy = 2.0
+omni_range = 20.0

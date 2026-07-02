@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="TwitchChatConfig" load_steps=2 format=3 uid="uid://cy25ecmbimgyb"]
+
+[ext_resource type="Script" uid="uid://do7ew2sfncmx" path="res://scripts/integrations/twitch/twitch_chat_config.gd" id="1_twitch_config"]
+
+[resource]
+script = ExtResource("1_twitch_config")
+enabled = true
+auto_connect = true
+anonymous_mode = true
+channel_name = "Knoxamiz"
+join_command = "!brains"
+websocket_url = "wss://irc-ws.chat.twitch.tv:443"
+bot_username = ""
+oauth_token_environment_variable = "ZOMBIE_HORDE_TWITCH_OAUTH"
+reconnect_delay_seconds = 5.0
+max_reconnect_attempts = 5

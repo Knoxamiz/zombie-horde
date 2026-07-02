@@ -1,0 +1,232 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scripts/main_menu/main_menu_controller.gd" id="1_controller"]
+[ext_resource type="Theme" path="res://assets/ui/main_menu_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://scenes/ui/main_menu_button.tscn" id="3_menu_button"]
+[ext_resource type="Environment" path="res://resources/environment/main_menu_environment.tres" id="4_environment"]
+[ext_resource type="PackedScene" path="res://scenes/main/road_arena.tscn" id="5_road_arena"]
+[ext_resource type="PackedScene" path="res://scenes/base/streamer_base.tscn" id="6_streamer_base"]
+[ext_resource type="PackedScene" path="res://scenes/base/minigun.tscn" id="7_minigun"]
+[ext_resource type="PackedScene" path="res://scenes/lobby/join_lobby.tscn" id="8_join_lobby"]
+[ext_resource type="PackedScene" path="res://scenes/zombies/visuals/zombie_basic_visual.tscn" id="9_zombie_visual"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficBarrier_1.gltf" id="10_traffic_barrier"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficCone_1.gltf" id="11_traffic_cone"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Vehicles/Vehicle_Pickup_Armored.gltf" id="12_pickup"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Container_Red.gltf" id="13_container_red"]
+[ext_resource type="Resource" path="res://resources/config/feature_access_config.tres" id="14_feature_config"]
+[sub_resource type="BoxMesh" id="BoxMesh_base_sign"]
+size = Vector3(6, 2.2, 0.28)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_base_sign"]
+albedo_color = Color(0.025, 0.06, 0.03, 1)
+emission_enabled = true
+emission = Color(0.08, 0.75, 0.15, 1)
+emission_energy_multiplier = 0.45
+
+[node name="MainMenu" type="Node3D"]
+script = ExtResource("1_controller")
+camera_path = NodePath("CinematicCamera")
+camera_focus = Vector3(2.2, 1.85, -9.5)
+menu_zombies_path = NodePath("CinematicWorld/MenuZombies")
+cage_light_path = NodePath("CageGreenLight")
+base_light_path = NodePath("BaseAmberLight")
+road_sweep_light_path = NodePath("RoadSweepLight")
+feature_config = ExtResource("14_feature_config")
+camera_idle_strength = 0.28
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("4_environment")
+
+[node name="CinematicWorld" type="Node3D" parent="."]
+
+[node name="RoadArena" parent="CinematicWorld" instance=ExtResource("5_road_arena")]
+
+[node name="StreamerBase" parent="CinematicWorld" instance=ExtResource("6_streamer_base")]
+transform = Transform3D(1.22, 0, 0, 0, 1.22, 0, 0, 0, 1.22, 0, 0, 42)
+
+[node name="BaseMinigun" parent="CinematicWorld" instance=ExtResource("7_minigun")]
+transform = Transform3D(1.08, 0, 0, 0, 1.08, 0, 0, 0, 1.08, 0, 0, 38.5)
+
+[node name="StreamerBaseSign" type="MeshInstance3D" parent="CinematicWorld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.3, 41.2)
+mesh = SubResource("BoxMesh_base_sign")
+surface_material_override/0 = SubResource("StandardMaterial3D_base_sign")
+
+[node name="StreamerBaseLabel" type="Label3D" parent="CinematicWorld"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 5.35, 41)
+text = "STREAMER BASE"
+font_size = 44
+modulate = Color(0.54, 1, 0.34, 1)
+outline_size = 8
+
+[node name="JoinLobby" parent="CinematicWorld" instance=ExtResource("8_join_lobby")]
+transform = Transform3D(0.76, 0, 0, 0, 0.76, 0, 0, 0, 0.76, 5.6, 0, -28.8)
+
+[node name="MenuZombies" type="Node3D" parent="CinematicWorld"]
+
+[node name="ZombieA" parent="CinematicWorld/MenuZombies" instance=ExtResource("9_zombie_visual")]
+transform = Transform3D(-0.86, 0, 0, 0, 0.86, 0, 0, 0, -0.86, 1.4, 0, -32.8)
+
+[node name="ZombieB" parent="CinematicWorld/MenuZombies" instance=ExtResource("9_zombie_visual")]
+transform = Transform3D(0, 0, 0.82, 0, 0.82, 0, -0.82, 0, 0, 4.5, 0, -31.4)
+
+[node name="ZombieC" parent="CinematicWorld/MenuZombies" instance=ExtResource("9_zombie_visual")]
+transform = Transform3D(0.78, 0, 0, 0, 0.78, 0, 0, 0, 0.78, 8.1, 0, -27.6)
+
+[node name="ZombieD" parent="CinematicWorld/MenuZombies" instance=ExtResource("9_zombie_visual")]
+transform = Transform3D(0, 0, -0.92, 0, 0.92, 0, 0.92, 0, 0, -1.4, 0, -22.8)
+
+[node name="ZombieE" parent="CinematicWorld/MenuZombies" instance=ExtResource("9_zombie_visual")]
+transform = Transform3D(-0.88, 0, 0, 0, 0.88, 0, 0, 0, -0.88, 3.2, 0, -17.4)
+
+[node name="ForegroundProps" type="Node3D" parent="CinematicWorld"]
+
+[node name="BrokenBarrierA" parent="CinematicWorld/ForegroundProps" instance=ExtResource("10_traffic_barrier")]
+transform = Transform3D(0.92, 0, 0, 0, 0.92, 0, 0, 0, 0.92, -3.1, 0, -17.3)
+
+[node name="BrokenBarrierB" parent="CinematicWorld/ForegroundProps" instance=ExtResource("10_traffic_barrier")]
+transform = Transform3D(0, 0, -0.95, 0, 0.95, 0, 0.95, 0, 0, 5.8, 0, -5.8)
+
+[node name="ConeA" parent="CinematicWorld/ForegroundProps" instance=ExtResource("11_traffic_cone")]
+transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, -6.2, 0, -27.5)
+
+[node name="ConeB" parent="CinematicWorld/ForegroundProps" instance=ExtResource("11_traffic_cone")]
+transform = Transform3D(0.95, 0, 0, 0, 0.95, 0, 0, 0, 0.95, 6.1, 0, -19.8)
+
+[node name="ArmoredPickupHero" parent="CinematicWorld/ForegroundProps" instance=ExtResource("12_pickup")]
+transform = Transform3D(0, 0, -1.25, 0, 1.25, 0, 1.25, 0, 0, -10.8, 0, -24.5)
+
+[node name="RedContainerHero" parent="CinematicWorld/ForegroundProps" instance=ExtResource("13_container_red")]
+transform = Transform3D(1.18, 0, 0, 0, 1.18, 0, 0, 0, 1.18, 12.4, 0, 30.5)
+
+[node name="MenuKeyLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.824126, -0.204874, 0.528807, 0, 0.93237, 0.361506, -0.566406, -0.297925, 0.768385, 0, 24, -24)
+light_color = Color(0.48, 0.77, 0.56, 1)
+light_energy = 0.35
+shadow_enabled = true
+
+[node name="CageGreenLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 5.2, -28.8)
+light_color = Color(0.39, 1, 0.24, 1)
+light_energy = 4.35
+omni_range = 20.0
+shadow_enabled = true
+
+[node name="BaseAmberLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 6.4, 37.5)
+light_color = Color(1, 0.62, 0.16, 1)
+light_energy = 3.2
+omni_range = 26.0
+shadow_enabled = true
+
+[node name="RoadSweepLight" type="SpotLight3D" parent="."]
+transform = Transform3D(-0.965926, -0.0990458, -0.239118, 0, 0.92388, -0.382683, 0.258819, -0.369644, -0.892399, -5.8, 8.6, -24)
+light_color = Color(0.48, 1, 0.32, 1)
+light_energy = 8.4
+shadow_enabled = true
+spot_range = 50.0
+spot_angle = 35.0
+spot_angle_attenuation = 0.7
+
+[node name="CinematicCamera" type="Camera3D" parent="."]
+transform = Transform3D(0.939693, 0, -0.34202, 0, 1, 0, 0.34202, 0, 0.939693, -12.8, 6.6, -39.5)
+current = true
+fov = 64.0
+
+[node name="MenuLayer" type="CanvasLayer" parent="."]
+
+[node name="Root" type="Control" parent="MenuLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+
+[node name="Vignette" type="ColorRect" parent="MenuLayer/Root"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.08)
+
+[node name="LeftShade" type="ColorRect" parent="MenuLayer/Root"]
+anchor_right = 0.39
+anchor_bottom = 1.0
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.3)
+
+[node name="Nav" type="VBoxContainer" parent="MenuLayer/Root"]
+offset_left = 72.0
+offset_top = 48.0
+offset_right = 646.0
+offset_bottom = 812.0
+theme_override_constants/separation = 12
+
+[node name="LogoLockup" type="VBoxContainer" parent="MenuLayer/Root/Nav"]
+custom_minimum_size = Vector2(540, 252)
+layout_mode = 2
+theme_override_constants/separation = -10
+
+[node name="ZombieTitle" type="Label" parent="MenuLayer/Root/Nav/LogoLockup"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.46, 1, 0.19, 1)
+theme_override_colors/font_outline_color = Color(0.015, 0.04, 0.01, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.96)
+theme_override_constants/outline_size = 8
+theme_override_constants/shadow_offset_x = 5
+theme_override_constants/shadow_offset_y = 5
+theme_override_font_sizes/font_size = 86
+text = "ZOMBIE"
+
+[node name="HordeTitle" type="Label" parent="MenuLayer/Root/Nav/LogoLockup"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.62, 0.1, 1)
+theme_override_colors/font_outline_color = Color(0.055, 0.032, 0.006, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.96)
+theme_override_constants/outline_size = 8
+theme_override_constants/shadow_offset_x = 5
+theme_override_constants/shadow_offset_y = 5
+theme_override_font_sizes/font_size = 94
+text = "HORDE"
+
+[node name="LogoRule" type="ColorRect" parent="MenuLayer/Root/Nav/LogoLockup"]
+custom_minimum_size = Vector2(440, 5)
+layout_mode = 2
+color = Color(1, 0.62, 0.12, 0.92)
+
+[node name="Tagline" type="Label" parent="MenuLayer/Root/Nav"]
+text = "DIRTY ARCADE CHAT LOTTO"
+theme_override_colors/font_color = Color(0.95, 0.75, 0.34, 1)
+theme_override_font_sizes/font_size = 20
+
+[node name="CommandLabel" type="Label" parent="MenuLayer/Root/Nav"]
+text = "TYPE !BRAINS TO JOIN"
+theme_override_colors/font_color = Color(0.81, 1, 0.52, 1)
+theme_override_font_sizes/font_size = 23
+
+[node name="SpacerA" type="Control" parent="MenuLayer/Root/Nav"]
+custom_minimum_size = Vector2(0, 14)
+
+[node name="OpenLobbyButton" parent="MenuLayer/Root/Nav" instance=ExtResource("3_menu_button")]
+text = "OPEN LOBBY    >"
+
+[node name="AddJoinButton" parent="MenuLayer/Root/Nav" instance=ExtResource("3_menu_button")]
+text = "ADD JOIN      >"
+
+[node name="SettingsButton" parent="MenuLayer/Root/Nav" instance=ExtResource("3_menu_button")]
+text = "SETTINGS      >"
+
+[node name="ExitButton" parent="MenuLayer/Root/Nav" instance=ExtResource("3_menu_button")]
+text = "EXIT GAME     >"
+
+[node name="SpacerB" type="Control" parent="MenuLayer/Root/Nav"]
+custom_minimum_size = Vector2(0, 34)
+
+[node name="Footer" type="Label" parent="MenuLayer/Root/Nav"]
+text = "SURVIVE. WIN. TAKE IT ALL."
+theme_override_colors/font_color = Color(0.93, 0.71, 0.34, 1)
+theme_override_font_sizes/font_size = 18

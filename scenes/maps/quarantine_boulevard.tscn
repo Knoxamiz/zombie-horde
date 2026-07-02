@@ -1,0 +1,58 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/main/road_arena.tscn" id="1_core"]
+[ext_resource type="Script" path="res://scripts/core/visual_collision_sanitizer.gd" id="2_sanitizer"]
+[ext_resource type="Material" path="res://assets/materials/lobby_warning_red.tres" id="3_red"]
+[ext_resource type="Material" path="res://assets/materials/city_window_glow.tres" id="4_glow"]
+[ext_resource type="Material" path="res://assets/materials/lobby_hazard_yellow.tres" id="5_yellow"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_neon_header"]
+size = Vector3(11.5, 0.18, 0.22)
+
+[sub_resource type="BoxMesh" id="BoxMesh_neon_post"]
+size = Vector3(0.24, 2.8, 0.24)
+
+[sub_resource type="BoxMesh" id="BoxMesh_map_banner"]
+size = Vector3(7.8, 1.35, 0.16)
+
+[node name="RoadArena" type="Node3D"]
+
+[node name="CoreRoad" parent="." instance=ExtResource("1_core")]
+
+[node name="MapDressing" type="Node3D" parent="."]
+
+[node name="VisualCollisionSanitizer" type="Node" parent="MapDressing"]
+script = ExtResource("2_sanitizer")
+
+[node name="QuarantineBanner" type="MeshInstance3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.8, -34.8)
+mesh = SubResource("BoxMesh_map_banner")
+surface_material_override/0 = ExtResource("3_red")
+
+[node name="QuarantineLabel" type="Label3D" parent="MapDressing"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 4.84, -34.68)
+text = "QUARANTINE BOULEVARD"
+font_size = 38
+outline_size = 8
+modulate = Color(0.82, 1, 0.45, 1)
+
+[node name="StartNeonHeader" type="MeshInstance3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.05, -34.0)
+mesh = SubResource("BoxMesh_neon_header")
+surface_material_override/0 = ExtResource("4_glow")
+
+[node name="StartNeonLeftPost" type="MeshInstance3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.8, 2.65, -34.0)
+mesh = SubResource("BoxMesh_neon_post")
+surface_material_override/0 = ExtResource("5_yellow")
+
+[node name="StartNeonRightPost" type="MeshInstance3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.8, 2.65, -34.0)
+mesh = SubResource("BoxMesh_neon_post")
+surface_material_override/0 = ExtResource("5_yellow")
+
+[node name="MapGreenWash" type="OmniLight3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.4, -31.0)
+light_color = Color(0.42, 1, 0.24, 1)
+light_energy = 1.6
+omni_range = 15.0

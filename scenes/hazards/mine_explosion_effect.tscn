@@ -1,0 +1,58 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/hazards/mine_explosion_effect.gd" id="1_script"]
+[ext_resource type="Material" path="res://assets/materials/explosion_burst.tres" id="2_burst"]
+[ext_resource type="Material" path="res://assets/materials/explosion_smoke.tres" id="3_smoke"]
+[ext_resource type="Material" path="res://assets/materials/explosion_ember.tres" id="4_ember"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_burst"]
+radius = 0.45
+height = 0.9
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_smoke"]
+top_radius = 0.55
+bottom_radius = 0.8
+height = 0.35
+
+[sub_resource type="SphereMesh" id="SphereMesh_ember"]
+radius = 0.08
+height = 0.16
+
+[node name="MineExplosionEffect" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="BurstMesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_burst")
+surface_material_override/0 = ExtResource("2_burst")
+
+[node name="SmokeRing" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.24, 0, 0, 0, 1, 0, 0.08, 0)
+mesh = SubResource("CylinderMesh_smoke")
+surface_material_override/0 = ExtResource("3_smoke")
+
+[node name="DebrisRoot" type="Node3D" parent="."]
+
+[node name="EmberA" type="MeshInstance3D" parent="DebrisRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.58, 0.26, 0.12)
+mesh = SubResource("SphereMesh_ember")
+surface_material_override/0 = ExtResource("4_ember")
+
+[node name="EmberB" type="MeshInstance3D" parent="DebrisRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42, 0.32, -0.38)
+mesh = SubResource("SphereMesh_ember")
+surface_material_override/0 = ExtResource("4_ember")
+
+[node name="EmberC" type="MeshInstance3D" parent="DebrisRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.12, 0.44, -0.64)
+mesh = SubResource("SphereMesh_ember")
+surface_material_override/0 = ExtResource("4_ember")
+
+[node name="EmberD" type="MeshInstance3D" parent="DebrisRoot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.62, 0.2, 0.44)
+mesh = SubResource("SphereMesh_ember")
+surface_material_override/0 = ExtResource("4_ember")
+
+[node name="FlashLight" type="OmniLight3D" parent="."]
+light_color = Color(1, 0.42, 0.18, 1)
+light_energy = 3.5
+omni_range = 7.0

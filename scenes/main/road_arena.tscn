@@ -1,0 +1,284 @@
+[gd_scene load_steps=29 format=3 uid="uid://degy2yw827pd"]
+
+[ext_resource type="Material" path="res://assets/materials/arena_ground.tres" id="1_ground"]
+[ext_resource type="Material" path="res://assets/materials/road_asphalt.tres" id="2_road"]
+[ext_resource type="Material" path="res://assets/materials/road_line.tres" id="3_line"]
+[ext_resource type="Material" path="res://assets/materials/spawn_zone.tres" id="4_spawn"]
+[ext_resource type="Material" path="res://assets/materials/goal_zone.tres" id="5_goal"]
+[ext_resource type="Material" path="res://assets/materials/base_concrete.tres" id="6_concrete"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/StreetLights.gltf" id="7_streetlights"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TownSign.gltf" id="8_townsign"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficLight_1.gltf" id="9_traffic_light"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Vehicles/Vehicle_Pickup_Armored.gltf" id="10_pickup"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Vehicles/Vehicle_Truck_Armored.gltf" id="11_truck"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Container_Red.gltf" id="12_container_red"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Container_Green.gltf" id="13_container_green"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficCone_1.gltf" id="14_traffic_cone"]
+[ext_resource type="PackedScene" path="res://scenes/main/city_backdrop.tscn" id="15_city_backdrop"]
+[ext_resource type="Script" path="res://scripts/core/visual_collision_sanitizer.gd" id="16_sanitizer"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_ground"]
+size = Vector3(32, 0.18, 96)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
+size = Vector3(32, 0.18, 96)
+
+[sub_resource type="BoxMesh" id="BoxMesh_road"]
+size = Vector3(16, 0.12, 88)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_road"]
+size = Vector3(16, 0.12, 88)
+
+[sub_resource type="BoxMesh" id="BoxMesh_line"]
+size = Vector3(0.18, 0.04, 82)
+
+[sub_resource type="BoxMesh" id="BoxMesh_rail"]
+size = Vector3(0.45, 0.9, 88)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rail"]
+size = Vector3(0.45, 0.9, 88)
+
+[sub_resource type="BoxMesh" id="BoxMesh_zone"]
+size = Vector3(14, 0.06, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_edge_line"]
+size = Vector3(0.18, 0.05, 86)
+
+[sub_resource type="BoxMesh" id="BoxMesh_checkpoint"]
+size = Vector3(14, 0.07, 0.45)
+
+[sub_resource type="BoxMesh" id="BoxMesh_post"]
+size = Vector3(0.28, 3.2, 0.28)
+
+[sub_resource type="BoxMesh" id="BoxMesh_header"]
+size = Vector3(15.5, 0.42, 0.42)
+
+[node name="RoadArena" type="Node3D"]
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.875427, -0.23457, 0.422618, 0, 0.87462, 0.48481, -0.48369, -0.424024, 0.765775, 0, 18, -18)
+light_color = Color(0.64, 0.7, 0.82, 1)
+light_energy = 0.48
+shadow_enabled = true
+
+[node name="StartPoolLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.2, -38)
+light_color = Color(0.52, 1, 0.35, 1)
+light_energy = 2.25
+omni_range = 18.0
+
+[node name="FinishPoolLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.2, 38)
+light_color = Color(1, 0.32, 0.12, 1)
+light_energy = 2.0
+omni_range = 18.0
+
+[node name="RoadAmberLightA" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.8, 4.4, -10)
+light_color = Color(1, 0.64, 0.18, 1)
+light_energy = 1.45
+omni_range = 14.0
+
+[node name="RoadAmberLightB" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.8, 4.4, 18)
+light_color = Color(1, 0.64, 0.18, 1)
+light_energy = 1.35
+omni_range = 14.0
+
+[node name="CityBackdrop" parent="." instance=ExtResource("15_city_backdrop")]
+
+[node name="Ground" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="GroundMesh" type="MeshInstance3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.11, 0)
+mesh = SubResource("BoxMesh_ground")
+surface_material_override/0 = ExtResource("1_ground")
+
+[node name="GroundCollision" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.11, 0)
+shape = SubResource("BoxShape3D_ground")
+
+[node name="Road" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="RoadMesh" type="MeshInstance3D" parent="Road"]
+mesh = SubResource("BoxMesh_road")
+surface_material_override/0 = ExtResource("2_road")
+
+[node name="RoadCollision" type="CollisionShape3D" parent="Road"]
+shape = SubResource("BoxShape3D_road")
+
+[node name="CenterLine" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09, 0)
+mesh = SubResource("BoxMesh_line")
+surface_material_override/0 = ExtResource("3_line")
+
+[node name="LeftEdgeLine" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.75, 0.1, 0)
+mesh = SubResource("BoxMesh_edge_line")
+surface_material_override/0 = ExtResource("3_line")
+
+[node name="RightEdgeLine" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.75, 0.1, 0)
+mesh = SubResource("BoxMesh_edge_line")
+surface_material_override/0 = ExtResource("3_line")
+
+[node name="StartLine" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.12, -38)
+mesh = SubResource("BoxMesh_checkpoint")
+surface_material_override/0 = ExtResource("4_spawn")
+
+[node name="FinishLine" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.12, 38)
+mesh = SubResource("BoxMesh_checkpoint")
+surface_material_override/0 = ExtResource("5_goal")
+
+[node name="LeftRail" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.35, 0.45, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="LeftRailMesh" type="MeshInstance3D" parent="LeftRail"]
+mesh = SubResource("BoxMesh_rail")
+surface_material_override/0 = ExtResource("6_concrete")
+
+[node name="LeftRailCollision" type="CollisionShape3D" parent="LeftRail"]
+shape = SubResource("BoxShape3D_rail")
+
+[node name="RightRail" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.35, 0.45, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="RightRailMesh" type="MeshInstance3D" parent="RightRail"]
+mesh = SubResource("BoxMesh_rail")
+surface_material_override/0 = ExtResource("6_concrete")
+
+[node name="RightRailCollision" type="CollisionShape3D" parent="RightRail"]
+shape = SubResource("BoxShape3D_rail")
+
+[node name="SpawnZone" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.12, -42)
+mesh = SubResource("BoxMesh_zone")
+surface_material_override/0 = ExtResource("4_spawn")
+
+[node name="GoalGuide" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.13, 42)
+mesh = SubResource("BoxMesh_zone")
+surface_material_override/0 = ExtResource("5_goal")
+
+[node name="StartGateLeftPost" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.6, 1.6, -38)
+mesh = SubResource("BoxMesh_post")
+surface_material_override/0 = ExtResource("6_concrete")
+
+[node name="StartGateRightPost" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.6, 1.6, -38)
+mesh = SubResource("BoxMesh_post")
+surface_material_override/0 = ExtResource("6_concrete")
+
+[node name="StartGateHeader" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.15, -38)
+mesh = SubResource("BoxMesh_header")
+surface_material_override/0 = ExtResource("4_spawn")
+
+[node name="FinishGateLeftPost" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.6, 1.6, 38)
+mesh = SubResource("BoxMesh_post")
+surface_material_override/0 = ExtResource("6_concrete")
+
+[node name="FinishGateRightPost" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.6, 1.6, 38)
+mesh = SubResource("BoxMesh_post")
+surface_material_override/0 = ExtResource("6_concrete")
+
+[node name="FinishGateHeader" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.15, 38)
+mesh = SubResource("BoxMesh_header")
+surface_material_override/0 = ExtResource("5_goal")
+
+[node name="SetDressing" type="Node3D" parent="."]
+
+[node name="VisualCollisionSanitizer" type="Node" parent="SetDressing"]
+script = ExtResource("16_sanitizer")
+
+[node name="NorthdaleSign" parent="SetDressing" instance=ExtResource("8_townsign")]
+transform = Transform3D(-1.15, 0, 0, 0, 1.15, 0, 0, 0, -1.15, -8.9, 0, 31.5)
+
+[node name="StartTrafficLight" parent="SetDressing" instance=ExtResource("9_traffic_light")]
+transform = Transform3D(-1.15, 0, 0, 0, 1.15, 0, 0, 0, -1.15, 8.95, 0, -38.5)
+
+[node name="LeftStreetLightA" parent="SetDressing" instance=ExtResource("7_streetlights")]
+transform = Transform3D(0, 0, 1.25, 0, 1.25, 0, -1.25, 0, 0, -8.85, 0, -28)
+
+[node name="LeftStreetLightASpot" type="SpotLight3D" parent="SetDressing"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, -5.55, 7.55, -28)
+light_color = Color(1, 0.72, 0.36, 1)
+light_energy = 5.2
+shadow_enabled = true
+spot_range = 16.0
+spot_angle = 42.0
+spot_angle_attenuation = 0.62
+
+[node name="LeftStreetLightB" parent="SetDressing" instance=ExtResource("7_streetlights")]
+transform = Transform3D(0, 0, 1.25, 0, 1.25, 0, -1.25, 0, 0, -8.85, 0, 3)
+
+[node name="LeftStreetLightBSpot" type="SpotLight3D" parent="SetDressing"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, -5.55, 7.55, 3)
+light_color = Color(1, 0.72, 0.36, 1)
+light_energy = 5.2
+shadow_enabled = true
+spot_range = 16.0
+spot_angle = 42.0
+spot_angle_attenuation = 0.62
+
+[node name="RightStreetLightA" parent="SetDressing" instance=ExtResource("7_streetlights")]
+transform = Transform3D(0, 0, -1.25, 0, 1.25, 0, 1.25, 0, 0, 8.85, 0, -12)
+
+[node name="RightStreetLightASpot" type="SpotLight3D" parent="SetDressing"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 5.55, 7.55, -12)
+light_color = Color(1, 0.72, 0.36, 1)
+light_energy = 5.2
+shadow_enabled = true
+spot_range = 16.0
+spot_angle = 42.0
+spot_angle_attenuation = 0.62
+
+[node name="RightStreetLightB" parent="SetDressing" instance=ExtResource("7_streetlights")]
+transform = Transform3D(0, 0, -1.25, 0, 1.25, 0, 1.25, 0, 0, 8.85, 0, 24)
+
+[node name="RightStreetLightBSpot" type="SpotLight3D" parent="SetDressing"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 5.55, 7.55, 24)
+light_color = Color(1, 0.72, 0.36, 1)
+light_energy = 5.2
+shadow_enabled = true
+spot_range = 16.0
+spot_angle = 42.0
+spot_angle_attenuation = 0.62
+
+[node name="LeftArmoredPickup" parent="SetDressing" instance=ExtResource("10_pickup")]
+transform = Transform3D(0, 0, -1.08, 0, 1.08, 0, 1.08, 0, 0, -12.7, 0, -18)
+
+[node name="RightArmoredTruck" parent="SetDressing" instance=ExtResource("11_truck")]
+transform = Transform3D(0, 0, 1.05, 0, 1.05, 0, -1.05, 0, 0, 12.5, 0, 12)
+
+[node name="RedContainer" parent="SetDressing" instance=ExtResource("12_container_red")]
+transform = Transform3D(1.05, 0, 0, 0, 1.05, 0, 0, 0, 1.05, -13.6, 0, 13)
+
+[node name="GreenContainer" parent="SetDressing" instance=ExtResource("13_container_green")]
+transform = Transform3D(-1.05, 0, 0, 0, 1.05, 0, 0, 0, -1.05, 13.6, 0, -25)
+
+[node name="ConeStartA" parent="SetDressing" instance=ExtResource("14_traffic_cone")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -6.4, 0, -36.5)
+
+[node name="ConeStartB" parent="SetDressing" instance=ExtResource("14_traffic_cone")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 6.4, 0, -36.5)
+
+[node name="ConeFinishA" parent="SetDressing" instance=ExtResource("14_traffic_cone")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -6.4, 0, 36.5)
+
+[node name="ConeFinishB" parent="SetDressing" instance=ExtResource("14_traffic_cone")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 6.4, 0, 36.5)

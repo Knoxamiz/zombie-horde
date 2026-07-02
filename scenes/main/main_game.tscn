@@ -1,0 +1,237 @@
+[gd_scene load_steps=49 format=3 uid="uid://cpckbkq2isxty"]
+
+[ext_resource type="Script" uid="uid://bdrcas6cpq4y0" path="res://scripts/core/input_map_setup.gd" id="1_input"]
+[ext_resource type="Script" uid="uid://ddgxum5bath7f" path="res://scripts/core/debug_join_source.gd" id="2_join"]
+[ext_resource type="Script" uid="uid://dnx40sopv6cfa" path="res://scripts/core/round_manager.gd" id="3_round"]
+[ext_resource type="Script" uid="uid://bpxpu3tst05fv" path="res://scripts/zombies/zombie_manager.gd" id="4_zombie_manager"]
+[ext_resource type="Script" uid="uid://6c8klsiwhd5u" path="res://scripts/hazards/hazard_manager.gd" id="5_hazard_manager"]
+[ext_resource type="Script" uid="uid://bi4a3girev18f" path="res://scripts/powerups/powerup_manager.gd" id="6_powerup_manager"]
+[ext_resource type="Resource" uid="uid://xw0ay3acrx46" path="res://resources/config/round_config.tres" id="7_round_config"]
+[ext_resource type="Resource" uid="uid://bougddnnf1ab1" path="res://resources/config/zombie_config.tres" id="8_zombie_config"]
+[ext_resource type="Resource" uid="uid://bupic2xlh7b2r" path="res://resources/config/hazard_config.tres" id="9_hazard_config"]
+[ext_resource type="Resource" uid="uid://dra4husd3g7uo" path="res://resources/config/powerup_config.tres" id="10_powerup_config"]
+[ext_resource type="PackedScene" uid="uid://c0xi8ko8w3cfk" path="res://scenes/zombies/zombie.tscn" id="11_zombie_scene"]
+[ext_resource type="PackedScene" uid="uid://cvflwsp3c4gah" path="res://scenes/hazards/mine_trap.tscn" id="12_mine_scene"]
+[ext_resource type="PackedScene" uid="uid://bnvdiheqdfd7y" path="res://scenes/powerups/boost_pad.tscn" id="13_boost_scene"]
+[ext_resource type="PackedScene" uid="uid://degy2yw827pd" path="res://scenes/main/road_arena.tscn" id="14_arena_scene"]
+[ext_resource type="PackedScene" uid="uid://bo8iicgk6ee38" path="res://scenes/base/streamer_base.tscn" id="15_base_scene"]
+[ext_resource type="PackedScene" uid="uid://ip7abt8ye5m0" path="res://scenes/base/minigun.tscn" id="16_minigun_scene"]
+[ext_resource type="PackedScene" uid="uid://cnyv0aop63ygu" path="res://scenes/camera/spectator_camera.tscn" id="17_camera_scene"]
+[ext_resource type="PackedScene" uid="uid://klfmkohhxs15" path="res://scenes/ui/hud.tscn" id="18_hud_scene"]
+[ext_resource type="Script" uid="uid://b20csqqsbs17x" path="res://scripts/core/join_source_hub.gd" id="19_join_hub"]
+[ext_resource type="Script" uid="uid://cylr54g22xg1g" path="res://scripts/integrations/twitch/twitch_join_source.gd" id="20_twitch_join"]
+[ext_resource type="Resource" uid="uid://cy25ecmbimgyb" path="res://resources/config/twitch_chat_config.tres" id="21_twitch_config"]
+[ext_resource type="Script" uid="uid://bi3amtncnmrdd" path="res://scripts/ui/world_feedback_manager.gd" id="22_feedback_manager"]
+[ext_resource type="PackedScene" path="res://scenes/ui/world_feedback_label.tscn" id="23_feedback_label"]
+[ext_resource type="PackedScene" path="res://scenes/hazards/road_obstacle.tscn" id="24_obstacle_scene"]
+[ext_resource type="PackedScene" path="res://scenes/hazards/traffic_cone_obstacle.tscn" id="25_cone_obstacle"]
+[ext_resource type="PackedScene" path="res://scenes/hazards/vehicle_obstacle.tscn" id="26_vehicle_obstacle"]
+[ext_resource type="Script" uid="uid://kvmk3nh1ulsy" path="res://scripts/core/game_flow_controller.gd" id="27_flow"]
+[ext_resource type="PackedScene" path="res://scenes/lobby/join_lobby.tscn" id="28_join_lobby"]
+[ext_resource type="Resource" uid="uid://bcr34x5f4lvl6" path="res://resources/config/minigun_config.tres" id="29_minigun_config"]
+[ext_resource type="PackedScene" path="res://scenes/ui/streamer_menu.tscn" id="30_streamer_menu"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pre_round_ui.tscn" id="31_pre_round_ui"]
+[ext_resource type="Environment" uid="uid://cpwbl8tfgd5tu" path="res://resources/environment/lobby_environment.tres" id="32_lobby_environment"]
+[ext_resource type="Environment" uid="uid://bmbu6rhlqb6bp" path="res://resources/environment/race_environment.tres" id="33_race_environment"]
+[ext_resource type="Script" uid="uid://c0vv1xt8beckx" path="res://scripts/defense/human_defender_manager.gd" id="34_defender_manager"]
+[ext_resource type="Resource" uid="uid://dltqqa505wwe4" path="res://resources/config/human_defender_config.tres" id="35_defender_config"]
+[ext_resource type="PackedScene" path="res://scenes/defense/human_defender.tscn" id="36_defender_scene"]
+[ext_resource type="PackedScene" path="res://scenes/hazards/sewer_hole_trap.tscn" id="37_sewer_hole_scene"]
+[ext_resource type="Script" uid="uid://7yeogx2trw24" path="res://scripts/core/leaderboard_store.gd" id="38_leaderboard_store"]
+[ext_resource type="Script" uid="uid://cq4audqefel2s" path="res://scripts/core/visual_settings_controller.gd" id="39_visual_settings"]
+[ext_resource type="Resource" path="res://resources/config/streamer_visual_config.tres" id="40_visual_config"]
+[ext_resource type="Script" uid="uid://cmdo1psjsmpcj" path="res://scripts/core/streamer_settings_applier.gd" id="41_settings_applier"]
+[ext_resource type="Resource" path="res://resources/config/feature_access_config.tres" id="42_feature_config"]
+[ext_resource type="Script" uid="uid://d024e6ourlubf" path="res://scripts/maps/race_map_controller.gd" id="43_map_controller"]
+[ext_resource type="Resource" path="res://resources/maps/quarantine_boulevard.tres" id="44_map_quarantine"]
+[ext_resource type="Resource" path="res://resources/maps/industrial_yard.tres" id="45_map_industrial"]
+[ext_resource type="Resource" path="res://resources/maps/suburban_evac_route.tres" id="46_map_suburban"]
+[ext_resource type="Resource" path="res://resources/maps/tunnel_checkpoint.tres" id="47_map_tunnel"]
+[ext_resource type="Resource" path="res://resources/maps/rooftop_causeway.tres" id="48_map_rooftop"]
+
+[node name="MainGame" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("32_lobby_environment")
+
+[node name="Systems" type="Node" parent="."]
+
+[node name="InputMapSetup" type="Node" parent="Systems"]
+script = ExtResource("1_input")
+
+[node name="DebugJoinSource" type="Node" parent="Systems"]
+script = ExtResource("2_join")
+round_config = ExtResource("7_round_config")
+
+[node name="TwitchJoinSource" type="Node" parent="Systems"]
+script = ExtResource("20_twitch_join")
+config = ExtResource("21_twitch_config")
+
+[node name="JoinSourceHub" type="Node" parent="Systems"]
+script = ExtResource("19_join_hub")
+
+[node name="StreamerSettingsApplier" type="Node" parent="Systems"]
+script = ExtResource("41_settings_applier")
+hazard_config = ExtResource("9_hazard_config")
+zombie_config = ExtResource("8_zombie_config")
+minigun_config = ExtResource("29_minigun_config")
+powerup_config = ExtResource("10_powerup_config")
+human_defender_config = ExtResource("35_defender_config")
+visual_config = ExtResource("40_visual_config")
+feature_config = ExtResource("42_feature_config")
+race_map_controller_path = NodePath("../RaceMapController")
+
+[node name="RaceMapController" type="Node" parent="Systems"]
+script = ExtResource("43_map_controller")
+feature_config = ExtResource("42_feature_config")
+race_world_path = NodePath("../../World")
+zombie_manager_path = NodePath("../ZombieManager")
+base_goal_path = NodePath("../../World/StreamerBase")
+minigun_path = NodePath("../../World/BaseMinigun")
+hazard_config = ExtResource("9_hazard_config")
+zombie_config = ExtResource("8_zombie_config")
+powerup_config = ExtResource("10_powerup_config")
+human_defender_config = ExtResource("35_defender_config")
+map_0_definition = ExtResource("44_map_quarantine")
+map_1_definition = ExtResource("45_map_industrial")
+map_2_definition = ExtResource("46_map_suburban")
+map_3_definition = ExtResource("47_map_tunnel")
+map_4_definition = ExtResource("48_map_rooftop")
+
+[node name="LeaderboardStore" type="Node" parent="Systems"]
+script = ExtResource("38_leaderboard_store")
+
+[node name="RoundManager" type="Node" parent="Systems"]
+script = ExtResource("3_round")
+round_config = ExtResource("7_round_config")
+join_source_path = NodePath("../JoinSourceHub")
+debug_join_source_path = NodePath("../DebugJoinSource")
+zombie_manager_path = NodePath("../ZombieManager")
+hazard_manager_path = NodePath("../HazardManager")
+powerup_manager_path = NodePath("../PowerupManager")
+defender_manager_path = NodePath("../HumanDefenderManager")
+leaderboard_store_path = NodePath("../LeaderboardStore")
+minigun_path = NodePath("../../World/BaseMinigun")
+base_goal_path = NodePath("../../World/StreamerBase")
+
+[node name="ZombieManager" type="Node3D" parent="Systems"]
+visible = false
+script = ExtResource("4_zombie_manager")
+zombie_scene = ExtResource("11_zombie_scene")
+zombie_config = ExtResource("8_zombie_config")
+
+[node name="HazardManager" type="Node3D" parent="Systems"]
+visible = false
+script = ExtResource("5_hazard_manager")
+hazard_config = ExtResource("9_hazard_config")
+mine_scene = ExtResource("12_mine_scene")
+sewer_hole_scene = ExtResource("37_sewer_hole_scene")
+obstacle_scene = ExtResource("24_obstacle_scene")
+cone_obstacle_scene = ExtResource("25_cone_obstacle")
+vehicle_obstacle_scene = ExtResource("26_vehicle_obstacle")
+
+[node name="PowerupManager" type="Node3D" parent="Systems"]
+visible = false
+script = ExtResource("6_powerup_manager")
+powerup_config = ExtResource("10_powerup_config")
+boost_pad_scene = ExtResource("13_boost_scene")
+
+[node name="HumanDefenderManager" type="Node3D" parent="Systems"]
+visible = false
+script = ExtResource("34_defender_manager")
+config = ExtResource("35_defender_config")
+defender_scene = ExtResource("36_defender_scene")
+zombie_manager_path = NodePath("../ZombieManager")
+
+[node name="VisualSettingsController" type="Node" parent="Systems"]
+script = ExtResource("39_visual_settings")
+visual_config = ExtResource("40_visual_config")
+world_environment_path = NodePath("../../WorldEnvironment")
+road_arena_path = NodePath("../../World/RoadArena")
+minigun_path = NodePath("../../World/BaseMinigun")
+race_environment = ExtResource("33_race_environment")
+lobby_environment = ExtResource("32_lobby_environment")
+
+[node name="GameFlowController" type="Node" parent="Systems"]
+script = ExtResource("27_flow")
+round_manager_path = NodePath("../RoundManager")
+race_world_path = NodePath("../../World")
+lobby_world_path = NodePath("../../LobbyWorld")
+zombie_manager_path = NodePath("../ZombieManager")
+hazard_manager_path = NodePath("../HazardManager")
+powerup_manager_path = NodePath("../PowerupManager")
+defender_manager_path = NodePath("../HumanDefenderManager")
+race_map_controller_path = NodePath("../RaceMapController")
+debug_join_source_path = NodePath("../DebugJoinSource")
+spectator_camera_path = NodePath("../../SpectatorCamera")
+hud_path = NodePath("../../HUD")
+streamer_menu_path = NodePath("../../StreamerMenu")
+pre_round_ui_path = NodePath("../../PreRoundUI")
+world_environment_path = NodePath("../../WorldEnvironment")
+transition_overlay_path = NodePath("../../TransitionLayer/FadeRect")
+lobby_environment = ExtResource("32_lobby_environment")
+race_environment = ExtResource("33_race_environment")
+
+[node name="LobbyWorld" type="Node3D" parent="."]
+
+[node name="JoinLobby" parent="LobbyWorld" instance=ExtResource("28_join_lobby")]
+round_manager_path = NodePath("../../Systems/RoundManager")
+
+[node name="World" type="Node3D" parent="."]
+visible = false
+
+[node name="RoadArena" parent="World" instance=ExtResource("14_arena_scene")]
+
+[node name="StreamerBase" parent="World" instance=ExtResource("15_base_scene")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 42)
+
+[node name="BaseMinigun" parent="World" instance=ExtResource("16_minigun_scene")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 38.5)
+zombie_manager_path = NodePath("../../Systems/ZombieManager")
+
+[node name="WorldFeedbackManager" type="Node3D" parent="World"]
+script = ExtResource("22_feedback_manager")
+feedback_label_scene = ExtResource("23_feedback_label")
+
+[node name="SpectatorCamera" parent="." instance=ExtResource("17_camera_scene")]
+
+[node name="HUD" parent="." instance=ExtResource("18_hud_scene")]
+visible = false
+round_manager_path = NodePath("../Systems/RoundManager")
+join_source_path = NodePath("../Systems/DebugJoinSource")
+twitch_join_source_path = NodePath("../Systems/TwitchJoinSource")
+leaderboard_store_path = NodePath("../Systems/LeaderboardStore")
+
+[node name="StreamerMenu" parent="." instance=ExtResource("30_streamer_menu")]
+visible = false
+hazard_config = ExtResource("9_hazard_config")
+zombie_config = ExtResource("8_zombie_config")
+minigun_config = ExtResource("29_minigun_config")
+powerup_config = ExtResource("10_powerup_config")
+human_defender_config = ExtResource("35_defender_config")
+visual_config = ExtResource("40_visual_config")
+feature_config = ExtResource("42_feature_config")
+round_manager_path = NodePath("../Systems/RoundManager")
+hazard_manager_path = NodePath("../Systems/HazardManager")
+powerup_manager_path = NodePath("../Systems/PowerupManager")
+race_map_controller_path = NodePath("../Systems/RaceMapController")
+visual_settings_controller_path = NodePath("../Systems/VisualSettingsController")
+
+[node name="PreRoundUI" parent="." instance=ExtResource("31_pre_round_ui")]
+round_manager_path = NodePath("../Systems/RoundManager")
+join_source_path = NodePath("../Systems/DebugJoinSource")
+twitch_join_source_path = NodePath("../Systems/TwitchJoinSource")
+leaderboard_store_path = NodePath("../Systems/LeaderboardStore")
+feature_config = ExtResource("42_feature_config")
+
+[node name="TransitionLayer" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="FadeRect" type="ColorRect" parent="TransitionLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.006, 0.007, 0.006, 1)

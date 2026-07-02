@@ -1,0 +1,671 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/streamer_menu_controller.gd" id="1_script"]
+[ext_resource type="Theme" path="res://assets/ui/zombie_horde_theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Matt.gltf" id="3_matt"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Lis.gltf" id="4_lis"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Sam.gltf" id="5_sam"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Shaun.gltf" id="6_shaun"]
+
+[node name="StreamerMenu" type="CanvasLayer"]
+layer = 30
+script = ExtResource("1_script")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+
+[node name="ToggleButton" type="Button" parent="Root"]
+visible = false
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -142.0
+offset_top = 16.0
+offset_right = -36.0
+offset_bottom = 52.0
+text = "Close"
+
+[node name="MenuPanel" type="PanelContainer" parent="Root"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -492.0
+offset_top = 58.0
+offset_right = -20.0
+offset_bottom = 880.0
+clip_contents = true
+
+[node name="Margin" type="MarginContainer" parent="Root/MenuPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="Root/MenuPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
+theme_override_font_sizes/font_size = 22
+text = "Streamer Settings"
+
+[node name="MenuTierRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/MenuTierRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Edition"
+
+[node name="EditionValueLabel" type="Label" parent="Root/MenuPanel/Margin/VBox/MenuTierRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 1, 0.45, 1)
+text = "Paid Premium"
+
+[node name="MenuTierDetailLabel" type="Label" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
+text = "Full street controls, tower loadouts, and chaos tuning"
+autowrap_mode = 2
+
+[node name="MapRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/MapRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Race Map"
+
+[node name="MapOption" type="OptionButton" parent="Root/MenuPanel/Margin/VBox/MapRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+
+[node name="PresetBlock" type="VBoxContainer" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="PresetTitleLabel" type="Label" parent="Root/MenuPanel/Margin/VBox/PresetBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
+text = "Saved Presets"
+
+[node name="PresetRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox/PresetBlock"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PresetButton1" type="Button" parent="Root/MenuPanel/Margin/VBox/PresetBlock/PresetRow"]
+custom_minimum_size = Vector2(92, 34)
+layout_mode = 2
+text = "Preset 1"
+
+[node name="PresetButton2" type="Button" parent="Root/MenuPanel/Margin/VBox/PresetBlock/PresetRow"]
+custom_minimum_size = Vector2(92, 34)
+layout_mode = 2
+text = "Preset 2"
+
+[node name="PresetButton3" type="Button" parent="Root/MenuPanel/Margin/VBox/PresetBlock/PresetRow"]
+custom_minimum_size = Vector2(92, 34)
+layout_mode = 2
+text = "Preset 3"
+
+[node name="PresetButton4" type="Button" parent="Root/MenuPanel/Margin/VBox/PresetBlock/PresetRow"]
+custom_minimum_size = Vector2(92, 34)
+layout_mode = 2
+text = "Preset 4"
+
+[node name="PresetActionRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox/PresetBlock"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SavePresetButton" type="Button" parent="Root/MenuPanel/Margin/VBox/PresetBlock/PresetActionRow"]
+custom_minimum_size = Vector2(184, 34)
+layout_mode = 2
+text = "Save Preset"
+
+[node name="ResetDefaultsButton" type="Button" parent="Root/MenuPanel/Margin/VBox/PresetBlock/PresetActionRow"]
+custom_minimum_size = Vector2(184, 34)
+layout_mode = 2
+text = "Reset Defaults"
+
+[node name="BalanceBlock" type="VBoxContainer" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="BalanceTitleLabel" type="Label" parent="Root/MenuPanel/Margin/VBox/BalanceBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
+text = "Round Balance"
+
+[node name="BalanceValueLabel" type="Label" parent="Root/MenuPanel/Margin/VBox/BalanceBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 1, 0.45, 1)
+theme_override_font_sizes/font_size = 20
+text = "Balanced Lotto"
+
+[node name="BalanceSlider" type="HSlider" parent="Root/MenuPanel/Margin/VBox/BalanceBlock"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+min_value = 0.0
+max_value = 100.0
+step = 1.0
+value = 50.0
+
+[node name="BalanceLabels" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox/BalanceBlock"]
+layout_mode = 2
+
+[node name="StreamerLabel" type="Label" parent="Root/MenuPanel/Margin/VBox/BalanceBlock/BalanceLabels"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Streamer Friendly"
+
+[node name="ChatLabel" type="Label" parent="Root/MenuPanel/Margin/VBox/BalanceBlock/BalanceLabels"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Chat Friendly"
+horizontal_alignment = 2
+
+[node name="BalanceDetailLabel" type="Label" parent="Root/MenuPanel/Margin/VBox/BalanceBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.96, 0.88, 1)
+text = "Fair race pressure on both sides"
+autowrap_mode = 2
+
+[node name="StreamerNameRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/StreamerNameRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Streamer Name"
+
+[node name="StreamerNameEdit" type="LineEdit" parent="Root/MenuPanel/Margin/VBox/StreamerNameRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+placeholder_text = "Streamer"
+
+[node name="TimeOfDayRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/TimeOfDayRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Lighting"
+
+[node name="TimeOfDayOption" type="OptionButton" parent="Root/MenuPanel/Margin/VBox/TimeOfDayRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+
+[node name="BackdropRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/BackdropRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Backdrop"
+
+[node name="BackdropOption" type="OptionButton" parent="Root/MenuPanel/Margin/VBox/BackdropRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+
+[node name="AvatarRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/AvatarRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Streamer Avatar"
+
+[node name="AvatarValueLabel" type="Label" parent="Root/MenuPanel/Margin/VBox/AvatarRow"]
+custom_minimum_size = Vector2(92, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 1, 0.45, 1)
+text = "Matt"
+
+[node name="ChooseCharacterButton" type="Button" parent="Root/MenuPanel/Margin/VBox/AvatarRow"]
+custom_minimum_size = Vector2(118, 0)
+layout_mode = 2
+text = "Choose"
+
+[node name="TowerGunRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/TowerGunRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "NPC Loadout"
+
+[node name="TowerGunOption" type="OptionButton" parent="Root/MenuPanel/Margin/VBox/TowerGunRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+
+[node name="TowerWeaponRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/TowerWeaponRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Weapon Props"
+
+[node name="TowerWeaponCheck" type="CheckBox" parent="Root/MenuPanel/Margin/VBox/TowerWeaponRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+
+[node name="PremiumScroll" type="ScrollContainer" parent="Root/MenuPanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 94)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PremiumControls" type="VBoxContainer" parent="Root/MenuPanel/Margin/VBox/PremiumScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 7
+
+[node name="PremiumTitleLabel" type="Label" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
+text = "Paid Premium Street Controls"
+
+[node name="MineRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/MineRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Mines"
+
+[node name="MineSpin" type="SpinBox" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/MineRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+max_value = 96.0
+step = 1.0
+
+[node name="StreetPropRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/StreetPropRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Street Props"
+
+[node name="StreetPropSpin" type="SpinBox" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/StreetPropRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+max_value = 96.0
+step = 1.0
+
+[node name="BoostPadRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/BoostPadRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Boost Pads"
+
+[node name="BoostPadSpin" type="SpinBox" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/BoostPadRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+max_value = 32.0
+step = 1.0
+
+[node name="SewerRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/SewerRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Sewer Holes"
+
+[node name="SewerSpin" type="SpinBox" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/SewerRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+max_value = 32.0
+step = 1.0
+
+[node name="DefenderRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/DefenderRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "NPC Towers"
+
+[node name="DefenderSpin" type="SpinBox" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/DefenderRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+max_value = 12.0
+step = 1.0
+
+[node name="VehicleWeightRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/VehicleWeightRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Car Weight"
+
+[node name="VehicleWeightSpin" type="SpinBox" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/VehicleWeightRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+max_value = 100.0
+step = 1.0
+
+[node name="ConeWeightRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/ConeWeightRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Cone Weight"
+
+[node name="ConeWeightSpin" type="SpinBox" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/ConeWeightRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+max_value = 100.0
+step = 1.0
+
+[node name="BarrierWeightRow" type="HBoxContainer" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/BarrierWeightRow"]
+custom_minimum_size = Vector2(166, 0)
+layout_mode = 2
+text = "Barrier Weight"
+
+[node name="BarrierWeightSpin" type="SpinBox" parent="Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/BarrierWeightRow"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+max_value = 100.0
+step = 1.0
+
+[node name="RerollButton" type="Button" parent="Root/MenuPanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Apply + Reroll Street"
+
+[node name="StatusLabel" type="Label" parent="Root/MenuPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 1, 0.45, 1)
+text = "Ready"
+autowrap_mode = 2
+clip_text = true
+max_lines_visible = 1
+
+[node name="CharacterOverlayWash" type="ColorRect" parent="Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.006, 0.008, 0.006, 0.68)
+
+[node name="CharacterSelectPanel" type="PanelContainer" parent="Root"]
+visible = false
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -486.0
+offset_top = -262.0
+offset_right = 486.0
+offset_bottom = 262.0
+
+[node name="Margin" type="MarginContainer" parent="Root/CharacterSelectPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="Root/CharacterSelectPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Root/CharacterSelectPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="Root/CharacterSelectPanel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
+theme_override_font_sizes/font_size = 24
+text = "Choose Streamer Character"
+
+[node name="CloseButton" type="Button" parent="Root/CharacterSelectPanel/Margin/VBox/Header"]
+custom_minimum_size = Vector2(96, 36)
+layout_mode = 2
+text = "Close"
+
+[node name="CharacterGrid" type="HBoxContainer" parent="Root/CharacterSelectPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MattCard" type="PanelContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid"]
+custom_minimum_size = Vector2(220, 398)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/MattCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/MattCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Preview" type="SubViewportContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/MattCard/Margin/VBox"]
+custom_minimum_size = Vector2(190, 276)
+layout_mode = 2
+stretch = true
+
+[node name="Viewport" type="SubViewport" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/MattCard/Margin/VBox/Preview"]
+transparent_bg = true
+own_world_3d = true
+size = Vector2i(190, 276)
+render_target_update_mode = 4
+
+[node name="Model" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/MattCard/Margin/VBox/Preview/Viewport" instance=ExtResource("3_matt")]
+transform = Transform3D(0.85, 0, 0, 0, 0.85, 0, 0, 0, 0.85, 0, -0.95, 0)
+
+[node name="Light" type="DirectionalLight3D" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/MattCard/Margin/VBox/Preview/Viewport"]
+transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 4, 4)
+light_energy = 1.3
+
+[node name="Camera" type="Camera3D" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/MattCard/Margin/VBox/Preview/Viewport"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 1.05, 4.5)
+current = true
+fov = 42.0
+
+[node name="NameLabel" type="Label" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/MattCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
+text = "Matt"
+horizontal_alignment = 1
+
+[node name="SelectButton" type="Button" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/MattCard/Margin/VBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Pick Matt"
+
+[node name="LisCard" type="PanelContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid"]
+custom_minimum_size = Vector2(220, 398)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/LisCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/LisCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Preview" type="SubViewportContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/LisCard/Margin/VBox"]
+custom_minimum_size = Vector2(190, 276)
+layout_mode = 2
+stretch = true
+
+[node name="Viewport" type="SubViewport" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/LisCard/Margin/VBox/Preview"]
+transparent_bg = true
+own_world_3d = true
+size = Vector2i(190, 276)
+render_target_update_mode = 4
+
+[node name="Model" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/LisCard/Margin/VBox/Preview/Viewport" instance=ExtResource("4_lis")]
+transform = Transform3D(0.85, 0, 0, 0, 0.85, 0, 0, 0, 0.85, 0, -0.95, 0)
+
+[node name="Light" type="DirectionalLight3D" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/LisCard/Margin/VBox/Preview/Viewport"]
+transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 4, 4)
+light_energy = 1.3
+
+[node name="Camera" type="Camera3D" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/LisCard/Margin/VBox/Preview/Viewport"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 1.05, 4.5)
+current = true
+fov = 42.0
+
+[node name="NameLabel" type="Label" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/LisCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
+text = "Lis"
+horizontal_alignment = 1
+
+[node name="SelectButton" type="Button" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/LisCard/Margin/VBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Pick Lis"
+
+[node name="SamCard" type="PanelContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid"]
+custom_minimum_size = Vector2(220, 398)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/SamCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/SamCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Preview" type="SubViewportContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/SamCard/Margin/VBox"]
+custom_minimum_size = Vector2(190, 276)
+layout_mode = 2
+stretch = true
+
+[node name="Viewport" type="SubViewport" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/SamCard/Margin/VBox/Preview"]
+transparent_bg = true
+own_world_3d = true
+size = Vector2i(190, 276)
+render_target_update_mode = 4
+
+[node name="Model" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/SamCard/Margin/VBox/Preview/Viewport" instance=ExtResource("5_sam")]
+transform = Transform3D(0.85, 0, 0, 0, 0.85, 0, 0, 0, 0.85, 0, -0.95, 0)
+
+[node name="Light" type="DirectionalLight3D" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/SamCard/Margin/VBox/Preview/Viewport"]
+transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 4, 4)
+light_energy = 1.3
+
+[node name="Camera" type="Camera3D" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/SamCard/Margin/VBox/Preview/Viewport"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 1.05, 4.5)
+current = true
+fov = 42.0
+
+[node name="NameLabel" type="Label" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/SamCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
+text = "Sam"
+horizontal_alignment = 1
+
+[node name="SelectButton" type="Button" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/SamCard/Margin/VBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Pick Sam"
+
+[node name="ShaunCard" type="PanelContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid"]
+custom_minimum_size = Vector2(220, 398)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/ShaunCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/ShaunCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Preview" type="SubViewportContainer" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/ShaunCard/Margin/VBox"]
+custom_minimum_size = Vector2(190, 276)
+layout_mode = 2
+stretch = true
+
+[node name="Viewport" type="SubViewport" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/ShaunCard/Margin/VBox/Preview"]
+transparent_bg = true
+own_world_3d = true
+size = Vector2i(190, 276)
+render_target_update_mode = 4
+
+[node name="Model" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/ShaunCard/Margin/VBox/Preview/Viewport" instance=ExtResource("6_shaun")]
+transform = Transform3D(0.85, 0, 0, 0, 0.85, 0, 0, 0, 0.85, 0, -0.95, 0)
+
+[node name="Light" type="DirectionalLight3D" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/ShaunCard/Margin/VBox/Preview/Viewport"]
+transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 4, 4)
+light_energy = 1.3
+
+[node name="Camera" type="Camera3D" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/ShaunCard/Margin/VBox/Preview/Viewport"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 1.05, 4.5)
+current = true
+fov = 42.0
+
+[node name="NameLabel" type="Label" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/ShaunCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
+text = "Shaun"
+horizontal_alignment = 1
+
+[node name="SelectButton" type="Button" parent="Root/CharacterSelectPanel/Margin/VBox/CharacterGrid/ShaunCard/Margin/VBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+text = "Pick Shaun"

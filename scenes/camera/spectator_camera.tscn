@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://cnyv0aop63ygu"]
+
+[ext_resource type="Script" uid="uid://ccuknc6o35ng6" path="res://scripts/camera/spectator_camera_controller.gd" id="1_script"]
+
+[node name="SpectatorCamera" type="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 0.906308, 0.422618, 0, -0.422618, 0.906308, 0, 18, -34)
+script = ExtResource("1_script")
+capture_mouse_on_start = false
+
+[node name="Camera3D" type="Camera3D" parent="."]
+fov = 64.0
+far = 400.0

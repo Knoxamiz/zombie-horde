@@ -1,0 +1,40 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/hazards/bounce_obstacle.gd" id="1_bounce_script"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Vehicles/Vehicle_Sports_Armored.gltf" id="2_sports"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Vehicles/Vehicle_Pickup_Armored.gltf" id="3_pickup"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Vehicles/Vehicle_Truck_Armored.gltf" id="4_truck"]
+
+[sub_resource type="BoxShape3D" id="BoxShape_trigger"]
+size = Vector3(5.2, 1.9, 3.0)
+
+[node name="VehicleObstacle" type="Node3D"]
+script = ExtResource("1_bounce_script")
+launch_strength = 7.4
+upward_strength = 2.1
+stun_duration = 0.22
+hit_cooldown = 0.7
+feedback_text = "CAR!"
+feedback_color = Color(0.95, 0.22, 0.08, 1)
+
+[node name="ArtRoot" type="Node3D" parent="."]
+transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, 0, -0.43, 0)
+
+[node name="VariantModels" type="Node3D" parent="ArtRoot"]
+
+[node name="SportsArmoredModel" parent="ArtRoot/VariantModels" instance=ExtResource("2_sports")]
+
+[node name="PickupArmoredModel" parent="ArtRoot/VariantModels" instance=ExtResource("3_pickup")]
+visible = false
+
+[node name="TruckArmoredModel" parent="ArtRoot/VariantModels" instance=ExtResource("4_truck")]
+visible = false
+transform = Transform3D(0.92, 0, 0, 0, 0.92, 0, 0, 0, 0.92, 0, 0, 0)
+
+[node name="Trigger" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="TriggerShape" type="CollisionShape3D" parent="Trigger"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+shape = SubResource("BoxShape_trigger")

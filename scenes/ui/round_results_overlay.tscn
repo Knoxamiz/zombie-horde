@@ -1,0 +1,221 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/round_results_overlay.gd" id="1_script"]
+[ext_resource type="Theme" path="res://assets/ui/zombie_horde_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_result_card"]
+content_margin_left = 26.0
+content_margin_top = 22.0
+content_margin_right = 26.0
+content_margin_bottom = 22.0
+bg_color = Color(0.012, 0.014, 0.012, 0.82)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.88, 0.54, 0.12, 0.78)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.58)
+shadow_size = 26
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_column"]
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
+bg_color = Color(0.05, 0.055, 0.043, 0.58)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.54, 0.72, 0.25, 0.36)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button_run"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.2, 0.13, 0.04, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.65, 0.18, 0.95)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button_run_hover"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.12, 0.22, 0.07, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 1, 0.3, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.2, 1, 0.08, 0.22)
+shadow_size = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button_run_pressed"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.72, 0.35, 0.04, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.9, 0.38, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="RoundResultsOverlay" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="ScreenDim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.24)
+
+[node name="ResultCard" type="PanelContainer" parent="."]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -390.0
+offset_top = -286.0
+offset_right = 390.0
+offset_bottom = 286.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBox_result_card")
+
+[node name="Margin" type="MarginContainer" parent="ResultCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="ResultCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="AccentBar" type="ColorRect" parent="ResultCard/Margin/VBox"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+color = Color(1, 0.62, 0.12, 1)
+
+[node name="TitleLabel" type="Label" parent="ResultCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.62, 0.12, 1)
+theme_override_font_sizes/font_size = 48
+text = "ZOMBIE WINS!"
+horizontal_alignment = 1
+
+[node name="WinnerLabel" type="Label" parent="ResultCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.96, 0.86, 1)
+theme_override_font_sizes/font_size = 32
+text = "Winner"
+horizontal_alignment = 1
+
+[node name="SummaryLabel" type="Label" parent="ResultCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.78, 0.32, 1)
+theme_override_font_sizes/font_size = 18
+text = "0 entered | 0 survived | --.--s"
+horizontal_alignment = 1
+
+[node name="Columns" type="HBoxContainer" parent="ResultCard/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="RunnerUpsPanel" type="PanelContainer" parent="ResultCard/Margin/VBox/Columns"]
+custom_minimum_size = Vector2(342, 230)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBox_column")
+
+[node name="Margin" type="MarginContainer" parent="ResultCard/Margin/VBox/Columns/RunnerUpsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="RunnerUpsLabel" type="Label" parent="ResultCard/Margin/VBox/Columns/RunnerUpsPanel/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 1, 0.55, 1)
+theme_override_font_sizes/font_size = 18
+text = "Runner-Ups\n-"
+autowrap_mode = 2
+
+[node name="StatsPanel" type="PanelContainer" parent="ResultCard/Margin/VBox/Columns"]
+custom_minimum_size = Vector2(342, 230)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBox_column")
+
+[node name="Margin" type="MarginContainer" parent="ResultCard/Margin/VBox/Columns/StatsPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
+
+[node name="StatsLabel" type="Label" parent="ResultCard/Margin/VBox/Columns/StatsPanel/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.74, 0.36, 1)
+theme_override_font_sizes/font_size = 18
+text = "Round Damage\n-"
+autowrap_mode = 2
+
+[node name="ButtonRow" type="HBoxContainer" parent="ResultCard/Margin/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="ReturnLobbyButton" type="Button" parent="ResultCard/Margin/VBox/ButtonRow"]
+custom_minimum_size = Vector2(240, 52)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.9, 0.72, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/hover = SubResource("StyleBox_button_run_hover")
+theme_override_styles/normal = SubResource("StyleBox_button_run")
+theme_override_styles/pressed = SubResource("StyleBox_button_run_pressed")
+text = "RUN IT BACK"

@@ -1,0 +1,103 @@
+[gd_scene load_steps=13 format=3 uid="uid://bo8iicgk6ee38"]
+
+[ext_resource type="Script" uid="uid://4qs5y5lde3wu" path="res://scripts/base/streamer_base_goal.gd" id="1_script"]
+[ext_resource type="Material" path="res://assets/materials/base_concrete.tres" id="2_concrete"]
+[ext_resource type="Material" path="res://assets/materials/goal_zone.tres" id="3_goal"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_goal"]
+size = Vector3(15, 3, 2.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+size = Vector3(16, 3, 1.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_goal"]
+size = Vector3(15, 0.08, 2.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_sign"]
+size = Vector3(8.6, 1.45, 0.22)
+
+[sub_resource type="BoxMesh" id="BoxMesh_light_strip"]
+size = Vector3(15.5, 0.1, 0.18)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sign_panel"]
+albedo_color = Color(0.014, 0.034, 0.018, 1)
+emission_enabled = true
+emission = Color(0.02, 0.22, 0.05, 1)
+emission_energy_multiplier = 0.35
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_green_strip"]
+albedo_color = Color(0.15, 0.88, 0.18, 1)
+emission_enabled = true
+emission = Color(0.22, 1, 0.18, 1)
+emission_energy_multiplier = 1.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_amber_strip"]
+albedo_color = Color(1, 0.58, 0.08, 1)
+emission_enabled = true
+emission = Color(1, 0.48, 0.08, 1)
+emission_energy_multiplier = 1.1
+
+[node name="StreamerBase" type="Area3D"]
+collision_layer = 32
+collision_mask = 2
+monitoring = false
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("BoxShape3D_goal")
+
+[node name="BaseWall" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 1.25)
+mesh = SubResource("BoxMesh_wall")
+surface_material_override/0 = ExtResource("2_concrete")
+
+[node name="StreamerBaseSign" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 0.55)
+mesh = SubResource("BoxMesh_sign")
+surface_material_override/0 = SubResource("StandardMaterial3D_sign_panel")
+
+[node name="StreamerBaseLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0.37)
+billboard = 1
+text = "STREAMER BASE"
+font_size = 52
+modulate = Color(0.54, 1, 0.32, 1)
+outline_size = 10
+
+[node name="OnAirLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.32, 0.34)
+billboard = 1
+text = "ON AIR"
+font_size = 24
+modulate = Color(1, 0.72, 0.18, 1)
+outline_size = 5
+
+[node name="GreenGoalStrip" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.16, -1.23)
+mesh = SubResource("BoxMesh_light_strip")
+surface_material_override/0 = SubResource("StandardMaterial3D_green_strip")
+
+[node name="AmberWallStrip" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.08, 0.57)
+mesh = SubResource("BoxMesh_light_strip")
+surface_material_override/0 = SubResource("StandardMaterial3D_amber_strip")
+
+[node name="BaseGreenLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 3.6, -1.35)
+light_color = Color(0.45, 1, 0.28, 1)
+light_energy = 3.8
+omni_range = 14.0
+shadow_enabled = true
+
+[node name="BaseAmberLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.3, 3.6, -1.35)
+light_color = Color(1, 0.62, 0.18, 1)
+light_energy = 3.2
+omni_range = 14.0
+shadow_enabled = true
+
+[node name="GoalZone" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09, -0.25)
+mesh = SubResource("BoxMesh_goal")
+surface_material_override/0 = ExtResource("3_goal")

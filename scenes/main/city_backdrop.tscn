@@ -1,0 +1,187 @@
+[gd_scene load_steps=20 format=3]
+
+[ext_resource type="Material" path="res://assets/materials/city_building_dark.tres" id="1_dark"]
+[ext_resource type="Material" path="res://assets/materials/city_building_mid.tres" id="2_mid"]
+[ext_resource type="Material" path="res://assets/materials/city_window_glow.tres" id="3_window"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/WaterTower.gltf" id="4_water_tower"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrashBag_1.gltf" id="5_trash_a"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrashBag_2.gltf" id="6_trash_b"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Wheels_Stack.gltf" id="7_wheels"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Pallet_Broken.gltf" id="8_pallet"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Pipes.gltf" id="9_pipes"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/FireHydrant.gltf" id="10_hydrant"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficLight_2.gltf" id="11_light"]
+[ext_resource type="Script" path="res://scripts/core/visual_collision_sanitizer.gd" id="12_sanitizer"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_building_tall"]
+size = Vector3(8, 18, 10)
+
+[sub_resource type="BoxMesh" id="BoxMesh_building_medium"]
+size = Vector3(7, 12, 9)
+
+[sub_resource type="BoxMesh" id="BoxMesh_building_short"]
+size = Vector3(9, 8, 8)
+
+[sub_resource type="BoxMesh" id="BoxMesh_window_strip"]
+size = Vector3(0.08, 0.24, 4.6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_rooftop"]
+size = Vector3(8.8, 0.45, 10.8)
+
+[sub_resource type="BoxMesh" id="BoxMesh_city_apron"]
+size = Vector3(128, 0.12, 152)
+
+[sub_resource type="BoxMesh" id="BoxMesh_far_block"]
+size = Vector3(24, 22, 18)
+
+[node name="CityBackdrop" type="Node3D"]
+
+[node name="VisualCollisionSanitizer" type="Node" parent="."]
+script = ExtResource("12_sanitizer")
+
+[node name="CityGroundApron" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.24, 0)
+mesh = SubResource("BoxMesh_city_apron")
+surface_material_override/0 = ExtResource("1_dark")
+
+[node name="LeftBuildings" type="Node3D" parent="."]
+
+[node name="LeftTowerA" type="MeshInstance3D" parent="LeftBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 9, -34)
+mesh = SubResource("BoxMesh_building_tall")
+surface_material_override/0 = ExtResource("1_dark")
+
+[node name="LeftTowerARoof" type="MeshInstance3D" parent="LeftBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 18.22, -34)
+mesh = SubResource("BoxMesh_rooftop")
+surface_material_override/0 = ExtResource("2_mid")
+
+[node name="LeftTowerAWindowsLow" type="MeshInstance3D" parent="LeftBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.95, 5.7, -34)
+mesh = SubResource("BoxMesh_window_strip")
+surface_material_override/0 = ExtResource("3_window")
+
+[node name="LeftTowerAWindowsHigh" type="MeshInstance3D" parent="LeftBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.95, 12.4, -34)
+mesh = SubResource("BoxMesh_window_strip")
+surface_material_override/0 = ExtResource("3_window")
+
+[node name="LeftBlockB" type="MeshInstance3D" parent="LeftBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 6, -11)
+mesh = SubResource("BoxMesh_building_medium")
+surface_material_override/0 = ExtResource("2_mid")
+
+[node name="LeftBlockBWindows" type="MeshInstance3D" parent="LeftBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.45, 7.2, -11)
+mesh = SubResource("BoxMesh_window_strip")
+surface_material_override/0 = ExtResource("3_window")
+
+[node name="LeftBlockC" type="MeshInstance3D" parent="LeftBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21, 4, 19)
+mesh = SubResource("BoxMesh_building_short")
+surface_material_override/0 = ExtResource("1_dark")
+
+[node name="LeftBlockCWindows" type="MeshInstance3D" parent="LeftBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16.45, 4.7, 19)
+mesh = SubResource("BoxMesh_window_strip")
+surface_material_override/0 = ExtResource("3_window")
+
+[node name="RightBuildings" type="Node3D" parent="."]
+
+[node name="RightTowerA" type="MeshInstance3D" parent="RightBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 9, -24)
+mesh = SubResource("BoxMesh_building_tall")
+surface_material_override/0 = ExtResource("2_mid")
+
+[node name="RightTowerAWindowsLow" type="MeshInstance3D" parent="RightBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.95, 5.2, -24)
+mesh = SubResource("BoxMesh_window_strip")
+surface_material_override/0 = ExtResource("3_window")
+
+[node name="RightTowerAWindowsHigh" type="MeshInstance3D" parent="RightBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.95, 12.6, -24)
+mesh = SubResource("BoxMesh_window_strip")
+surface_material_override/0 = ExtResource("3_window")
+
+[node name="RightBlockB" type="MeshInstance3D" parent="RightBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 6, 5)
+mesh = SubResource("BoxMesh_building_medium")
+surface_material_override/0 = ExtResource("1_dark")
+
+[node name="RightBlockBWindows" type="MeshInstance3D" parent="RightBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.45, 7.2, 5)
+mesh = SubResource("BoxMesh_window_strip")
+surface_material_override/0 = ExtResource("3_window")
+
+[node name="RightBlockC" type="MeshInstance3D" parent="RightBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 4, 31)
+mesh = SubResource("BoxMesh_building_short")
+surface_material_override/0 = ExtResource("2_mid")
+
+[node name="RightBlockCWindows" type="MeshInstance3D" parent="RightBuildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.45, 4.8, 31)
+mesh = SubResource("BoxMesh_window_strip")
+surface_material_override/0 = ExtResource("3_window")
+
+[node name="OuterCityFill" type="Node3D" parent="."]
+
+[node name="FarLeftBlock" type="MeshInstance3D" parent="OuterCityFill"]
+transform = Transform3D(1.55, 0, 0, 0, 0.95, 0, 0, 0, 1.35, -48, 10.4, -54)
+mesh = SubResource("BoxMesh_far_block")
+surface_material_override/0 = ExtResource("1_dark")
+
+[node name="FarCenterBlock" type="MeshInstance3D" parent="OuterCityFill"]
+transform = Transform3D(2.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 0, 13.2, 66)
+mesh = SubResource("BoxMesh_far_block")
+surface_material_override/0 = ExtResource("2_mid")
+
+[node name="FarRightBlock" type="MeshInstance3D" parent="OuterCityFill"]
+transform = Transform3D(1.7, 0, 0, 0, 1.08, 0, 0, 0, 1.25, 49, 11.9, -44)
+mesh = SubResource("BoxMesh_far_block")
+surface_material_override/0 = ExtResource("1_dark")
+
+[node name="RightForegroundMass" type="MeshInstance3D" parent="OuterCityFill"]
+transform = Transform3D(1.9, 0, 0, 0, 0.82, 0, 0, 0, 1.55, 47, 9.0, 35)
+mesh = SubResource("BoxMesh_far_block")
+surface_material_override/0 = ExtResource("2_mid")
+
+[node name="LeftForegroundMass" type="MeshInstance3D" parent="OuterCityFill"]
+transform = Transform3D(2.1, 0, 0, 0, 0.72, 0, 0, 0, 1.45, -46, 7.9, 31)
+mesh = SubResource("BoxMesh_far_block")
+surface_material_override/0 = ExtResource("1_dark")
+
+[node name="NearLeftBlock" type="MeshInstance3D" parent="OuterCityFill"]
+transform = Transform3D(1.45, 0, 0, 0, 0.78, 0, 0, 0, 1.05, -38, 8.6, -72)
+mesh = SubResource("BoxMesh_far_block")
+surface_material_override/0 = ExtResource("2_mid")
+
+[node name="NearRightBlock" type="MeshInstance3D" parent="OuterCityFill"]
+transform = Transform3D(1.45, 0, 0, 0, 0.78, 0, 0, 0, 1.05, 38, 8.6, -72)
+mesh = SubResource("BoxMesh_far_block")
+surface_material_override/0 = ExtResource("1_dark")
+
+[node name="KitCityProps" type="Node3D" parent="."]
+
+[node name="WaterTower" parent="KitCityProps" instance=ExtResource("4_water_tower")]
+transform = Transform3D(1.6, 0, 0, 0, 1.6, 0, 0, 0, 1.6, 24, 0, -39)
+
+[node name="TrashPileA" parent="KitCityProps" instance=ExtResource("5_trash_a")]
+transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, -10.9, 0, -6)
+
+[node name="TrashPileB" parent="KitCityProps" instance=ExtResource("6_trash_b")]
+transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, 10.7, 0, 19)
+
+[node name="WheelStack" parent="KitCityProps" instance=ExtResource("7_wheels")]
+transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, -10.6, 0, 27)
+
+[node name="BrokenPallet" parent="KitCityProps" instance=ExtResource("8_pallet")]
+transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, 10.8, 0, -3)
+
+[node name="PipeStack" parent="KitCityProps" instance=ExtResource("9_pipes")]
+transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, -10.6, 0, 7)
+
+[node name="Hydrant" parent="KitCityProps" instance=ExtResource("10_hydrant")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 9.9, 0, 33)
+
+[node name="CornerTrafficLight" parent="KitCityProps" instance=ExtResource("11_light")]
+transform = Transform3D(1.18, 0, 0, 0, 1.18, 0, 0, 0, 1.18, -9.8, 0, 38)

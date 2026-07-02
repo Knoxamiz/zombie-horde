@@ -1,0 +1,472 @@
+[gd_scene load_steps=42 format=3]
+
+[ext_resource type="Script" path="res://scripts/lobby/join_lobby_manager.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://scenes/lobby/lobby_zombie.tscn" id="2_lobby_zombie"]
+[ext_resource type="Material" path="res://assets/materials/lobby_floor.tres" id="3_floor"]
+[ext_resource type="Material" path="res://assets/materials/lobby_wall.tres" id="4_wall"]
+[ext_resource type="Material" path="res://assets/materials/lobby_bar.tres" id="5_bar"]
+[ext_resource type="Material" path="res://assets/materials/lobby_hazard_yellow.tres" id="6_yellow"]
+[ext_resource type="Material" path="res://assets/materials/lobby_warning_red.tres" id="7_red"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Barrel.gltf" id="8_barrel"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrashBag_1.gltf" id="9_trash"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficLight_2.gltf" id="10_traffic_light"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Container_Red.gltf" id="11_container_red"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Container_Green.gltf" id="12_container_green"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Pipes.gltf" id="13_pipes"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Pallet_Broken.gltf" id="14_pallet_broken"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Wheels_Stack.gltf" id="15_wheels_stack"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficBarrier_1.gltf" id="16_traffic_barrier"]
+[ext_resource type="Material" path="res://assets/materials/city_building_dark.tres" id="17_city_dark"]
+[ext_resource type="Material" path="res://assets/materials/city_building_mid.tres" id="18_city_mid"]
+[ext_resource type="Material" path="res://assets/materials/city_window_glow.tres" id="19_window_glow"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/StreetLights.gltf" id="20_streetlights"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(12, 0.22, 8.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_long_wall"]
+size = Vector3(12.2, 3.2, 0.24)
+
+[sub_resource type="BoxMesh" id="BoxMesh_short_wall"]
+size = Vector3(0.24, 3.2, 8.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape_floor"]
+size = Vector3(12, 0.22, 8.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape_long_wall"]
+size = Vector3(12.2, 3.2, 0.24)
+
+[sub_resource type="BoxShape3D" id="BoxShape_short_wall"]
+size = Vector3(0.24, 3.2, 8.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_bar_vertical"]
+size = Vector3(0.12, 3.35, 0.12)
+
+[sub_resource type="BoxMesh" id="BoxMesh_bar_horizontal_long"]
+size = Vector3(12.4, 0.14, 0.14)
+
+[sub_resource type="BoxMesh" id="BoxMesh_bar_horizontal_short"]
+size = Vector3(0.14, 0.14, 8.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_outer_floor"]
+size = Vector3(34, 0.12, 24)
+
+[sub_resource type="BoxMesh" id="BoxMesh_yard_back_wall"]
+size = Vector3(28, 5.4, 0.32)
+
+[sub_resource type="BoxMesh" id="BoxMesh_yard_side_wall"]
+size = Vector3(0.32, 4.8, 18)
+
+[sub_resource type="BoxMesh" id="BoxMesh_loading_door"]
+size = Vector3(5.2, 3.25, 0.16)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_light_strip"]
+size = Vector3(3.6, 0.14, 0.12)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor_lane"]
+size = Vector3(0.22, 0.05, 12)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor_caption_bar"]
+size = Vector3(4.2, 0.05, 0.18)
+
+[sub_resource type="BoxMesh" id="BoxMesh_overhead_beam"]
+size = Vector3(25.5, 0.18, 0.22)
+
+[sub_resource type="BoxMesh" id="BoxMesh_void_stage_floor"]
+size = Vector3(76, 0.1, 58)
+
+[sub_resource type="BoxMesh" id="BoxMesh_void_backdrop_wall"]
+size = Vector3(76, 32, 0.42)
+
+[sub_resource type="BoxMesh" id="BoxMesh_void_backdrop_side"]
+size = Vector3(0.42, 28, 56)
+
+[sub_resource type="BoxMesh" id="BoxMesh_void_light_bar"]
+size = Vector3(10.5, 0.14, 0.16)
+
+[node name="JoinLobby" type="Node3D"]
+script = ExtResource("1_script")
+lobby_zombie_scene = ExtResource("2_lobby_zombie")
+spawn_area_size = Vector3(9.8, 0, 6.2)
+
+[node name="VoidStage" type="Node3D" parent="."]
+
+[node name="StageFloor" type="MeshInstance3D" parent="VoidStage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.36, -4.0)
+mesh = SubResource("BoxMesh_void_stage_floor")
+surface_material_override/0 = ExtResource("17_city_dark")
+
+[node name="BackDropWall" type="MeshInstance3D" parent="VoidStage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 11.2, -27.5)
+mesh = SubResource("BoxMesh_void_backdrop_wall")
+surface_material_override/0 = ExtResource("17_city_dark")
+
+[node name="LeftShadowWing" type="MeshInstance3D" parent="VoidStage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35.5, 9.2, -3.0)
+mesh = SubResource("BoxMesh_void_backdrop_side")
+surface_material_override/0 = ExtResource("17_city_dark")
+
+[node name="RightShadowWing" type="MeshInstance3D" parent="VoidStage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35.5, 9.2, -3.0)
+mesh = SubResource("BoxMesh_void_backdrop_side")
+surface_material_override/0 = ExtResource("17_city_dark")
+
+[node name="BackGlowSlashA" type="MeshInstance3D" parent="VoidStage"]
+transform = Transform3D(0.92, -0.18, 0, 0.18, 0.92, 0, 0, 0, 1, -21, 15.1, -27.2)
+mesh = SubResource("BoxMesh_void_light_bar")
+surface_material_override/0 = ExtResource("19_window_glow")
+
+[node name="BackGlowSlashB" type="MeshInstance3D" parent="VoidStage"]
+transform = Transform3D(0.98, 0.1, 0, -0.1, 0.98, 0, 0, 0, 1, 17.6, 12.8, -27.2)
+mesh = SubResource("BoxMesh_void_light_bar")
+surface_material_override/0 = ExtResource("6_yellow")
+
+[node name="BackGlowSlashC" type="MeshInstance3D" parent="VoidStage"]
+transform = Transform3D(0.88, -0.26, 0, 0.26, 0.88, 0, 0, 0, 1, 4.8, 18.0, -27.2)
+mesh = SubResource("BoxMesh_void_light_bar")
+surface_material_override/0 = ExtResource("7_red")
+
+[node name="VoidGreenWash" type="OmniLight3D" parent="VoidStage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, 8.6, -17.5)
+light_color = Color(0.32, 1, 0.24, 1)
+light_energy = 2.4
+omni_range = 24.0
+
+[node name="VoidAmberKick" type="OmniLight3D" parent="VoidStage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.0, 7.2, -8.5)
+light_color = Color(1, 0.45, 0.08, 1)
+light_energy = 1.65
+omni_range = 22.0
+
+[node name="VoidRedEdge" type="OmniLight3D" parent="VoidStage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22.0, 5.6, 5.0)
+light_color = Color(1, 0.08, 0.04, 1)
+light_energy = 0.95
+omni_range = 18.0
+
+[node name="ContainmentYard" type="Node3D" parent="."]
+
+[node name="OuterFloor" type="MeshInstance3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.23, 0)
+mesh = SubResource("BoxMesh_outer_floor")
+surface_material_override/0 = ExtResource("17_city_dark")
+
+[node name="RearContainmentWall" type="MeshInstance3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, -10.25)
+mesh = SubResource("BoxMesh_yard_back_wall")
+surface_material_override/0 = ExtResource("18_city_mid")
+
+[node name="LeftServiceWall" type="MeshInstance3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.2, 2.2, -0.8)
+mesh = SubResource("BoxMesh_yard_side_wall")
+surface_material_override/0 = ExtResource("17_city_dark")
+
+[node name="RightServiceWall" type="MeshInstance3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.2, 2.2, -0.8)
+mesh = SubResource("BoxMesh_yard_side_wall")
+surface_material_override/0 = ExtResource("17_city_dark")
+
+[node name="LoadingDoor" type="MeshInstance3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.8, 1.45, -10.04)
+mesh = SubResource("BoxMesh_loading_door")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="InspectionPanel" type="MeshInstance3D" parent="ContainmentYard"]
+transform = Transform3D(0.62, 0, 0, 0, 0.82, 0, 0, 0, 1, 4.6, 1.5, -10.02)
+mesh = SubResource("BoxMesh_loading_door")
+surface_material_override/0 = ExtResource("17_city_dark")
+
+[node name="RearGreenStripA" type="MeshInstance3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.4, 3.65, -9.98)
+mesh = SubResource("BoxMesh_wall_light_strip")
+surface_material_override/0 = ExtResource("19_window_glow")
+
+[node name="RearGreenStripB" type="MeshInstance3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.9, 3.65, -9.98)
+mesh = SubResource("BoxMesh_wall_light_strip")
+surface_material_override/0 = ExtResource("19_window_glow")
+
+[node name="OverheadBeam" type="MeshInstance3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.95, -4.75)
+mesh = SubResource("BoxMesh_overhead_beam")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="LeftFloorLane" type="MeshInstance3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.35, 0.04, -0.4)
+mesh = SubResource("BoxMesh_floor_lane")
+surface_material_override/0 = ExtResource("6_yellow")
+
+[node name="RightFloorLane" type="MeshInstance3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.35, 0.04, -0.4)
+mesh = SubResource("BoxMesh_floor_lane")
+surface_material_override/0 = ExtResource("7_red")
+
+[node name="FrontQueueMark" type="MeshInstance3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 6.35)
+mesh = SubResource("BoxMesh_floor_caption_bar")
+surface_material_override/0 = ExtResource("6_yellow")
+
+[node name="ContainmentSign" type="Label3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.78, -9.88)
+billboard = 1
+text = "QUARANTINE LOTTO CAGE"
+font_size = 42
+outline_size = 10
+modulate = Color(0.84, 1, 0.45, 1)
+
+[node name="CommandSign" type="Label3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, -9.86)
+billboard = 1
+text = "TYPE !BRAINS"
+font_size = 30
+outline_size = 8
+modulate = Color(1, 0.68, 0.18, 1)
+
+[node name="RearWallGreenWash" type="OmniLight3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.15, -8.5)
+light_color = Color(0.45, 1, 0.28, 1)
+light_energy = 2.3
+omni_range = 12.5
+
+[node name="FrontAmberPool" type="OmniLight3D" parent="ContainmentYard"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 6.4)
+light_color = Color(1, 0.58, 0.14, 1)
+light_energy = 1.45
+omni_range = 10.0
+
+[node name="YardProps" type="Node3D" parent="ContainmentYard"]
+
+[node name="RedContainerStack" parent="ContainmentYard/YardProps" instance=ExtResource("11_container_red")]
+transform = Transform3D(1.18, 0, 0, 0, 1.18, 0, 0, 0, 1.18, -11.4, 0, -5.9)
+
+[node name="GreenContainerStack" parent="ContainmentYard/YardProps" instance=ExtResource("12_container_green")]
+transform = Transform3D(1.08, 0, 0, 0, 1.08, 0, 0, 0, 1.08, 11.7, 0, -3.4)
+
+[node name="PipeRack" parent="ContainmentYard/YardProps" instance=ExtResource("13_pipes")]
+transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, -9.3, 0, 5.8)
+
+[node name="BrokenPallet" parent="ContainmentYard/YardProps" instance=ExtResource("14_pallet_broken")]
+transform = Transform3D(1.45, 0, 0, 0, 1.45, 0, 0, 0, 1.45, 9.1, 0, 5.7)
+
+[node name="WheelStack" parent="ContainmentYard/YardProps" instance=ExtResource("15_wheels_stack")]
+transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, 11.0, 0, 1.6)
+
+[node name="GateBarrierLeft" parent="ContainmentYard/YardProps" instance=ExtResource("16_traffic_barrier")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -7.9, 0, 6.6)
+
+[node name="GateBarrierRight" parent="ContainmentYard/YardProps" instance=ExtResource("16_traffic_barrier")]
+transform = Transform3D(-1.1, 0, 0, 0, 1.1, 0, 0, 0, -1.1, 7.9, 0, 6.6)
+
+[node name="LeftYardLight" parent="ContainmentYard/YardProps" instance=ExtResource("20_streetlights")]
+transform = Transform3D(1.05, 0, 0, 0, 1.05, 0, 0, 0, 1.05, -9.6, 0, -7.3)
+
+[node name="RightYardLight" parent="ContainmentYard/YardProps" instance=ExtResource("20_streetlights")]
+transform = Transform3D(-1.05, 0, 0, 0, 1.05, 0, 0, 0, -1.05, 9.8, 0, -7.0)
+
+[node name="LobbyBox" type="Node3D" parent="."]
+
+[node name="Floor" type="StaticBody3D" parent="LobbyBox"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="FloorMesh" type="MeshInstance3D" parent="LobbyBox/Floor"]
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = ExtResource("3_floor")
+
+[node name="FloorShape" type="CollisionShape3D" parent="LobbyBox/Floor"]
+shape = SubResource("BoxShape_floor")
+
+[node name="BackWall" type="StaticBody3D" parent="LobbyBox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, -4.1)
+collision_layer = 1
+collision_mask = 0
+
+[node name="BackWallMesh" type="MeshInstance3D" parent="LobbyBox/BackWall"]
+mesh = SubResource("BoxMesh_long_wall")
+surface_material_override/0 = ExtResource("4_wall")
+
+[node name="BackWallShape" type="CollisionShape3D" parent="LobbyBox/BackWall"]
+shape = SubResource("BoxShape_long_wall")
+
+[node name="FrontWall" type="StaticBody3D" parent="LobbyBox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 4.1)
+collision_layer = 1
+collision_mask = 0
+
+[node name="FrontWallMesh" type="MeshInstance3D" parent="LobbyBox/FrontWall"]
+mesh = SubResource("BoxMesh_long_wall")
+surface_material_override/0 = ExtResource("4_wall")
+
+[node name="FrontWallShape" type="CollisionShape3D" parent="LobbyBox/FrontWall"]
+shape = SubResource("BoxShape_long_wall")
+
+[node name="LeftWall" type="StaticBody3D" parent="LobbyBox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.1, 1.6, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="LeftWallMesh" type="MeshInstance3D" parent="LobbyBox/LeftWall"]
+mesh = SubResource("BoxMesh_short_wall")
+surface_material_override/0 = ExtResource("4_wall")
+
+[node name="LeftWallShape" type="CollisionShape3D" parent="LobbyBox/LeftWall"]
+shape = SubResource("BoxShape_short_wall")
+
+[node name="RightWall" type="StaticBody3D" parent="LobbyBox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.1, 1.6, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="RightWallMesh" type="MeshInstance3D" parent="LobbyBox/RightWall"]
+mesh = SubResource("BoxMesh_short_wall")
+surface_material_override/0 = ExtResource("4_wall")
+
+[node name="RightWallShape" type="CollisionShape3D" parent="LobbyBox/RightWall"]
+shape = SubResource("BoxShape_short_wall")
+
+[node name="CageBars" type="Node3D" parent="LobbyBox"]
+
+[node name="FrontBarA" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 1.65, 4.24)
+mesh = SubResource("BoxMesh_bar_vertical")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="FrontBarB" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 1.65, 4.24)
+mesh = SubResource("BoxMesh_bar_vertical")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="FrontBarC" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 1.65, 4.24)
+mesh = SubResource("BoxMesh_bar_vertical")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="FrontBarD" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1.65, 4.24)
+mesh = SubResource("BoxMesh_bar_vertical")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="FrontBarE" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1.65, 4.24)
+mesh = SubResource("BoxMesh_bar_vertical")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="FrontBarF" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1.65, 4.24)
+mesh = SubResource("BoxMesh_bar_vertical")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="BackBarA" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 1.65, -4.24)
+mesh = SubResource("BoxMesh_bar_vertical")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="BackBarB" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 1.65, -4.24)
+mesh = SubResource("BoxMesh_bar_vertical")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="BackBarC" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 1.65, -4.24)
+mesh = SubResource("BoxMesh_bar_vertical")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="BackBarD" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1.65, -4.24)
+mesh = SubResource("BoxMesh_bar_vertical")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="BackBarE" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1.65, -4.24)
+mesh = SubResource("BoxMesh_bar_vertical")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="BackBarF" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1.65, -4.24)
+mesh = SubResource("BoxMesh_bar_vertical")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="FrontRailLow" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.72, 4.28)
+mesh = SubResource("BoxMesh_bar_horizontal_long")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="FrontRailHigh" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, 4.28)
+mesh = SubResource("BoxMesh_bar_horizontal_long")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="BackRailLow" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.72, -4.28)
+mesh = SubResource("BoxMesh_bar_horizontal_long")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="BackRailHigh" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.45, -4.28)
+mesh = SubResource("BoxMesh_bar_horizontal_long")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="LeftRail" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.28, 2.0, 0)
+mesh = SubResource("BoxMesh_bar_horizontal_short")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="RightRail" type="MeshInstance3D" parent="LobbyBox/CageBars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.28, 2.0, 0)
+mesh = SubResource("BoxMesh_bar_horizontal_short")
+surface_material_override/0 = ExtResource("5_bar")
+
+[node name="SignLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.85, 0)
+billboard = 1
+text = "LOTTO LOBBY"
+font_size = 34
+outline_size = 8
+
+[node name="LobbyLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 0)
+light_color = Color(0.63, 1, 0.48, 1)
+light_energy = 2.6
+omni_range = 14.0
+shadow_enabled = true
+
+[node name="AmberGateLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.4, 3.2, 4.7)
+light_color = Color(1, 0.57, 0.14, 1)
+light_energy = 2.2
+omni_range = 8.5
+
+[node name="RedBackLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 2.8, -4.5)
+light_color = Color(1, 0.12, 0.07, 1)
+light_energy = 1.35
+omni_range = 7.0
+
+[node name="WarningStripeFront" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.18, 0, 0, 0, 1, 0, 0.12, 4.72)
+mesh = SubResource("BoxMesh_bar_horizontal_long")
+surface_material_override/0 = ExtResource("6_yellow")
+
+[node name="WarningStripeBack" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.18, 0, 0, 0, 1, 0, 0.12, -4.72)
+mesh = SubResource("BoxMesh_bar_horizontal_long")
+surface_material_override/0 = ExtResource("7_red")
+
+[node name="LobbyProps" type="Node3D" parent="."]
+
+[node name="LeftBarrel" parent="LobbyProps" instance=ExtResource("8_barrel")]
+transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, -7.1, 0, 2.9)
+
+[node name="RightBarrel" parent="LobbyProps" instance=ExtResource("8_barrel")]
+transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, 7.0, 0, -2.8)
+
+[node name="TrashBagA" parent="LobbyProps" instance=ExtResource("9_trash")]
+transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, -7.1, 0, -2.8)
+
+[node name="TrashBagB" parent="LobbyProps" instance=ExtResource("9_trash")]
+transform = Transform3D(1.05, 0, 0, 0, 1.05, 0, 0, 0, 1.05, 7.2, 0, 3.1)
+
+[node name="DeadTrafficLight" parent="LobbyProps" instance=ExtResource("10_traffic_light")]
+transform = Transform3D(0.78, 0, 0, 0, 0.78, 0, 0, 0, 0.78, -6.9, 0, -4.8)
+
+[node name="Zombies" type="Node3D" parent="."]

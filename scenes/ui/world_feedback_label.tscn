@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/world_feedback_label.gd" id="1_script"]
+
+[node name="WorldFeedbackLabel" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="Label3D" type="Label3D" parent="."]
+billboard = 1
+text = "HIT"
+font_size = 36
+outline_size = 8
+modulate = Color(1, 0.85, 0.2, 1)
+

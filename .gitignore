@@ -1,4 +1,8 @@
 .godot/
-export_credentials.cfg
-*.tmp
-*.log
+.import/
+*.translation
+.env
+.env.*
+secrets/
+resources/config/*local*.tres
+resources/config/*secret*.tres

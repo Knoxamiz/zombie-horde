@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Theme" path="res://assets/ui/main_menu_theme.tres" id="1_theme"]
+
+[node name="MainMenuButton" type="Button"]
+custom_minimum_size = Vector2(470, 66)
+theme = ExtResource("1_theme")
+text = "MENU BUTTON"
+alignment = 0
