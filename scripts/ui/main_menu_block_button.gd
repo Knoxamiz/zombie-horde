@@ -218,16 +218,16 @@ func _apply_visuals(force: bool) -> void:
 	var current: Color = target if force else _face_material.albedo_color.lerp(target, blend_speed)
 
 	_face_material.albedo_color = current
-	_face_material.emission = _brighten(current, 0.1) * (0.35 if _hovered and interactable else 0.14)
+	_face_material.emission = _brighten(current, 0.04) * (0.16 if _hovered and interactable else 0.05)
 
-	_depth_material.albedo_color = _darken(current, 0.28)
-	_depth_material.emission = _darken(current, 0.18) * 0.08
+	_depth_material.albedo_color = _darken(current, 0.32)
+	_depth_material.emission = _darken(current, 0.24) * 0.04
 
-	_top_bevel_material.albedo_color = _brighten(current, 0.28 if _hovered else 0.18)
-	_top_bevel_material.emission = _brighten(current, 0.2) * (0.3 if _hovered and interactable else 0.12)
+	_top_bevel_material.albedo_color = _brighten(current, 0.22 if _hovered else 0.14)
+	_top_bevel_material.emission = _brighten(current, 0.14) * (0.14 if _hovered and interactable else 0.05)
 
-	_bottom_shade_material.albedo_color = _darken(current, 0.22)
-	_bottom_shade_material.emission = _darken(current, 0.3) * 0.05
+	_bottom_shade_material.albedo_color = _darken(current, 0.26)
+	_bottom_shade_material.emission = _darken(current, 0.34) * 0.02
 
 	_shadow_material.albedo_color = Color(0.0, 0.0, 0.0, 0.42 if _hovered and interactable else 0.3)
 
@@ -255,7 +255,7 @@ func _ensure_materials() -> void:
 
 func _make_surface_material() -> StandardMaterial3D:
 	var material: StandardMaterial3D = StandardMaterial3D.new()
-	material.roughness = 0.44
+	material.roughness = 0.58
 	material.metallic = 0.0
 	material.emission_enabled = true
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
