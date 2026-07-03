@@ -60,48 +60,48 @@ transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, 0, 1.72, -7.15)
 [node name="ButtonCenterRack" type="Node3D" parent="MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay"]
 
 [node name="StartButton3D" parent="MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/ButtonCenterRack" instance=ExtResource("4_block_button")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.35, -6.85)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.28, -6.85)
 action_id = &"start"
 text = "START"
 base_color = Color(0.38, 0.78, 0.16, 1)
 hover_color = Color(0.5, 0.95, 0.28, 1)
-block_size = Vector3(2.05, 0.46, 0.2)
-font_size = 28
+font_size = 24
+block_size = Vector3(1.2, 0.3, 0.12)
 
 [node name="StreamerButton3D" parent="MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/ButtonCenterRack" instance=ExtResource("4_block_button")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.95, -6.85)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.72, -6.85)
 action_id = &"streamer"
 text = "STREAMER MODE"
 base_color = Color(0.58, 0.24, 0.88, 1)
 hover_color = Color(0.72, 0.38, 1, 1)
-block_size = Vector3(2.35, 0.46, 0.2)
-font_size = 22
+font_size = 20
+block_size = Vector3(1.2, 0.3, 0.12)
 idle_phase = 0.7
 
 [node name="QuitButton3D" parent="MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/ButtonCenterRack" instance=ExtResource("4_block_button")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.55, -6.85)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.16, -6.85)
 action_id = &"quit"
 text = "QUIT"
 base_color = Color(0.82, 0.28, 0.18, 1)
 hover_color = Color(0.98, 0.38, 0.28, 1)
-block_size = Vector3(1.85, 0.46, 0.2)
-font_size = 26
+font_size = 22
+block_size = Vector3(1.2, 0.3, 0.12)
 idle_phase = 1.4
 
 [node name="SettingsButton3D" parent="MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay" instance=ExtResource("4_block_button")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.15, -2.55, -6.85)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.15, -2.16, -6.85)
 action_id = &"settings"
 text = "SETTINGS"
 base_color = Color(0.95, 0.58, 0.1, 1)
 hover_color = Color(1, 0.72, 0.22, 1)
-block_size = Vector3(1.95, 0.46, 0.2)
-font_size = 24
+font_size = 20
+block_size = Vector3(1.2, 0.3, 0.12)
 idle_phase = 2.1
 
 [node name="VersionLabel3D" type="Label3D" parent="MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.55, -2.95, -6.9)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.55, -2.55, -6.9)
 modulate = Color(1, 0.98, 0.92, 0.95)
-text = "v2.1.2"
+text = "v2.1.3"
 font_size = 14
 outline_size = 3
 horizontal_alignment = 2

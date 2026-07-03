@@ -9,12 +9,14 @@ script = ExtResource("1_script")
 
 [node name="Edge" type="MeshInstance3D" parent="."]
 
+[node name="Highlight" type="MeshInstance3D" parent="."]
+
 [node name="Label" type="Label3D" parent="."]
 texture_filter = 4
 billboard = 0
 modulate = Color(1, 1, 1, 1)
 text = "BUTTON"
-font_size = 26
-outline_size = 6
+font_size = 22
+outline_size = 8
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
