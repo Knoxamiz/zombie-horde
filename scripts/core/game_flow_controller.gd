@@ -89,6 +89,7 @@ func _initialize_flow() -> void:
 
 	GameEvents.round_state_changed.connect(_on_round_state_changed)
 	GameEvents.round_reset.connect(_on_round_reset)
+	GameEvents.round_ended.connect(_on_round_ended)
 	_prepare_transition_overlay()
 	_apply_phase("lobby")
 	_apply_launch_request()
@@ -135,6 +136,10 @@ func _on_round_state_changed(state_text: String) -> void:
 func _on_round_reset() -> void:
 	_intro_active = false
 	show_lobby()
+
+func _on_round_ended(_winner_name: String, _base_won: bool) -> void:
+	if _spectator_camera != null:
+		_spectator_camera.set_mouse_capture_allowed(false)
 
 func _on_active_map_changed(_map_index: int, _display_name: String) -> void:
 	if _current_phase.is_empty():

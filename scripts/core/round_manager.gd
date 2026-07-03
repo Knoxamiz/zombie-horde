@@ -280,7 +280,6 @@ func _run_countdown(token: int) -> void:
 		if token != _round_token or state != RoundState.COUNTDOWN:
 			return
 		GameEvents.round_countdown_changed.emit(remaining)
-		GameEvents.command_text_changed.emit("Round starts in %d..." % remaining)
 		await get_tree().create_timer(1.0).timeout
 		remaining -= 1
 
