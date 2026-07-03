@@ -4,5 +4,8 @@
 
 [node name="TitleBlocks" type="Node3D"]
 script = ExtResource("1_script")
-block_size = Vector3(0.31, 0.31, 0.48)
-line_spacing = 0.34
+block_size = Vector3(0.11, 0.11, 0.2)
+line_spacing = 0.16
+letter_spacing = 0.05
+depth_layers = 2
+drip_strength = 0.35

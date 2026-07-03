@@ -322,8 +322,8 @@ func _make_block_material(
 	material.roughness = 0.84
 	material.metallic = 0.02
 	material.emission_enabled = true
-	material.emission = base * (0.12 + float(layer) * 0.03)
-	material.emission_energy_multiplier = 0.7
+	material.emission = base * (0.28 + float(layer) * 0.06)
+	material.emission_energy_multiplier = 1.15
 	if crack_strength > 0.0 and (row + column + glyph_width + layer) % 4 == 0:
 		material.roughness = 0.95
 		material.albedo_color = base.darkened(0.08 * crack_strength)

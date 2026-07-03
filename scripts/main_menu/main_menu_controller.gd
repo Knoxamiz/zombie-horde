@@ -11,12 +11,12 @@ const CHAT_ACTIVITY_FEED: Array[String] = [
 
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/main/main_game.tscn"
 @export var camera_path: NodePath
-@export var camera_focus: Vector3 = Vector3(1.8, 1.45, -6.5)
+@export var camera_focus: Vector3 = Vector3(1.2, 1.2, -8.0)
 @export var menu_zombies_path: NodePath
 @export var cage_light_path: NodePath
 @export var base_light_path: NodePath
 @export var road_sweep_light_path: NodePath
-@export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.22
+@export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.14
 
 var _transitioning: bool = false
 var _time: float = 0.0
