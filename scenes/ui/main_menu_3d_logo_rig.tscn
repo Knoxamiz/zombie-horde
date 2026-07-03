@@ -1,0 +1,27 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/main_menu/zombie_chat_horde_logo.png" id="1_logo"]
+
+[node name="LogoRig" type="Node3D"]
+
+[node name="LogoDepthFar" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.14, -0.12, -0.28)
+modulate = Color(0.015, 0.012, 0.025, 0.9)
+pixel_size = 0.00315
+texture = ExtResource("1_logo")
+
+[node name="LogoDepthMid" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08, -0.06, -0.15)
+modulate = Color(0.05, 0.018, 0.08, 0.94)
+pixel_size = 0.00315
+texture = ExtResource("1_logo")
+
+[node name="LogoGlow" type="Sprite3D" parent="."]
+transform = Transform3D(1.04, 0, 0, 0, 1.04, 0, 0, 0, 1.04, 0, 0, -0.06)
+modulate = Color(0.48, 0.19, 1, 0.18)
+pixel_size = 0.00315
+texture = ExtResource("1_logo")
+
+[node name="LogoFace" type="Sprite3D" parent="."]
+pixel_size = 0.00315
+texture = ExtResource("1_logo")
