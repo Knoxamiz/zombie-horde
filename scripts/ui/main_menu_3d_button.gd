@@ -180,7 +180,7 @@ func _build_icon() -> void:
 		_icon_material.emission_enabled = true
 
 	var front_z: float = block_size.z * 0.5 + 0.1
-	var icon_root := Node3D.new()
+	var icon_root: Node3D = Node3D.new()
 	icon_root.name = "IconRoot"
 	icon_root.position = Vector3(-block_size.x * 0.5 + 0.34, 0.0, front_z)
 	add_child(icon_root)
@@ -213,8 +213,8 @@ func _build_icon() -> void:
 			_add_icon_box(icon_root, Vector3(0.18, 0.04, 0.05), Vector3(0.0, -0.08, 0.0), Vector3(0, 0, -0.52))
 
 func _add_icon_box(parent: Node3D, size: Vector3, local_position: Vector3, rotation: Vector3 = Vector3.ZERO) -> void:
-	var icon_node := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
+	var icon_node: MeshInstance3D = MeshInstance3D.new()
+	var mesh: BoxMesh = BoxMesh.new()
 	mesh.size = size
 	icon_node.mesh = mesh
 	icon_node.position = local_position
@@ -224,10 +224,10 @@ func _add_icon_box(parent: Node3D, size: Vector3, local_position: Vector3, rotat
 	_icon_nodes.append(icon_node)
 
 func _make_noise_texture(light: Color, dark: Color, size: int) -> Texture2D:
-	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var image: Image = Image.create(size, size, false, Image.FORMAT_RGBA8)
 	for y in range(size):
 		for x in range(size):
-			var n := abs(sin(float(x) * 0.17 + float(y) * 0.23) * 43758.5453)
+			var n: float = abs(sin(float(x) * 0.17 + float(y) * 0.23) * 43758.5453)
 			n -= floor(n)
 			image.set_pixel(x, y, light.lerp(dark, n))
 	return ImageTexture.create_from_image(image)

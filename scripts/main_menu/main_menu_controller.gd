@@ -157,7 +157,7 @@ func _update_camera_idle() -> void:
 	if _camera == null or camera_idle_strength <= 0.0:
 		return
 
-	var offset := Vector3(
+	var offset: Vector3 = Vector3(
 		sin(_time * 0.37) * 0.42,
 		sin(_time * 0.29 + 1.4) * 0.18,
 		sin(_time * 0.23 + 0.8) * 0.26

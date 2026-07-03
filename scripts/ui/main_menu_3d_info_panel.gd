@@ -36,7 +36,7 @@ func _apply_text() -> void:
 		_body_label.text = body_text
 
 func _build() -> void:
-	var face := _make_box(
+	var face: MeshInstance3D = _make_box(
 		"Face",
 		Vector3(panel_size.x, panel_size.y, 0.12),
 		Vector3.ZERO,
@@ -107,13 +107,13 @@ func _build() -> void:
 		)
 
 	if mount_siren:
-		var siren_base := _make_box(
+		var _siren_base: MeshInstance3D = _make_box(
 			"SirenBase",
 			Vector3(0.34, 0.18, 0.34),
 			Vector3(panel_size.x * 0.52, panel_size.y * 0.5 + 0.22, 0.02),
 			_make_frame_material()
 		)
-		var siren_dome := _make_box(
+		var siren_dome: MeshInstance3D = _make_box(
 			"SirenDome",
 			Vector3(0.28, 0.22, 0.28),
 			Vector3(panel_size.x * 0.52, panel_size.y * 0.5 + 0.38, 0.02),
@@ -134,9 +134,9 @@ func _process(delta: float) -> void:
 	_siren_light.light_energy = 1.2 + pulse * 2.2
 
 func _make_box(node_name: String, size: Vector3, position: Vector3, material: Material) -> MeshInstance3D:
-	var mesh_node := MeshInstance3D.new()
+	var mesh_node: MeshInstance3D = MeshInstance3D.new()
 	mesh_node.name = node_name
-	var mesh := BoxMesh.new()
+	var mesh: BoxMesh = BoxMesh.new()
 	mesh.size = size
 	mesh_node.mesh = mesh
 	mesh_node.position = position
@@ -145,7 +145,7 @@ func _make_box(node_name: String, size: Vector3, position: Vector3, material: Ma
 	return mesh_node
 
 func _make_face_material() -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
+	var material: StandardMaterial3D = StandardMaterial3D.new()
 	material.albedo_color = face_color
 	material.roughness = 0.72
 	material.metallic = 0.0
@@ -155,7 +155,7 @@ func _make_face_material() -> StandardMaterial3D:
 	return material
 
 func _make_frame_material() -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
+	var material: StandardMaterial3D = StandardMaterial3D.new()
 	material.albedo_color = frame_color
 	material.roughness = 0.62
 	material.metallic = 0.08
@@ -164,7 +164,7 @@ func _make_frame_material() -> StandardMaterial3D:
 	return material
 
 func _make_siren_material() -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
+	var material: StandardMaterial3D = StandardMaterial3D.new()
 	material.albedo_color = Color(0.82, 0.12, 0.08, 1.0)
 	material.roughness = 0.35
 	material.metallic = 0.1

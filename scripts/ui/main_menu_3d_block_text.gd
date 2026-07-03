@@ -3,8 +3,8 @@ extends Node3D
 
 ## Builds chunky extruded block letters from box meshes — no sprites, no Label3D title cheats.
 
-const LETTER_WIDTH := 5
-const LETTER_HEIGHT := 7
+const LETTER_WIDTH: int = 5
+const LETTER_HEIGHT: int = 7
 
 const GLYPHS: Dictionary = {
 	"A": [
@@ -214,33 +214,40 @@ func _rebuild() -> void:
 	for line_index in range(lines.size()):
 		var line_text: String = lines[line_index].to_upper()
 		var line_color: Color = line_colors[line_index] if line_index < line_colors.size() else Color.WHITE
-		var line_root := Node3D.new()
+		var line_root: Node3D = Node3D.new()
 		line_root.name = "Line_%d" % line_index
 		add_child(line_root)
 		_line_roots.append(line_root)
 
 		var letter_cursor_x: float = -_measure_line_width(line_text) * 0.5
-		for character in line_text:
-			var glyph_key: String = character
+		for character_index in range(line_text.length()):
+			var glyph_key: String = line_text.substr(character_index, 1)
 			if not GLYPHS.has(glyph_key):
 				letter_cursor_x += block_size.x * 2.2 + letter_spacing
 				continue
 
-			var glyph: PackedStringArray = GLYPHS[glyph_key]
+			var glyph: PackedStringArray = _get_glyph_rows(glyph_key)
 			var glyph_width: int = glyph[0].length()
 			_build_glyph(line_root, glyph, glyph_width, letter_cursor_x, y_cursor, line_color)
 			letter_cursor_x += float(glyph_width) * block_size.x + letter_spacing + block_size.x * 0.55
 
 		y_cursor -= float(LETTER_HEIGHT) * block_size.y + line_spacing
 
+func _get_glyph_rows(glyph_key: String) -> PackedStringArray:
+	var rows: Array = GLYPHS[glyph_key] as Array
+	var packed: PackedStringArray = PackedStringArray()
+	for row in rows:
+		packed.append(String(row))
+	return packed
+
 func _measure_line_width(line_text: String) -> float:
 	var width: float = 0.0
-	for character in line_text:
-		var glyph_key: String = character
+	for character_index in range(line_text.length()):
+		var glyph_key: String = line_text.substr(character_index, 1)
 		if not GLYPHS.has(glyph_key):
 			width += block_size.x * 2.2 + letter_spacing
 			continue
-		var glyph: PackedStringArray = GLYPHS[glyph_key]
+		var glyph: PackedStringArray = _get_glyph_rows(glyph_key)
 		width += float(glyph[0].length()) * block_size.x + letter_spacing + block_size.x * 0.55
 	return width
 
@@ -271,8 +278,8 @@ func _add_block(
 	glyph_width: int
 ) -> void:
 	for layer in range(depth_layers):
-		var block := MeshInstance3D.new()
-		var mesh := BoxMesh.new()
+		var block: MeshInstance3D = MeshInstance3D.new()
+		var mesh: BoxMesh = BoxMesh.new()
 		mesh.size = block_size
 		block.mesh = mesh
 		block.position = position + Vector3(0.0, 0.0, -float(layer) * block_size.z * 0.34)
@@ -284,8 +291,8 @@ func _add_block(
 	if (row + column + glyph_width) % 3 != 0:
 		return
 
-	var drip := MeshInstance3D.new()
-	var drip_mesh := BoxMesh.new()
+	var drip: MeshInstance3D = MeshInstance3D.new()
+	var drip_mesh: BoxMesh = BoxMesh.new()
 	var drip_height: float = block_size.y * randf_range(0.35, 0.95) * drip_strength
 	drip_mesh.size = Vector3(block_size.x * 0.42, drip_height, block_size.z * 0.36)
 	drip.mesh = drip_mesh
@@ -301,12 +308,12 @@ func _make_block_material(
 	layer: int,
 	glyph_width: int
 ) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
+	var material: StandardMaterial3D = StandardMaterial3D.new()
 	var shade: float = 0.82 - float(layer) * 0.12 + float(row) * 0.012 - float(column) * 0.004
-	var base := Color(
-		clamp(tint.r * shade, 0.0, 1.0),
-		clamp(tint.g * shade, 0.0, 1.0),
-		clamp(tint.b * shade, 0.0, 1.0),
+	var base: Color = Color(
+		clampf(tint.r * shade, 0.0, 1.0),
+		clampf(tint.g * shade, 0.0, 1.0),
+		clampf(tint.b * shade, 0.0, 1.0),
 		1.0
 	)
 	material.albedo_color = base
@@ -323,8 +330,8 @@ func _make_block_material(
 	return material
 
 func _make_drip_material(tint: Color) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	var blood := Color(0.78, 0.08, 0.05, 1.0).lerp(tint, 0.18)
+	var material: StandardMaterial3D = StandardMaterial3D.new()
+	var blood: Color = Color(0.78, 0.08, 0.05, 1.0).lerp(tint, 0.18)
 	material.albedo_color = blood
 	material.albedo_texture = _blood_texture
 	material.roughness = 0.42
@@ -334,12 +341,12 @@ func _make_drip_material(tint: Color) -> StandardMaterial3D:
 	return material
 
 func _make_noise_texture(light: Color, dark: Color, size: int) -> Texture2D:
-	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var image: Image = Image.create(size, size, false, Image.FORMAT_RGBA8)
 	for y in range(size):
 		for x in range(size):
-			var n := _hash_noise(float(x) * 0.11, float(y) * 0.11)
-			var n2 := _hash_noise(float(x) * 0.23 + 4.0, float(y) * 0.19 + 2.0)
-			var blend: float = clamp(n * 0.65 + n2 * 0.35, 0.0, 1.0)
+			var n: float = _hash_noise(float(x) * 0.11, float(y) * 0.11)
+			var n2: float = _hash_noise(float(x) * 0.23 + 4.0, float(y) * 0.19 + 2.0)
+			var blend: float = clampf(n * 0.65 + n2 * 0.35, 0.0, 1.0)
 			image.set_pixel(x, y, light.lerp(dark, blend))
 	return ImageTexture.create_from_image(image)
 
