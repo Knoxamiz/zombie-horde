@@ -3,14 +3,28 @@
 [ext_resource type="Script" path="res://scripts/main_menu/main_menu_controller.gd" id="1_controller"]
 [ext_resource type="Environment" path="res://resources/environment/main_menu_environment.tres" id="2_environment"]
 [ext_resource type="Texture2D" path="res://assets/ui/main_menu/zombie_chat_horde_menu_art.png" id="3_menu_art"]
-[ext_resource type="PackedScene" path="res://scenes/ui/main_menu_3d_button.tscn" id="4_menu_3d_button"]
+[ext_resource type="PackedScene" path="res://scenes/ui/main_menu_block_button.tscn" id="4_block_button"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_menu_3d_logo_rig.tscn" id="5_logo_rig"]
 
 [node name="MainMenu" type="Node3D"]
 script = ExtResource("1_controller")
 camera_path = NodePath("CinematicCamera")
-camera_idle_strength = 0.08
+camera_idle_strength = 0.06
 logo_wobble_strength = 1.0
+
+[node name="BackgroundLayer" type="CanvasLayer" parent="."]
+layer = -10
+
+[node name="Background" type="TextureRect" parent="BackgroundLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_menu_art")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = ExtResource("2_environment")
@@ -20,11 +34,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 5.5)
 current = true
 fov = 50.0
 
-[node name="MenuBackdrop" type="Sprite3D" parent="CinematicCamera"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, -13.5)
-pixel_size = 0.0113
-texture = ExtResource("3_menu_art")
-
 [node name="Menu3DOverlay" type="Node3D" parent="CinematicCamera"]
 
 [node name="LogoRig" parent="CinematicCamera/Menu3DOverlay" instance=ExtResource("5_logo_rig")]
@@ -32,65 +41,49 @@ transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, 0, 1.72, -7.15)
 
 [node name="ButtonCenterRack" type="Node3D" parent="CinematicCamera/Menu3DOverlay"]
 
-[node name="StartButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonCenterRack" instance=ExtResource("4_menu_3d_button")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.42, -6.85)
+[node name="StartButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonCenterRack" instance=ExtResource("4_block_button")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.35, -6.85)
 action_id = &"start"
-icon_kind = &"play"
 text = "START"
-base_color = Color(0.48, 0.72, 0.14, 1)
-hover_color = Color(0.66, 0.95, 0.2, 1)
-accent_color = Color(0.9, 1, 0.32, 1)
-text_color = Color(1, 1, 1, 1)
-block_size = Vector3(1.95, 0.4, 0.24)
-font_size = 24
-outline_size = 8
+base_color = Color(0.38, 0.78, 0.16, 1)
+hover_color = Color(0.5, 0.95, 0.28, 1)
+block_size = Vector3(2.05, 0.46, 0.2)
+font_size = 28
 
-[node name="StreamerButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonCenterRack" instance=ExtResource("4_menu_3d_button")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.98, -6.85)
+[node name="StreamerButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonCenterRack" instance=ExtResource("4_block_button")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.95, -6.85)
 action_id = &"streamer"
-icon_kind = &"streamer"
 text = "STREAMER MODE"
-base_color = Color(0.34, 0.15, 0.62, 1)
-hover_color = Color(0.52, 0.24, 0.9, 1)
-accent_color = Color(0.82, 0.48, 1, 1)
-text_color = Color(1, 1, 1, 1)
-block_size = Vector3(2.2, 0.4, 0.24)
-font_size = 19
-outline_size = 8
+base_color = Color(0.58, 0.24, 0.88, 1)
+hover_color = Color(0.72, 0.38, 1, 1)
+block_size = Vector3(2.35, 0.46, 0.2)
+font_size = 22
 idle_phase = 0.7
 
-[node name="QuitButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonCenterRack" instance=ExtResource("4_menu_3d_button")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.54, -6.85)
+[node name="QuitButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonCenterRack" instance=ExtResource("4_block_button")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.55, -6.85)
 action_id = &"quit"
-icon_kind = &"exit"
 text = "QUIT"
-base_color = Color(0.52, 0.12, 0.1, 1)
-hover_color = Color(0.78, 0.18, 0.14, 1)
-accent_color = Color(1, 0.42, 0.32, 1)
-text_color = Color(1, 1, 1, 1)
-block_size = Vector3(1.72, 0.4, 0.24)
-font_size = 22
-outline_size = 8
+base_color = Color(0.82, 0.28, 0.18, 1)
+hover_color = Color(0.98, 0.38, 0.28, 1)
+block_size = Vector3(1.85, 0.46, 0.2)
+font_size = 26
 idle_phase = 1.4
 
-[node name="SettingsButton3D" parent="CinematicCamera/Menu3DOverlay" instance=ExtResource("4_menu_3d_button")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.05, -1.54, -6.85)
+[node name="SettingsButton3D" parent="CinematicCamera/Menu3DOverlay" instance=ExtResource("4_block_button")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.15, -2.55, -6.85)
 action_id = &"settings"
-icon_kind = &"gear"
 text = "SETTINGS"
-base_color = Color(0.86, 0.36, 0.04, 1)
-hover_color = Color(1, 0.5, 0.08, 1)
-accent_color = Color(1, 0.75, 0.22, 1)
-text_color = Color(1, 1, 1, 1)
-block_size = Vector3(1.82, 0.4, 0.24)
-font_size = 20
-outline_size = 8
+base_color = Color(0.95, 0.58, 0.1, 1)
+hover_color = Color(1, 0.72, 0.22, 1)
+block_size = Vector3(1.95, 0.46, 0.2)
+font_size = 24
 idle_phase = 2.1
 
 [node name="VersionLabel3D" type="Label3D" parent="CinematicCamera/Menu3DOverlay"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.45, -2.35, -6.9)
-modulate = Color(1, 0.96, 0.86, 0.95)
-text = "v2.1.0"
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.55, -2.95, -6.9)
+modulate = Color(1, 0.98, 0.92, 0.95)
+text = "v2.1.1"
 font_size = 14
 outline_size = 3
 horizontal_alignment = 2
@@ -105,4 +98,4 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0, 0, 0, 0.1)
+color = Color(0, 0, 0, 0.06)

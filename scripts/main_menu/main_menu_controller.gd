@@ -6,7 +6,7 @@ const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_set
 
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/main/main_game.tscn"
 @export var camera_path: NodePath
-@export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.08
+@export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.06
 @export_range(0.0, 1.0, 0.01) var logo_wobble_strength: float = 1.0
 
 var _transitioning: bool = false
@@ -14,18 +14,22 @@ var _time: float = 0.0
 var _camera_base_position: Vector3 = Vector3.ZERO
 var _logo_base_position: Vector3 = Vector3.ZERO
 var _logo_base_scale: Vector3 = Vector3.ONE
-var _menu_3d_buttons: Array[MainMenu3DButton] = []
+var _menu_buttons: Array[MainMenuBlockButton] = []
 
 @onready var _camera: Camera3D = get_node_or_null(camera_path) as Camera3D
 @onready var _logo_rig: Node3D = get_node_or_null("CinematicCamera/Menu3DOverlay/LogoRig") as Node3D
+@onready var _background: TextureRect = get_node_or_null("BackgroundLayer/Background") as TextureRect
 
 func _ready() -> void:
+	get_viewport().transparent_bg = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_fit_background()
+
 	var music_controller: MusicController = _get_or_create_music_controller()
 	if music_controller != null:
 		music_controller.play_menu_music()
 
-	_connect_3d_buttons()
+	_connect_buttons()
 
 	if _camera != null:
 		_camera_base_position = _camera.position
@@ -36,12 +40,16 @@ func _ready() -> void:
 		_logo_base_position = _logo_rig.position
 		_logo_base_scale = _logo_rig.scale
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_SIZE_CHANGED:
+		_fit_background()
+
 func _process(delta: float) -> void:
 	_time += delta
 	_update_camera_idle()
 	_update_logo_rig()
 
-func _on_menu_3d_button_pressed(action_id: StringName) -> void:
+func _on_menu_button_pressed(action_id: StringName) -> void:
 	match action_id:
 		&"start":
 			_launch_lobby(0, false)
@@ -71,41 +79,50 @@ func _launch_lobby(debug_joins_to_seed: int, open_settings: bool) -> void:
 		push_error("Unable to load game scene: %s" % game_scene_path)
 
 func _set_buttons_enabled(enabled: bool) -> void:
-	for button in _menu_3d_buttons:
+	for button in _menu_buttons:
 		if button != null and is_instance_valid(button):
 			button.set_interactable(enabled)
 
-func _connect_3d_buttons() -> void:
-	_menu_3d_buttons.clear()
-	var racks: Array[NodePath] = [
+func _connect_buttons() -> void:
+	_menu_buttons.clear()
+	var paths: Array[NodePath] = [
 		NodePath("CinematicCamera/Menu3DOverlay/ButtonCenterRack"),
 		NodePath("CinematicCamera/Menu3DOverlay/SettingsButton3D"),
 	]
-	for rack_path in racks:
-		var rack: Node = get_node_or_null(rack_path)
-		if rack == null:
+	for path in paths:
+		var node: Node = get_node_or_null(path)
+		if node == null:
 			continue
-		if rack is MainMenu3DButton:
-			_register_button(rack as MainMenu3DButton)
+		if node is MainMenuBlockButton:
+			_register_button(node as MainMenuBlockButton)
 			continue
-		for child in rack.get_children():
-			var button: MainMenu3DButton = child as MainMenu3DButton
+		for child in node.get_children():
+			var button: MainMenuBlockButton = child as MainMenuBlockButton
 			if button != null:
 				_register_button(button)
 
-func _register_button(button: MainMenu3DButton) -> void:
-	_menu_3d_buttons.append(button)
-	if not button.pressed.is_connected(_on_menu_3d_button_pressed):
-		button.pressed.connect(_on_menu_3d_button_pressed)
+func _register_button(button: MainMenuBlockButton) -> void:
+	_menu_buttons.append(button)
+	if not button.pressed.is_connected(_on_menu_button_pressed):
+		button.pressed.connect(_on_menu_button_pressed)
+
+func _fit_background() -> void:
+	if _background == null:
+		return
+	_background.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_background.offset_left = 0.0
+	_background.offset_top = 0.0
+	_background.offset_right = 0.0
+	_background.offset_bottom = 0.0
 
 func _update_camera_idle() -> void:
 	if _camera == null or camera_idle_strength <= 0.0:
 		return
 
 	var offset: Vector3 = Vector3(
-		sin(_time * 0.37) * 0.14,
-		sin(_time * 0.29 + 1.4) * 0.06,
-		sin(_time * 0.23 + 0.8) * 0.08
+		sin(_time * 0.37) * 0.1,
+		sin(_time * 0.29 + 1.4) * 0.05,
+		sin(_time * 0.23 + 0.8) * 0.06
 	) * camera_idle_strength
 	_camera.position = _camera_base_position + offset
 
