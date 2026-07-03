@@ -858,8 +858,6 @@ func _restore_peer_world_roots() -> void:
 	_hidden_world_roots.clear()
 
 func _should_restore_world_root_visible(root_path: String, was_visible: bool) -> bool:
-	if root_path.contains("LobbyBoards") or root_path.contains("RaceBoards"):
-		return false
 	return was_visible
 
 func _collect_peer_world_roots() -> Array[Node3D]:
@@ -869,8 +867,6 @@ func _collect_peer_world_roots() -> Array[Node3D]:
 		return roots
 
 	var root_paths: Array[String] = [
-		"WorldMenus3D/LobbyBoards",
-		"WorldMenus3D/RaceBoards",
 		"GameSettings3D",
 	]
 	for root_path in root_paths:

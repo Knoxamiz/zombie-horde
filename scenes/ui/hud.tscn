@@ -45,7 +45,6 @@ layer = 15
 script = ExtResource("1_script")
 
 [node name="Root" type="Control" parent="."]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -82,26 +81,11 @@ text = "RACE STATUS"
 
 [node name="StateLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
 layout_mode = 2
-text = "State: Idle | Queued: 0"
+text = "Idle | Queued: 0"
 
 [node name="CountLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
 layout_mode = 2
-text = "Zombies: 0 alive / 0 total"
-
-[node name="LeaderLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
-visible = false
-layout_mode = 2
-text = "Leader: -"
-
-[node name="WinnerLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
-visible = false
-layout_mode = 2
-text = "Winner: -"
-
-[node name="ChatStatusLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
-visible = false
-layout_mode = 2
-text = "Chat: Debug only"
+text = "0 alive / 0 total"
 
 [node name="RosterPanel" type="PanelContainer" parent="Root"]
 layout_mode = 0
@@ -141,7 +125,7 @@ theme_override_colors/font_color = Color(0.92, 0.94, 0.86, 1)
 text = "Kills:\n-"
 autowrap_mode = 2
 
-[node name="LeaderboardPanel" type="PanelContainer" parent="Root"]
+[node name="StandingsPanel" type="PanelContainer" parent="Root"]
 layout_mode = 0
 anchor_left = 1.0
 anchor_top = 1.0
@@ -153,24 +137,24 @@ offset_right = -16.0
 offset_bottom = -16.0
 theme_override_styles/panel = SubResource("StyleBox_hud_panel")
 
-[node name="Margin" type="MarginContainer" parent="Root/LeaderboardPanel"]
+[node name="Margin" type="MarginContainer" parent="Root/StandingsPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 12
 
-[node name="VBox" type="VBoxContainer" parent="Root/LeaderboardPanel/Margin"]
+[node name="VBox" type="VBoxContainer" parent="Root/StandingsPanel/Margin"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="StandingsHeaderLabel" type="Label" parent="Root/LeaderboardPanel/Margin/VBox"]
+[node name="StandingsHeaderLabel" type="Label" parent="Root/StandingsPanel/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
 theme_override_font_sizes/font_size = 18
 text = "TOP 10"
 
-[node name="LeaderboardLabel" type="Label" parent="Root/LeaderboardPanel/Margin/VBox"]
+[node name="StandingsLabel" type="Label" parent="Root/StandingsPanel/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.92, 0.94, 0.86, 1)
 theme_override_font_sizes/font_size = 15
@@ -207,37 +191,6 @@ text = "TYPE !BRAINS TO JOIN"
 [node name="ChatStatusLabel" type="Label" parent="Root/BottomLeftPanel/Margin/VBox"]
 layout_mode = 2
 text = "Chat: Debug only"
-
-[node name="ControlPanel" type="PanelContainer" parent="Root"]
-visible = false
-layout_mode = 0
-offset_left = 16.0
-offset_top = 202.0
-offset_right = 410.0
-offset_bottom = 260.0
-
-[node name="Margin" type="MarginContainer" parent="Root/ControlPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 8
-
-[node name="HBox" type="HBoxContainer" parent="Root/ControlPanel/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="StartButton" type="Button" parent="Root/ControlPanel/Margin/HBox"]
-layout_mode = 2
-text = "Start"
-
-[node name="ResetButton" type="Button" parent="Root/ControlPanel/Margin/HBox"]
-layout_mode = 2
-text = "Reset"
-
-[node name="JoinButton" type="Button" parent="Root/ControlPanel/Margin/HBox"]
-layout_mode = 2
-text = "Add Join"
 
 [node name="CountdownPanel" type="PanelContainer" parent="Root"]
 layout_mode = 0
