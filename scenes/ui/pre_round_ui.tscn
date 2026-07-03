@@ -162,7 +162,7 @@ offset_right = 180.0
 offset_bottom = -16.0
 grow_horizontal = 0
 grow_vertical = 0
-text = "Options"
+text = "Streamer Settings"
 
 [node name="MainMenuButton" type="Button" parent="Root"]
 custom_minimum_size = Vector2(200, 46)

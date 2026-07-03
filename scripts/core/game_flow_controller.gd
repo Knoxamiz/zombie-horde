@@ -23,7 +23,6 @@ const META_PROCESS_MODE := "_zh_saved_process_mode"
 @export var spectator_camera_path: NodePath
 @export var hud_path: NodePath
 @export var streamer_menu_path: NodePath
-@export var options_menu_path: NodePath
 @export var pre_round_ui_path: NodePath
 @export var world_environment_path: NodePath
 @export var transition_overlay_path: NodePath
@@ -50,7 +49,6 @@ var _debug_join_source: DebugJoinSource
 var _spectator_camera: SpectatorCameraController
 var _hud: CanvasLayer
 var _streamer_menu: CanvasLayer
-var _options_menu: OptionsMenuController
 var _pre_round_ui: PreRoundUIController
 var _world_environment: WorldEnvironment
 var _transition_overlay: ColorRect
@@ -77,7 +75,6 @@ func _initialize_flow() -> void:
 	_spectator_camera = get_node_or_null(spectator_camera_path) as SpectatorCameraController
 	_hud = get_node_or_null(hud_path) as CanvasLayer
 	_streamer_menu = get_node_or_null(streamer_menu_path) as CanvasLayer
-	_options_menu = get_node_or_null(options_menu_path) as OptionsMenuController
 	_pre_round_ui = get_node_or_null(pre_round_ui_path) as PreRoundUIController
 	_world_environment = get_node_or_null(world_environment_path) as WorldEnvironment
 	_transition_overlay = get_node_or_null(transition_overlay_path) as ColorRect
@@ -111,7 +108,7 @@ func _on_ready_requested() -> void:
 		_round_manager.start_round()
 
 func _on_options_requested() -> void:
-	_open_options_menu()
+	_open_streamer_settings()
 
 func _on_main_menu_requested() -> void:
 	if _returning_to_main_menu:
@@ -246,11 +243,6 @@ func _open_streamer_settings() -> void:
 	var streamer_menu_controller: StreamerMenuController = _streamer_menu as StreamerMenuController
 	if streamer_menu_controller != null:
 		streamer_menu_controller.open_menu()
-
-func _open_options_menu() -> void:
-	if _options_menu != null:
-		_options_menu.open_menu()
-
 func _open_game_settings() -> void:
 	var game_settings: GameSettingsController = _get_or_create_game_settings()
 	if game_settings != null:

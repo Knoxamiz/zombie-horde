@@ -84,17 +84,24 @@ var _status_text: String = "Settings loaded"
 @onready var _tower_gun_row: HBoxContainer = get_node("Root/MenuPanel/Margin/VBox/TowerGunRow") as HBoxContainer
 @onready var _tower_gun_option: OptionButton = get_node("Root/MenuPanel/Margin/VBox/TowerGunRow/TowerGunOption") as OptionButton
 @onready var _tower_weapon_row: HBoxContainer = get_node("Root/MenuPanel/Margin/VBox/TowerWeaponRow") as HBoxContainer
-@onready var _tower_weapon_check: CheckBox = get_node("Root/MenuPanel/Margin/VBox/TowerWeaponRow/TowerWeaponCheck") as CheckBox
-@onready var _premium_scroll: ScrollContainer = get_node("Root/MenuPanel/Margin/VBox/PremiumScroll") as ScrollContainer
-@onready var _premium_controls: VBoxContainer = get_node("Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls") as VBoxContainer
-@onready var _mine_spin: SpinBox = get_node("Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/MineRow/MineSpin") as SpinBox
-@onready var _street_prop_spin: SpinBox = get_node("Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/StreetPropRow/StreetPropSpin") as SpinBox
-@onready var _boost_pad_spin: SpinBox = get_node("Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/BoostPadRow/BoostPadSpin") as SpinBox
-@onready var _sewer_spin: SpinBox = get_node("Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/SewerRow/SewerSpin") as SpinBox
-@onready var _defender_spin: SpinBox = get_node("Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/DefenderRow/DefenderSpin") as SpinBox
-@onready var _vehicle_weight_spin: SpinBox = get_node("Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/VehicleWeightRow/VehicleWeightSpin") as SpinBox
-@onready var _cone_weight_spin: SpinBox = get_node("Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/ConeWeightRow/ConeWeightSpin") as SpinBox
-@onready var _barrier_weight_spin: SpinBox = get_node("Root/MenuPanel/Margin/VBox/PremiumScroll/PremiumControls/BarrierWeightRow/BarrierWeightSpin") as SpinBox
+var _tower_weapon_check: CheckBox
+var _premium_controls: VBoxContainer
+var _mine_spin: SliderControl
+var _street_prop_spin: SliderControl
+var _boost_pad_spin: SliderControl
+var _sewer_spin: SliderControl
+var _defender_spin: SliderControl
+var _vehicle_weight_spin: SliderControl
+var _cone_weight_spin: SliderControl
+var _barrier_weight_spin: SliderControl
+var _mine_meter_label: Label
+var _street_prop_meter_label: Label
+var _boost_pad_meter_label: Label
+var _sewer_meter_label: Label
+var _defender_meter_label: Label
+var _vehicle_weight_meter_label: Label
+var _cone_weight_meter_label: Label
+var _barrier_weight_meter_label: Label
 @onready var _status_label: Label = get_node("Root/MenuPanel/Margin/VBox/StatusLabel") as Label
 @onready var _reroll_button: Button = get_node("Root/MenuPanel/Margin/VBox/RerollButton") as Button
 @onready var _character_overlay_wash: ColorRect = get_node("Root/CharacterOverlayWash") as ColorRect
@@ -157,14 +164,6 @@ func _ready() -> void:
 	_shaun_button.pressed.connect(_on_character_button_pressed.bind(3))
 	_tower_gun_option.item_selected.connect(_on_tower_gun_selected)
 	_tower_weapon_check.toggled.connect(_on_tower_weapon_toggled)
-	_mine_spin.value_changed.connect(_on_premium_control_changed)
-	_street_prop_spin.value_changed.connect(_on_premium_control_changed)
-	_boost_pad_spin.value_changed.connect(_on_premium_control_changed)
-	_sewer_spin.value_changed.connect(_on_premium_control_changed)
-	_defender_spin.value_changed.connect(_on_premium_control_changed)
-	_vehicle_weight_spin.value_changed.connect(_on_premium_control_changed)
-	_cone_weight_spin.value_changed.connect(_on_premium_control_changed)
-	_barrier_weight_spin.value_changed.connect(_on_premium_control_changed)
 	GameEvents.round_ended.connect(_on_round_ended)
 	_connect_world_button(_world_close_button)
 	_connect_world_button(_world_map_button)
@@ -215,13 +214,13 @@ func _build_control_room_streamer_modal() -> void:
 	var avatar_box := HBoxContainer.new()
 	avatar_box.add_theme_constant_override("separation", 10)
 	avatar_box.add_child(_avatar_value_label)
-	_choose_character_button = _make_modal_button("NEXT AVATAR", ControlRoomTheme.COLOR_PURPLE)
+	_choose_character_button = _make_modal_button("CHOOSE NPC", ControlRoomTheme.COLOR_PURPLE)
 	avatar_box.add_child(_choose_character_button)
-	_settings_modal.add_row(overview_group, "Avatar", avatar_box)
+	_settings_modal.add_row(overview_group, "NPC Character", avatar_box)
 
 	var gameplay_group: VBoxContainer = _settings_modal.add_group("Gameplay")
 	_map_option = _make_modal_option()
-	_map_row = _settings_modal.add_row(gameplay_group, "Race Map", _map_option)
+	_map_row = _settings_modal.add_row(gameplay_group, "Level", _map_option)
 	_balance_value_label = Label.new()
 	ControlRoomTheme.apply_label(_balance_value_label, 19, ControlRoomTheme.COLOR_GREEN)
 	_balance_detail_label = Label.new()
@@ -265,22 +264,30 @@ func _build_control_room_streamer_modal() -> void:
 	_premium_controls.add_theme_constant_override("separation", 4)
 	var premium_group: VBoxContainer = _settings_modal.add_group("Chaos Controls")
 	premium_group.add_child(_premium_controls)
-	_mine_spin = _make_modal_spin(0, 96)
-	_settings_modal.add_row(_premium_controls, "Mines", _mine_spin)
-	_street_prop_spin = _make_modal_spin(0, 96)
-	_settings_modal.add_row(_premium_controls, "Street Props", _street_prop_spin)
-	_boost_pad_spin = _make_modal_spin(0, 32)
-	_settings_modal.add_row(_premium_controls, "Boost Pads", _boost_pad_spin)
-	_sewer_spin = _make_modal_spin(0, 32)
-	_settings_modal.add_row(_premium_controls, "Sewer Holes", _sewer_spin)
-	_defender_spin = _make_modal_spin(0, 12)
-	_settings_modal.add_row(_premium_controls, "Defenders", _defender_spin)
-	_vehicle_weight_spin = _make_modal_spin(0, 100)
-	_settings_modal.add_row(_premium_controls, "Vehicle Weight", _vehicle_weight_spin)
-	_cone_weight_spin = _make_modal_spin(0, 100)
-	_settings_modal.add_row(_premium_controls, "Cone Weight", _cone_weight_spin)
-	_barrier_weight_spin = _make_modal_spin(0, 100)
-	_settings_modal.add_row(_premium_controls, "Barrier Weight", _barrier_weight_spin)
+	var mine_meter: Dictionary = _create_modal_meter(_premium_controls, "Mines", 0, 96)
+	_mine_spin = mine_meter["slider"] as SliderControl
+	_mine_meter_label = mine_meter["label"] as Label
+	var street_meter: Dictionary = _create_modal_meter(_premium_controls, "Street Props", 0, 96)
+	_street_prop_spin = street_meter["slider"] as SliderControl
+	_street_prop_meter_label = street_meter["label"] as Label
+	var boost_meter: Dictionary = _create_modal_meter(_premium_controls, "Boost Pads", 0, 32)
+	_boost_pad_spin = boost_meter["slider"] as SliderControl
+	_boost_pad_meter_label = boost_meter["label"] as Label
+	var sewer_meter: Dictionary = _create_modal_meter(_premium_controls, "Sewer Holes", 0, 32)
+	_sewer_spin = sewer_meter["slider"] as SliderControl
+	_sewer_meter_label = sewer_meter["label"] as Label
+	var defender_meter: Dictionary = _create_modal_meter(_premium_controls, "NPC Towers", 0, 12)
+	_defender_spin = defender_meter["slider"] as SliderControl
+	_defender_meter_label = defender_meter["label"] as Label
+	var vehicle_meter: Dictionary = _create_modal_meter(_premium_controls, "Vehicle Weight", 0, 100)
+	_vehicle_weight_spin = vehicle_meter["slider"] as SliderControl
+	_vehicle_weight_meter_label = vehicle_meter["label"] as Label
+	var cone_meter: Dictionary = _create_modal_meter(_premium_controls, "Cone Weight", 0, 100)
+	_cone_weight_spin = cone_meter["slider"] as SliderControl
+	_cone_weight_meter_label = cone_meter["label"] as Label
+	var barrier_meter: Dictionary = _create_modal_meter(_premium_controls, "Barrier Weight", 0, 100)
+	_barrier_weight_spin = barrier_meter["slider"] as SliderControl
+	_barrier_weight_meter_label = barrier_meter["label"] as Label
 
 	_reroll_button = _make_modal_button("REROLL STREET PREVIEW", ControlRoomTheme.COLOR_BLUE)
 	premium_group.add_child(_reroll_button)
@@ -297,6 +304,21 @@ func _make_slider_value_pair(value_label: Label) -> Dictionary:
 	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	box.add_child(value_label)
 	return {"root": box, "slider": slider}
+
+func _create_modal_meter(parent: VBoxContainer, label_text: String, minimum: int, maximum: int) -> Dictionary:
+	var value_label := Label.new()
+	value_label.custom_minimum_size = Vector2(52, 0)
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	ControlRoomTheme.apply_label(value_label, 18, ControlRoomTheme.COLOR_TEXT)
+	var pair: Dictionary = _make_slider_value_pair(value_label)
+	var slider: SliderControl = pair["slider"] as SliderControl
+	slider.min_value = float(minimum)
+	slider.max_value = float(maximum)
+	slider.step = 1.0
+	slider.value_changed.connect(_on_premium_control_changed)
+	_settings_modal.add_row(parent, label_text, pair["root"] as Control)
+	return {"slider": slider, "label": value_label}
 
 func _make_modal_button(label: String, accent: Color) -> Button:
 	var button := Button.new()
@@ -327,6 +349,8 @@ func open_menu() -> void:
 		_set_menu_open(false)
 		return
 
+	_profile = StreamerSettingsProfile.load_from_disk()
+	_refresh_controls()
 	_set_menu_open(true)
 
 func can_open_menu() -> bool:
@@ -336,6 +360,8 @@ func close_menu() -> void:
 	_set_menu_open(false)
 
 func _set_menu_open(open: bool) -> void:
+	if _root != null:
+		_root.visible = open
 	_menu_panel.visible = false
 	_toggle_button.visible = false
 	_toggle_button.text = "Close"
@@ -365,6 +391,8 @@ func _refresh_controls() -> void:
 	_vehicle_weight_spin.value = _profile.premium_vehicle_weight
 	_cone_weight_spin.value = _profile.premium_cone_weight
 	_barrier_weight_spin.value = _profile.premium_barrier_weight
+	if _mine_spin != null:
+		_refresh_chaos_meter_labels()
 	_refresh_menu_tier_controls()
 	_refresh_balance_labels()
 	_refresh_avatar_labels()
@@ -446,9 +474,6 @@ func _on_reset_defaults_pressed() -> void:
 	_save_profile("Defaults restored")
 
 func _on_choose_character_pressed() -> void:
-	if _settings_modal != null and _settings_modal.visible:
-		_cycle_world_avatar()
-		return
 	_set_character_select_open(true)
 
 func _on_character_close_pressed() -> void:
@@ -490,9 +515,10 @@ func _on_premium_control_changed(_value: float) -> void:
 	if _is_refreshing:
 		return
 
+	_refresh_chaos_meter_labels()
 	_read_premium_controls()
 	_apply_profile_to_game(true)
-	_save_profile("Saved premium controls")
+	_save_profile("Saved chaos controls")
 
 func _on_reroll_pressed() -> void:
 	if _round_manager != null and _round_manager.get_state_text() != "Joining":
@@ -604,9 +630,13 @@ func _refresh_preset_buttons() -> void:
 
 func _set_character_select_open(open: bool) -> void:
 	if _character_overlay_wash != null:
-		_character_overlay_wash.visible = false
+		_character_overlay_wash.visible = open
 	if _character_select_panel != null:
-		_character_select_panel.visible = false
+		_character_select_panel.visible = open
+	if _settings_modal != null:
+		_settings_modal.visible = not open and _root != null and _root.visible
+	if open:
+		_refresh_avatar_labels()
 
 func _sanitize_character_previews() -> void:
 	var grid: Control = get_node_or_null("Root/CharacterSelectPanel/Margin/VBox/CharacterGrid") as Control
@@ -646,7 +676,25 @@ func _sync_profile_from_controls() -> void:
 	_profile.streamer_name = clean_name
 	_read_premium_controls()
 
+func _refresh_chaos_meter_labels() -> void:
+	_set_meter_label(_mine_spin, _mine_meter_label)
+	_set_meter_label(_street_prop_spin, _street_prop_meter_label)
+	_set_meter_label(_boost_pad_spin, _boost_pad_meter_label)
+	_set_meter_label(_sewer_spin, _sewer_meter_label)
+	_set_meter_label(_defender_spin, _defender_meter_label)
+	_set_meter_label(_vehicle_weight_spin, _vehicle_weight_meter_label)
+	_set_meter_label(_cone_weight_spin, _cone_weight_meter_label)
+	_set_meter_label(_barrier_weight_spin, _barrier_weight_meter_label)
+
+func _set_meter_label(slider: SliderControl, label: Label) -> void:
+	if slider == null or label == null:
+		return
+	label.text = str(int(round(slider.value)))
+
 func _read_premium_controls() -> void:
+	if _mine_spin == null:
+		return
+
 	_profile.premium_mine_count = int(round(_mine_spin.value))
 	_profile.premium_obstacle_count = int(round(_street_prop_spin.value))
 	_profile.premium_boost_pad_count = int(round(_boost_pad_spin.value))
