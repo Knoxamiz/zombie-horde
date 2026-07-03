@@ -218,8 +218,8 @@ frame_color = Color(0.95, 0.48, 0.08, 1)
 [node name="CageTimesBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards"]
 transform = Transform3D(0.985, 0, 0.174, 0, 1, 0, -0.174, 0, 0.985, 2.45, 0.82, -5.62)
 script = ExtResource("49_world_board")
-title_text = "CAGE RECORDS"
-body_text = "Fastest Times\n-\n\nLast 10 Winners\n-"
+title_text = "RECENT WINNERS"
+body_text = "-"
 board_size = Vector2(2.55, 2.02)
 title_font_size = 23
 body_font_size = 13

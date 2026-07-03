@@ -43,8 +43,9 @@ var _state_text: String = "Joining"
 @onready var _options_button: Button = get_node("Root/OptionsButton") as Button
 @onready var _main_menu_button: Button = get_node("Root/MainMenuButton") as Button
 @onready var _scores_panel: PanelContainer = get_node("Root/ScoresPanel") as PanelContainer
-@onready var _fastest_label: Label = get_node("Root/ScoresPanel/Margin/VBox/FastestLabel") as Label
 @onready var _recent_winners_label: Label = get_node("Root/ScoresPanel/Margin/VBox/RecentWinnersLabel") as Label
+@onready var _fastest_times_button: Button = get_node("Root/ScoresPanel/Margin/VBox/FastestTimesButton") as Button
+@onready var _leaderboard_menu: LeaderboardMenuController = get_node("LeaderboardMenu") as LeaderboardMenuController
 
 func _ready() -> void:
 	_round_manager = get_node_or_null(round_manager_path) as RoundManager
@@ -64,6 +65,7 @@ func _ready() -> void:
 	_reset_button.hold_confirmed.connect(_on_reset_confirmed)
 	_options_button.pressed.connect(_on_options_pressed)
 	_main_menu_button.pressed.connect(_on_main_menu_pressed)
+	_fastest_times_button.pressed.connect(_on_fastest_times_pressed)
 	_connect_world_button(_world_ready_button)
 	_connect_world_button(_world_reset_button)
 	_connect_world_button(_world_join_button)
@@ -110,6 +112,10 @@ func _on_options_pressed() -> void:
 func _on_main_menu_pressed() -> void:
 	main_menu_requested.emit()
 
+func _on_fastest_times_pressed() -> void:
+	if _leaderboard_menu != null:
+		_leaderboard_menu.open_menu()
+
 func _on_participant_queue_changed(display_names: PackedStringArray) -> void:
 	_queued_names = display_names
 	_refresh_labels()
@@ -149,46 +155,22 @@ func _refresh_labels() -> void:
 	_refresh_ready_button()
 
 func _refresh_scoreboards() -> void:
-	var fastest_text: String = _format_fastest_times()
 	var recent_text: String = _format_recent_winners()
-	if _fastest_label != null:
-		_fastest_label.text = fastest_text
 	if _recent_winners_label != null:
 		_recent_winners_label.text = recent_text
 	if _world_scores_board != null:
-		_world_scores_board.set_board_text("SCORES", "%s\n\n%s" % [_format_world_fastest_times(), _format_world_recent_winners()])
-
-func _format_fastest_times() -> String:
-	if _leaderboard_store == null:
-		return "FASTEST RUNS\n—"
-
-	var entries: Array = _leaderboard_store.get_entries()
-	if entries.is_empty():
-		return "FASTEST RUNS\n—"
-
-	var lines: Array[String] = ["FASTEST RUNS", _board_column_header("TIME")]
-	var max_entries: int = mini(entries.size(), 8)
-	for index in range(max_entries):
-		if typeof(entries[index]) != TYPE_DICTIONARY:
-			continue
-		var entry: Dictionary = entries[index]
-		lines.append(_format_board_row(
-			index + 1,
-			str(entry.get("display_name", "Zombie")),
-			_format_finish_time(float(entry.get("elapsed_seconds", 0.0)))
-		))
-	return _join_strings(lines, "\n")
+		_world_scores_board.set_board_text("RECENT WINNERS", _format_world_recent_winners())
 
 func _format_recent_winners() -> String:
 	if _leaderboard_store == null:
-		return "RECENT WINNERS\n—"
+		return "—"
 
 	var entries: Array = _leaderboard_store.get_recent_winners()
 	if entries.is_empty():
-		return "RECENT WINNERS\n—"
+		return "—"
 
-	var lines: Array[String] = ["RECENT WINNERS", _board_column_header("TIME")]
-	var max_entries: int = mini(entries.size(), 8)
+	var lines: Array[String] = [_board_column_header("ROUND")]
+	var max_entries: int = mini(entries.size(), 10)
 	for index in range(max_entries):
 		if typeof(entries[index]) != TYPE_DICTIONARY:
 			continue
@@ -197,7 +179,7 @@ func _format_recent_winners() -> String:
 		lines.append(_format_board_row(
 			index + 1,
 			display_name,
-			_format_finish_time(float(entry.get("elapsed_seconds", 0.0)))
+			"#%d" % int(entry.get("round_number", 0))
 		))
 	return _join_strings(lines, "\n")
 
@@ -261,9 +243,6 @@ func _join_strings(values: Array[String], separator: String) -> String:
 			result += separator
 		result += values[index]
 	return result
-
-func _format_finish_time(seconds: float) -> String:
-	return "%.2fs" % max(seconds, 0.0)
 
 func _refresh_chat_status_from_source() -> void:
 	if _twitch_join_source == null:
@@ -331,45 +310,24 @@ func _format_world_lobby_names() -> String:
 		lines.append("+%d more" % (_queued_names.size() - max_names))
 	return _join_strings(lines, "\n")
 
-func _format_world_fastest_times() -> String:
-	if _leaderboard_store == null:
-		return "Fastest Times\n-"
-
-	var entries: Array = _leaderboard_store.get_entries()
-	if entries.is_empty():
-		return "Fastest Times\n-"
-
-	var lines: Array[String] = ["Fastest Times"]
-	var max_entries: int = mini(entries.size(), 5)
-	for index in range(max_entries):
-		if typeof(entries[index]) != TYPE_DICTIONARY:
-			continue
-		var entry: Dictionary = entries[index]
-		lines.append("%d. %s  %s" % [
-			index + 1,
-			str(entry.get("display_name", "Zombie")),
-			_format_finish_time(float(entry.get("elapsed_seconds", 0.0)))
-		])
-	return _join_strings(lines, "\n")
-
 func _format_world_recent_winners() -> String:
 	if _leaderboard_store == null:
-		return "Recent Winners\n-"
+		return "-"
 
 	var entries: Array = _leaderboard_store.get_recent_winners()
 	if entries.is_empty():
-		return "Recent Winners\n-"
+		return "-"
 
-	var lines: Array[String] = ["Recent Winners"]
-	var max_entries: int = mini(entries.size(), 5)
+	var lines: Array[String] = []
+	var max_entries: int = mini(entries.size(), 8)
 	for index in range(max_entries):
 		if typeof(entries[index]) != TYPE_DICTIONARY:
 			continue
 		var entry: Dictionary = entries[index]
 		var display_name: String = "Streamer Base" if bool(entry.get("base_won", false)) else str(entry.get("display_name", "Zombie"))
-		lines.append("%d. %s  %s" % [
+		lines.append("%d. %s  #%d" % [
 			index + 1,
 			display_name,
-			_format_finish_time(float(entry.get("elapsed_seconds", 0.0)))
+			int(entry.get("round_number", 0))
 		])
 	return _join_strings(lines, "\n")

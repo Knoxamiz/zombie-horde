@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/pre_round_ui_controller.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/ui/zombie_horde_theme.tres" id="2_theme"]
 [ext_resource type="Script" path="res://scripts/ui/hold_to_confirm_button.gd" id="3_hold_button"]
+[ext_resource type="PackedScene" path="res://scenes/ui/leaderboard_menu.tscn" id="4_leaderboard_menu"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_board_header"]
 content_margin_left = 16.0
@@ -216,19 +217,22 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.06, 0.04, 0.02, 1)
 theme_override_colors/font_shadow_color = Color(1, 0.85, 0.4, 0.3)
 theme_override_font_sizes/font_size = 26
-text = "LEADERBOARD"
+text = "RECENT WINNERS"
 horizontal_alignment = 1
-
-[node name="FastestLabel" type="Label" parent="Root/ScoresPanel/Margin/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
-theme_override_font_sizes/font_size = 17
-text = "Fastest Times\n-"
-autowrap_mode = 2
 
 [node name="RecentWinnersLabel" type="Label" parent="Root/ScoresPanel/Margin/VBox"]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
-theme_override_font_sizes/font_size = 17
-text = "Recent Winners\n-"
+theme_override_font_sizes/font_size = 18
+text = "—"
 autowrap_mode = 2
+
+[node name="FastestTimesButton" type="Button" parent="Root/ScoresPanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "Fastest Times…"
+
+[node name="LeaderboardMenu" parent="." instance=ExtResource("4_leaderboard_menu")]
+visible = false
+leaderboard_store_path = NodePath("../../Systems/LeaderboardStore")
