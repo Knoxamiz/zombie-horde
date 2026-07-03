@@ -168,9 +168,9 @@ func _apply_layout() -> void:
 
 	if _glow_back != null:
 		var glow_mesh: QuadMesh = QuadMesh.new()
-		glow_mesh.size = Vector2(block_size.x + 0.55, block_size.y + 0.55)
+		glow_mesh.size = Vector2(block_size.x * 1.6 + 1.1, block_size.y * 3.4 + 1.1)
 		_glow_back.mesh = glow_mesh
-		_glow_back.position = Vector3(0.0, 0.0, -depth_offset - 0.06)
+		_glow_back.position = Vector3(0.0, 0.0, -depth_offset - 0.04)
 
 	_set_box(_depth, Vector3(block_size.x * 0.98, block_size.y * 0.96, block_size.z * 0.72), Vector3(0.0, -0.01, -depth_offset))
 	_set_box(_face, block_size, Vector3.ZERO)
@@ -243,12 +243,13 @@ func _apply_visuals(force: bool) -> void:
 
 	if _glow_material != null:
 		_glow_pulse = 0.5 + 0.5 * sin(_time * 2.4 + idle_phase)
-		var base_glow_alpha: float = 0.32 + _glow_pulse * 0.1
-		var glow_alpha: float = 0.62 if _hovered and interactable else base_glow_alpha
+		var base_glow_alpha: float = 0.7 + _glow_pulse * 0.2
+		var glow_alpha: float = 1.0 if _hovered and interactable else base_glow_alpha
 		if not interactable:
-			glow_alpha = 0.12
+			glow_alpha = 0.25
 		_glow_material.albedo_color = Color(glow_color.r, glow_color.g, glow_color.b, glow_alpha)
-		_glow_material.emission = Color(glow_color.r, glow_color.g, glow_color.b) * (1.6 if _hovered and interactable else 0.9)
+		_glow_material.emission = Color(glow_color.r, glow_color.g, glow_color.b) * (3.0 if _hovered and interactable else 1.8)
+		_glow_material.emission_energy_multiplier = 2.0 if _hovered and interactable else 1.2
 
 	var label_target: Color = _brighten(text_color, 0.06) if _hovered and interactable else text_color
 	_label.modulate = label_target if interactable else Color(text_color.r, text_color.g, text_color.b, 0.45)
@@ -294,7 +295,7 @@ func _make_radial_glow_texture() -> Texture2D:
 			var dy: float = (float(y) - center) / max_dist
 			var dist: float = sqrt(dx * dx + dy * dy)
 			var falloff: float = clampf(1.0 - dist, 0.0, 1.0)
-			falloff = falloff * falloff
+			falloff = pow(falloff, 1.4)
 			image.set_pixel(x, y, Color(1.0, 1.0, 1.0, falloff))
 	return ImageTexture.create_from_image(image)
 
