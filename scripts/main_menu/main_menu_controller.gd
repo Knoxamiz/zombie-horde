@@ -26,6 +26,7 @@ var _menu_buttons: Array[MainMenuBlockButton] = []
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
+	resized.connect(_fit_layout)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_fit_layout()
 

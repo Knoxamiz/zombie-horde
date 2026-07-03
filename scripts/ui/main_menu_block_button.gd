@@ -3,8 +3,6 @@ extends Area3D
 
 signal pressed(action_id: StringName)
 
-const MENU_FONT: FontFile = preload("res://assets/fonts/bangers.ttf")
-
 @export var action_id: StringName = &""
 @export var text: String = "BUTTON"
 @export var base_color: Color = Color(0.4, 0.75, 0.18, 1.0)
@@ -28,17 +26,19 @@ var _pressed_down: bool = false
 var _base_position: Vector3 = Vector3.ZERO
 var _base_scale: Vector3 = Vector3.ONE
 var _time: float = 0.0
+var _menu_font: Font
 var _face_material: StandardMaterial3D
 var _edge_material: StandardMaterial3D
 var _highlight_material: StandardMaterial3D
 
 @onready var _face: MeshInstance3D = get_node("Face") as MeshInstance3D
 @onready var _edge: MeshInstance3D = get_node("Edge") as MeshInstance3D
-@onready var _highlight: MeshInstance3D = get_node("Highlight") as MeshInstance3D
+@onready var _highlight: MeshInstance3D = get_node_or_null("Highlight") as MeshInstance3D
 @onready var _label: Label3D = get_node("Label") as Label3D
 @onready var _shape: CollisionShape3D = get_node("CollisionShape3D") as CollisionShape3D
 
 func _ready() -> void:
+	_ensure_highlight_node()
 	input_ray_pickable = interactable
 	_base_position = position
 	_base_scale = scale
@@ -74,6 +74,26 @@ func set_interactable(enabled: bool) -> void:
 		_hovered = false
 		_pressed_down = false
 
+func _ensure_highlight_node() -> void:
+	if _highlight != null:
+		return
+	_highlight = MeshInstance3D.new()
+	_highlight.name = "Highlight"
+	add_child(_highlight)
+
+func _get_menu_font() -> Font:
+	if _menu_font != null:
+		return _menu_font
+
+	if ResourceLoader.exists("res://assets/fonts/bangers.ttf"):
+		var loaded: Resource = load("res://assets/fonts/bangers.ttf")
+		_menu_font = loaded as Font
+
+	if _menu_font == null:
+		_menu_font = ThemeDB.fallback_font
+
+	return _menu_font
+
 func _apply_layout() -> void:
 	if autofit_block:
 		block_size = _compute_block_size()
@@ -87,16 +107,18 @@ func _apply_layout() -> void:
 	_edge.mesh = edge_mesh
 	_edge.position = Vector3(0.0, block_size.y * 0.5 + 0.022, 0.0)
 
-	var highlight_mesh: BoxMesh = BoxMesh.new()
-	highlight_mesh.size = Vector3(block_size.x + 0.05, block_size.y + 0.05, 0.02)
-	_highlight.mesh = highlight_mesh
-	_highlight.position = Vector3(0.0, 0.0, block_size.z * 0.5 + 0.01)
+	if _highlight != null:
+		var highlight_mesh: BoxMesh = BoxMesh.new()
+		highlight_mesh.size = Vector3(block_size.x + 0.05, block_size.y + 0.05, 0.02)
+		_highlight.mesh = highlight_mesh
+		_highlight.position = Vector3(0.0, 0.0, block_size.z * 0.5 + 0.01)
 
 	var box_shape: BoxShape3D = BoxShape3D.new()
 	box_shape.size = Vector3(block_size.x + 0.06, block_size.y + 0.08, block_size.z + 0.14)
 	_shape.shape = box_shape
 
-	_label.font = MENU_FONT
+	var menu_font: Font = _get_menu_font()
+	_label.font = menu_font
 	_label.text = text
 	_label.modulate = text_color
 	_label.font_size = font_size
@@ -109,8 +131,9 @@ func _apply_layout() -> void:
 	_label.render_priority = 10
 
 func _compute_block_size() -> Vector3:
-	var text_width_px: float = MENU_FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-	var text_height_px: float = MENU_FONT.get_height(font_size)
+	var menu_font: Font = _get_menu_font()
+	var text_width_px: float = menu_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var text_height_px: float = menu_font.get_height(font_size)
 	var width_scale: float = 0.0036
 	var height_scale: float = 0.0031
 	var fitted_width: float = maxf(min_block_width, text_width_px * width_scale + horizontal_padding)
@@ -129,7 +152,7 @@ func _apply_visuals(force: bool) -> void:
 		_edge_material.roughness = 0.3
 		_edge_material.metallic = 0.0
 		_edge.set_surface_override_material(0, _edge_material)
-	if _highlight_material == null:
+	if _highlight != null and _highlight_material == null:
 		_highlight_material = StandardMaterial3D.new()
 		_highlight_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		_highlight_material.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -153,16 +176,17 @@ func _apply_visuals(force: bool) -> void:
 	_edge_material.emission_enabled = true
 	_edge_material.emission = _brighten(current, 0.2) * (0.28 if _hovered and interactable else 0.1)
 
-	var highlight_alpha: float = 0.0
-	var highlight_color: Color = Color(1.0, 1.0, 1.0, 0.0)
-	if _hovered and interactable and not _pressed_down:
-		highlight_alpha = 0.22
-		highlight_color = Color(1.0, 1.0, 0.85, highlight_alpha)
-	elif _pressed_down and interactable:
-		highlight_alpha = 0.08
-		highlight_color = Color(0.0, 0.0, 0.0, highlight_alpha)
-	_highlight_material.albedo_color = highlight_color
-	_highlight.visible = highlight_alpha > 0.0
+	if _highlight != null and _highlight_material != null:
+		var highlight_alpha: float = 0.0
+		var highlight_color: Color = Color(1.0, 1.0, 1.0, 0.0)
+		if _hovered and interactable and not _pressed_down:
+			highlight_alpha = 0.22
+			highlight_color = Color(1.0, 1.0, 0.85, highlight_alpha)
+		elif _pressed_down and interactable:
+			highlight_alpha = 0.08
+			highlight_color = Color(0.0, 0.0, 0.0, highlight_alpha)
+		_highlight_material.albedo_color = highlight_color
+		_highlight.visible = highlight_alpha > 0.0
 
 	var label_target: Color = text_color
 	if _hovered and interactable:
