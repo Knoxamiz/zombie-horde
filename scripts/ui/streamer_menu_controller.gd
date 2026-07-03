@@ -261,20 +261,18 @@ func _build_control_room_streamer_modal() -> void:
 	preset_actions.add_child(_reset_defaults_button)
 	preset_group.add_child(preset_actions)
 
-	_premium_scroll = ScrollContainer.new()
 	_premium_controls = VBoxContainer.new()
-	_premium_controls.add_theme_constant_override("separation", 8)
-	var premium_group: VBoxContainer = _settings_modal.add_group("Premium Street Controls")
-	premium_group.add_child(_premium_scroll)
-	_premium_scroll.add_child(_premium_controls)
+	_premium_controls.add_theme_constant_override("separation", 4)
+	var premium_group: VBoxContainer = _settings_modal.add_group("Chaos Controls")
+	premium_group.add_child(_premium_controls)
 	_mine_spin = _make_modal_spin(0, 96)
 	_settings_modal.add_row(_premium_controls, "Mines", _mine_spin)
 	_street_prop_spin = _make_modal_spin(0, 96)
 	_settings_modal.add_row(_premium_controls, "Street Props", _street_prop_spin)
 	_boost_pad_spin = _make_modal_spin(0, 32)
-	_settings_modal.add_row(_premium_controls, "Boosts", _boost_pad_spin)
+	_settings_modal.add_row(_premium_controls, "Boost Pads", _boost_pad_spin)
 	_sewer_spin = _make_modal_spin(0, 32)
-	_settings_modal.add_row(_premium_controls, "Sewers", _sewer_spin)
+	_settings_modal.add_row(_premium_controls, "Sewer Holes", _sewer_spin)
 	_defender_spin = _make_modal_spin(0, 12)
 	_settings_modal.add_row(_premium_controls, "Defenders", _defender_spin)
 	_vehicle_weight_spin = _make_modal_spin(0, 100)
@@ -315,7 +313,7 @@ func _make_modal_option() -> OptionButton:
 
 func _make_modal_spin(minimum: int, maximum: int) -> SpinBox:
 	var spin := SpinBox.new()
-	spin.custom_minimum_size = Vector2(180, 42)
+	spin.custom_minimum_size = Vector2(160, 34)
 	spin.min_value = float(minimum)
 	spin.max_value = float(maximum)
 	spin.step = 1.0
@@ -401,8 +399,6 @@ func _on_backdrop_selected(index: int) -> void:
 
 func _on_map_selected(option_index: int) -> void:
 	if _is_refreshing:
-		return
-	if not _has_premium_access():
 		return
 	if _round_manager != null and _round_manager.get_state_text() != "Joining":
 		_refresh_controls()
@@ -575,19 +571,17 @@ func _refresh_menu_tier_controls() -> void:
 	if _menu_tier_detail_label != null:
 		_menu_tier_detail_label.text = _profile.get_menu_tier_detail(feature_config)
 	if _map_row != null:
-		_map_row.visible = premium_enabled
+		_map_row.visible = true
 	if _save_preset_button != null:
-		_save_preset_button.visible = premium_enabled
+		_save_preset_button.visible = true
 	if _reset_defaults_button != null:
-		_reset_defaults_button.visible = premium_enabled
-	if _premium_scroll != null:
-		_premium_scroll.visible = premium_enabled
+		_reset_defaults_button.visible = true
 	if _premium_controls != null:
-		_premium_controls.visible = premium_enabled
+		_premium_controls.visible = true
 	if _tower_gun_row != null:
-		_tower_gun_row.visible = premium_enabled
+		_tower_gun_row.visible = true
 	if _tower_weapon_row != null:
-		_tower_weapon_row.visible = premium_enabled
+		_tower_weapon_row.visible = true
 
 func _refresh_avatar_labels() -> void:
 	if _avatar_value_label != null:

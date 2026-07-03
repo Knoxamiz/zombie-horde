@@ -43,7 +43,7 @@ func _build() -> void:
 	panel.add_child(margin)
 
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 16)
+	box.add_theme_constant_override("separation", 10)
 	margin.add_child(box)
 
 	var header := HBoxContainer.new()
@@ -70,7 +70,7 @@ func _build() -> void:
 
 	_groups_box = VBoxContainer.new()
 	_groups_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_groups_box.add_theme_constant_override("separation", 18)
+	_groups_box.add_theme_constant_override("separation", 12)
 	scroll.add_child(_groups_box)
 
 	var footer := HBoxContainer.new()
@@ -111,19 +111,19 @@ func add_group(title: String) -> VBoxContainer:
 	_groups_box.add_child(group_panel)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 18)
-	margin.add_theme_constant_override("margin_top", 14)
-	margin.add_theme_constant_override("margin_right", 18)
-	margin.add_theme_constant_override("margin_bottom", 14)
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_bottom", 10)
 	group_panel.add_child(margin)
 
 	var group_box := VBoxContainer.new()
-	group_box.add_theme_constant_override("separation", 10)
+	group_box.add_theme_constant_override("separation", 6)
 	margin.add_child(group_box)
 
 	var heading := Label.new()
 	heading.text = title.to_upper()
-	ControlRoomTheme.apply_label(heading, 23, ControlRoomTheme.COLOR_GREEN)
+	ControlRoomTheme.apply_label(heading, 20, ControlRoomTheme.COLOR_GREEN)
 	group_box.add_child(heading)
 	return group_box
 
