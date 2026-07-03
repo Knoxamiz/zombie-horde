@@ -2,9 +2,10 @@ class_name LobbyZombie
 extends RigidBody3D
 
 @export var display_name: String = "Zombie"
-@export var impulse_strength: float = 4.0
-@export var upward_impulse: float = 1.25
-@export var spin_strength: float = 5.0
+@export var impulse_strength: float = 2.4
+@export var upward_impulse: float = 0.15
+@export var spin_strength: float = 7.5
+@export var settle_velocity_threshold: float = 0.42
 
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _motion_timer: float = 0.0
@@ -32,7 +33,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_motion_timer = _rng.randf_range(0.55, 1.35)
-	if linear_velocity.length_squared() < 1.4:
+	if linear_velocity.length_squared() < settle_velocity_threshold:
 		apply_central_impulse(_get_random_impulse(impulse_strength * 0.55))
 		angular_velocity += _get_random_spin(spin_strength * 0.5)
 

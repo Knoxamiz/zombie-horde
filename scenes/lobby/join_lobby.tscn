@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=3]
+[gd_scene load_steps=43 format=3]
 
 [ext_resource type="Script" path="res://scripts/lobby/join_lobby_manager.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://scenes/lobby/lobby_zombie.tscn" id="2_lobby_zombie"]
@@ -84,10 +84,15 @@ size = Vector3(0.42, 28, 56)
 [sub_resource type="BoxMesh" id="BoxMesh_void_light_bar"]
 size = Vector3(10.5, 0.14, 0.16)
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_cage"]
+bounce = 0.9
+friction = 0.14
+
 [node name="JoinLobby" type="Node3D"]
 script = ExtResource("1_script")
 lobby_zombie_scene = ExtResource("2_lobby_zombie")
 spawn_area_size = Vector3(9.8, 0, 6.2)
+drop_height = 5.85
 
 [node name="VoidStage" type="Node3D" parent="."]
 
@@ -268,6 +273,7 @@ transform = Transform3D(-1.05, 0, 0, 0, 1.05, 0, 0, 0, -1.05, 9.8, 0, -7.0)
 [node name="Floor" type="StaticBody3D" parent="LobbyBox"]
 collision_layer = 1
 collision_mask = 0
+physics_material_override = SubResource("PhysicsMaterial_cage")
 
 [node name="FloorMesh" type="MeshInstance3D" parent="LobbyBox/Floor"]
 mesh = SubResource("BoxMesh_floor")
@@ -280,6 +286,7 @@ shape = SubResource("BoxShape_floor")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, -4.1)
 collision_layer = 1
 collision_mask = 0
+physics_material_override = SubResource("PhysicsMaterial_cage")
 
 [node name="BackWallMesh" type="MeshInstance3D" parent="LobbyBox/BackWall"]
 mesh = SubResource("BoxMesh_long_wall")
@@ -292,6 +299,7 @@ shape = SubResource("BoxShape_long_wall")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 4.1)
 collision_layer = 1
 collision_mask = 0
+physics_material_override = SubResource("PhysicsMaterial_cage")
 
 [node name="FrontWallMesh" type="MeshInstance3D" parent="LobbyBox/FrontWall"]
 mesh = SubResource("BoxMesh_long_wall")
@@ -304,6 +312,7 @@ shape = SubResource("BoxShape_long_wall")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.1, 1.6, 0)
 collision_layer = 1
 collision_mask = 0
+physics_material_override = SubResource("PhysicsMaterial_cage")
 
 [node name="LeftWallMesh" type="MeshInstance3D" parent="LobbyBox/LeftWall"]
 mesh = SubResource("BoxMesh_short_wall")
@@ -316,6 +325,7 @@ shape = SubResource("BoxShape_short_wall")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.1, 1.6, 0)
 collision_layer = 1
 collision_mask = 0
+physics_material_override = SubResource("PhysicsMaterial_cage")
 
 [node name="RightWallMesh" type="MeshInstance3D" parent="LobbyBox/RightWall"]
 mesh = SubResource("BoxMesh_short_wall")
