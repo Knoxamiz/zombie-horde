@@ -5,6 +5,7 @@ signal pressed(action_id: StringName)
 
 @export var action_id: StringName = &""
 @export var text: String = "BUTTON"
+@export var icon_kind: StringName = &"play"
 @export var base_color: Color = Color(0.35, 0.7, 0.1, 1.0)
 @export var hover_color: Color = Color(0.55, 0.95, 0.2, 1.0)
 @export var accent_color: Color = Color(0.9, 1.0, 0.35, 1.0)
@@ -27,7 +28,10 @@ var _accent_material: StandardMaterial3D
 var _lip_material: StandardMaterial3D
 var _shadow_material: StandardMaterial3D
 var _scratch_material: StandardMaterial3D
+var _icon_material: StandardMaterial3D
+var _stone_texture: Texture2D
 var _detail_nodes: Array[MeshInstance3D] = []
+var _icon_nodes: Array[MeshInstance3D] = []
 
 @onready var _block: MeshInstance3D = get_node("Block") as MeshInstance3D
 @onready var _accent: MeshInstance3D = get_node("Accent") as MeshInstance3D
@@ -37,11 +41,13 @@ var _detail_nodes: Array[MeshInstance3D] = []
 func _ready() -> void:
 	input_ray_pickable = interactable
 	_base_position = position
+	_stone_texture = _make_noise_texture(Color(0.5, 0.48, 0.42), Color(0.2, 0.18, 0.15), 64)
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
 	input_event.connect(_on_input_event)
 	_ensure_detail_nodes()
 	_apply_layout()
+	_build_icon()
 	_apply_visuals(true)
 
 func _process(delta: float) -> void:
@@ -147,6 +153,8 @@ func _apply_visuals(force: bool) -> void:
 	var target_color: Color = hover_color if _hovered and interactable else base_color
 	var current_color: Color = target_color if force else _block_material.albedo_color.lerp(target_color, 0.22)
 	_block_material.albedo_color = current_color
+	_block_material.albedo_texture = _stone_texture
+	_block_material.uv1_scale = Vector3(1.4, 1.4, 1.4)
 	_block_material.emission = current_color * (0.34 if _hovered and interactable else 0.18)
 	_accent_material.albedo_color = accent_color
 	_accent_material.emission = accent_color * (0.42 if _hovered and interactable else 0.22)
@@ -157,6 +165,72 @@ func _apply_visuals(force: bool) -> void:
 	_scratch_material.albedo_color = _shift_color(current_color, 0.19)
 	_scratch_material.emission = current_color * 0.1
 	_label.modulate = text_color if interactable else Color(text_color.r, text_color.g, text_color.b, 0.42)
+	if _icon_material != null:
+		_icon_material.albedo_color = Color(1, 1, 1, 0.95) if interactable else Color(1, 1, 1, 0.35)
+		_icon_material.emission = accent_color * (0.55 if _hovered and interactable else 0.28)
+
+func _build_icon() -> void:
+	for icon_node in _icon_nodes:
+		if icon_node != null and is_instance_valid(icon_node):
+			icon_node.queue_free()
+	_icon_nodes.clear()
+
+	if _icon_material == null:
+		_icon_material = _make_detail_material()
+		_icon_material.emission_enabled = true
+
+	var front_z: float = block_size.z * 0.5 + 0.1
+	var icon_root := Node3D.new()
+	icon_root.name = "IconRoot"
+	icon_root.position = Vector3(-block_size.x * 0.5 + 0.34, 0.0, front_z)
+	add_child(icon_root)
+
+	match icon_kind:
+		&"play":
+			_add_icon_box(icon_root, Vector3(0.16, 0.22, 0.05), Vector3(0.05, 0.0, 0.0))
+			_add_icon_box(icon_root, Vector3(0.08, 0.18, 0.05), Vector3(-0.03, 0.0, 0.0))
+			_add_icon_box(icon_root, Vector3(0.08, 0.18, 0.05), Vector3(-0.03, 0.18, 0.0), Vector3(0, 0, -0.72))
+			_add_icon_box(icon_root, Vector3(0.08, 0.18, 0.05), Vector3(-0.03, -0.18, 0.0), Vector3(0, 0, 0.72))
+		&"streamer":
+			_add_icon_box(icon_root, Vector3(0.16, 0.16, 0.05), Vector3(0.0, 0.14, 0.0))
+			_add_icon_box(icon_root, Vector3(0.28, 0.16, 0.05), Vector3(0.0, -0.1, 0.0))
+		&"trophy":
+			_add_icon_box(icon_root, Vector3(0.24, 0.08, 0.05), Vector3(0.0, 0.12, 0.0))
+			_add_icon_box(icon_root, Vector3(0.16, 0.14, 0.05), Vector3(0.0, 0.02, 0.0))
+			_add_icon_box(icon_root, Vector3(0.08, 0.12, 0.05), Vector3(0.0, -0.1, 0.0))
+		&"gear":
+			_add_icon_box(icon_root, Vector3(0.18, 0.18, 0.05), Vector3(0.0, 0.0, 0.0))
+			_add_icon_box(icon_root, Vector3(0.08, 0.08, 0.06), Vector3(0.0, 0.0, 0.01))
+			for angle_index in range(4):
+				var angle: float = float(angle_index) * TAU / 4.0
+				_add_icon_box(
+					icon_root,
+					Vector3(0.06, 0.06, 0.05),
+					Vector3(cos(angle) * 0.14, sin(angle) * 0.14, 0.0)
+				)
+		&"exit":
+			_add_icon_box(icon_root, Vector3(0.18, 0.04, 0.05), Vector3(0.0, 0.08, 0.0), Vector3(0, 0, 0.52))
+			_add_icon_box(icon_root, Vector3(0.18, 0.04, 0.05), Vector3(0.0, -0.08, 0.0), Vector3(0, 0, -0.52))
+
+func _add_icon_box(parent: Node3D, size: Vector3, local_position: Vector3, rotation: Vector3 = Vector3.ZERO) -> void:
+	var icon_node := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	icon_node.mesh = mesh
+	icon_node.position = local_position
+	icon_node.rotation = rotation
+	icon_node.material_override = _icon_material
+	parent.add_child(icon_node)
+	_icon_nodes.append(icon_node)
+
+func _make_noise_texture(light: Color, dark: Color, size: int) -> Texture2D:
+	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	for y in range(size):
+		for x in range(size):
+			var n := abs(sin(float(x) * 0.17 + float(y) * 0.23) * 43758.5453)
+			n -= floor(n)
+			image.set_pixel(x, y, light.lerp(dark, n))
+	return ImageTexture.create_from_image(image)
 
 func _make_detail_material() -> StandardMaterial3D:
 	var material: StandardMaterial3D = StandardMaterial3D.new()

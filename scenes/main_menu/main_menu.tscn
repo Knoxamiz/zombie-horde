@@ -1,4 +1,4 @@
-[gd_scene load_steps=41 format=3 uid="uid://bl7b03v3qe672"]
+[gd_scene load_steps=42 format=3 uid="uid://bl7b03v3qe672"]
 
 [ext_resource type="Script" uid="uid://cqk4hcw17svdm" path="res://scripts/main_menu/main_menu_controller.gd" id="1_controller"]
 [ext_resource type="Theme" uid="uid://dipqo44ax4dyr" path="res://assets/ui/main_menu_theme.tres" id="2_theme"]
@@ -19,6 +19,8 @@
 [ext_resource type="Texture2D" uid="uid://oaei4jilx35y" path="res://assets/ui/main_menu/zombie_chat_horde_logo.png" id="17_menu_logo"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_menu_3d_button.tscn" id="18_menu_3d_button"]
 [ext_resource type="PackedScene" uid="uid://t5cafwko3blb" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TownSign.gltf" id="19_town_sign"]
+
+[ext_resource type="PackedScene" path="res://scenes/main/city_backdrop.tscn" id="20_city_backdrop"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_base_sign"]
 size = Vector3(6, 2.2, 0.28)
@@ -256,13 +258,16 @@ menu_zombies_path = NodePath("CinematicWorld/MenuZombies")
 cage_light_path = NodePath("CageGreenLight")
 base_light_path = NodePath("BaseAmberLight")
 road_sweep_light_path = NodePath("RoadSweepLight")
-camera_idle_strength = 0.28
+camera_focus = Vector3(1.8, 1.45, -6.5)
+camera_idle_strength = 0.22
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = ExtResource("4_environment")
 
 [node name="CinematicWorld" type="Node3D" parent="."]
-visible = false
+
+[node name="CityBackdrop" parent="CinematicWorld" instance=ExtResource("20_city_backdrop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 18)
 
 [node name="RoadArena" parent="CinematicWorld" instance=ExtResource("5_road_arena")]
 
@@ -304,6 +309,15 @@ transform = Transform3D(0, 0, -0.92, 0, 0.92, 0, 0.92, 0, 0, -1.4, 0, -22.8)
 [node name="ZombieE" parent="CinematicWorld/MenuZombies" instance=ExtResource("9_zombie_visual")]
 transform = Transform3D(-0.88, 0, 0, 0, 0.88, 0, 0, 0, -0.88, 3.2, 0, -17.4)
 
+[node name="ZombieF" parent="CinematicWorld/MenuZombies" instance=ExtResource("9_zombie_visual")]
+transform = Transform3D(0, 0, 0.76, 0, 0.76, 0, -0.76, 0, 0, -3.8, 0, -14.2)
+
+[node name="ZombieG" parent="CinematicWorld/MenuZombies" instance=ExtResource("9_zombie_visual")]
+transform = Transform3D(-0.72, 0, 0, 0, 0.72, 0, 0, 0, -0.72, 7.4, 0, -11.6)
+
+[node name="ZombieH" parent="CinematicWorld/MenuZombies" instance=ExtResource("9_zombie_visual")]
+transform = Transform3D(0.68, 0, 0, 0, 0.68, 0, 0, 0, 0.68, -0.6, 0, -8.4)
+
 [node name="ForegroundProps" type="Node3D" parent="CinematicWorld"]
 
 [node name="BrokenBarrierA" parent="CinematicWorld/ForegroundProps" instance=ExtResource("10_traffic_barrier")]
@@ -339,6 +353,9 @@ transform = Transform3D(0.82, 0, 0, 0, 0.82, 0, 0, 0, 0.82, -1.8, 0, -9.4)
 [node name="ConeD" parent="CinematicWorld/ForegroundProps" instance=ExtResource("11_traffic_cone")]
 transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 2.6, 0, -7.6)
 
+[node name="NorthdaleSign" parent="CinematicWorld/ForegroundProps" instance=ExtResource("19_town_sign")]
+transform = Transform3D(0, 0, -0.92, 0, 0.92, 0, 0.92, 0, 0, 9.8, 0, 4.2)
+
 [node name="MenuKeyLight" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.824126, -0.204874, 0.528807, 0, 0.93237, 0.361506, -0.566406, -0.297925, 0.768385, 0, 24, -24)
 light_color = Color(0.48, 0.77, 0.56, 1)
@@ -369,18 +386,20 @@ spot_angle = 35.0
 spot_angle_attenuation = 0.7
 
 [node name="CinematicCamera" type="Camera3D" parent="."]
-transform = Transform3D(0.939693, 0, -0.34202, 0, 1, 0, 0.34202, 0, 0.939693, -12.8, 6.6, -39.5)
+transform = Transform3D(0.996195, 0, -0.0871558, 0, 0.990268, 0.139173, 0.0871558, -0.138632, 0.986996, -10.2, 5.4, -28.5)
 current = true
-fov = 64.0
+fov = 58.0
 
 [node name="Menu3DOverlay" type="Node3D" parent="CinematicCamera"]
 
 [node name="MenuArt3D" type="Sprite3D" parent="CinematicCamera/Menu3DOverlay"]
+visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -8.2)
 pixel_size = 0.01075
 texture = ExtResource("16_menu_art")
 
 [node name="LogoRig" type="Node3D" parent="CinematicCamera/Menu3DOverlay"]
+visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08, 2.14, -6.12)
 
 [node name="LogoDepthFar" type="Sprite3D" parent="CinematicCamera/Menu3DOverlay/LogoRig"]
@@ -412,8 +431,9 @@ texture = ExtResource("17_menu_logo")
 [node name="ButtonRack" type="Node3D" parent="CinematicCamera/Menu3DOverlay"]
 
 [node name="StartButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonRack" instance=ExtResource("18_menu_3d_button")]
-transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, -3.24, 0.25, -5.36)
+transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, -3.72, 0.42, -5.36)
 action_id = &"start"
+icon_kind = &"play"
 text = "START"
 base_color = Color(0.48, 0.72, 0.14, 1)
 hover_color = Color(0.66, 0.95, 0.2, 1)
@@ -423,8 +443,9 @@ block_size = Vector3(3.28, 0.68, 0.34)
 font_size = 35
 
 [node name="StreamerButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonRack" instance=ExtResource("18_menu_3d_button")]
-transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, -3.24, -0.63, -5.34)
+transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, -3.72, -0.46, -5.34)
 action_id = &"streamer"
+icon_kind = &"streamer"
 text = "STREAMER MODE"
 base_color = Color(0.34, 0.15, 0.62, 1)
 hover_color = Color(0.52, 0.24, 0.9, 1)
@@ -435,8 +456,9 @@ font_size = 31
 idle_phase = 0.7
 
 [node name="LeaderboardButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonRack" instance=ExtResource("18_menu_3d_button")]
-transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, -3.24, -1.51, -5.32)
+transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, -3.72, -1.34, -5.32)
 action_id = &"leaderboard"
+icon_kind = &"trophy"
 text = "LEADERBOARD"
 base_color = Color(0.11, 0.46, 0.74, 1)
 hover_color = Color(0.18, 0.62, 0.96, 1)
@@ -447,8 +469,9 @@ font_size = 31
 idle_phase = 1.4
 
 [node name="SettingsButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonRack" instance=ExtResource("18_menu_3d_button")]
-transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, -3.24, -2.39, -5.3)
+transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, -3.72, -2.22, -5.3)
 action_id = &"settings"
+icon_kind = &"gear"
 text = "SETTINGS"
 base_color = Color(0.86, 0.36, 0.04, 1)
 hover_color = Color(1, 0.5, 0.08, 1)
@@ -459,8 +482,10 @@ font_size = 32
 idle_phase = 2.1
 
 [node name="ExitButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonRack" instance=ExtResource("18_menu_3d_button")]
+visible = false
 transform = Transform3D(0.94, 0, 0, 0, 0.926, 0.163, 0, -0.163, 0.926, -3.29, -3.2, -5.28)
 action_id = &"exit"
+icon_kind = &"exit"
 text = "EXIT GAME"
 base_color = Color(0.09, 0.07, 0.045, 1)
 hover_color = Color(0.2, 0.12, 0.045, 1)
@@ -472,6 +497,7 @@ outline_size = 6
 idle_phase = 2.8
 
 [node name="ChatRoadSign" type="Node3D" parent="CinematicCamera/Menu3DOverlay"]
+visible = false
 transform = Transform3D(0.996195, -0.087156, 0, 0.087156, 0.996195, 0, 0, 0, 1, 3.38, 0.14, -5.42)
 
 [node name="TownSignAsset" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign" instance=ExtResource("19_town_sign")]
@@ -543,19 +569,24 @@ outline_size = 5
 horizontal_alignment = 0
 
 [node name="JoinPrompt3D" type="Node3D" parent="CinematicCamera/Menu3DOverlay"]
-transform = Transform3D(0.999391, -0.0348995, 0, 0.0348995, 0.999391, 0, 0, 0, 1, -3.58, -3.62, -5.55)
+transform = Transform3D(0.999391, -0.0348995, 0, 0.0348995, 0.999391, 0, 0, 0, 1, -3.72, -3.02, -5.55)
 
 [node name="PromptBlock" type="MeshInstance3D" parent="CinematicCamera/Menu3DOverlay/JoinPrompt3D"]
 mesh = SubResource("BoxMesh_join_prompt")
 surface_material_override/0 = SubResource("StandardMaterial3D_join_prompt")
 
 [node name="PromptLabel" type="Label3D" parent="CinematicCamera/Menu3DOverlay/JoinPrompt3D"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.65, -0.04, 0.14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.15, -0.04, 0.14)
 modulate = Color(1, 0.92, 0.76, 1)
 text = "TYPE !BRAINS TO JOIN"
 font_size = 22
 outline_size = 5
 horizontal_alignment = 0
+
+[node name="TwitchIcon" type="MeshInstance3D" parent="CinematicCamera/Menu3DOverlay/JoinPrompt3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.72, -0.02, 0.12)
+mesh = SubResource("BoxMesh_chat_sign_bolt")
+surface_material_override/0 = SubResource("StandardMaterial3D_join_prompt")
 
 [node name="VersionLabel3D" type="Label3D" parent="CinematicCamera/Menu3DOverlay"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.9, -3.62, -5.55)
