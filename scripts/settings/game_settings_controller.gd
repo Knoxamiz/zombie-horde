@@ -7,6 +7,7 @@ const BUS_MUSIC := &"Music"
 const BUS_SFX := &"SFX"
 const WORLD_BOARD_SCRIPT := preload("res://scripts/ui/world_text_board.gd")
 const WORLD_BUTTON_SCENE := preload("res://scenes/ui/main_menu_3d_button.tscn")
+const SETTINGS_MODAL_SCRIPT: Script = preload("res://scripts/ui/settings_modal.gd")
 
 const QUALITY_LABELS: Array[String] = ["Low", "Medium", "High", "Ultra"]
 const DISPLAY_MODE_LABELS: Array[String] = ["Windowed", "Borderless", "Fullscreen"]
@@ -76,6 +77,7 @@ var _world_board: WorldTextBoard
 var _world_buttons: Dictionary = {}
 var _world_button_nodes: Array[MainMenu3DButton] = []
 var _hidden_world_roots: Dictionary = {}
+var _settings_modal: SettingsModal
 
 @onready var _root: Control = get_node("Root") as Control
 @onready var _tabs: TabContainer = get_node("Root/Panel/Margin/VBox/Tabs") as TabContainer
@@ -102,6 +104,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	_root.visible = false
+	_build_control_room_settings_modal()
 	_test_sfx_button.set_meta("_zh_sfx_skip_button", true)
 	_ensure_audio_buses()
 	_load_settings()
@@ -116,21 +119,22 @@ func open_settings(tab_name: String = "") -> void:
 	visible = true
 	_root.visible = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	if tab_name == "audio":
+	if _settings_modal != null:
+		_settings_modal.show_modal()
+	if _tabs != null and tab_name == "audio":
 		_tabs.current_tab = 0
-	elif tab_name == "graphics":
+	elif _tabs != null and tab_name == "graphics":
 		_tabs.current_tab = 1
-	elif tab_name == "controls":
+	elif _tabs != null and tab_name == "controls":
 		_tabs.current_tab = 2
-	_ensure_world_settings_stage()
-	_hide_peer_world_roots()
-	_set_world_settings_visible(true)
 	_refresh_world_settings()
 
 func close_settings() -> void:
 	_waiting_for_action = ""
 	visible = false
 	_root.visible = false
+	if _settings_modal != null:
+		_settings_modal.hide_modal()
 	_set_world_settings_visible(false)
 	_restore_peer_world_roots()
 	_refresh_control_buttons()
@@ -167,6 +171,93 @@ func _unhandled_input(event: InputEvent) -> void:
 	if key_code == KEY_ESCAPE:
 		close_settings()
 		get_viewport().set_input_as_handled()
+
+func _build_control_room_settings_modal() -> void:
+	_settings_modal = SETTINGS_MODAL_SCRIPT.new() as SettingsModal
+	if _settings_modal == null:
+		return
+	_settings_modal.name = "ControlRoomSettingsModal"
+	add_child(_settings_modal)
+	_settings_modal.set_title("Game Settings")
+	_settings_modal.close_pressed.connect(close_settings)
+	_settings_modal.done_pressed.connect(close_settings)
+	_settings_modal.reset_pressed.connect(_on_reset_all_pressed)
+	_settings_modal.clear_groups()
+
+	var audio_group: VBoxContainer = _settings_modal.add_group("Audio")
+	var master_pair: Dictionary = _make_slider_value_pair("100%")
+	_master_slider = master_pair["slider"] as HSlider
+	_master_value_label = master_pair["value"] as Label
+	_settings_modal.add_row(audio_group, "Master Volume", master_pair["root"] as Control)
+
+	var music_pair: Dictionary = _make_slider_value_pair("90%")
+	_music_slider = music_pair["slider"] as HSlider
+	_music_value_label = music_pair["value"] as Label
+	_settings_modal.add_row(audio_group, "Music Volume", music_pair["root"] as Control)
+
+	var sfx_pair: Dictionary = _make_slider_value_pair("95%")
+	_sfx_slider = sfx_pair["slider"] as HSlider
+	_sfx_value_label = sfx_pair["value"] as Label
+	_settings_modal.add_row(audio_group, "SFX Volume", sfx_pair["root"] as Control)
+
+	_mute_check = ToggleControl.new()
+	_mute_check.text = "MUTE AUDIO"
+	_settings_modal.add_row(audio_group, "Mute", _mute_check)
+
+	_test_sfx_button = _make_modal_button("TEST SFX", ControlRoomTheme.COLOR_BLUE)
+	_settings_modal.add_row(audio_group, "Speaker Check", _test_sfx_button)
+
+	var display_group: VBoxContainer = _settings_modal.add_group("Display")
+	_quality_option = _make_modal_option()
+	_settings_modal.add_row(display_group, "Graphics Quality", _quality_option)
+	_display_mode_option = _make_modal_option()
+	_settings_modal.add_row(display_group, "Display Mode", _display_mode_option)
+	_fps_cap_option = _make_modal_option()
+	_settings_modal.add_row(display_group, "Frame Rate Cap", _fps_cap_option)
+	_vsync_check = ToggleControl.new()
+	_vsync_check.text = "VSYNC"
+	_settings_modal.add_row(display_group, "Sync", _vsync_check)
+
+	var gameplay_group: VBoxContainer = _settings_modal.add_group("Gameplay")
+	_controls_list = VBoxContainer.new()
+	_controls_list.add_theme_constant_override("separation", 8)
+	gameplay_group.add_child(_controls_list)
+	_controls_status_label = Label.new()
+	ControlRoomTheme.apply_label(_controls_status_label, 17, ControlRoomTheme.COLOR_GREEN)
+	gameplay_group.add_child(_controls_status_label)
+	_reset_controls_button = _make_modal_button("RESET CONTROLS", ControlRoomTheme.COLOR_ORANGE)
+	_settings_modal.add_row(gameplay_group, "Keybinds", _reset_controls_button)
+
+	var streamer_group: VBoxContainer = _settings_modal.add_group("Streamer")
+	_streamer_controls_button = _make_modal_button("OPEN STREAMER SETTINGS", ControlRoomTheme.COLOR_PURPLE)
+	_settings_modal.add_row(streamer_group, "Premium Controls", _streamer_controls_button)
+
+func _make_slider_value_pair(initial_text: String) -> Dictionary:
+	var box := HBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
+	var slider := SliderControl.new()
+	box.add_child(slider)
+	var value_label := Label.new()
+	value_label.custom_minimum_size = Vector2(74, 0)
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	value_label.text = initial_text
+	ControlRoomTheme.apply_label(value_label, 18, ControlRoomTheme.COLOR_TEXT)
+	box.add_child(value_label)
+	return {"root": box, "slider": slider, "value": value_label}
+
+func _make_modal_button(label: String, accent: Color) -> Button:
+	var button := Button.new()
+	button.custom_minimum_size = Vector2(220, 42)
+	button.text = label
+	ControlRoomTheme.apply_button(button, Color(0.075, 0.09, 0.078, 0.98), Color(0.13, 0.16, 0.13, 1.0), accent, 17)
+	return button
+
+func _make_modal_option() -> OptionButton:
+	var option := OptionButton.new()
+	option.custom_minimum_size = Vector2(280, 42)
+	ControlRoomTheme.apply_button(option, Color(0.075, 0.09, 0.078, 0.98), Color(0.13, 0.16, 0.13, 1.0), ControlRoomTheme.COLOR_BLUE, 17)
+	return option
 
 func _connect_controls() -> void:
 	_close_button.pressed.connect(close_settings)
@@ -535,39 +626,33 @@ func _ensure_world_settings_stage() -> void:
 
 	_world_stage = Node3D.new()
 	_world_stage.name = "GameSettings3D"
-	_world_stage.position = Vector3(0.0, 0.2, -4.9)
+	_world_stage.position = Vector3(0.0, 0.42, -5.18)
 	camera.add_child(_world_stage)
 
 	_world_board = WORLD_BOARD_SCRIPT.new() as WorldTextBoard
 	_world_board.name = "SettingsBoard"
 	_world_board.title_text = "GAME SETTINGS"
 	_world_board.body_text = _format_world_settings_body()
-	_world_board.board_size = Vector2(4.85, 2.75)
-	_world_board.title_font_size = 34
-	_world_board.body_font_size = 20
-	_world_board.title_outline_size = 8
-	_world_board.body_outline_size = 6
+	_world_board.board_size = Vector2(4.7, 2.16)
+	_world_board.title_font_size = 30
+	_world_board.body_font_size = 17
+	_world_board.title_outline_size = 7
+	_world_board.body_outline_size = 5
 	_world_board.face_color = Color(0.012, 0.018, 0.012, 0.98)
 	_world_board.frame_color = Color(0.95, 0.48, 0.08, 1.0)
 	_world_board.title_color = Color(0.88, 1.0, 0.34, 1.0)
 	_world_stage.add_child(_world_board)
 
-	_add_world_settings_button(&"master_down", "MASTER -", Vector3(-1.95, -1.47, 0.34), Vector3(1.18, 0.36, 0.22), Color(0.34, 0.15, 0.62, 1.0), Color(0.52, 0.24, 0.9, 1.0), Color(0.82, 0.48, 1.0, 1.0))
-	_add_world_settings_button(&"master_up", "MASTER +", Vector3(-0.65, -1.47, 0.34), Vector3(1.18, 0.36, 0.22), Color(0.34, 0.15, 0.62, 1.0), Color(0.52, 0.24, 0.9, 1.0), Color(0.82, 0.48, 1.0, 1.0))
-	_add_world_settings_button(&"music_down", "MUSIC -", Vector3(0.65, -1.47, 0.34), Vector3(1.16, 0.36, 0.22), Color(0.13, 0.46, 0.72, 1.0), Color(0.2, 0.65, 0.95, 1.0), Color(0.42, 0.88, 1.0, 1.0))
-	_add_world_settings_button(&"music_up", "MUSIC +", Vector3(1.95, -1.47, 0.34), Vector3(1.16, 0.36, 0.22), Color(0.13, 0.46, 0.72, 1.0), Color(0.2, 0.65, 0.95, 1.0), Color(0.42, 0.88, 1.0, 1.0))
-	_add_world_settings_button(&"sfx_down", "SFX -", Vector3(-1.95, -1.94, 0.34), Vector3(1.0, 0.36, 0.22), Color(0.86, 0.36, 0.04, 1.0), Color(1.0, 0.5, 0.08, 1.0), Color(1.0, 0.75, 0.22, 1.0))
-	_add_world_settings_button(&"sfx_up", "SFX +", Vector3(-0.65, -1.94, 0.34), Vector3(1.0, 0.36, 0.22), Color(0.86, 0.36, 0.04, 1.0), Color(1.0, 0.5, 0.08, 1.0), Color(1.0, 0.75, 0.22, 1.0))
-	_add_world_settings_button(&"mute", "MUTE", Vector3(0.65, -1.94, 0.34), Vector3(1.0, 0.36, 0.22), Color(0.1, 0.08, 0.05, 1.0), Color(0.25, 0.13, 0.05, 1.0), Color(0.95, 0.5, 0.12, 1.0))
-	_add_world_settings_button(&"test_sfx", "TEST", Vector3(1.95, -1.94, 0.34), Vector3(1.0, 0.36, 0.22), Color(0.42, 0.68, 0.12, 1.0), Color(0.62, 0.92, 0.18, 1.0), Color(0.9, 1.0, 0.28, 1.0))
-	_add_world_settings_button(&"quality", "QUALITY", Vector3(-1.95, -2.41, 0.34), Vector3(1.24, 0.36, 0.22), Color(0.13, 0.46, 0.72, 1.0), Color(0.2, 0.65, 0.95, 1.0), Color(0.42, 0.88, 1.0, 1.0))
-	_add_world_settings_button(&"display", "DISPLAY", Vector3(-0.65, -2.41, 0.34), Vector3(1.22, 0.36, 0.22), Color(0.13, 0.46, 0.72, 1.0), Color(0.2, 0.65, 0.95, 1.0), Color(0.42, 0.88, 1.0, 1.0))
-	_add_world_settings_button(&"fps", "FPS", Vector3(0.65, -2.41, 0.34), Vector3(0.92, 0.36, 0.22), Color(0.13, 0.46, 0.72, 1.0), Color(0.2, 0.65, 0.95, 1.0), Color(0.42, 0.88, 1.0, 1.0))
-	_add_world_settings_button(&"vsync", "VSYNC", Vector3(1.95, -2.41, 0.34), Vector3(1.1, 0.36, 0.22), Color(0.86, 0.36, 0.04, 1.0), Color(1.0, 0.5, 0.08, 1.0), Color(1.0, 0.75, 0.22, 1.0))
-	_add_world_settings_button(&"reset_controls", "KEY RESET", Vector3(-1.95, -2.88, 0.34), Vector3(1.42, 0.36, 0.22), Color(0.1, 0.08, 0.05, 1.0), Color(0.25, 0.13, 0.05, 1.0), Color(0.95, 0.5, 0.12, 1.0))
-	_add_world_settings_button(&"reset_all", "RESET ALL", Vector3(-0.52, -2.88, 0.34), Vector3(1.34, 0.36, 0.22), Color(0.1, 0.08, 0.05, 1.0), Color(0.25, 0.13, 0.05, 1.0), Color(0.95, 0.5, 0.12, 1.0))
-	_add_world_settings_button(&"streamer", "STREAMER", Vector3(0.94, -2.88, 0.34), Vector3(1.36, 0.36, 0.22), Color(0.34, 0.15, 0.62, 1.0), Color(0.52, 0.24, 0.9, 1.0), Color(0.82, 0.48, 1.0, 1.0))
-	_add_world_settings_button(&"close", "DONE", Vector3(2.12, -2.88, 0.34), Vector3(0.9, 0.36, 0.22), Color(0.42, 0.68, 0.12, 1.0), Color(0.62, 0.92, 0.18, 1.0), Color(0.9, 1.0, 0.28, 1.0))
+	_add_world_settings_button(&"master_down", "MASTER -", Vector3(-2.15, -1.34, 0.34), Vector3(1.04, 0.34, 0.22), Color(0.34, 0.15, 0.62, 1.0), Color(0.52, 0.24, 0.9, 1.0), Color(0.82, 0.48, 1.0, 1.0))
+	_add_world_settings_button(&"master_up", "MASTER +", Vector3(-1.08, -1.34, 0.34), Vector3(1.04, 0.34, 0.22), Color(0.34, 0.15, 0.62, 1.0), Color(0.52, 0.24, 0.9, 1.0), Color(0.82, 0.48, 1.0, 1.0))
+	_add_world_settings_button(&"music_down", "MUSIC -", Vector3(0.0, -1.34, 0.34), Vector3(1.0, 0.34, 0.22), Color(0.13, 0.46, 0.72, 1.0), Color(0.2, 0.65, 0.95, 1.0), Color(0.42, 0.88, 1.0, 1.0))
+	_add_world_settings_button(&"music_up", "MUSIC +", Vector3(1.08, -1.34, 0.34), Vector3(1.0, 0.34, 0.22), Color(0.13, 0.46, 0.72, 1.0), Color(0.2, 0.65, 0.95, 1.0), Color(0.42, 0.88, 1.0, 1.0))
+	_add_world_settings_button(&"mute", "MUTE", Vector3(2.12, -1.34, 0.34), Vector3(0.92, 0.34, 0.22), Color(0.1, 0.08, 0.05, 1.0), Color(0.25, 0.13, 0.05, 1.0), Color(0.95, 0.5, 0.12, 1.0))
+	_add_world_settings_button(&"sfx_down", "SFX -", Vector3(-1.84, -1.78, 0.34), Vector3(0.92, 0.34, 0.22), Color(0.86, 0.36, 0.04, 1.0), Color(1.0, 0.5, 0.08, 1.0), Color(1.0, 0.75, 0.22, 1.0))
+	_add_world_settings_button(&"sfx_up", "SFX +", Vector3(-0.86, -1.78, 0.34), Vector3(0.92, 0.34, 0.22), Color(0.86, 0.36, 0.04, 1.0), Color(1.0, 0.5, 0.08, 1.0), Color(1.0, 0.75, 0.22, 1.0))
+	_add_world_settings_button(&"quality", "QUALITY", Vector3(0.18, -1.78, 0.34), Vector3(1.06, 0.34, 0.22), Color(0.13, 0.46, 0.72, 1.0), Color(0.2, 0.65, 0.95, 1.0), Color(0.42, 0.88, 1.0, 1.0))
+	_add_world_settings_button(&"display", "DISPLAY", Vector3(1.3, -1.78, 0.34), Vector3(1.06, 0.34, 0.22), Color(0.13, 0.46, 0.72, 1.0), Color(0.2, 0.65, 0.95, 1.0), Color(0.42, 0.88, 1.0, 1.0))
+	_add_world_settings_button(&"close", "DONE", Vector3(2.3, -1.78, 0.34), Vector3(0.92, 0.34, 0.22), Color(0.42, 0.68, 0.12, 1.0), Color(0.62, 0.92, 0.18, 1.0), Color(0.9, 1.0, 0.28, 1.0))
 
 func _add_world_settings_button(action_id: StringName, label: String, local_position: Vector3, block_size: Vector3, base_color: Color, hover_color: Color, accent_color: Color) -> void:
 	var button: MainMenu3DButton = WORLD_BUTTON_SCENE.instantiate() as MainMenu3DButton
@@ -581,7 +666,7 @@ func _add_world_settings_button(action_id: StringName, label: String, local_posi
 	button.hover_color = hover_color
 	button.accent_color = accent_color
 	button.block_size = block_size
-	button.font_size = 15
+	button.font_size = 14
 	button.outline_size = 4
 	button.pressed.connect(_on_world_settings_button_pressed)
 	_world_stage.add_child(button)
@@ -608,7 +693,7 @@ func _set_world_button_text(action_id: StringName, label: String) -> void:
 		button.set_button_text(label)
 
 func _format_world_settings_body() -> String:
-	return "Audio  Master %d  Music %d  SFX %d\nMute  %s\nGraphics  %s  %s\nFPS  %s  VSync  %s\nMove  %s  %s  %s  %s\nRound  %s / %s / %s\nStatus  %s" % [
+	return "AUDIO\nMaster %d  Music %d  SFX %d  Mute %s\n\nGRAPHICS\n%s  %s  FPS %s  VSync %s\n\nCONTROLS\nMove %s %s %s %s  Round %s/%s/%s\n\nSTATUS\n%s" % [
 		int(round(_master_volume * 100.0)),
 		int(round(_music_volume * 100.0)),
 		int(round(_sfx_volume * 100.0)),

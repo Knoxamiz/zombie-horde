@@ -1,6 +1,8 @@
 class_name StreamerMenuController
 extends CanvasLayer
 
+const SETTINGS_MODAL_SCRIPT: Script = preload("res://scripts/ui/settings_modal.gd")
+
 @export var hazard_config: HazardConfig
 @export var zombie_config: ZombieConfig
 @export var minigun_config: MinigunConfig
@@ -52,6 +54,7 @@ var _world_preset_3_button: MainMenu3DButton
 var _world_preset_4_button: MainMenu3DButton
 var _world_reset_button: MainMenu3DButton
 var _hidden_world_roots: Dictionary = {}
+var _settings_modal: SettingsModal
 var _profile: StreamerSettingsProfile = StreamerSettingsProfile.new()
 var _is_refreshing: bool = false
 var _active_preset_slot: int = 0
@@ -127,6 +130,7 @@ func _ready() -> void:
 	if _root != null:
 		_root.visible = false
 
+	_build_control_room_streamer_modal()
 	_profile = StreamerSettingsProfile.load_from_disk()
 	_populate_options()
 	_apply_profile_to_game(false)
@@ -183,6 +187,140 @@ func _ready() -> void:
 	_set_character_select_open(false)
 	_set_status("Settings loaded")
 
+func _build_control_room_streamer_modal() -> void:
+	_settings_modal = SETTINGS_MODAL_SCRIPT.new() as SettingsModal
+	if _settings_modal == null:
+		return
+	_settings_modal.name = "ControlRoomStreamerModal"
+	add_child(_settings_modal)
+	_settings_modal.set_title("Streamer Settings")
+	_settings_modal.close_pressed.connect(close_menu)
+	_settings_modal.done_pressed.connect(close_menu)
+	_settings_modal.reset_pressed.connect(_on_reset_defaults_pressed)
+	_settings_modal.clear_groups()
+
+	var overview_group: VBoxContainer = _settings_modal.add_group("Streamer")
+	_edition_value_label = Label.new()
+	ControlRoomTheme.apply_label(_edition_value_label, 20, ControlRoomTheme.COLOR_GREEN)
+	_settings_modal.add_row(overview_group, "Edition", _edition_value_label)
+	_menu_tier_detail_label = Label.new()
+	_menu_tier_detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ControlRoomTheme.apply_label(_menu_tier_detail_label, 16, ControlRoomTheme.COLOR_MUTED)
+	overview_group.add_child(_menu_tier_detail_label)
+	_streamer_name_edit = LineEdit.new()
+	_streamer_name_edit.custom_minimum_size = Vector2(320, 42)
+	_settings_modal.add_row(overview_group, "Streamer Name", _streamer_name_edit)
+	_avatar_value_label = Label.new()
+	ControlRoomTheme.apply_label(_avatar_value_label, 19, ControlRoomTheme.COLOR_TEXT)
+	var avatar_box := HBoxContainer.new()
+	avatar_box.add_theme_constant_override("separation", 10)
+	avatar_box.add_child(_avatar_value_label)
+	_choose_character_button = _make_modal_button("NEXT AVATAR", ControlRoomTheme.COLOR_PURPLE)
+	avatar_box.add_child(_choose_character_button)
+	_settings_modal.add_row(overview_group, "Avatar", avatar_box)
+
+	var gameplay_group: VBoxContainer = _settings_modal.add_group("Gameplay")
+	_map_option = _make_modal_option()
+	_map_row = _settings_modal.add_row(gameplay_group, "Race Map", _map_option)
+	_balance_value_label = Label.new()
+	ControlRoomTheme.apply_label(_balance_value_label, 19, ControlRoomTheme.COLOR_GREEN)
+	_balance_detail_label = Label.new()
+	_balance_detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ControlRoomTheme.apply_label(_balance_detail_label, 16, ControlRoomTheme.COLOR_MUTED)
+	var balance_pair: Dictionary = _make_slider_value_pair(_balance_value_label)
+	_balance_slider = balance_pair["slider"] as HSlider
+	_settings_modal.add_row(gameplay_group, "Round Balance", balance_pair["root"] as Control)
+	gameplay_group.add_child(_balance_detail_label)
+	_time_of_day_option = _make_modal_option()
+	_settings_modal.add_row(gameplay_group, "Lighting", _time_of_day_option)
+	_backdrop_option = _make_modal_option()
+	_settings_modal.add_row(gameplay_group, "Backdrop", _backdrop_option)
+	_tower_gun_option = _make_modal_option()
+	_tower_gun_row = _settings_modal.add_row(gameplay_group, "NPC Loadout", _tower_gun_option)
+	_tower_weapon_check = ToggleControl.new()
+	_tower_weapon_check.text = "SHOW WEAPON PROPS"
+	_tower_weapon_row = _settings_modal.add_row(gameplay_group, "Weapon Props", _tower_weapon_check)
+
+	var preset_group: VBoxContainer = _settings_modal.add_group("Presets")
+	var preset_row := HBoxContainer.new()
+	preset_row.add_theme_constant_override("separation", 10)
+	_preset_button_1 = _make_modal_button("PRESET 1", ControlRoomTheme.COLOR_PURPLE)
+	_preset_button_2 = _make_modal_button("PRESET 2", ControlRoomTheme.COLOR_PURPLE)
+	_preset_button_3 = _make_modal_button("PRESET 3", ControlRoomTheme.COLOR_PURPLE)
+	_preset_button_4 = _make_modal_button("PRESET 4", ControlRoomTheme.COLOR_PURPLE)
+	preset_row.add_child(_preset_button_1)
+	preset_row.add_child(_preset_button_2)
+	preset_row.add_child(_preset_button_3)
+	preset_row.add_child(_preset_button_4)
+	preset_group.add_child(preset_row)
+	var preset_actions := HBoxContainer.new()
+	preset_actions.add_theme_constant_override("separation", 10)
+	_save_preset_button = _make_modal_button("SAVE PRESET", ControlRoomTheme.COLOR_GREEN)
+	_reset_defaults_button = _make_modal_button("DEFAULTS", ControlRoomTheme.COLOR_ORANGE)
+	preset_actions.add_child(_save_preset_button)
+	preset_actions.add_child(_reset_defaults_button)
+	preset_group.add_child(preset_actions)
+
+	_premium_scroll = ScrollContainer.new()
+	_premium_controls = VBoxContainer.new()
+	_premium_controls.add_theme_constant_override("separation", 8)
+	var premium_group: VBoxContainer = _settings_modal.add_group("Premium Street Controls")
+	premium_group.add_child(_premium_scroll)
+	_premium_scroll.add_child(_premium_controls)
+	_mine_spin = _make_modal_spin(0, 96)
+	_settings_modal.add_row(_premium_controls, "Mines", _mine_spin)
+	_street_prop_spin = _make_modal_spin(0, 96)
+	_settings_modal.add_row(_premium_controls, "Street Props", _street_prop_spin)
+	_boost_pad_spin = _make_modal_spin(0, 32)
+	_settings_modal.add_row(_premium_controls, "Boosts", _boost_pad_spin)
+	_sewer_spin = _make_modal_spin(0, 32)
+	_settings_modal.add_row(_premium_controls, "Sewers", _sewer_spin)
+	_defender_spin = _make_modal_spin(0, 12)
+	_settings_modal.add_row(_premium_controls, "Defenders", _defender_spin)
+	_vehicle_weight_spin = _make_modal_spin(0, 100)
+	_settings_modal.add_row(_premium_controls, "Vehicle Weight", _vehicle_weight_spin)
+	_cone_weight_spin = _make_modal_spin(0, 100)
+	_settings_modal.add_row(_premium_controls, "Cone Weight", _cone_weight_spin)
+	_barrier_weight_spin = _make_modal_spin(0, 100)
+	_settings_modal.add_row(_premium_controls, "Barrier Weight", _barrier_weight_spin)
+
+	_reroll_button = _make_modal_button("REROLL STREET PREVIEW", ControlRoomTheme.COLOR_BLUE)
+	premium_group.add_child(_reroll_button)
+	_status_label = Label.new()
+	ControlRoomTheme.apply_label(_status_label, 17, ControlRoomTheme.COLOR_GREEN)
+	premium_group.add_child(_status_label)
+
+func _make_slider_value_pair(value_label: Label) -> Dictionary:
+	var box := HBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
+	var slider := SliderControl.new()
+	box.add_child(slider)
+	value_label.custom_minimum_size = Vector2(180, 0)
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	box.add_child(value_label)
+	return {"root": box, "slider": slider}
+
+func _make_modal_button(label: String, accent: Color) -> Button:
+	var button := Button.new()
+	button.custom_minimum_size = Vector2(160, 42)
+	button.text = label
+	ControlRoomTheme.apply_button(button, Color(0.075, 0.09, 0.078, 0.98), Color(0.13, 0.16, 0.13, 1.0), accent, 16)
+	return button
+
+func _make_modal_option() -> OptionButton:
+	var option := OptionButton.new()
+	option.custom_minimum_size = Vector2(320, 42)
+	ControlRoomTheme.apply_button(option, Color(0.075, 0.09, 0.078, 0.98), Color(0.13, 0.16, 0.13, 1.0), ControlRoomTheme.COLOR_BLUE, 16)
+	return option
+
+func _make_modal_spin(minimum: int, maximum: int) -> SpinBox:
+	var spin := SpinBox.new()
+	spin.custom_minimum_size = Vector2(180, 42)
+	spin.min_value = float(minimum)
+	spin.max_value = float(maximum)
+	spin.step = 1.0
+	return spin
+
 func _on_toggle_pressed() -> void:
 	_set_menu_open(not _menu_panel.visible)
 
@@ -203,7 +341,12 @@ func _set_menu_open(open: bool) -> void:
 	_menu_panel.visible = false
 	_toggle_button.visible = false
 	_toggle_button.text = "Close"
-	_set_world_menu_visible(open)
+	_set_world_menu_visible(false)
+	if _settings_modal != null:
+		if open:
+			_settings_modal.show_modal()
+		else:
+			_settings_modal.hide_modal()
 	if not open:
 		_set_character_select_open(false)
 
@@ -307,6 +450,9 @@ func _on_reset_defaults_pressed() -> void:
 	_save_profile("Defaults restored")
 
 func _on_choose_character_pressed() -> void:
+	if _settings_modal != null and _settings_modal.visible:
+		_cycle_world_avatar()
+		return
 	_set_character_select_open(true)
 
 func _on_character_close_pressed() -> void:

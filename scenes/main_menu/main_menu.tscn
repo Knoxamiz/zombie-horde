@@ -1,4 +1,4 @@
-[gd_scene load_steps=36 format=3 uid="uid://bl7b03v3qe672"]
+[gd_scene load_steps=41 format=3 uid="uid://bl7b03v3qe672"]
 
 [ext_resource type="Script" uid="uid://cqk4hcw17svdm" path="res://scripts/main_menu/main_menu_controller.gd" id="1_controller"]
 [ext_resource type="Theme" uid="uid://dipqo44ax4dyr" path="res://assets/ui/main_menu_theme.tres" id="2_theme"]
@@ -30,7 +30,7 @@ emission = Color(0.08, 0.75, 0.15, 1)
 emission_energy_multiplier = 0.45
 
 [sub_resource type="BoxMesh" id="BoxMesh_chat_sign_face"]
-size = Vector3(3.1, 1.55, 0.12)
+size = Vector3(2.95, 1.48, 0.12)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_chat_sign_face"]
 albedo_color = Color(0.018, 0.035, 0.02, 1)
@@ -38,6 +38,25 @@ roughness = 0.72
 emission_enabled = true
 emission = Color(0.09, 0.45, 0.13, 1)
 emission_energy_multiplier = 0.28
+
+[sub_resource type="BoxMesh" id="BoxMesh_chat_sign_rim_h"]
+size = Vector3(3.18, 0.18, 0.18)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_chat_sign_frame"]
+albedo_color = Color(0.72, 0.28, 0.06, 1)
+roughness = 0.62
+emission_enabled = true
+emission = Color(0.9, 0.28, 0.08, 1)
+emission_energy_multiplier = 0.22
+
+[sub_resource type="BoxMesh" id="BoxMesh_chat_sign_rim_v"]
+size = Vector3(0.18, 1.72, 0.18)
+
+[sub_resource type="BoxMesh" id="BoxMesh_chat_sign_scuff"]
+size = Vector3(0.62, 0.025, 0.025)
+
+[sub_resource type="BoxMesh" id="BoxMesh_chat_sign_bolt"]
+size = Vector3(0.12, 0.12, 0.05)
 
 [sub_resource type="BoxMesh" id="BoxMesh_join_prompt"]
 size = Vector3(3.85, 0.54, 0.18)
@@ -243,6 +262,7 @@ camera_idle_strength = 0.28
 environment = ExtResource("4_environment")
 
 [node name="CinematicWorld" type="Node3D" parent="."]
+visible = false
 
 [node name="RoadArena" parent="CinematicWorld" instance=ExtResource("5_road_arena")]
 
@@ -361,118 +381,165 @@ pixel_size = 0.01075
 texture = ExtResource("16_menu_art")
 
 [node name="LogoRig" type="Node3D" parent="CinematicCamera/Menu3DOverlay"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.12, 2.08, -6.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08, 2.14, -6.12)
 
 [node name="LogoDepthFar" type="Sprite3D" parent="CinematicCamera/Menu3DOverlay/LogoRig"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16, -0.12, -0.24)
 modulate = Color(0.015, 0.012, 0.025, 0.9)
-pixel_size = 0.00305
+pixel_size = 0.0032
 no_depth_test = true
 texture = ExtResource("17_menu_logo")
 
 [node name="LogoDepthMid" type="Sprite3D" parent="CinematicCamera/Menu3DOverlay/LogoRig"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.09, -0.07, -0.13)
 modulate = Color(0.05, 0.018, 0.08, 0.94)
-pixel_size = 0.00305
+pixel_size = 0.0032
 no_depth_test = true
 texture = ExtResource("17_menu_logo")
 
 [node name="LogoGlow" type="Sprite3D" parent="CinematicCamera/Menu3DOverlay/LogoRig"]
 transform = Transform3D(1.035, 0, 0, 0, 1.035, 0, 0, 0, 1.035, 0, 0, -0.06)
 modulate = Color(0.48, 0.19, 1, 0.18)
-pixel_size = 0.00305
+pixel_size = 0.0032
 no_depth_test = true
 texture = ExtResource("17_menu_logo")
 
 [node name="LogoFace" type="Sprite3D" parent="CinematicCamera/Menu3DOverlay/LogoRig"]
-pixel_size = 0.00305
+pixel_size = 0.0032
 no_depth_test = true
 texture = ExtResource("17_menu_logo")
 
 [node name="ButtonRack" type="Node3D" parent="CinematicCamera/Menu3DOverlay"]
 
 [node name="StartButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonRack" instance=ExtResource("18_menu_3d_button")]
-transform = Transform3D(1, 0, 0, 0, 0.98, 0.173648, 0, -0.173648, 0.98, -3.45, 0.38, -5.82)
+transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, -3.24, 0.25, -5.36)
 action_id = &"start"
 text = "START"
 base_color = Color(0.48, 0.72, 0.14, 1)
 hover_color = Color(0.66, 0.95, 0.2, 1)
 accent_color = Color(0.9, 1, 0.32, 1)
 text_color = Color(1, 0.98, 0.86, 1)
-block_size = Vector3(3.65, 0.72, 0.34)
+block_size = Vector3(3.28, 0.68, 0.34)
+font_size = 35
 
 [node name="StreamerButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonRack" instance=ExtResource("18_menu_3d_button")]
-transform = Transform3D(1, 0, 0, 0, 0.98, 0.173648, 0, -0.173648, 0.98, -3.45, -0.47, -5.78)
+transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, -3.24, -0.63, -5.34)
 action_id = &"streamer"
 text = "STREAMER MODE"
 base_color = Color(0.34, 0.15, 0.62, 1)
 hover_color = Color(0.52, 0.24, 0.9, 1)
 accent_color = Color(0.82, 0.48, 1, 1)
 text_color = Color(1, 0.96, 0.88, 1)
-block_size = Vector3(3.95, 0.72, 0.34)
+block_size = Vector3(3.55, 0.68, 0.34)
+font_size = 31
 idle_phase = 0.7
 
 [node name="LeaderboardButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonRack" instance=ExtResource("18_menu_3d_button")]
-transform = Transform3D(1, 0, 0, 0, 0.98, 0.173648, 0, -0.173648, 0.98, -3.45, -1.32, -5.74)
+transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, -3.24, -1.51, -5.32)
 action_id = &"leaderboard"
 text = "LEADERBOARD"
 base_color = Color(0.11, 0.46, 0.74, 1)
 hover_color = Color(0.18, 0.62, 0.96, 1)
 accent_color = Color(0.42, 0.88, 1, 1)
 text_color = Color(1, 0.96, 0.88, 1)
-block_size = Vector3(3.8, 0.72, 0.34)
+block_size = Vector3(3.42, 0.68, 0.34)
+font_size = 31
 idle_phase = 1.4
 
 [node name="SettingsButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonRack" instance=ExtResource("18_menu_3d_button")]
-transform = Transform3D(1, 0, 0, 0, 0.98, 0.173648, 0, -0.173648, 0.98, -3.45, -2.17, -5.7)
+transform = Transform3D(1, 0, 0, 0, 0.985, 0.174, 0, -0.174, 0.985, -3.24, -2.39, -5.3)
 action_id = &"settings"
 text = "SETTINGS"
 base_color = Color(0.86, 0.36, 0.04, 1)
 hover_color = Color(1, 0.5, 0.08, 1)
 accent_color = Color(1, 0.75, 0.22, 1)
 text_color = Color(1, 0.96, 0.88, 1)
-block_size = Vector3(3.55, 0.72, 0.34)
+block_size = Vector3(3.2, 0.68, 0.34)
+font_size = 32
 idle_phase = 2.1
 
 [node name="ExitButton3D" parent="CinematicCamera/Menu3DOverlay/ButtonRack" instance=ExtResource("18_menu_3d_button")]
-transform = Transform3D(0.92, 0, 0, 0, 0.901, 0.159756, 0, -0.159756, 0.901, -3.55, -2.98, -5.66)
+transform = Transform3D(0.94, 0, 0, 0, 0.926, 0.163, 0, -0.163, 0.926, -3.29, -3.2, -5.28)
 action_id = &"exit"
 text = "EXIT GAME"
 base_color = Color(0.09, 0.07, 0.045, 1)
 hover_color = Color(0.2, 0.12, 0.045, 1)
 accent_color = Color(0.95, 0.5, 0.12, 1)
 text_color = Color(0.95, 0.82, 0.58, 1)
-block_size = Vector3(3.35, 0.62, 0.28)
+block_size = Vector3(3.02, 0.58, 0.28)
+font_size = 27
+outline_size = 6
 idle_phase = 2.8
 
 [node name="ChatRoadSign" type="Node3D" parent="CinematicCamera/Menu3DOverlay"]
-transform = Transform3D(0.991445, -0.130526, 0, 0.130526, 0.991445, 0, 0, 0, 1, 3.1, 0.72, -5.52)
+transform = Transform3D(0.996195, -0.087156, 0, 0.087156, 0.996195, 0, 0, 0, 1, 3.38, 0.14, -5.42)
 
 [node name="TownSignAsset" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign" instance=ExtResource("19_town_sign")]
 transform = Transform3D(0.78, 0, 0, 0, 0.78, 0, 0, 0, 0.78, 0, -0.36, -0.16)
+visible = false
 
 [node name="SignFace" type="MeshInstance3D" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign"]
 mesh = SubResource("BoxMesh_chat_sign_face")
 surface_material_override/0 = SubResource("StandardMaterial3D_chat_sign_face")
 
+[node name="SignRimTop" type="MeshInstance3D" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.81, 0.04)
+mesh = SubResource("BoxMesh_chat_sign_rim_h")
+surface_material_override/0 = SubResource("StandardMaterial3D_chat_sign_frame")
+
+[node name="SignRimBottom" type="MeshInstance3D" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.81, 0.04)
+mesh = SubResource("BoxMesh_chat_sign_rim_h")
+surface_material_override/0 = SubResource("StandardMaterial3D_chat_sign_frame")
+
+[node name="SignRimLeft" type="MeshInstance3D" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.57, 0, 0.04)
+mesh = SubResource("BoxMesh_chat_sign_rim_v")
+surface_material_override/0 = SubResource("StandardMaterial3D_chat_sign_frame")
+
+[node name="SignRimRight" type="MeshInstance3D" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.57, 0, 0.04)
+mesh = SubResource("BoxMesh_chat_sign_rim_v")
+surface_material_override/0 = SubResource("StandardMaterial3D_chat_sign_frame")
+
+[node name="SignScuffA" type="MeshInstance3D" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign"]
+transform = Transform3D(1.35, 0, 0, 0, 1, 0, 0, 0, 1, 0.42, -0.18, 0.1)
+mesh = SubResource("BoxMesh_chat_sign_scuff")
+surface_material_override/0 = SubResource("StandardMaterial3D_chat_sign_frame")
+
+[node name="SignScuffB" type="MeshInstance3D" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign"]
+transform = Transform3D(0.86, 0, 0, 0, 1, 0, 0, 0, 1, -0.18, -0.48, 0.1)
+mesh = SubResource("BoxMesh_chat_sign_scuff")
+surface_material_override/0 = SubResource("StandardMaterial3D_chat_sign_frame")
+
+[node name="SignBoltTL" type="MeshInstance3D" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.42, 0.7, 0.12)
+mesh = SubResource("BoxMesh_chat_sign_bolt")
+surface_material_override/0 = SubResource("StandardMaterial3D_chat_sign_frame")
+
+[node name="SignBoltTR" type="MeshInstance3D" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.42, 0.7, 0.12)
+mesh = SubResource("BoxMesh_chat_sign_bolt")
+surface_material_override/0 = SubResource("StandardMaterial3D_chat_sign_frame")
+
 [node name="SignHeader" type="Label3D" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.32, 0.48, 0.12)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.18, 0.48, 0.18)
 modulate = Color(1, 0.31, 0.22, 1)
 text = "CHAT ACTIVITY"
-font_size = 20
-outline_size = 5
+font_size = 30
+outline_size = 7
 horizontal_alignment = 0
 
 [node name="ChatFeedLabel3D" type="Label3D" parent="CinematicCamera/Menu3DOverlay/ChatRoadSign"]
-transform = Transform3D(0.92, 0, 0, 0, 0.92, 0, 0, 0, 0.92, -1.32, 0.13, 0.13)
+transform = Transform3D(0.98, 0, 0, 0, 0.98, 0, 0, 0, 0.98, -1.18, 0.1, 0.19)
 modulate = Color(0.82, 1, 0.3, 1)
 text = "TacoKing: !BRAINS
 PixelPunk: !CHAOS
 NotSleepy: !NUKE
 HexHunger: !SLOWMO
 >>> TOO MANY BRAINS!"
-font_size = 14
-outline_size = 3
+font_size = 24
+outline_size = 5
 horizontal_alignment = 0
 
 [node name="JoinPrompt3D" type="Node3D" parent="CinematicCamera/Menu3DOverlay"]

@@ -3,10 +3,13 @@ extends Node3D
 
 const AUDIO_MANAGER_SCENE: PackedScene = preload("res://scenes/audio/audio_manager.tscn")
 const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_settings_menu.tscn")
+const MAIN_LOBBY_SCREEN_SCENE: Script = preload("res://scripts/ui/main_lobby_screen.gd")
+const MENU_LOGO: Texture2D = preload("res://assets/ui/main_menu/zombie_chat_horde_logo.png")
+const FEATURE_CONFIG: FeatureAccessConfig = preload("res://resources/config/feature_access_config.tres")
 const CHAT_ACTIVITY_FEED: Array[String] = [
-	"TacoKing: !BRAINS\nPixelPunk: !CHAOS\nNotSleepy: !NUKE\nHexHunger: !SLOWMO\n>>> TOO MANY BRAINS!",
-	"ByteBiter: !BRAINS\nGraveShift: !CHAOS\nNeonRot: !BRAINS\nVanDad: !SLOWMO\n>>> HORDE GROWING",
-	"RoadRage: !NUKE\nSnackStack: !BRAINS\nMoldMode: !CHAOS\nCrateLord: !BRAINS\n>>> CHAT IS LOUD",
+	"ByteBiter: !brains\nGraveSnarl: !chaos\nNeonRot: !brains\nCrawlerQ: !slowmo",
+	"RoadRage: !nuke\nSnackStack: !brains\nMoldMode: !chaos\nCrateLord: !brains",
+	"TacoKing: !brains\nPixelPunk: !chaos\nNotSleepy: !nuke\nHexHunger: !slowmo",
 ]
 
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/main/main_game.tscn"
@@ -34,6 +37,7 @@ var _chat_activity_index: int = 0
 var _chat_activity_elapsed: float = 0.0
 var _menu_3d_buttons: Array[MainMenu3DButton] = []
 var _logo_rig_base_position: Vector3 = Vector3.ZERO
+var _control_room_screen: MainLobbyScreen
 
 @onready var _camera: Camera3D = get_node_or_null(camera_path) as Camera3D
 @onready var _open_lobby_button: Button = get_node_or_null("MenuLayer/Root/Nav/OpenLobbyButton") as Button
@@ -50,12 +54,12 @@ func _ready() -> void:
 	var music_controller: MusicController = _get_or_create_music_controller()
 	if music_controller != null:
 		music_controller.play_menu_music()
+	_hide_legacy_menu_ui()
+	_build_control_room_screen()
 	_cache_cinematic_nodes()
 	if _camera != null:
 		_camera.look_at(camera_focus, Vector3.UP)
 
-	_connect_canvas_buttons()
-	_connect_3d_buttons()
 	_refresh_chat_activity()
 	_refresh_feature_buttons()
 
@@ -71,7 +75,7 @@ func _on_open_lobby_pressed() -> void:
 	_launch_lobby(0, false)
 
 func _on_add_join_pressed() -> void:
-	_launch_lobby(0, true)
+	_launch_lobby(debug_joins_per_click, false)
 
 func _on_leaderboard_pressed() -> void:
 	_launch_lobby(0, false)
@@ -81,10 +85,23 @@ func _on_menu_3d_button_pressed(action_id: StringName) -> void:
 		&"start":
 			_on_open_lobby_pressed()
 		&"streamer":
-			_on_add_join_pressed()
+			_on_streamer_settings_pressed()
 		&"leaderboard":
 			_on_leaderboard_pressed()
 		&"settings":
+			_on_settings_pressed()
+		&"exit":
+			_on_exit_pressed()
+
+func _on_control_room_action_requested(action_id: StringName) -> void:
+	match action_id:
+		&"start":
+			_on_open_lobby_pressed()
+		&"add_join":
+			_on_add_join_pressed()
+		&"streamer_settings":
+			_on_streamer_settings_pressed()
+		&"game_settings":
 			_on_settings_pressed()
 		&"exit":
 			_on_exit_pressed()
@@ -93,6 +110,9 @@ func _on_settings_pressed() -> void:
 	var game_settings: GameSettingsController = _get_or_create_game_settings()
 	if game_settings != null:
 		game_settings.open_settings()
+
+func _on_streamer_settings_pressed() -> void:
+	_launch_lobby(0, true)
 
 func _on_exit_pressed() -> void:
 	get_tree().quit()
@@ -124,11 +144,66 @@ func _set_buttons_enabled(enabled: bool) -> void:
 	for button in _menu_3d_buttons:
 		if button != null and is_instance_valid(button):
 			button.set_interactable(enabled)
+	if _control_room_screen != null:
+		_control_room_screen.set_action_enabled(&"start", enabled)
+		_control_room_screen.set_action_enabled(&"add_join", enabled)
+		_control_room_screen.set_action_enabled(&"streamer_settings", enabled)
+		_control_room_screen.set_action_enabled(&"game_settings", enabled)
+		_control_room_screen.set_action_enabled(&"exit", enabled)
 
 func _refresh_feature_buttons() -> void:
 	if _settings_button != null:
 		_settings_button.visible = true
 		_settings_button.disabled = false
+	if _control_room_screen != null:
+		_control_room_screen.set_action_enabled(&"game_settings", true)
+
+func _hide_legacy_menu_ui() -> void:
+	var legacy_layer: CanvasItem = get_node_or_null("MenuLayer") as CanvasItem
+	if legacy_layer != null:
+		legacy_layer.visible = false
+	var legacy_overlay: Node3D = get_node_or_null("CinematicCamera/Menu3DOverlay") as Node3D
+	if legacy_overlay != null:
+		legacy_overlay.visible = false
+
+func _build_control_room_screen() -> void:
+	_control_room_screen = MAIN_LOBBY_SCREEN_SCENE.new() as MainLobbyScreen
+	if _control_room_screen == null:
+		return
+	_control_room_screen.name = "MainLobbyScreen"
+	add_child(_control_room_screen)
+	_control_room_screen.set_logo_texture(MENU_LOGO)
+	_control_room_screen.action_requested.connect(_on_control_room_action_requested)
+	_control_room_screen.set_actions([
+		{"id": &"start", "icon": ">", "label": "Start Lobby", "primary": true},
+		{"id": &"add_join", "icon": "+", "label": "Add Join"},
+		{"id": &"reset", "icon": "R", "label": "Reset", "enabled": false},
+		{"id": &"streamer_settings", "icon": "S", "label": "Streamer Settings"},
+		{"id": &"game_settings", "icon": "G", "label": "Game Settings"},
+		{"id": &"exit", "icon": "X", "label": "Exit Game"},
+	])
+	_control_room_screen.set_lobby_status(
+		"Cage empty - waiting for !brains",
+		"No active lobby yet.",
+		"Twitch chat ready for commands.",
+		"Start the lobby when you are ready."
+	)
+	_control_room_screen.set_records("Fastest Times\n-", "Last Winners\n-")
+	_control_room_screen.set_bottom_items(_build_main_menu_status_items())
+
+func _build_main_menu_status_items() -> Array[Dictionary]:
+	var profile: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
+	return [
+		{"label": "Map", "value": "Quarantine Boulevard"},
+		{"label": "Edition", "value": FEATURE_CONFIG.get_edition_name()},
+		{"label": "Round Type", "value": "Lotto Race"},
+		{"label": "Lighting", "value": profile.get_time_of_day_name()},
+		{"label": "Props", "value": str(profile.premium_obstacle_count)},
+		{"label": "Mines", "value": str(profile.premium_mine_count)},
+		{"label": "Boosts", "value": str(profile.premium_boost_pad_count)},
+		{"label": "Sewers", "value": str(profile.premium_sewer_hole_count)},
+		{"label": "Defenders", "value": str(profile.premium_defender_count)},
+	]
 
 func _connect_canvas_buttons() -> void:
 	if _open_lobby_button != null:
@@ -266,3 +341,5 @@ func _refresh_chat_activity() -> void:
 		_chat_activity_label.text = feed_text
 	if _chat_activity_label_3d != null:
 		_chat_activity_label_3d.text = feed_text
+	if _control_room_screen != null:
+		_control_room_screen.set_chat_activity(PackedStringArray(feed_text.split("\n")))

@@ -14,11 +14,16 @@ extends Node3D
 @export var title_color: Color = Color(0.88, 1.0, 0.34, 1.0)
 @export var body_color: Color = Color(1.0, 0.94, 0.74, 1.0)
 @export var glow_strength: float = 0.18
+@export_range(0.0, 1.0, 0.05) var texture_strength: float = 0.75
 @export var title_z: float = 0.16
 @export var body_z: float = 0.17
 
 var _face_material: StandardMaterial3D
 var _frame_material: StandardMaterial3D
+var _detail_material: StandardMaterial3D
+var _shadow_material: StandardMaterial3D
+var _face_detail_nodes: Array[MeshInstance3D] = []
+var _bolt_nodes: Array[MeshInstance3D] = []
 
 @onready var _face: MeshInstance3D = get_node_or_null("Face") as MeshInstance3D
 @onready var _top_rim: MeshInstance3D = get_node_or_null("TopRim") as MeshInstance3D
@@ -57,6 +62,16 @@ func _ensure_nodes() -> void:
 	_right_rim = _get_or_create_mesh("RightRim")
 	_title_label = _get_or_create_label("TitleLabel")
 	_body_label = _get_or_create_label("BodyLabel")
+	_ensure_detail_nodes()
+
+func _ensure_detail_nodes() -> void:
+	_face_detail_nodes.clear()
+	for index in range(5):
+		_face_detail_nodes.append(_get_or_create_mesh("FaceScuff%d" % index))
+
+	_bolt_nodes.clear()
+	for index in range(4):
+		_bolt_nodes.append(_get_or_create_mesh("CornerPlate%d" % index))
 
 func _get_or_create_mesh(node_name: String) -> MeshInstance3D:
 	var mesh_node: MeshInstance3D = get_node_or_null(node_name) as MeshInstance3D
@@ -84,16 +99,40 @@ func _get_or_create_label(node_name: String) -> Label3D:
 func _apply_layout() -> void:
 	_face_material = _make_material(face_color, glow_strength)
 	_frame_material = _make_material(frame_color, glow_strength * 1.8)
+	_detail_material = _make_material(_shift_color(face_color, 0.055), glow_strength * 0.7)
+	_shadow_material = _make_material(_shift_color(frame_color, -0.24), glow_strength * 0.9)
 
 	_set_box(_face, Vector3(board_size.x, board_size.y, board_depth), Vector3.ZERO, _face_material)
 	_set_box(_top_rim, Vector3(board_size.x + 0.18, 0.13, board_depth + 0.08), Vector3(0.0, board_size.y * 0.5 + 0.06, 0.03), _frame_material)
 	_set_box(_bottom_rim, Vector3(board_size.x + 0.18, 0.13, board_depth + 0.08), Vector3(0.0, -board_size.y * 0.5 - 0.06, 0.03), _frame_material)
 	_set_box(_left_rim, Vector3(0.13, board_size.y + 0.18, board_depth + 0.08), Vector3(-board_size.x * 0.5 - 0.06, 0.0, 0.03), _frame_material)
 	_set_box(_right_rim, Vector3(0.13, board_size.y + 0.18, board_depth + 0.08), Vector3(board_size.x * 0.5 + 0.06, 0.0, 0.03), _frame_material)
+	_apply_surface_detail()
 
 	var left_edge: float = -board_size.x * 0.43
 	_title_label.position = Vector3(left_edge, board_size.y * 0.4, board_depth * 0.5 + title_z)
 	_body_label.position = Vector3(left_edge, board_size.y * 0.22, board_depth * 0.5 + body_z)
+
+func _apply_surface_detail() -> void:
+	var detail_alpha: float = clamp(texture_strength, 0.0, 1.0)
+	var detail_z: float = board_depth * 0.5 + 0.014
+	for index in range(_face_detail_nodes.size()):
+		var width: float = board_size.x * (0.2 + float(index % 3) * 0.09)
+		var x_offset: float = board_size.x * (-0.18 + float(index) * 0.09)
+		var y_offset: float = board_size.y * (0.26 - float(index) * 0.12)
+		var scuff_size: Vector3 = Vector3(width * detail_alpha, 0.018, 0.012)
+		_set_box(_face_detail_nodes[index], scuff_size, Vector3(x_offset, y_offset, detail_z), _detail_material)
+
+	var bolt_margin_x: float = board_size.x * 0.5 - 0.18
+	var bolt_margin_y: float = board_size.y * 0.5 - 0.18
+	var bolt_positions: Array[Vector3] = [
+		Vector3(-bolt_margin_x, bolt_margin_y, detail_z + 0.018),
+		Vector3(bolt_margin_x, bolt_margin_y, detail_z + 0.018),
+		Vector3(-bolt_margin_x, -bolt_margin_y, detail_z + 0.018),
+		Vector3(bolt_margin_x, -bolt_margin_y, detail_z + 0.018),
+	]
+	for index in range(_bolt_nodes.size()):
+		_set_box(_bolt_nodes[index], Vector3(0.13, 0.13, 0.055), bolt_positions[index], _shadow_material)
 
 func _set_box(mesh_node: MeshInstance3D, size: Vector3, local_position: Vector3, material: Material) -> void:
 	var box_mesh: BoxMesh = BoxMesh.new()
@@ -109,8 +148,18 @@ func _make_material(color: Color, emission_scale: float) -> StandardMaterial3D:
 	material.metallic = 0.0
 	material.emission_enabled = true
 	material.emission = color * emission_scale
+	material.no_depth_test = true
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 	return material
+
+func _shift_color(color: Color, amount: float) -> Color:
+	return Color(
+		clamp(color.r + amount, 0.0, 1.0),
+		clamp(color.g + amount, 0.0, 1.0),
+		clamp(color.b + amount, 0.0, 1.0),
+		color.a
+	)
 
 func _apply_text() -> void:
 	if _title_label == null or _body_label == null:
