@@ -3,10 +3,6 @@ extends Node3D
 
 const AUDIO_MANAGER_SCENE: PackedScene = preload("res://scenes/audio/audio_manager.tscn")
 const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_settings_menu.tscn")
-const BLOCK_TEXT_SCENE: Script = preload("res://scripts/ui/main_menu_3d_block_text.gd")
-const INFO_PANEL_SCENE: Script = preload("res://scripts/ui/main_menu_3d_info_panel.gd")
-const FEATURE_CONFIG: FeatureAccessConfig = preload("res://resources/config/feature_access_config.tres")
-const CHAT_CONTROLS_TEXT := "!BRAINS - Join the horde\n!NUKE - Drop a mine strike\n!SLOWMO - Slow the race\n!CHAOS - Random chaos event"
 const CHAT_ACTIVITY_FEED: Array[String] = [
 	"ByteBiter: !brains\nGraveSnarl: !chaos\nNeonRot: !brains\nCrawlerQ: !slowmo",
 	"RoadRage: !nuke\nSnackStack: !brains\nMoldMode: !chaos\nCrateLord: !brains",
@@ -15,13 +11,12 @@ const CHAT_ACTIVITY_FEED: Array[String] = [
 
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/main/main_game.tscn"
 @export var camera_path: NodePath
-@export var camera_focus: Vector3 = Vector3(2.2, 1.85, -9.5)
+@export var camera_focus: Vector3 = Vector3(1.8, 1.45, -6.5)
 @export var menu_zombies_path: NodePath
 @export var cage_light_path: NodePath
 @export var base_light_path: NodePath
 @export var road_sweep_light_path: NodePath
-@export_range(1, 24, 1) var debug_joins_per_click: int = 1
-@export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.28
+@export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.22
 
 var _transitioning: bool = false
 var _time: float = 0.0
@@ -37,21 +32,21 @@ var _road_sweep_light_energy: float = 0.0
 var _chat_activity_index: int = 0
 var _chat_activity_elapsed: float = 0.0
 var _menu_3d_buttons: Array[MainMenu3DButton] = []
-var _chat_activity_panel: MainMenu3DInfoPanel
 
 @onready var _camera: Camera3D = get_node_or_null(camera_path) as Camera3D
-@onready var _chat_activity_label_3d: Label3D = get_node_or_null("CinematicCamera/Menu3DOverlay/ChatRoadSign/ChatFeedLabel3D") as Label3D
+@onready var _chat_activity_panel: MainMenu3DInfoPanel = get_node_or_null(
+	"CinematicCamera/Menu3DOverlay/ChatActivityPanel"
+) as MainMenu3DInfoPanel
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var music_controller: MusicController = _get_or_create_music_controller()
 	if music_controller != null:
 		music_controller.play_menu_music()
-	_activate_cinematic_menu()
+	_connect_3d_buttons()
 	_cache_cinematic_nodes()
 	if _camera != null:
 		_camera.look_at(camera_focus, Vector3.UP)
-
 	_refresh_chat_activity()
 
 func _process(delta: float) -> void:
@@ -71,8 +66,6 @@ func _on_menu_3d_button_pressed(action_id: StringName) -> void:
 			_launch_lobby(0, false)
 		&"settings":
 			_on_settings_pressed()
-		&"exit":
-			get_tree().quit()
 
 func _on_settings_pressed() -> void:
 	var game_settings: GameSettingsController = _get_or_create_game_settings()
@@ -97,76 +90,6 @@ func _set_buttons_enabled(enabled: bool) -> void:
 		if button != null and is_instance_valid(button):
 			button.set_interactable(enabled)
 
-func _activate_cinematic_menu() -> void:
-	var legacy_layer: CanvasItem = get_node_or_null("MenuLayer") as CanvasItem
-	if legacy_layer != null:
-		legacy_layer.visible = false
-
-	var cinematic_world: Node3D = get_node_or_null("CinematicWorld") as Node3D
-	if cinematic_world != null:
-		cinematic_world.visible = true
-
-	var overlay: Node3D = get_node_or_null("CinematicCamera/Menu3DOverlay") as Node3D
-	if overlay == null:
-		return
-	overlay.visible = true
-
-	var flat_art: Node3D = overlay.get_node_or_null("MenuArt3D") as Node3D
-	if flat_art != null:
-		flat_art.visible = false
-
-	var legacy_logo: Node3D = overlay.get_node_or_null("LogoRig") as Node3D
-	if legacy_logo != null:
-		legacy_logo.visible = false
-
-	var legacy_chat_sign: Node3D = overlay.get_node_or_null("ChatRoadSign") as Node3D
-	if legacy_chat_sign != null:
-		legacy_chat_sign.visible = false
-
-	_build_title(overlay)
-	_build_info_panels(overlay)
-	_connect_3d_buttons()
-
-func _build_title(overlay: Node3D) -> void:
-	if overlay.get_node_or_null("TitleBlocks") != null:
-		return
-
-	var title: MainMenu3DBlockText = BLOCK_TEXT_SCENE.new() as MainMenu3DBlockText
-	title.name = "TitleBlocks"
-	title.position = Vector3(0.35, 2.05, -6.35)
-	title.block_size = Vector3(0.31, 0.31, 0.48)
-	title.line_spacing = 0.34
-	overlay.add_child(title)
-
-func _build_info_panels(overlay: Node3D) -> void:
-	if overlay.get_node_or_null("ChatControlsPanel") == null:
-		var controls: MainMenu3DInfoPanel = INFO_PANEL_SCENE.new() as MainMenu3DInfoPanel
-		controls.name = "ChatControlsPanel"
-		controls.position = Vector3(-4.55, 1.72, -5.95)
-		controls.rotation_degrees = Vector3(0.0, 8.0, 0.0)
-		controls.panel_size = Vector2(3.15, 1.95)
-		controls.header_text = "CHAT CONTROLS"
-		controls.body_text = CHAT_CONTROLS_TEXT
-		controls.header_color = Color(0.72, 0.42, 1.0, 1.0)
-		controls.body_color = Color(0.88, 0.92, 1.0, 1.0)
-		controls.frame_color = Color(0.52, 0.18, 0.82, 1.0)
-		controls.body_font_size = 20
-		overlay.add_child(controls)
-
-	if overlay.get_node_or_null("ChatActivityPanel") == null:
-		_chat_activity_panel = INFO_PANEL_SCENE.new() as MainMenu3DInfoPanel
-		_chat_activity_panel.name = "ChatActivityPanel"
-		_chat_activity_panel.position = Vector3(4.35, 1.72, -5.95)
-		_chat_activity_panel.rotation_degrees = Vector3(0.0, -8.0, 0.0)
-		_chat_activity_panel.panel_size = Vector2(3.05, 1.75)
-		_chat_activity_panel.header_text = "CHAT ACTIVITY"
-		_chat_activity_panel.body_text = CHAT_ACTIVITY_FEED[0]
-		_chat_activity_panel.header_color = Color(1.0, 0.31, 0.22, 1.0)
-		_chat_activity_panel.body_color = Color(0.82, 1.0, 0.3, 1.0)
-		_chat_activity_panel.mount_pole = true
-		_chat_activity_panel.mount_siren = true
-		overlay.add_child(_chat_activity_panel)
-
 func _connect_3d_buttons() -> void:
 	_menu_3d_buttons.clear()
 	var button_rack: Node = get_node_or_null("CinematicCamera/Menu3DOverlay/ButtonRack")
@@ -176,9 +99,6 @@ func _connect_3d_buttons() -> void:
 	for child in button_rack.get_children():
 		var button: MainMenu3DButton = child as MainMenu3DButton
 		if button == null:
-			continue
-		if button.action_id == &"exit":
-			button.visible = false
 			continue
 		_menu_3d_buttons.append(button)
 		if not button.pressed.is_connected(_on_menu_3d_button_pressed):
@@ -266,7 +186,7 @@ func _update_menu_lights() -> void:
 		_road_sweep_light.light_energy = _road_sweep_light_energy * (1.0 + sin(_time * 0.9 + 0.6) * 0.09)
 
 func _update_chat_activity(delta: float) -> void:
-	if _chat_activity_panel == null and _chat_activity_label_3d == null:
+	if _chat_activity_panel == null:
 		return
 
 	_chat_activity_elapsed += delta
@@ -278,8 +198,5 @@ func _update_chat_activity(delta: float) -> void:
 	_refresh_chat_activity()
 
 func _refresh_chat_activity() -> void:
-	var feed_text: String = CHAT_ACTIVITY_FEED[_chat_activity_index]
-	if _chat_activity_label_3d != null:
-		_chat_activity_label_3d.text = feed_text
 	if _chat_activity_panel != null:
-		_chat_activity_panel.set_panel_text("CHAT ACTIVITY", feed_text)
+		_chat_activity_panel.set_panel_text("CHAT ACTIVITY", CHAT_ACTIVITY_FEED[_chat_activity_index])

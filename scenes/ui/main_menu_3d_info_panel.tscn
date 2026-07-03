@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/main_menu_3d_info_panel.gd" id="1_script"]
+
+[node name="MainMenu3DInfoPanel" type="Node3D"]
+script = ExtResource("1_script")

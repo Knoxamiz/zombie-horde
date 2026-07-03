@@ -19,25 +19,26 @@ cd C:\dev\zombie-horde
 git pull origin main
 ```
 
-You should be on commit `a584c3a` or newer.
+You should be on commit `a584c3a` or newer (look for version `v1.2.0-3d` in the bottom-right of the main menu).
 
 ### Quick check that you have the 3D main menu
 
 In Godot, open `res://scenes/main_menu/main_menu.tscn` and confirm the Scene tree contains:
 
 - `CinematicWorld` → `CityBackdrop`
-- `CinematicCamera` → `Menu3DOverlay` → `ButtonRack`
+- `CinematicCamera` → `Menu3DOverlay` → `TitleBlocks`, `ButtonRack`, `ChatControlsPanel`
 
-Open `res://scripts/main_menu/main_menu_controller.gd` and confirm `_ready()` calls `_activate_cinematic_menu()`.
+Open `res://scripts/main_menu/main_menu_controller.gd` and confirm `_ready()` calls `_connect_3d_buttons()`.
 
-If you still see `_build_control_room_screen()`, your local files are outdated.
+There should be **no** `MenuLayer` node in `main_menu.tscn` and **no** `_build_control_room_screen()` in the controller.
 
 ## Run The Main Menu
 
 1. Open `res://scenes/main_menu/main_menu.tscn`.
 2. Press **F5** (Run Project).
    - Do **not** use **F6** (Run Current Scene) on `main_game.tscn` for menu testing.
-3. You should see a 3D road scene with block-letter title and left-side 3D buttons.
+3. You should see a 3D road scene with voxel title and left-side 3D buttons.
+4. Bottom-right version label should read `v1.2.0-3d`.
 
 Expected main-menu buttons:
 
