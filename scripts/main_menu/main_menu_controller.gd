@@ -4,36 +4,26 @@ extends Node3D
 const AUDIO_MANAGER_SCENE: PackedScene = preload("res://scenes/audio/audio_manager.tscn")
 const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_settings_menu.tscn")
 const CHAT_ACTIVITY_FEED: Array[String] = [
-	"ByteBiter: !brains\nGraveSnarl: !chaos\nNeonRot: !brains\nCrawlerQ: !slowmo",
-	"RoadRage: !nuke\nSnackStack: !brains\nMoldMode: !chaos\nCrateLord: !brains",
-	"TacoKing: !brains\nPixelPunk: !chaos\nNotSleepy: !nuke\nHexHunger: !slowmo",
+	"TacoKing: !BRAINS\nPixelPunk: !CHAOS\nNotSleepy: !NUKE\nHexHunger: !SLOWMO\nDoomSprint: !BRAINS\n>>> TOO MANY BRAINS!",
+	"RoadRage: !NUKE\nSnackStack: !BRAINS\nMoldMode: !CHAOS\nCrateLord: !BRAINS\nByteBiter: !SLOWMO\n>>> CHAOS RISING!",
+	"ByteBiter: !brains\nGraveSnarl: !chaos\nNeonRot: !brains\nCrawlerQ: !slowmo\nHexHunger: !nuke\n>>> HORDE GROWS!",
 ]
 
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/main/main_game.tscn"
 @export var camera_path: NodePath
-@export var camera_focus: Vector3 = Vector3(1.2, 1.2, -8.0)
-@export var menu_zombies_path: NodePath
-@export var cage_light_path: NodePath
-@export var base_light_path: NodePath
-@export var road_sweep_light_path: NodePath
-@export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.14
+@export var camera_focus: Vector3 = Vector3(0.0, 0.0, -20.0)
+@export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.1
 
 var _transitioning: bool = false
 var _time: float = 0.0
 var _camera_base_position: Vector3 = Vector3.ZERO
-var _menu_zombies: Array[Node3D] = []
-var _menu_zombie_base_transforms: Array[Transform3D] = []
-var _cage_light: Light3D
-var _base_light: Light3D
-var _road_sweep_light: Light3D
-var _cage_light_energy: float = 0.0
-var _base_light_energy: float = 0.0
-var _road_sweep_light_energy: float = 0.0
+var _logo_base_position: Vector3 = Vector3.ZERO
 var _chat_activity_index: int = 0
 var _chat_activity_elapsed: float = 0.0
 var _menu_3d_buttons: Array[MainMenu3DButton] = []
 
 @onready var _camera: Camera3D = get_node_or_null(camera_path) as Camera3D
+@onready var _logo_rig: Node3D = get_node_or_null("CinematicCamera/Menu3DOverlay/LogoRig") as Node3D
 @onready var _chat_activity_panel: MainMenu3DInfoPanel = get_node_or_null(
 	"CinematicCamera/Menu3DOverlay/ChatActivityPanel"
 ) as MainMenu3DInfoPanel
@@ -44,16 +34,18 @@ func _ready() -> void:
 	if music_controller != null:
 		music_controller.play_menu_music()
 	_connect_3d_buttons()
-	_cache_cinematic_nodes()
 	if _camera != null:
-		_camera.look_at(camera_focus, Vector3.UP)
+		_camera_base_position = _camera.position
+		var look_target: Vector3 = _camera.global_position + Vector3(0.0, -0.15, -18.0)
+		_camera.look_at(look_target, Vector3.UP)
+	if _logo_rig != null:
+		_logo_base_position = _logo_rig.position
 	_refresh_chat_activity()
 
 func _process(delta: float) -> void:
 	_time += delta
 	_update_camera_idle()
-	_update_menu_zombies()
-	_update_menu_lights()
+	_update_logo_rig()
 	_update_chat_activity(delta)
 
 func _on_menu_3d_button_pressed(action_id: StringName) -> void:
@@ -130,67 +122,34 @@ func _get_or_create_game_settings() -> GameSettingsController:
 	get_tree().root.add_child(game_settings)
 	return game_settings
 
-func _cache_cinematic_nodes() -> void:
-	if _camera != null:
-		_camera_base_position = _camera.global_position
-
-	var zombie_group: Node3D = get_node_or_null(menu_zombies_path) as Node3D
-	if zombie_group != null:
-		for child in zombie_group.get_children():
-			var zombie: Node3D = child as Node3D
-			if zombie == null:
-				continue
-			_menu_zombies.append(zombie)
-			_menu_zombie_base_transforms.append(zombie.transform)
-
-	_cage_light = get_node_or_null(cage_light_path) as Light3D
-	_base_light = get_node_or_null(base_light_path) as Light3D
-	_road_sweep_light = get_node_or_null(road_sweep_light_path) as Light3D
-	if _cage_light != null:
-		_cage_light_energy = _cage_light.light_energy
-	if _base_light != null:
-		_base_light_energy = _base_light.light_energy
-	if _road_sweep_light != null:
-		_road_sweep_light_energy = _road_sweep_light.light_energy
-
 func _update_camera_idle() -> void:
 	if _camera == null or camera_idle_strength <= 0.0:
 		return
 
 	var offset: Vector3 = Vector3(
-		sin(_time * 0.37) * 0.42,
-		sin(_time * 0.29 + 1.4) * 0.18,
-		sin(_time * 0.23 + 0.8) * 0.26
+		sin(_time * 0.37) * 0.18,
+		sin(_time * 0.29 + 1.4) * 0.08,
+		sin(_time * 0.23 + 0.8) * 0.1
 	) * camera_idle_strength
-	_camera.global_position = _camera_base_position + offset
-	var look_target: Vector3 = camera_focus + Vector3(0.0, sin(_time * 0.31) * 0.08, 0.0)
-	_camera.look_at(look_target, Vector3.UP)
+	_camera.position = _camera_base_position + offset
 
-func _update_menu_zombies() -> void:
-	for index in range(_menu_zombies.size()):
-		var zombie: Node3D = _menu_zombies[index]
-		if zombie == null or not is_instance_valid(zombie):
-			continue
+func _update_logo_rig() -> void:
+	if _logo_rig == null:
+		return
 
-		var base_transform: Transform3D = _menu_zombie_base_transforms[index]
-		zombie.transform = base_transform
-		zombie.position.y = base_transform.origin.y + sin(_time * 1.25 + float(index) * 0.9) * 0.045
-		zombie.rotate_y(sin(_time * 0.58 + float(index) * 1.7) * 0.08)
-
-func _update_menu_lights() -> void:
-	if _cage_light != null:
-		_cage_light.light_energy = _cage_light_energy * (1.0 + sin(_time * 1.7) * 0.08)
-	if _base_light != null:
-		_base_light.light_energy = _base_light_energy * (1.0 + sin(_time * 1.15 + 1.3) * 0.06)
-	if _road_sweep_light != null:
-		_road_sweep_light.light_energy = _road_sweep_light_energy * (1.0 + sin(_time * 0.9 + 0.6) * 0.09)
+	_logo_rig.position = _logo_base_position + Vector3(
+		sin(_time * 0.82) * 0.02,
+		sin(_time * 0.68 + 0.9) * 0.025,
+		0.0
+	)
+	_logo_rig.rotation.z = sin(_time * 0.55) * 0.008
 
 func _update_chat_activity(delta: float) -> void:
 	if _chat_activity_panel == null:
 		return
 
 	_chat_activity_elapsed += delta
-	if _chat_activity_elapsed < 1.9:
+	if _chat_activity_elapsed < 2.4:
 		return
 
 	_chat_activity_elapsed = 0.0
