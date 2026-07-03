@@ -5,18 +5,29 @@
 [node name="MainMenuBlockButton" type="Area3D"]
 script = ExtResource("1_script")
 
-[node name="Face" type="MeshInstance3D" parent="."]
+[node name="VisualRoot" type="Node3D" parent="."]
 
-[node name="Edge" type="MeshInstance3D" parent="."]
+[node name="Depth" type="MeshInstance3D" parent="VisualRoot"]
 
-[node name="Highlight" type="MeshInstance3D" parent="."]
+[node name="Face" type="MeshInstance3D" parent="VisualRoot"]
 
-[node name="Label" type="Label3D" parent="."]
-texture_filter = 4
-billboard = 0
+[node name="TopBevel" type="MeshInstance3D" parent="VisualRoot"]
+
+[node name="BottomShade" type="MeshInstance3D" parent="VisualRoot"]
+
+[node name="DropShadow" type="MeshInstance3D" parent="VisualRoot"]
+
+[node name="TextAnchor" type="Node3D" parent="VisualRoot"]
+
+[node name="LabelShadow" type="Label3D" parent="VisualRoot/TextAnchor"]
+modulate = Color(0, 0, 0, 0.42)
+text = "BUTTON"
+font_size = 22
+
+[node name="Label" type="Label3D" parent="VisualRoot/TextAnchor"]
 modulate = Color(1, 1, 1, 1)
 text = "BUTTON"
 font_size = 22
-outline_size = 8
+outline_size = 6
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]

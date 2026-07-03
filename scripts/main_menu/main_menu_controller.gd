@@ -9,6 +9,10 @@ const MENU_ART: Texture2D = preload("res://assets/ui/main_menu/zombie_chat_horde
 @export var camera_path: NodePath = NodePath("MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera")
 @export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.06
 @export_range(0.0, 1.0, 0.01) var logo_wobble_strength: float = 1.0
+@export var button_stack_start_y: float = -0.72
+@export var button_stack_gap: float = 0.1
+@export var button_depth_z: float = -6.85
+@export var corner_x: float = 3.55
 
 var _transitioning: bool = false
 var _time: float = 0.0
@@ -16,6 +20,8 @@ var _camera_base_position: Vector3 = Vector3.ZERO
 var _logo_base_position: Vector3 = Vector3.ZERO
 var _logo_base_scale: Vector3 = Vector3.ONE
 var _menu_buttons: Array[MainMenuBlockButton] = []
+var _viewport_container: SubViewportContainer
+var _pressed_button: MainMenuBlockButton
 
 @onready var _background: TextureRect = $Background
 @onready var _viewport: SubViewport = $MenuViewportContainer/MenuViewport
@@ -23,10 +29,20 @@ var _menu_buttons: Array[MainMenuBlockButton] = []
 @onready var _logo_rig: Node3D = get_node_or_null(
 	"MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/LogoRig"
 ) as Node3D
+@onready var _button_rack: Node3D = get_node_or_null(
+	"MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/ButtonCenterRack"
+) as Node3D
+@onready var _settings_button: MainMenuBlockButton = get_node_or_null(
+	"MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/SettingsButton3D"
+) as MainMenuBlockButton
+@onready var _version_label: Label3D = get_node_or_null(
+	"MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/VersionLabel3D"
+) as Label3D
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	resized.connect(_fit_layout)
+	_viewport_container = get_node_or_null("MenuViewportContainer") as SubViewportContainer
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_fit_layout()
 
@@ -35,6 +51,7 @@ func _ready() -> void:
 		music_controller.play_menu_music()
 
 	_connect_buttons()
+	call_deferred("_layout_menu_buttons")
 
 	if _camera != null:
 		_camera_base_position = _camera.position
@@ -53,6 +70,74 @@ func _process(delta: float) -> void:
 	_time += delta
 	_update_camera_idle()
 	_update_logo_rig()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _transitioning or _viewport_container == null or _camera == null:
+		return
+
+	if event is InputEventMouseMotion:
+		_update_hover_from_mouse()
+		return
+
+	var mouse_button: InputEventMouseButton = event as InputEventMouseButton
+	if mouse_button == null or mouse_button.button_index != MOUSE_BUTTON_LEFT:
+		return
+
+	var local_pos: Vector2 = _viewport_container.get_local_mouse_position()
+	if not Rect2(Vector2.ZERO, _viewport_container.size).has_point(local_pos):
+		return
+
+	if mouse_button.pressed:
+		var hit_button: MainMenuBlockButton = _pick_button_at(local_pos)
+		if hit_button != null:
+			_pressed_button = hit_button
+			hit_button.set_pressed_state(true)
+			get_viewport().set_input_as_handled()
+		return
+
+	if _pressed_button != null:
+		var release_button: MainMenuBlockButton = _pick_button_at(local_pos)
+		if release_button == _pressed_button:
+			_pressed_button.trigger_pressed()
+		_pressed_button.set_pressed_state(false)
+		_pressed_button = null
+		get_viewport().set_input_as_handled()
+
+func _update_hover_from_mouse() -> void:
+	if _viewport_container == null:
+		return
+	var local_pos: Vector2 = _viewport_container.get_local_mouse_position()
+	var hovered_button: MainMenuBlockButton = _pick_button_at(local_pos)
+	for button in _menu_buttons:
+		if button != null:
+			button.set_hovered_state(button == hovered_button)
+
+func _pick_button_at(local_pos: Vector2) -> MainMenuBlockButton:
+	var viewport_size: Vector2 = Vector2(_viewport.size)
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+		return null
+
+	var viewport_pos: Vector2 = Vector2(
+		local_pos.x * viewport_size.x / _viewport_container.size.x,
+		local_pos.y * viewport_size.y / _viewport_container.size.y
+	)
+	var ray_origin: Vector3 = _camera.project_ray_origin(viewport_pos)
+	var ray_direction: Vector3 = _camera.project_ray_normal(viewport_pos)
+
+	var closest_button: MainMenuBlockButton = null
+	var closest_distance: float = INF
+	for button in _menu_buttons:
+		if button == null or not button.interactable:
+			continue
+		var hit_distance: Variant = button.intersect_ray(ray_origin, ray_direction)
+		if hit_distance == null:
+			continue
+		var distance: float = float(hit_distance)
+		if distance < closest_distance:
+			closest_distance = distance
+			closest_button = button
+
+	return closest_button
 
 func _on_menu_button_pressed(action_id: StringName) -> void:
 	match action_id:
@@ -90,24 +175,42 @@ func _set_buttons_enabled(enabled: bool) -> void:
 
 func _connect_buttons() -> void:
 	_menu_buttons.clear()
-	var rack: Node = get_node_or_null(
-		"MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/ButtonCenterRack"
-	)
-	var settings_button: Node = get_node_or_null(
-		"MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/SettingsButton3D"
-	)
-	if rack != null:
-		for child in rack.get_children():
+	if _button_rack != null:
+		for child in _button_rack.get_children():
 			var button: MainMenuBlockButton = child as MainMenuBlockButton
 			if button != null:
 				_register_button(button)
-	if settings_button is MainMenuBlockButton:
-		_register_button(settings_button as MainMenuBlockButton)
+	if _settings_button != null:
+		_register_button(_settings_button)
 
 func _register_button(button: MainMenuBlockButton) -> void:
 	_menu_buttons.append(button)
 	if not button.pressed.is_connected(_on_menu_button_pressed):
 		button.pressed.connect(_on_menu_button_pressed)
+
+func _layout_menu_buttons() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	var stack_y: float = button_stack_start_y
+	if _button_rack != null:
+		for child in _button_rack.get_children():
+			var button: MainMenuBlockButton = child as MainMenuBlockButton
+			if button == null:
+				continue
+			var placed: Vector3 = Vector3(0.0, stack_y, button_depth_z)
+			button.set_base_position(placed)
+			stack_y -= button.get_block_height() + button_stack_gap
+
+	if _settings_button != null:
+		var settings_y: float = -2.72
+		_settings_button.set_base_position(Vector3(corner_x, settings_y, button_depth_z))
+		if _version_label != null:
+			_version_label.position = Vector3(
+				corner_x,
+				settings_y - _settings_button.get_block_height() - 0.22,
+				button_depth_z - 0.05
+			)
 
 func _fit_layout() -> void:
 	var viewport_size: Vector2 = get_viewport_rect().size
@@ -124,18 +227,20 @@ func _fit_layout() -> void:
 		_background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		_background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 
-	var viewport_container: SubViewportContainer = get_node_or_null("MenuViewportContainer") as SubViewportContainer
-	if viewport_container != null:
-		viewport_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-		viewport_container.offset_left = 0.0
-		viewport_container.offset_top = 0.0
-		viewport_container.offset_right = 0.0
-		viewport_container.offset_bottom = 0.0
-		viewport_container.stretch = true
+	if _viewport_container != null:
+		_viewport_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_viewport_container.offset_left = 0.0
+		_viewport_container.offset_top = 0.0
+		_viewport_container.offset_right = 0.0
+		_viewport_container.offset_bottom = 0.0
+		_viewport_container.stretch = true
+		_viewport_container.mouse_filter = Control.MOUSE_FILTER_STOP
 
 	if _viewport != null:
-		_viewport.size = viewport_size
+		_viewport.size = Vector2i(int(viewport_size.x), int(viewport_size.y))
 		_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		_viewport.handle_input_locally = false
+		_viewport.physics_object_picking = true
 
 func _update_camera_idle() -> void:
 	if _camera == null or camera_idle_strength <= 0.0:
