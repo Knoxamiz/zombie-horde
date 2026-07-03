@@ -122,7 +122,7 @@ func _apply_layout() -> void:
 	_label.text = text
 	_label.modulate = text_color
 	_label.font_size = font_size
-	_label.outline_size = 8
+	_label.outline_size = maxi(8, int(round(float(font_size) * 0.11)))
 	_label.outline_modulate = Color(0.05, 0.05, 0.05, 1.0)
 	_label.position = Vector3(0.0, 0.0, block_size.z * 0.5 + 0.07)
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
