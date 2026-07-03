@@ -170,7 +170,7 @@ func _format_fastest_times() -> String:
 	if entries.is_empty():
 		return "FASTEST RUNS\n—"
 
-	var lines: Array[String] = ["FASTEST RUNS"]
+	var lines: Array[String] = ["FASTEST RUNS", _board_column_header("TIME")]
 	var max_entries: int = mini(entries.size(), 8)
 	for index in range(max_entries):
 		if typeof(entries[index]) != TYPE_DICTIONARY:
@@ -191,7 +191,7 @@ func _format_recent_winners() -> String:
 	if entries.is_empty():
 		return "RECENT WINNERS\n—"
 
-	var lines: Array[String] = ["RECENT WINNERS"]
+	var lines: Array[String] = ["RECENT WINNERS", _board_column_header("TIME")]
 	var max_entries: int = mini(entries.size(), 8)
 	for index in range(max_entries):
 		if typeof(entries[index]) != TYPE_DICTIONARY:
@@ -204,6 +204,12 @@ func _format_recent_winners() -> String:
 			_format_finish_time(float(entry.get("elapsed_seconds", 0.0)))
 		))
 	return _join_strings(lines, "\n")
+
+func _board_column_header(value_label: String) -> String:
+	var name_text: String = "RUNNER"
+	while name_text.length() < 15:
+		name_text += " "
+	return "  #  %s %s" % [name_text, value_label]
 
 func _format_board_row(rank: int, display_name: String, value_text: String) -> String:
 	var name_text: String = display_name

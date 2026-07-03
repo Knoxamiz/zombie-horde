@@ -30,10 +30,10 @@ const META_PROCESS_MODE := "_zh_saved_process_mode"
 @export var lobby_environment: Environment
 @export var race_environment: Environment
 @export var fade_seconds: float = 0.22
-@export var intro_camera_position: Vector3 = Vector3(0.0, 8.6, 14.0)
-@export var intro_camera_rotation_degrees: Vector3 = Vector3(-28.0, 0.0, 0.0)
-@export var lobby_camera_position: Vector3 = Vector3(0.0, 8.6, 14.0)
-@export var lobby_camera_rotation_degrees: Vector3 = Vector3(-28.0, 0.0, 0.0)
+@export var intro_camera_position: Vector3 = Vector3(0.0, 7.2, 10.5)
+@export var intro_camera_rotation_degrees: Vector3 = Vector3(-27.0, 0.0, 0.0)
+@export var lobby_camera_position: Vector3 = Vector3(0.0, 7.2, 10.5)
+@export var lobby_camera_rotation_degrees: Vector3 = Vector3(-27.0, 0.0, 0.0)
 @export var race_camera_position: Vector3 = Vector3(0.0, 23.0, -46.0)
 @export var race_camera_rotation_degrees: Vector3 = Vector3(-31.0, 180.0, 0.0)
 
