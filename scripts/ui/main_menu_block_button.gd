@@ -256,8 +256,8 @@ func _apply_visuals(force: bool) -> void:
 	var blend_speed: float = 1.0 if force else 0.28
 	var current: Color = target if force else _face_material.albedo_color.lerp(target, blend_speed)
 
-	_face_material.albedo_color = current
-	_face_material.emission = _brighten(current, 0.04) * (0.16 if _hovered and interactable else 0.05)
+	_face_material.albedo_color = _darken(current, 0.06)
+	_face_material.emission = _brighten(current, 0.02) * (0.12 if _hovered and interactable else 0.03)
 
 	_depth_material.albedo_color = _darken(current, 0.32)
 	_depth_material.emission = _darken(current, 0.24) * 0.04
@@ -333,8 +333,9 @@ func _make_radial_glow_texture() -> Texture2D:
 
 func _make_surface_material() -> StandardMaterial3D:
 	var material: StandardMaterial3D = StandardMaterial3D.new()
-	material.roughness = 0.58
+	material.roughness = 0.82
 	material.metallic = 0.0
+	material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 	material.emission_enabled = true
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 	return material

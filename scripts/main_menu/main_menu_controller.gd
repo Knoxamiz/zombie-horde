@@ -5,9 +5,9 @@ const AUDIO_MANAGER_SCENE: PackedScene = preload("res://scenes/audio/audio_manag
 const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_settings_menu.tscn")
 const MENU_ART: Texture2D = preload("res://assets/ui/main_menu/zombie_chat_horde_menu_art.png")
 const JOIN_FEED_LINES: Array[String] = [
-	"TacoKing joined the horde!\nPixelPunk: !BRAINS\nNotSleepy: !CHAOS\nHexHunger: !NUKE\nDoomSprint: !SLOWMO\nGraveSnarl: !BRAINS",
-	"ByteBiter joined the horde!\nRoadRage: !NUKE\nSnackStack: !BRAINS\nMoldMode: !CHAOS\nCrateLord: !BRAINS\nNeonRot: !SLOWMO",
-	"CrawlerQ joined the horde!\nEchoRot: !BRAINS\nAdaBites: !CHAOS\nCaptainDecay: !BRAINS\nGlitchGnaw: !SLOWMO\nPixelMunch: !NUKE",
+	"TacoKing joined the horde!\nPixelPunk: !BRAINS\nNotSleepy: !CHAOS\nHexHunger: !NUKE\nDoomSprint: !SLOWMO\nGraveSnarl: !BRAINS\nMossFang: !CHAOS\nRustJaw: !BRAINS\nViperGut: !NUKE\nHollowKid: !SLOWMO\n>>> HORDE GROWING!",
+	"ByteBiter joined the horde!\nRoadRage: !NUKE\nSnackStack: !BRAINS\nMoldMode: !CHAOS\nCrateLord: !BRAINS\nNeonRot: !SLOWMO\nAshCrawl: !BRAINS\nDripFang: !CHAOS\nBoltHusk: !NUKE\nGnashPit: !BRAINS\n>>> CHAOS RISING!",
+	"CrawlerQ joined the horde!\nEchoRot: !BRAINS\nAdaBites: !CHAOS\nCaptainDecay: !BRAINS\nGlitchGnaw: !SLOWMO\nPixelMunch: !NUKE\nSludgeRun: !BRAINS\nFrostMaw: !CHAOS\nZeroPulse: !BRAINS\nVoidSnarl: !SLOWMO\n>>> TOO MANY BRAINS!",
 ]
 
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/main/main_game.tscn"
@@ -47,7 +47,7 @@ var _prompt_time: float = 0.0
 	"MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/VersionLabel3D"
 ) as Label3D
 @onready var _feed_body: Label = get_node_or_null("OverlayLayer/JoinFeedPanel/Margin/VBox/FeedBody") as Label
-@onready var _join_prompt: Label = get_node_or_null("OverlayLayer/JoinPromptLabel") as Label
+@onready var _join_prompt: Label = get_node_or_null("OverlayLayer/JoinPromptPanel/JoinPromptLabel") as Label
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
