@@ -181,7 +181,6 @@ func _apply_layout() -> void:
 		label_node.position = Vector3.ZERO
 		label_node.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 		label_node.no_depth_test = false
-		label_node.depth_offset = -1.0
 
 	_label.modulate = text_color
 	_label.outline_modulate = Color(0.04, 0.04, 0.04, 1.0)
