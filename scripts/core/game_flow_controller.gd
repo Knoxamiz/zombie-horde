@@ -24,6 +24,8 @@ const META_PROCESS_MODE := "_zh_saved_process_mode"
 @export var hud_path: NodePath
 @export var streamer_menu_path: NodePath
 @export var pre_round_ui_path: NodePath
+@export var lobby_world_boards_path: NodePath
+@export var race_world_boards_path: NodePath
 @export var world_environment_path: NodePath
 @export var transition_overlay_path: NodePath
 @export_file("*.tscn") var main_menu_scene_path: String = "res://scenes/main_menu/main_menu.tscn"
@@ -50,6 +52,8 @@ var _spectator_camera: SpectatorCameraController
 var _hud: CanvasLayer
 var _streamer_menu: CanvasLayer
 var _pre_round_ui: PreRoundUIController
+var _lobby_world_boards: Node3D
+var _race_world_boards: Node3D
 var _world_environment: WorldEnvironment
 var _transition_overlay: ColorRect
 var _music_controller: MusicController
@@ -76,6 +80,8 @@ func _initialize_flow() -> void:
 	_hud = get_node_or_null(hud_path) as CanvasLayer
 	_streamer_menu = get_node_or_null(streamer_menu_path) as CanvasLayer
 	_pre_round_ui = get_node_or_null(pre_round_ui_path) as PreRoundUIController
+	_lobby_world_boards = get_node_or_null(lobby_world_boards_path) as Node3D
+	_race_world_boards = get_node_or_null(race_world_boards_path) as Node3D
 	_world_environment = get_node_or_null(world_environment_path) as WorldEnvironment
 	_transition_overlay = get_node_or_null(transition_overlay_path) as ColorRect
 	_music_controller = _get_or_create_music_controller()
@@ -182,6 +188,8 @@ func _apply_phase(phase_name: String) -> void:
 			_set_world_active(_race_world, false)
 			_set_world_active(_lobby_world, true)
 			_set_race_manager_active(false)
+			_set_world_menu_boards_visible(false, false)
+			_set_hud_broadcast_mode(false)
 			_set_node_visible(_hud, false)
 			_set_node_visible(_streamer_menu, false)
 			if _pre_round_ui != null:
@@ -195,6 +203,8 @@ func _apply_phase(phase_name: String) -> void:
 			_set_world_active(_race_world, false)
 			_set_world_active(_lobby_world, true)
 			_set_race_manager_active(false)
+			_set_world_menu_boards_visible(false, false)
+			_set_hud_broadcast_mode(false)
 			_set_node_visible(_hud, false)
 			_set_node_visible(_streamer_menu, true)
 			if _pre_round_ui != null:
@@ -207,7 +217,9 @@ func _apply_phase(phase_name: String) -> void:
 			_set_world_active(_race_world, true)
 			_set_world_active(_lobby_world, false)
 			_set_race_manager_active(true)
+			_set_world_menu_boards_visible(false, false)
 			_set_node_visible(_hud, true)
+			_set_hud_broadcast_mode(true)
 			_set_node_visible(_streamer_menu, false)
 			if _pre_round_ui != null:
 				_pre_round_ui.set_screen_mode("hidden")
@@ -278,6 +290,17 @@ func _get_or_create_game_settings() -> GameSettingsController:
 	game_settings.name = "GameSettings"
 	get_tree().root.add_child(game_settings)
 	return game_settings
+
+func _set_world_menu_boards_visible(lobby_boards_visible: bool, race_boards_visible: bool) -> void:
+	if _lobby_world_boards != null:
+		_lobby_world_boards.visible = lobby_boards_visible
+	if _race_world_boards != null:
+		_race_world_boards.visible = race_boards_visible
+
+func _set_hud_broadcast_mode(enabled: bool) -> void:
+	var hud_controller: HudController = _hud as HudController
+	if hud_controller != null:
+		hud_controller.set_broadcast_mode(enabled)
 
 func _set_node_visible(node: Node, visible: bool) -> void:
 	if node == null:

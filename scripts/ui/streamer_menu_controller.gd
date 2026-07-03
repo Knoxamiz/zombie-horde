@@ -854,8 +854,13 @@ func _restore_peer_world_roots() -> void:
 	for root_path in _hidden_world_roots.keys():
 		var root: Node3D = get_node_or_null(NodePath(str(root_path))) as Node3D
 		if root != null:
-			root.visible = bool(_hidden_world_roots[root_path])
+			root.visible = _should_restore_world_root_visible(str(root_path), bool(_hidden_world_roots[root_path]))
 	_hidden_world_roots.clear()
+
+func _should_restore_world_root_visible(root_path: String, was_visible: bool) -> bool:
+	if root_path.contains("LobbyBoards") or root_path.contains("RaceBoards"):
+		return false
+	return was_visible
 
 func _collect_peer_world_roots() -> Array[Node3D]:
 	var roots: Array[Node3D] = []

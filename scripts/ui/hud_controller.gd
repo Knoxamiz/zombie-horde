@@ -44,6 +44,7 @@ var _last_winner_name: String = ""
 var _last_base_won: bool = false
 var _results_showing: bool = false
 var _last_visible_state: bool = false
+var _broadcast_mode: bool = false
 var _race_active: bool = false
 var _standings_refresh_timer: float = 0.0
 var _queued_names: PackedStringArray = PackedStringArray()
@@ -121,13 +122,24 @@ func _ready() -> void:
 	_refresh_standings()
 	_refresh_static_labels()
 	_refresh_roster()
-	_set_world_visible(visible)
+	_sync_broadcast_display()
 	_last_visible_state = visible
+
+func set_broadcast_mode(enabled: bool) -> void:
+	_broadcast_mode = enabled
+	_sync_broadcast_display()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED:
+		_sync_broadcast_display()
 
 func _process(delta: float) -> void:
 	if _last_visible_state != visible:
 		_last_visible_state = visible
-		_set_world_visible(visible)
+		_sync_broadcast_display()
+
+	if visible and _broadcast_mode:
+		_hide_world_boards()
 
 	if not visible or not _race_active:
 		return
@@ -388,14 +400,18 @@ func _on_world_button_pressed(action_id: StringName) -> void:
 	if action_id == &"reset":
 		_on_results_reset_requested()
 
-func _set_world_visible(should_show: bool) -> void:
-	if _world_boards_root != null:
-		_world_boards_root.visible = false
+func _sync_broadcast_display() -> void:
+	_hide_world_boards()
+	var should_show_hud: bool = visible and _broadcast_mode
 	if _root != null:
-		_root.visible = should_show
-	if not should_show:
+		_root.visible = should_show_hud
+	if not should_show_hud:
 		return
 	_refresh_static_labels()
 	_refresh_roster()
 	_refresh_standings()
 	_refresh_command_hint()
+
+func _hide_world_boards() -> void:
+	if _world_boards_root != null:
+		_world_boards_root.visible = false
