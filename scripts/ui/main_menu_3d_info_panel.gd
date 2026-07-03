@@ -71,6 +71,7 @@ func _build() -> void:
 	_header_label.font_size = header_font_size
 	_header_label.outline_size = 6
 	_header_label.modulate = header_color
+	_header_label.render_priority = 8
 	_header_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_header_label.position = Vector3(-panel_size.x * 0.44, panel_size.y * 0.34, face.position.z + 0.05)
 	add_child(_header_label)

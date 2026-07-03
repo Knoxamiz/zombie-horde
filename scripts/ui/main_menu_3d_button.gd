@@ -86,12 +86,14 @@ func _apply_layout() -> void:
 	box_shape.size = Vector3(block_size.x, block_size.y, block_size.z + 0.18)
 	_shape.shape = box_shape
 
-	_label.position = Vector3(-block_size.x * 0.41, -0.04, block_size.z * 0.5 + 0.08)
+	_label.position = Vector3(-block_size.x * 0.22, -0.05, block_size.z * 0.5 + 0.12)
 	_label.text = text
 	_label.modulate = text_color
-	_label.font_size = font_size
-	_label.outline_size = outline_size
+	_label.font_size = _fit_font_size()
+	_label.outline_size = maxi(outline_size, 6)
+	_label.outline_modulate = Color(0.02, 0.02, 0.02, 1.0)
 	_label.no_depth_test = true
+	_label.render_priority = 12
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_ensure_detail_materials()
 	_apply_surface_detail()
@@ -139,14 +141,12 @@ func _apply_visuals(force: bool) -> void:
 		_block_material.roughness = 0.78
 		_block_material.metallic = 0.0
 		_block_material.emission_enabled = true
-		_block_material.no_depth_test = true
 		_block_material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 		_block.set_surface_override_material(0, _block_material)
 	if _accent_material == null:
 		_accent_material = StandardMaterial3D.new()
 		_accent_material.roughness = 0.58
 		_accent_material.emission_enabled = true
-		_accent_material.no_depth_test = true
 		_accent.set_surface_override_material(0, _accent_material)
 	_ensure_detail_materials()
 
@@ -179,10 +179,10 @@ func _build_icon() -> void:
 		_icon_material = _make_detail_material()
 		_icon_material.emission_enabled = true
 
-	var front_z: float = block_size.z * 0.5 + 0.1
+	var front_z: float = block_size.z * 0.5 + 0.12
 	var icon_root: Node3D = Node3D.new()
 	icon_root.name = "IconRoot"
-	icon_root.position = Vector3(-block_size.x * 0.5 + 0.34, 0.0, front_z)
+	icon_root.position = Vector3(-block_size.x * 0.38, 0.0, front_z)
 	add_child(icon_root)
 
 	match icon_kind:
@@ -232,12 +232,18 @@ func _make_noise_texture(light: Color, dark: Color, size: int) -> Texture2D:
 			image.set_pixel(x, y, light.lerp(dark, n))
 	return ImageTexture.create_from_image(image)
 
+func _fit_font_size() -> int:
+	var fitted: int = font_size
+	var max_width: float = block_size.x * 0.58
+	while fitted > 14 and float(text.length()) * float(fitted) * 0.017 > max_width:
+		fitted -= 1
+	return fitted
+
 func _make_detail_material() -> StandardMaterial3D:
 	var material: StandardMaterial3D = StandardMaterial3D.new()
 	material.roughness = 0.7
 	material.metallic = 0.0
 	material.emission_enabled = true
-	material.no_depth_test = true
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 	return material
 
@@ -251,9 +257,9 @@ func _ensure_detail_materials() -> void:
 
 func _shift_color(color: Color, amount: float) -> Color:
 	return Color(
-		clamp(color.r + amount, 0.0, 1.0),
-		clamp(color.g + amount, 0.0, 1.0),
-		clamp(color.b + amount, 0.0, 1.0),
+		clampf(color.r + amount, 0.0, 1.0),
+		clampf(color.g + amount, 0.0, 1.0),
+		clampf(color.b + amount, 0.0, 1.0),
 		color.a
 	)
 
