@@ -1,4 +1,4 @@
-[gd_scene load_steps=51 format=3 uid="uid://cpckbkq2isxty"]
+[gd_scene load_steps=52 format=3 uid="uid://cpckbkq2isxty"]
 
 [ext_resource type="Script" uid="uid://bdrcas6cpq4y0" path="res://scripts/core/input_map_setup.gd" id="1_input"]
 [ext_resource type="Script" uid="uid://ddgxum5bath7f" path="res://scripts/core/debug_join_source.gd" id="2_join"]
@@ -50,6 +50,7 @@
 [ext_resource type="Resource" path="res://resources/maps/rooftop_causeway.tres" id="48_map_rooftop"]
 [ext_resource type="Script" path="res://scripts/ui/world_text_board.gd" id="49_world_board"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_menu_3d_button.tscn" id="50_3d_button"]
+[ext_resource type="Script" path="res://scripts/ui/race_world_boards_guard.gd" id="51_boards_guard"]
 
 [node name="MainGame" type="Node3D"]
 
@@ -289,6 +290,7 @@ outline_size = 4
 
 [node name="RaceBoards" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D"]
 visible = false
+script = ExtResource("51_boards_guard")
 
 [node name="RaceStatusBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
 transform = Transform3D(0.985, 0, -0.174, 0, 1, 0, 0.174, 0, 0.985, -3.05, 1.72, -5.28)
@@ -550,14 +552,6 @@ join_source_path = NodePath("../Systems/DebugJoinSource")
 twitch_join_source_path = NodePath("../Systems/TwitchJoinSource")
 leaderboard_store_path = NodePath("../Systems/LeaderboardStore")
 zombie_manager_path = NodePath("../Systems/ZombieManager")
-world_status_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceStatusBoard")
-world_feed_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceFeedBoard")
-world_leaders_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceLeadersBoard")
-world_command_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceCommandBoard")
-world_countdown_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceCountdownBoard")
-world_results_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceResultsBoard")
-world_results_reset_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards/RaceResultResetButton3D")
-world_boards_root_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards")
 
 [node name="StreamerMenu" parent="." instance=ExtResource("30_streamer_menu")]
 visible = false
