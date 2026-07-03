@@ -4,6 +4,11 @@ extends Control
 const AUDIO_MANAGER_SCENE: PackedScene = preload("res://scenes/audio/audio_manager.tscn")
 const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_settings_menu.tscn")
 const MENU_ART: Texture2D = preload("res://assets/ui/main_menu/zombie_chat_horde_menu_art.png")
+const JOIN_FEED_LINES: Array[String] = [
+	"TacoKing joined the horde!\nPixelPunk: !BRAINS\nNotSleepy: !CHAOS\nHexHunger: !NUKE\nDoomSprint: !SLOWMO\nGraveSnarl: !BRAINS",
+	"ByteBiter joined the horde!\nRoadRage: !NUKE\nSnackStack: !BRAINS\nMoldMode: !CHAOS\nCrateLord: !BRAINS\nNeonRot: !SLOWMO",
+	"CrawlerQ joined the horde!\nEchoRot: !BRAINS\nAdaBites: !CHAOS\nCaptainDecay: !BRAINS\nGlitchGnaw: !SLOWMO\nPixelMunch: !NUKE",
+]
 
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/main/main_game.tscn"
 @export var camera_path: NodePath = NodePath("MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera")
@@ -22,6 +27,9 @@ var _logo_base_scale: Vector3 = Vector3.ONE
 var _menu_buttons: Array[MainMenuBlockButton] = []
 var _viewport_container: SubViewportContainer
 var _pressed_button: MainMenuBlockButton
+var _feed_index: int = 0
+var _feed_elapsed: float = 0.0
+var _prompt_time: float = 0.0
 
 @onready var _background: TextureRect = $Background
 @onready var _viewport: SubViewport = $MenuViewportContainer/MenuViewport
@@ -38,6 +46,8 @@ var _pressed_button: MainMenuBlockButton
 @onready var _version_label: Label3D = get_node_or_null(
 	"MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/VersionLabel3D"
 ) as Label3D
+@onready var _feed_body: Label = get_node_or_null("OverlayLayer/JoinFeedPanel/Margin/VBox/FeedBody") as Label
+@onready var _join_prompt: Label = get_node_or_null("OverlayLayer/JoinPromptLabel") as Label
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -62,6 +72,8 @@ func _ready() -> void:
 		_logo_base_position = _logo_rig.position
 		_logo_base_scale = _logo_rig.scale
 
+	_refresh_join_feed()
+
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_SIZE_CHANGED:
 		_fit_layout()
@@ -70,6 +82,29 @@ func _process(delta: float) -> void:
 	_time += delta
 	_update_camera_idle()
 	_update_logo_rig()
+	_update_join_feed(delta)
+	_update_join_prompt(delta)
+
+func _update_join_feed(delta: float) -> void:
+	if _feed_body == null:
+		return
+	_feed_elapsed += delta
+	if _feed_elapsed < 2.6:
+		return
+	_feed_elapsed = 0.0
+	_feed_index = (_feed_index + 1) % JOIN_FEED_LINES.size()
+	_refresh_join_feed()
+
+func _refresh_join_feed() -> void:
+	if _feed_body != null:
+		_feed_body.text = JOIN_FEED_LINES[_feed_index]
+
+func _update_join_prompt(delta: float) -> void:
+	if _join_prompt == null:
+		return
+	_prompt_time += delta
+	var pulse: float = 0.75 + 0.25 * sin(_prompt_time * 3.0)
+	_join_prompt.modulate = Color(1.0, 1.0, 1.0, pulse)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _transitioning or _viewport_container == null or _camera == null:
