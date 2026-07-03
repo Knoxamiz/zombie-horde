@@ -8,11 +8,12 @@ signal pressed(action_id: StringName)
 @export var base_color: Color = Color(0.4, 0.75, 0.18, 1.0)
 @export var hover_color: Color = Color(0.55, 0.92, 0.28, 1.0)
 @export var text_color: Color = Color(1.0, 1.0, 1.0, 1.0)
+@export var glow_color: Color = Color(0.36, 1.0, 0.32, 1.0)
 @export var block_size: Vector3 = Vector3(1.6, 0.32, 0.16)
 @export var font_size: int = 22
-@export var horizontal_padding: float = 0.18
-@export var vertical_padding: float = 0.06
-@export var min_block_width: float = 1.05
+@export var horizontal_padding: float = 0.4
+@export var vertical_padding: float = 0.16
+@export var min_block_width: float = 1.2
 @export var autofit_block: bool = true
 @export var hover_lift: float = 0.1
 @export var hover_scale: float = 1.05
@@ -32,8 +33,11 @@ var _depth_material: StandardMaterial3D
 var _top_bevel_material: StandardMaterial3D
 var _bottom_shade_material: StandardMaterial3D
 var _shadow_material: StandardMaterial3D
+var _glow_material: StandardMaterial3D
+var _glow_pulse: float = 0.0
 
 @onready var _visual_root: Node3D = get_node("VisualRoot") as Node3D
+@onready var _glow_back: MeshInstance3D = get_node_or_null("VisualRoot/GlowBack") as MeshInstance3D
 @onready var _depth: MeshInstance3D = get_node("VisualRoot/Depth") as MeshInstance3D
 @onready var _face: MeshInstance3D = get_node("VisualRoot/Face") as MeshInstance3D
 @onready var _top_bevel: MeshInstance3D = get_node("VisualRoot/TopBevel") as MeshInstance3D
@@ -162,6 +166,12 @@ func _apply_layout() -> void:
 	var face_z: float = block_size.z * 0.5
 	var depth_offset: float = block_size.z * 0.42
 
+	if _glow_back != null:
+		var glow_mesh: QuadMesh = QuadMesh.new()
+		glow_mesh.size = Vector2(block_size.x + 0.55, block_size.y + 0.55)
+		_glow_back.mesh = glow_mesh
+		_glow_back.position = Vector3(0.0, 0.0, -depth_offset - 0.06)
+
 	_set_box(_depth, Vector3(block_size.x * 0.98, block_size.y * 0.96, block_size.z * 0.72), Vector3(0.0, -0.01, -depth_offset))
 	_set_box(_face, block_size, Vector3.ZERO)
 	_set_box(_top_bevel, Vector3(block_size.x * 0.96, block_size.y * 0.1, 0.03), Vector3(0.0, block_size.y * 0.42, face_z + 0.012))
@@ -231,6 +241,15 @@ func _apply_visuals(force: bool) -> void:
 
 	_shadow_material.albedo_color = Color(0.0, 0.0, 0.0, 0.42 if _hovered and interactable else 0.3)
 
+	if _glow_material != null:
+		_glow_pulse = 0.5 + 0.5 * sin(_time * 2.4 + idle_phase)
+		var base_glow_alpha: float = 0.32 + _glow_pulse * 0.1
+		var glow_alpha: float = 0.62 if _hovered and interactable else base_glow_alpha
+		if not interactable:
+			glow_alpha = 0.12
+		_glow_material.albedo_color = Color(glow_color.r, glow_color.g, glow_color.b, glow_alpha)
+		_glow_material.emission = Color(glow_color.r, glow_color.g, glow_color.b) * (1.6 if _hovered and interactable else 0.9)
+
 	var label_target: Color = _brighten(text_color, 0.06) if _hovered and interactable else text_color
 	_label.modulate = label_target if interactable else Color(text_color.r, text_color.g, text_color.b, 0.45)
 
@@ -252,6 +271,32 @@ func _ensure_materials() -> void:
 		_shadow_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		_shadow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		_drop_shadow.set_surface_override_material(0, _shadow_material)
+	if _glow_back != null and _glow_material == null:
+		_glow_material = StandardMaterial3D.new()
+		_glow_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_glow_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		_glow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_glow_material.emission_enabled = true
+		_glow_material.billboard_mode = BaseMaterial3D.BILLBOARD_DISABLED
+		_glow_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+		_glow_material.albedo_texture = _make_radial_glow_texture()
+		_glow_material.emission_texture = _glow_material.albedo_texture
+		_glow_back.set_surface_override_material(0, _glow_material)
+
+func _make_radial_glow_texture() -> Texture2D:
+	var size: int = 128
+	var image: Image = Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var center: float = float(size - 1) * 0.5
+	var max_dist: float = center
+	for y in range(size):
+		for x in range(size):
+			var dx: float = (float(x) - center) / max_dist
+			var dy: float = (float(y) - center) / max_dist
+			var dist: float = sqrt(dx * dx + dy * dy)
+			var falloff: float = clampf(1.0 - dist, 0.0, 1.0)
+			falloff = falloff * falloff
+			image.set_pixel(x, y, Color(1.0, 1.0, 1.0, falloff))
+	return ImageTexture.create_from_image(image)
 
 func _make_surface_material() -> StandardMaterial3D:
 	var material: StandardMaterial3D = StandardMaterial3D.new()

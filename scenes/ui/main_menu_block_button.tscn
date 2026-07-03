@@ -7,6 +7,8 @@ script = ExtResource("1_script")
 
 [node name="VisualRoot" type="Node3D" parent="."]
 
+[node name="GlowBack" type="MeshInstance3D" parent="VisualRoot"]
+
 [node name="Depth" type="MeshInstance3D" parent="VisualRoot"]
 
 [node name="Face" type="MeshInstance3D" parent="VisualRoot"]
