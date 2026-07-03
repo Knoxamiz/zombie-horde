@@ -2,12 +2,56 @@
 
 Zombie Horde is a Godot 4.x PC/Steam-targeted 3D horde race game foundation. The playable slice is organized around production systems: explicit round state, event-driven gameplay, configurable resources, replaceable scenes, debug joins, and Twitch chat joins.
 
-## Run
+## Open The Project (Windows)
 
-1. Open this folder in Godot 4.x: `C:\dev\gameday\zombie-horde`.
-2. Open `res://scenes/main/main_game.tscn`.
-3. Press Play.
-4. Use the HUD buttons or keyboard controls:
+1. Use this folder: `C:\dev\zombie-horde`
+   - Do **not** open `C:\dev\gameday` unless that is your active clone.
+2. Launch Godot 4.4 (`Godot_v4.4-stable_win64.exe`).
+3. Click **Import** (or **Edit a project**) and select `C:\dev\zombie-horde\project.godot`.
+4. Wait for the first import to finish.
+
+## Get The Latest Code
+
+If this folder came from GitHub, pull updates before testing:
+
+```powershell
+cd C:\dev\zombie-horde
+git pull origin main
+```
+
+You should be on commit `a584c3a` or newer.
+
+### Quick check that you have the 3D main menu
+
+In Godot, open `res://scenes/main_menu/main_menu.tscn` and confirm the Scene tree contains:
+
+- `CinematicWorld` → `CityBackdrop`
+- `CinematicCamera` → `Menu3DOverlay` → `ButtonRack`
+
+Open `res://scripts/main_menu/main_menu_controller.gd` and confirm `_ready()` calls `_activate_cinematic_menu()`.
+
+If you still see `_build_control_room_screen()`, your local files are outdated.
+
+## Run The Main Menu
+
+1. Open `res://scenes/main_menu/main_menu.tscn`.
+2. Press **F5** (Run Project).
+   - Do **not** use **F6** (Run Current Scene) on `main_game.tscn` for menu testing.
+3. You should see a 3D road scene with block-letter title and left-side 3D buttons.
+
+Expected main-menu buttons:
+
+- `START`
+- `STREAMER MODE`
+- `LEADERBOARD`
+- `SETTINGS`
+
+If you instead see flat panels named `LOTTO CAGE` and `CAGE RECORDS`, you are still on the old UI build.
+
+## Run The Game Loop
+
+1. From the 3D main menu, click **START**.
+2. In the lobby/game scene use:
    - `Enter`: start round
    - `R`: reset round
    - `J`: add a simulated chat join through the join-source interface

@@ -591,7 +591,7 @@ surface_material_override/0 = SubResource("StandardMaterial3D_join_prompt")
 [node name="VersionLabel3D" type="Label3D" parent="CinematicCamera/Menu3DOverlay"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.9, -3.62, -5.55)
 modulate = Color(1, 0.96, 0.86, 0.95)
-text = "v1.0.0"
+text = "v1.1.0-3d"
 font_size = 17
 outline_size = 4
 horizontal_alignment = 2
@@ -852,5 +852,5 @@ offset_right = 1560.0
 offset_bottom = 880.0
 theme_override_colors/font_color = Color(1, 0.96, 0.86, 0.92)
 theme_override_font_sizes/font_size = 20
-text = "v1.0.0"
+text = "v1.1.0-3d"
 horizontal_alignment = 2
