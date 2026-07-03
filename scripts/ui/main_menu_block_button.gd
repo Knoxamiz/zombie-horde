@@ -8,12 +8,13 @@ signal pressed(action_id: StringName)
 @export var base_color: Color = Color(0.4, 0.75, 0.18, 1.0)
 @export var hover_color: Color = Color(0.55, 0.92, 0.28, 1.0)
 @export var text_color: Color = Color(1.0, 1.0, 1.0, 1.0)
-@export var glow_color: Color = Color(0.36, 1.0, 0.32, 1.0)
+@export var glow_color: Color = Color(0.0, 0.0, 0.0, 0.0)
 @export var block_size: Vector3 = Vector3(1.6, 0.32, 0.16)
 @export var font_size: int = 22
-@export var horizontal_padding: float = 0.4
+@export var horizontal_padding: float = 0.55
 @export var vertical_padding: float = 0.16
 @export var min_block_width: float = 1.2
+@export var extrusion_layers: int = 5
 @export var autofit_block: bool = true
 @export var hover_lift: float = 0.1
 @export var hover_scale: float = 1.05
@@ -35,6 +36,7 @@ var _bottom_shade_material: StandardMaterial3D
 var _shadow_material: StandardMaterial3D
 var _glow_material: StandardMaterial3D
 var _glow_pulse: float = 0.0
+var _extrusion_labels: Array[Label3D] = []
 
 @onready var _visual_root: Node3D = get_node("VisualRoot") as Node3D
 @onready var _glow_back: MeshInstance3D = get_node_or_null("VisualRoot/GlowBack") as MeshInstance3D
@@ -168,7 +170,7 @@ func _apply_layout() -> void:
 
 	if _glow_back != null:
 		var glow_mesh: QuadMesh = QuadMesh.new()
-		glow_mesh.size = Vector2(block_size.x * 1.6 + 1.1, block_size.y * 3.4 + 1.1)
+		glow_mesh.size = Vector2(block_size.x * 1.9 + 1.8, block_size.y * 4.6 + 1.8)
 		_glow_back.mesh = glow_mesh
 		_glow_back.position = Vector3(0.0, 0.0, -depth_offset - 0.04)
 
@@ -197,12 +199,39 @@ func _apply_layout() -> void:
 	_label_shadow.modulate = Color(0.0, 0.0, 0.0, 0.42)
 	_label_shadow.outline_size = 0
 	_label_shadow.position = Vector3(0.014, -0.016, -0.006)
-	_label.render_priority = 12
+	_label.render_priority = 12 + extrusion_layers
 	_label_shadow.render_priority = 11
+
+	_build_extrusion_labels(menu_font)
 
 	var box_shape: BoxShape3D = BoxShape3D.new()
 	box_shape.size = Vector3(block_size.x + 0.04, block_size.y + 0.06, block_size.z + 0.18)
 	_shape.shape = box_shape
+
+func _build_extrusion_labels(menu_font: Font) -> void:
+	for old_label in _extrusion_labels:
+		if old_label != null and is_instance_valid(old_label):
+			old_label.queue_free()
+	_extrusion_labels.clear()
+
+	var step: float = 0.012
+	var extrude_color: Color = _darken(base_color, 0.4)
+	for layer in range(extrusion_layers):
+		var depth_label: Label3D = Label3D.new()
+		depth_label.font = menu_font
+		depth_label.text = text
+		depth_label.font_size = font_size
+		depth_label.outline_size = 0
+		depth_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		depth_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		depth_label.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+		depth_label.no_depth_test = false
+		var t: float = float(layer + 1) / float(extrusion_layers)
+		depth_label.position = Vector3(-step * float(layer + 1), -step * float(layer + 1), -0.004 * float(layer + 1))
+		depth_label.modulate = _darken(extrude_color, t * 0.25)
+		depth_label.render_priority = 12 + (extrusion_layers - layer - 1)
+		_text_anchor.add_child(depth_label)
+		_extrusion_labels.append(depth_label)
 
 func _set_box(mesh_node: MeshInstance3D, size: Vector3, local_position: Vector3) -> void:
 	var box_mesh: BoxMesh = BoxMesh.new()
@@ -214,7 +243,7 @@ func _compute_block_size() -> Vector3:
 	var menu_font: Font = _get_menu_font()
 	var text_width_px: float = menu_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 	var text_height_px: float = menu_font.get_height(font_size)
-	var width_scale: float = 0.0038
+	var width_scale: float = 0.0044
 	var height_scale: float = 0.0034
 	var fitted_width: float = maxf(min_block_width, text_width_px * width_scale + horizontal_padding)
 	var fitted_height: float = maxf(0.26, text_height_px * height_scale + vertical_padding)
@@ -242,14 +271,17 @@ func _apply_visuals(force: bool) -> void:
 	_shadow_material.albedo_color = Color(0.0, 0.0, 0.0, 0.42 if _hovered and interactable else 0.3)
 
 	if _glow_material != null:
+		var glow_tint: Color = glow_color
+		if glow_tint.a <= 0.0:
+			glow_tint = _brighten(base_color, 0.12)
 		_glow_pulse = 0.5 + 0.5 * sin(_time * 2.4 + idle_phase)
 		var base_glow_alpha: float = 0.7 + _glow_pulse * 0.2
 		var glow_alpha: float = 1.0 if _hovered and interactable else base_glow_alpha
 		if not interactable:
 			glow_alpha = 0.25
-		_glow_material.albedo_color = Color(glow_color.r, glow_color.g, glow_color.b, glow_alpha)
-		_glow_material.emission = Color(glow_color.r, glow_color.g, glow_color.b) * (3.0 if _hovered and interactable else 1.8)
-		_glow_material.emission_energy_multiplier = 2.0 if _hovered and interactable else 1.2
+		_glow_material.albedo_color = Color(glow_tint.r, glow_tint.g, glow_tint.b, glow_alpha)
+		_glow_material.emission = Color(glow_tint.r, glow_tint.g, glow_tint.b) * (3.0 if _hovered and interactable else 1.8)
+		_glow_material.emission_energy_multiplier = 2.2 if _hovered and interactable else 1.4
 
 	var label_target: Color = _brighten(text_color, 0.06) if _hovered and interactable else text_color
 	_label.modulate = label_target if interactable else Color(text_color.r, text_color.g, text_color.b, 0.45)
