@@ -76,13 +76,13 @@ mouse_filter = 2
 color = Color(0.004, 0.008, 0.005, 0.42)
 
 [node name="LobbyPanel" type="PanelContainer" parent="Root"]
-custom_minimum_size = Vector2(520, 300)
+custom_minimum_size = Vector2(520, 280)
 layout_mode = 1
 anchors_preset = 0
 offset_left = 40.0
 offset_top = 40.0
 offset_right = 560.0
-offset_bottom = 340.0
+offset_bottom = 320.0
 theme_override_styles/panel = SubResource("StyleBox_lobby_glow")
 
 [node name="Margin" type="MarginContainer" parent="Root/LobbyPanel"]
@@ -123,6 +123,13 @@ autowrap_mode = 2
 clip_text = true
 max_lines_visible = 1
 
+[node name="ReadyButton" type="Button" parent="Root/LobbyPanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "Ready"
+
 [node name="SecondaryButtonRow" type="HBoxContainer" parent="Root/LobbyPanel/Margin/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
@@ -140,13 +147,6 @@ custom_minimum_size = Vector2(108, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Add NPC"
-
-[node name="ReadyButton" type="Button" parent="Root/LobbyPanel/Margin/VBox"]
-custom_minimum_size = Vector2(0, 68)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 22
-text = "Ready"
 
 [node name="MainMenuButton" type="Button" parent="Root"]
 custom_minimum_size = Vector2(200, 46)
