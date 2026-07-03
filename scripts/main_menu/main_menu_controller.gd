@@ -1,11 +1,12 @@
 class_name MainMenuController
-extends Node3D
+extends Control
 
 const AUDIO_MANAGER_SCENE: PackedScene = preload("res://scenes/audio/audio_manager.tscn")
 const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_settings_menu.tscn")
+const MENU_ART: Texture2D = preload("res://assets/ui/main_menu/zombie_chat_horde_menu_art.png")
 
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/main/main_game.tscn"
-@export var camera_path: NodePath
+@export var camera_path: NodePath = NodePath("MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera")
 @export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.06
 @export_range(0.0, 1.0, 0.01) var logo_wobble_strength: float = 1.0
 
@@ -16,14 +17,17 @@ var _logo_base_position: Vector3 = Vector3.ZERO
 var _logo_base_scale: Vector3 = Vector3.ONE
 var _menu_buttons: Array[MainMenuBlockButton] = []
 
+@onready var _background: TextureRect = $Background
+@onready var _viewport: SubViewport = $MenuViewportContainer/MenuViewport
 @onready var _camera: Camera3D = get_node_or_null(camera_path) as Camera3D
-@onready var _logo_rig: Node3D = get_node_or_null("CinematicCamera/Menu3DOverlay/LogoRig") as Node3D
-@onready var _background: TextureRect = get_node_or_null("BackgroundLayer/Background") as TextureRect
+@onready var _logo_rig: Node3D = get_node_or_null(
+	"MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/LogoRig"
+) as Node3D
 
 func _ready() -> void:
-	get_viewport().transparent_bg = true
+	set_anchors_preset(Control.PRESET_FULL_RECT)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	_fit_background()
+	_fit_layout()
 
 	var music_controller: MusicController = _get_or_create_music_controller()
 	if music_controller != null:
@@ -41,8 +45,8 @@ func _ready() -> void:
 		_logo_base_scale = _logo_rig.scale
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_WM_SIZE_CHANGED:
-		_fit_background()
+	if what == NOTIFICATION_WM_SIZE_CHANGED or what == NOTIFICATION_RESIZED:
+		_fit_layout()
 
 func _process(delta: float) -> void:
 	_time += delta
@@ -85,35 +89,52 @@ func _set_buttons_enabled(enabled: bool) -> void:
 
 func _connect_buttons() -> void:
 	_menu_buttons.clear()
-	var paths: Array[NodePath] = [
-		NodePath("CinematicCamera/Menu3DOverlay/ButtonCenterRack"),
-		NodePath("CinematicCamera/Menu3DOverlay/SettingsButton3D"),
-	]
-	for path in paths:
-		var node: Node = get_node_or_null(path)
-		if node == null:
-			continue
-		if node is MainMenuBlockButton:
-			_register_button(node as MainMenuBlockButton)
-			continue
-		for child in node.get_children():
+	var rack: Node = get_node_or_null(
+		"MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/ButtonCenterRack"
+	)
+	var settings_button: Node = get_node_or_null(
+		"MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/SettingsButton3D"
+	)
+	if rack != null:
+		for child in rack.get_children():
 			var button: MainMenuBlockButton = child as MainMenuBlockButton
 			if button != null:
 				_register_button(button)
+	if settings_button is MainMenuBlockButton:
+		_register_button(settings_button as MainMenuBlockButton)
 
 func _register_button(button: MainMenuBlockButton) -> void:
 	_menu_buttons.append(button)
 	if not button.pressed.is_connected(_on_menu_button_pressed):
 		button.pressed.connect(_on_menu_button_pressed)
 
-func _fit_background() -> void:
-	if _background == null:
+func _fit_layout() -> void:
+	var viewport_size: Vector2 = get_viewport_rect().size
+	if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
 		return
-	_background.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_background.offset_left = 0.0
-	_background.offset_top = 0.0
-	_background.offset_right = 0.0
-	_background.offset_bottom = 0.0
+
+	if _background != null:
+		_background.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_background.offset_left = 0.0
+		_background.offset_top = 0.0
+		_background.offset_right = 0.0
+		_background.offset_bottom = 0.0
+		_background.texture = MENU_ART
+		_background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+
+	var viewport_container: SubViewportContainer = get_node_or_null("MenuViewportContainer") as SubViewportContainer
+	if viewport_container != null:
+		viewport_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		viewport_container.offset_left = 0.0
+		viewport_container.offset_top = 0.0
+		viewport_container.offset_right = 0.0
+		viewport_container.offset_bottom = 0.0
+		viewport_container.stretch = true
+
+	if _viewport != null:
+		_viewport.size = viewport_size
+		_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 
 func _update_camera_idle() -> void:
 	if _camera == null or camera_idle_strength <= 0.0:
