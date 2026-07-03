@@ -5,9 +5,6 @@ signal ready_requested()
 signal settings_requested()
 signal main_menu_requested()
 
-const MAIN_LOBBY_SCREEN_SCENE: Script = preload("res://scripts/ui/main_lobby_screen.gd")
-const MENU_LOGO: Texture2D = preload("res://assets/ui/main_menu/zombie_chat_horde_logo.png")
-
 @export var round_manager_path: NodePath
 @export var join_source_path: NodePath
 @export var twitch_join_source_path: NodePath
@@ -34,13 +31,11 @@ var _world_join_button: MainMenu3DButton
 var _world_settings_button: MainMenu3DButton
 var _world_main_menu_button: MainMenu3DButton
 var _world_boards_root: Node3D
-var _control_room_screen: MainLobbyScreen
 var _queued_names: PackedStringArray = PackedStringArray()
 var _command_text: String = "Type !brains to join."
 var _state_text: String = "Joining"
 
 @onready var _root: Control = get_node("Root") as Control
-@onready var _lobby_panel: PanelContainer = get_node("Root/LobbyPanel") as PanelContainer
 @onready var _lobby_count_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyCountLabel") as Label
 @onready var _lobby_names_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyNamesLabel") as Label
 @onready var _lobby_chat_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyChatLabel") as Label
@@ -49,9 +44,9 @@ var _state_text: String = "Joining"
 @onready var _lobby_join_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ButtonRow/AddJoinButton") as Button
 @onready var _settings_button: Button = get_node("Root/LobbyPanel/Margin/VBox/MenuRow/SettingsButton") as Button
 @onready var _main_menu_button: Button = get_node("Root/LobbyPanel/Margin/VBox/MenuRow/MainMenuButton") as Button
-@onready var _cage_board_panel: PanelContainer = get_node("Root/CageBoardPanel") as PanelContainer
-@onready var _fastest_label: Label = get_node("Root/CageBoardPanel/Margin/VBox/FastestLabel") as Label
-@onready var _recent_winners_label: Label = get_node("Root/CageBoardPanel/Margin/VBox/RecentWinnersLabel") as Label
+@onready var _scores_panel: PanelContainer = get_node("Root/ScoresPanel") as PanelContainer
+@onready var _fastest_label: Label = get_node("Root/ScoresPanel/Margin/VBox/FastestLabel") as Label
+@onready var _recent_winners_label: Label = get_node("Root/ScoresPanel/Margin/VBox/RecentWinnersLabel") as Label
 
 func _ready() -> void:
 	_round_manager = get_node_or_null(round_manager_path) as RoundManager
@@ -66,10 +61,6 @@ func _ready() -> void:
 	_world_settings_button = get_node_or_null(world_settings_button_path) as MainMenu3DButton
 	_world_main_menu_button = get_node_or_null(world_main_menu_button_path) as MainMenu3DButton
 	_world_boards_root = get_node_or_null(world_boards_root_path) as Node3D
-
-	if _root != null:
-		_root.visible = false
-	_build_control_room_screen()
 
 	_lobby_join_button.pressed.connect(_on_add_join_pressed)
 	_ready_button.pressed.connect(_on_ready_pressed)
@@ -100,13 +91,7 @@ func set_screen_mode(mode: String) -> void:
 	var should_show: bool = mode != "hidden"
 	visible = true
 	if _root != null:
-		_root.visible = false
-	if _lobby_panel != null:
-		_lobby_panel.visible = false
-	if _cage_board_panel != null:
-		_cage_board_panel.visible = false
-	if _control_room_screen != null:
-		_control_room_screen.visible = should_show
+		_root.visible = should_show
 	_set_world_visible(false)
 	if should_show:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -128,29 +113,6 @@ func _on_settings_pressed() -> void:
 
 func _on_main_menu_pressed() -> void:
 	main_menu_requested.emit()
-
-func _on_streamer_settings_pressed() -> void:
-	var scene: Node = get_tree().current_scene
-	if scene == null:
-		return
-	var streamer_menu: StreamerMenuController = scene.get_node_or_null("StreamerMenu") as StreamerMenuController
-	if streamer_menu != null:
-		streamer_menu.open_menu()
-
-func _on_control_room_action_requested(action_id: StringName) -> void:
-	match action_id:
-		&"ready":
-			_on_ready_pressed()
-		&"add_join":
-			_on_add_join_pressed()
-		&"reset":
-			_on_reset_pressed()
-		&"streamer_settings":
-			_on_streamer_settings_pressed()
-		&"game_settings":
-			_on_settings_pressed()
-		&"main_menu":
-			_on_main_menu_pressed()
 
 func _on_participant_queue_changed(display_names: PackedStringArray) -> void:
 	_queued_names = display_names
@@ -187,9 +149,7 @@ func _refresh_labels() -> void:
 	if _lobby_chat_label != null:
 		_lobby_chat_label.text = command_text
 	if _world_lobby_board != null:
-		_world_lobby_board.set_board_text("LOTTO CAGE", _format_world_lobby_body(queue_summary, command_text))
-	if _control_room_screen != null:
-		_control_room_screen.set_lobby_status(queue_summary, _format_lobby_names_multiline(), command_text, _state_text)
+		_world_lobby_board.set_board_text("LOBBY", _format_world_lobby_body(queue_summary, command_text))
 	_refresh_ready_button()
 
 func _refresh_scoreboards() -> void:
@@ -200,10 +160,7 @@ func _refresh_scoreboards() -> void:
 	if _recent_winners_label != null:
 		_recent_winners_label.text = recent_text
 	if _world_scores_board != null:
-		_world_scores_board.set_board_text("CAGE RECORDS", "%s\n\n%s" % [_format_world_fastest_times(), _format_world_recent_winners()])
-	if _control_room_screen != null:
-		_control_room_screen.set_records(_format_world_fastest_times(), _format_world_recent_winners())
-		_control_room_screen.set_bottom_items(_build_status_bar_items())
+		_world_scores_board.set_board_text("SCORES", "%s\n\n%s" % [_format_world_fastest_times(), _format_world_recent_winners()])
 
 func _format_fastest_times() -> String:
 	if _leaderboard_store == null:
@@ -228,13 +185,13 @@ func _format_fastest_times() -> String:
 
 func _format_recent_winners() -> String:
 	if _leaderboard_store == null:
-		return "Last 10 Winners\n-"
+		return "Recent Winners\n-"
 
 	var entries: Array = _leaderboard_store.get_recent_winners()
 	if entries.is_empty():
-		return "Last 10 Winners\n-"
+		return "Recent Winners\n-"
 
-	var lines: Array[String] = ["Last 10 Winners"]
+	var lines: Array[String] = ["Recent Winners"]
 	var max_entries: int = mini(entries.size(), 10)
 	for index in range(max_entries):
 		if typeof(entries[index]) != TYPE_DICTIONARY:
@@ -250,8 +207,8 @@ func _format_recent_winners() -> String:
 
 func _format_queue_summary() -> String:
 	if _queued_names.is_empty():
-		return "Cage empty - waiting for !brains"
-	return "%d zombies shaking the cage" % _queued_names.size()
+		return "Waiting for players — type !brains in chat"
+	return "%d player(s) in lobby" % _queued_names.size()
 
 func _format_lobby_names() -> String:
 	if _queued_names.is_empty():
@@ -264,21 +221,6 @@ func _format_lobby_names() -> String:
 	if _queued_names.size() > max_names:
 		names.append("+%d more" % (_queued_names.size() - max_names))
 	return _join_strings(names, ", ")
-
-func _format_lobby_names_multiline() -> String:
-	if _queued_names.is_empty():
-		return "-"
-
-	var lines: Array[String] = []
-	var max_names: int = mini(_queued_names.size(), 20)
-	for index in range(max_names):
-		var name_text: String = str(_queued_names[index])
-		if name_text.length() > 24:
-			name_text = "%s..." % name_text.substr(0, 21)
-		lines.append("%02d  %s" % [index + 1, name_text])
-	if _queued_names.size() > max_names:
-		lines.append("+%d more in queue" % (_queued_names.size() - max_names))
-	return _join_strings(lines, "\n")
 
 func _refresh_ready_button() -> void:
 	if _ready_button == null:
@@ -293,9 +235,6 @@ func _refresh_ready_button() -> void:
 	if _world_ready_button != null:
 		_world_ready_button.set_button_text(_ready_button.text.to_upper())
 		_world_ready_button.set_interactable(can_ready)
-	if _control_room_screen != null:
-		_control_room_screen.set_action_label(&"ready", _ready_button.text)
-		_control_room_screen.set_action_enabled(&"ready", can_ready)
 	if _settings_button != null:
 		_settings_button.visible = true
 		_settings_button.disabled = false
@@ -309,12 +248,6 @@ func _refresh_ready_button() -> void:
 		_world_reset_button.set_interactable(true)
 	if _world_join_button != null:
 		_world_join_button.set_interactable(true)
-	if _control_room_screen != null:
-		_control_room_screen.set_action_enabled(&"reset", true)
-		_control_room_screen.set_action_enabled(&"add_join", true)
-		_control_room_screen.set_action_enabled(&"streamer_settings", true)
-		_control_room_screen.set_action_enabled(&"game_settings", true)
-		_control_room_screen.set_action_enabled(&"main_menu", _state_text == "Joining")
 
 func _join_strings(values: Array[String], separator: String) -> String:
 	var result: String = ""
@@ -335,9 +268,6 @@ func _refresh_chat_status_from_source() -> void:
 	var status_text: String = _twitch_join_source.get_status_text()
 	var detail_text: String = _twitch_join_source.get_status_detail()
 	_on_chat_connection_status_changed(status_text, detail_text)
-
-func _can_open_settings() -> bool:
-	return true
 
 func _connect_world_button(button: MainMenu3DButton) -> void:
 	if button == null:
@@ -366,57 +296,6 @@ func _set_world_visible(should_show: bool) -> void:
 		_refresh_labels()
 		_refresh_scoreboards()
 
-func _build_control_room_screen() -> void:
-	_control_room_screen = MAIN_LOBBY_SCREEN_SCENE.new() as MainLobbyScreen
-	if _control_room_screen == null:
-		return
-	_control_room_screen.name = "MainLobbyScreen"
-	add_child(_control_room_screen)
-	_control_room_screen.set_logo_texture(MENU_LOGO)
-	_control_room_screen.action_requested.connect(_on_control_room_action_requested)
-	_control_room_screen.set_actions([
-		{"id": &"ready", "icon": ">", "label": "Ready", "primary": true, "enabled": false},
-		{"id": &"add_join", "icon": "+", "label": "Add Join"},
-		{"id": &"reset", "icon": "R", "label": "Reset"},
-		{"id": &"streamer_settings", "icon": "S", "label": "Streamer Settings"},
-		{"id": &"game_settings", "icon": "G", "label": "Game Settings"},
-		{"id": &"main_menu", "icon": "<", "label": "Back To Menu"},
-	])
-	_control_room_screen.set_chat_activity(PackedStringArray([
-		"ByteBiter: !brains",
-		"GraveSnarl: !chaos",
-		"NeonRot: !brains",
-		"CrawlerQ: !slowmo",
-	]))
-	_control_room_screen.set_bottom_items(_build_status_bar_items())
-
-func _build_status_bar_items() -> Array[Dictionary]:
-	var profile: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
-	var map_name: String = "Quarantine Boulevard"
-	var scene: Node = get_tree().current_scene
-	if scene != null:
-		var map_controller: RaceMapController = scene.get_node_or_null("Systems/RaceMapController") as RaceMapController
-		if map_controller != null:
-			map_name = map_controller.get_active_map_name()
-	var edition: String = feature_config.get_edition_name() if feature_config != null else "Basic"
-	return [
-		{"label": "Map", "value": map_name},
-		{"label": "Edition", "value": edition},
-		{"label": "Round Type", "value": "Lotto Race"},
-		{"label": "Lighting", "value": profile.get_time_of_day_name()},
-		{"label": "Props", "value": str(profile.premium_obstacle_count)},
-		{"label": "Mines", "value": str(profile.premium_mine_count)},
-		{"label": "Boosts", "value": str(profile.premium_boost_pad_count)},
-		{"label": "Sewers", "value": str(profile.premium_sewer_hole_count)},
-		{"label": "Defenders", "value": str(profile.premium_defender_count)},
-	]
-
-func _format_world_lobby_body(queue_summary: String, command_text: String) -> String:
-	var names_text: String = _format_world_lobby_names()
-	if names_text == "-":
-		names_text = "No runners in the cage yet."
-	return "%s\n\n%s\n\n%s" % [queue_summary, names_text, command_text]
-
 func _set_world_buttons_interactable(enabled: bool) -> void:
 	var buttons: Array[MainMenu3DButton] = [
 		_world_ready_button,
@@ -428,6 +307,12 @@ func _set_world_buttons_interactable(enabled: bool) -> void:
 	for button in buttons:
 		if button != null:
 			button.set_interactable(enabled)
+
+func _format_world_lobby_body(queue_summary: String, command_text: String) -> String:
+	var names_text: String = _format_world_lobby_names()
+	if names_text == "-":
+		names_text = "No players yet."
+	return "%s\n\n%s\n\n%s" % [queue_summary, names_text, command_text]
 
 func _format_world_lobby_names() -> String:
 	if _queued_names.is_empty():
@@ -467,13 +352,13 @@ func _format_world_fastest_times() -> String:
 
 func _format_world_recent_winners() -> String:
 	if _leaderboard_store == null:
-		return "Last Winners\n-"
+		return "Recent Winners\n-"
 
 	var entries: Array = _leaderboard_store.get_recent_winners()
 	if entries.is_empty():
-		return "Last Winners\n-"
+		return "Recent Winners\n-"
 
-	var lines: Array[String] = ["Last Winners"]
+	var lines: Array[String] = ["Recent Winners"]
 	var max_entries: int = mini(entries.size(), 5)
 	for index in range(max_entries):
 		if typeof(entries[index]) != TYPE_DICTIONARY:
