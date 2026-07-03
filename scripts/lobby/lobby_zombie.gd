@@ -6,10 +6,14 @@ extends RigidBody3D
 @export var upward_impulse: float = 0.15
 @export var spin_strength: float = 7.5
 @export var settle_velocity_threshold: float = 0.42
+@export_range(0.1, 1.0, 0.01) var first_bounce_scale: float = 0.55
+@export_range(1.0, 1.6, 0.01) var later_bounce_boost: float = 1.24
 
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _motion_timer: float = 0.0
 var _animation_player: AnimationPlayer
+var _was_falling: bool = true
+var _landings: int = 0
 
 @onready var _name_label: Label3D = get_node_or_null("NameLabel") as Label3D
 
@@ -24,8 +28,28 @@ func _ready() -> void:
 func configure_lobby_zombie(new_display_name: String, random_seed: int) -> void:
 	display_name = new_display_name
 	_rng.seed = random_seed
+	_landings = 0
+	_was_falling = true
 	_refresh_name_label()
 	call_deferred("_kick")
+
+func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
+	var velocity: Vector3 = state.get_linear_velocity()
+
+	if velocity.y < -0.35:
+		_was_falling = true
+		return
+
+	if not _was_falling or velocity.y <= 0.05:
+		return
+
+	_was_falling = false
+	_landings += 1
+
+	if _landings == 1:
+		state.linear_velocity = Vector3(velocity.x, velocity.y * first_bounce_scale, velocity.z)
+	else:
+		state.linear_velocity = Vector3(velocity.x, velocity.y * later_bounce_boost, velocity.z)
 
 func _physics_process(delta: float) -> void:
 	_motion_timer -= delta
