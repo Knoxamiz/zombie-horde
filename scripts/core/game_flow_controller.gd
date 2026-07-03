@@ -208,7 +208,6 @@ func _apply_phase(phase_name: String) -> void:
 			_set_world_active(_lobby_world, false)
 			_set_race_manager_active(true)
 			_set_node_visible(_hud, true)
-			_refresh_hud_display()
 			_set_node_visible(_streamer_menu, false)
 			if _pre_round_ui != null:
 				_pre_round_ui.set_screen_mode("hidden")
@@ -279,11 +278,6 @@ func _get_or_create_game_settings() -> GameSettingsController:
 	game_settings.name = "GameSettings"
 	get_tree().root.add_child(game_settings)
 	return game_settings
-
-func _refresh_hud_display() -> void:
-	var hud_controller: HudController = _hud as HudController
-	if hud_controller != null:
-		hud_controller.call_deferred("refresh_display")
 
 func _set_node_visible(node: Node, visible: bool) -> void:
 	if node == null:

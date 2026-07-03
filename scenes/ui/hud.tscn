@@ -1,13 +1,15 @@
-[gd_scene load_steps=3 format=3 uid="uid://klfmkohhxs15"]
+[gd_scene load_steps=4 format=3 uid="uid://klfmkohhxs15"]
 
 [ext_resource type="Script" uid="uid://u81cp382hnt1" path="res://scripts/ui/hud_controller.gd" id="1_script"]
+[ext_resource type="Theme" path="res://assets/ui/zombie_horde_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://scenes/ui/round_results_overlay.tscn" id="3_results_overlay"]
 
 [node name="HUD" type="CanvasLayer"]
-layer = 15
+layer = 6
 script = ExtResource("1_script")
 
 [node name="Root" type="Control" parent="."]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -15,147 +17,173 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme = ExtResource("2_theme")
 
-[node name="TopLeftTint" type="ColorRect" parent="Root"]
+[node name="TopPanel" type="PanelContainer" parent="Root"]
 layout_mode = 0
-offset_right = 380.0
-offset_bottom = 150.0
-mouse_filter = 2
-color = Color(0.01, 0.02, 0.01, 0.1)
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 390.0
+offset_bottom = 190.0
 
-[node name="TopRightTint" type="ColorRect" parent="Root"]
-layout_mode = 0
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -400.0
-offset_bottom = 260.0
-grow_horizontal = 0
-mouse_filter = 2
-color = Color(0.02, 0.01, 0.01, 0.09)
-
-[node name="BottomRightTint" type="ColorRect" parent="Root"]
-layout_mode = 0
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -400.0
-offset_top = -300.0
-grow_horizontal = 0
-grow_vertical = 0
-mouse_filter = 2
-color = Color(0.02, 0.015, 0.01, 0.1)
-
-[node name="BottomLeftTint" type="ColorRect" parent="Root"]
-layout_mode = 0
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_top = -120.0
-offset_right = 440.0
-grow_vertical = 0
-mouse_filter = 2
-color = Color(0.01, 0.015, 0.02, 0.09)
-
-[node name="TopLeft" type="VBoxContainer" parent="Root"]
-layout_mode = 0
-offset_left = 24.0
-offset_top = 20.0
-offset_right = 372.0
-offset_bottom = 132.0
-theme_override_constants/separation = 4
-
-[node name="HeaderLabel" type="Label" parent="Root/TopLeft"]
+[node name="Margin" type="MarginContainer" parent="Root/TopPanel"]
 layout_mode = 2
-text = "RACE STATUS"
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
 
-[node name="StateLabel" type="Label" parent="Root/TopLeft"]
+[node name="VBox" type="VBoxContainer" parent="Root/TopPanel/Margin"]
 layout_mode = 2
-text = "Joining | Queued: 0"
-
-[node name="CountLabel" type="Label" parent="Root/TopLeft"]
-layout_mode = 2
-text = "0 alive / 0 total"
-
-[node name="TopRight" type="VBoxContainer" parent="Root"]
-layout_mode = 0
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -384.0
-offset_top = 20.0
-offset_right = -24.0
-offset_bottom = 252.0
-grow_horizontal = 0
 theme_override_constants/separation = 6
 
-[node name="FeedHeaderLabel" type="Label" parent="Root/TopRight"]
+[node name="StateLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
 layout_mode = 2
-text = "LIVE FEED"
+theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
+text = "State: Idle | Queued: 0"
 
-[node name="QueueLabel" type="Label" parent="Root/TopRight"]
+[node name="CountLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
+layout_mode = 2
+text = "Zombies: 0 alive / 0 total"
+
+[node name="LeaderLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
+layout_mode = 2
+text = "Leader: -"
+
+[node name="WinnerLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
+layout_mode = 2
+text = "Winner: -"
+
+[node name="ChatStatusLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
+layout_mode = 2
+text = "Chat: Debug only"
+
+[node name="ControlPanel" type="PanelContainer" parent="Root"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 202.0
+offset_right = 410.0
+offset_bottom = 260.0
+
+[node name="Margin" type="MarginContainer" parent="Root/ControlPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="HBox" type="HBoxContainer" parent="Root/ControlPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StartButton" type="Button" parent="Root/ControlPanel/Margin/HBox"]
+layout_mode = 2
+text = "Start"
+
+[node name="ResetButton" type="Button" parent="Root/ControlPanel/Margin/HBox"]
+layout_mode = 2
+text = "Reset"
+
+[node name="JoinButton" type="Button" parent="Root/ControlPanel/Margin/HBox"]
+layout_mode = 2
+text = "Add Join"
+
+[node name="RosterPanel" type="PanelContainer" parent="Root"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -392.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 314.0
+
+[node name="Margin" type="MarginContainer" parent="Root/RosterPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="Root/RosterPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="QueueLabel" type="Label" parent="Root/RosterPanel/Margin/VBox"]
 layout_mode = 2
 text = "Lotto: waiting for !brains"
 autowrap_mode = 2
 
-[node name="RosterLabel" type="Label" parent="Root/TopRight"]
+[node name="RosterLabel" type="Label" parent="Root/RosterPanel/Margin/VBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.48, 0.34, 1)
 text = "Kills:\n-"
 autowrap_mode = 2
 
-[node name="BottomRight" type="VBoxContainer" parent="Root"]
+[node name="LeaderboardPanel" type="PanelContainer" parent="Root"]
 layout_mode = 0
 anchor_left = 1.0
-anchor_top = 1.0
 anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -384.0
-offset_top = -288.0
-offset_right = -24.0
-offset_bottom = -20.0
-grow_horizontal = 0
-grow_vertical = 0
-theme_override_constants/separation = 6
+offset_left = -392.0
+offset_top = 326.0
+offset_right = -16.0
+offset_bottom = 560.0
 
-[node name="StandingsHeaderLabel" type="Label" parent="Root/BottomRight"]
+[node name="Margin" type="MarginContainer" parent="Root/LeaderboardPanel"]
 layout_mode = 2
-text = "TOP 10"
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
 
-[node name="StandingsLabel" type="Label" parent="Root/BottomRight"]
+[node name="VBox" type="VBoxContainer" parent="Root/LeaderboardPanel/Margin"]
 layout_mode = 2
-size_flags_vertical = 3
-text = "-"
+theme_override_constants/separation = 8
+
+[node name="LeaderboardLabel" type="Label" parent="Root/LeaderboardPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
+text = "Fastest Winners\n-"
 autowrap_mode = 2
 
-[node name="BottomLeft" type="VBoxContainer" parent="Root"]
-layout_mode = 0
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = -104.0
-offset_right = 420.0
-offset_bottom = -20.0
-grow_vertical = 0
-theme_override_constants/separation = 4
-
-[node name="CommandLabel" type="Label" parent="Root/BottomLeft"]
-layout_mode = 2
-text = "TYPE !BRAINS TO JOIN"
-
-[node name="ChatStatusLabel" type="Label" parent="Root/BottomLeft"]
-layout_mode = 2
-text = "Chat: Debug only"
-
-[node name="CountdownLabel" type="Label" parent="Root"]
-visible = false
+[node name="CountdownPanel" type="PanelContainer" parent="Root"]
 layout_mode = 0
 anchor_left = 0.5
+anchor_top = 0.5
 anchor_right = 0.5
-offset_left = -90.0
-offset_top = 18.0
-offset_right = 90.0
-offset_bottom = 170.0
-grow_horizontal = 2
+anchor_bottom = 0.5
+offset_left = -82.0
+offset_top = -82.0
+offset_right = 82.0
+offset_bottom = 82.0
+
+[node name="Margin" type="MarginContainer" parent="Root/CountdownPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="CountdownLabel" type="Label" parent="Root/CountdownPanel/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.12, 1)
+theme_override_font_sizes/font_size = 104
 text = "5"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="RoundResultsOverlay" parent="Root" instance=ExtResource("3_results_overlay")]
+
+[node name="CommandLabel" type="Label" parent="Root"]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -230.0
+offset_top = -72.0
+offset_right = 230.0
+offset_bottom = -28.0
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
+text = "Type !brains to join."
