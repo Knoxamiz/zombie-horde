@@ -2,6 +2,7 @@ class_name PreRoundUIController
 extends CanvasLayer
 
 signal ready_requested()
+signal options_requested()
 signal main_menu_requested()
 
 @export var round_manager_path: NodePath
@@ -39,6 +40,7 @@ var _state_text: String = "Joining"
 @onready var _ready_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ReadyButton") as Button
 @onready var _reset_button: HoldToConfirmButton = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/ResetButton") as HoldToConfirmButton
 @onready var _lobby_join_button: Button = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/AddNpcButton") as Button
+@onready var _options_button: Button = get_node("Root/OptionsButton") as Button
 @onready var _main_menu_button: Button = get_node("Root/MainMenuButton") as Button
 @onready var _scores_panel: PanelContainer = get_node("Root/ScoresPanel") as PanelContainer
 @onready var _fastest_label: Label = get_node("Root/ScoresPanel/Margin/VBox/FastestLabel") as Label
@@ -60,6 +62,7 @@ func _ready() -> void:
 	_lobby_join_button.pressed.connect(_on_add_npc_pressed)
 	_ready_button.pressed.connect(_on_ready_pressed)
 	_reset_button.hold_confirmed.connect(_on_reset_confirmed)
+	_options_button.pressed.connect(_on_options_pressed)
 	_main_menu_button.pressed.connect(_on_main_menu_pressed)
 	_connect_world_button(_world_ready_button)
 	_connect_world_button(_world_reset_button)
@@ -100,6 +103,9 @@ func _on_add_npc_pressed() -> void:
 	var debug_source: DebugJoinSource = _join_source as DebugJoinSource
 	if debug_source != null:
 		debug_source.request_random_join()
+
+func _on_options_pressed() -> void:
+	options_requested.emit()
 
 func _on_main_menu_pressed() -> void:
 	main_menu_requested.emit()
