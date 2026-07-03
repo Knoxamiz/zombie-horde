@@ -103,7 +103,7 @@ map_4_definition = ExtResource("48_map_rooftop")
 [node name="LeaderboardStore" type="Node" parent="Systems"]
 script = ExtResource("38_leaderboard_store")
 
-[node name="RoundManager" type="Node" parent="Systems"]
+[node name="RoundManager" type="Node" parent="Systems" groups=["round_manager"]]
 script = ExtResource("3_round")
 round_config = ExtResource("7_round_config")
 join_source_path = NodePath("../JoinSourceHub")
@@ -116,7 +116,7 @@ leaderboard_store_path = NodePath("../LeaderboardStore")
 minigun_path = NodePath("../../World/BaseMinigun")
 base_goal_path = NodePath("../../World/StreamerBase")
 
-[node name="ZombieManager" type="Node3D" parent="Systems"]
+[node name="ZombieManager" type="Node3D" parent="Systems" groups=["zombie_manager"]]
 visible = false
 script = ExtResource("4_zombie_manager")
 zombie_scene = ExtResource("11_zombie_scene")

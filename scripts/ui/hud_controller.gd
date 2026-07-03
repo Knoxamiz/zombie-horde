@@ -39,8 +39,8 @@ var _last_stats: Dictionary = {}
 @onready var _results_overlay: RoundResultsOverlay = get_node("Root/RoundResultsOverlay") as RoundResultsOverlay
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_apply_visual_style()
-	_resolve_managers()
 
 	GameEvents.round_state_changed.connect(_on_round_state_changed)
 	GameEvents.round_started.connect(_on_round_started)
@@ -57,6 +57,10 @@ func _ready() -> void:
 	if _results_overlay != null:
 		_results_overlay.reset_requested.connect(_on_results_reset_requested)
 
+	call_deferred("_finalize_setup")
+
+func _finalize_setup() -> void:
+	_force_resolve_managers()
 	_sync_from_managers()
 	_countdown_label.visible = false
 	if _results_overlay != null:
@@ -65,19 +69,40 @@ func _ready() -> void:
 	refresh_display()
 	_last_visible_state = visible
 
+func bind_managers(
+	round_manager: RoundManager,
+	zombie_manager: ZombieManager,
+	twitch_join_source: TwitchJoinSource = null
+) -> void:
+	if round_manager != null:
+		_round_manager = round_manager
+	if zombie_manager != null:
+		_zombie_manager = zombie_manager
+	if twitch_join_source != null:
+		_twitch_join_source = twitch_join_source
+
 func refresh_display() -> void:
 	_resolve_managers()
 	_sync_from_managers()
-	_sync_display()
+	_refresh_all_labels()
+	_sync_visibility()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_VISIBILITY_CHANGED:
-		_sync_display()
+		if visible:
+			_resolve_managers()
+			_sync_from_managers()
+		_sync_visibility()
+		_refresh_all_labels()
 
 func _process(delta: float) -> void:
 	if _last_visible_state != visible:
 		_last_visible_state = visible
-		_sync_display()
+		if visible:
+			_resolve_managers()
+			_sync_from_managers()
+		_sync_visibility()
+		_refresh_all_labels()
 
 	if not visible:
 		return
@@ -86,12 +111,14 @@ func _process(delta: float) -> void:
 	if _refresh_timer < STANDINGS_REFRESH_SECONDS:
 		return
 	_refresh_timer = 0.0
+	_resolve_managers()
 	_sync_from_managers()
-	_refresh_static_labels()
-	_refresh_roster()
-	_refresh_standings()
+	_refresh_all_labels()
 
 func _resolve_managers() -> void:
+	_force_resolve_managers()
+
+func _force_resolve_managers() -> void:
 	if _round_manager == null and not round_manager_path.is_empty():
 		_round_manager = get_node_or_null(round_manager_path) as RoundManager
 	if _zombie_manager == null and not zombie_manager_path.is_empty():
@@ -99,18 +126,25 @@ func _resolve_managers() -> void:
 	if _twitch_join_source == null and not twitch_join_source_path.is_empty():
 		_twitch_join_source = get_node_or_null(twitch_join_source_path) as TwitchJoinSource
 
-	if _round_manager == null:
-		var systems: Node = get_node_or_null("../Systems")
-		if systems != null:
+	var systems: Node = _get_systems_node()
+	if systems != null:
+		if _round_manager == null:
 			_round_manager = systems.get_node_or_null("RoundManager") as RoundManager
-	if _zombie_manager == null:
-		var systems: Node = get_node_or_null("../Systems")
-		if systems != null:
+		if _zombie_manager == null:
 			_zombie_manager = systems.get_node_or_null("ZombieManager") as ZombieManager
-	if _twitch_join_source == null:
-		var systems: Node = get_node_or_null("../Systems")
-		if systems != null:
+		if _twitch_join_source == null:
 			_twitch_join_source = systems.get_node_or_null("TwitchJoinSource") as TwitchJoinSource
+
+	if _round_manager == null:
+		_round_manager = get_tree().get_first_node_in_group("round_manager") as RoundManager
+	if _zombie_manager == null:
+		_zombie_manager = get_tree().get_first_node_in_group("zombie_manager") as ZombieManager
+
+func _get_systems_node() -> Node:
+	var parent_node: Node = get_parent()
+	if parent_node == null:
+		return null
+	return parent_node.get_node_or_null("Systems")
 
 func _sync_from_managers() -> void:
 	if _round_manager != null:
@@ -121,12 +155,12 @@ func _sync_from_managers() -> void:
 		_living_count = _zombie_manager.get_living_count()
 		_total_count = _zombie_manager.get_total_count()
 
-func _sync_display() -> void:
+func _sync_visibility() -> void:
 	if _root == null:
 		return
 	_root.visible = visible
-	if not visible:
-		return
+
+func _refresh_all_labels() -> void:
 	_refresh_command_hint()
 	_refresh_static_labels()
 	_refresh_roster()
