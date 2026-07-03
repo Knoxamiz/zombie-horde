@@ -55,6 +55,7 @@ func _ready() -> void:
 	_viewport_container = get_node_or_null("MenuViewportContainer") as SubViewportContainer
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_fit_layout()
+	ResourceLoader.load_threaded_request(game_scene_path)
 
 	var music_controller: MusicController = _get_or_create_music_controller()
 	if music_controller != null:
@@ -197,11 +198,24 @@ func _launch_lobby(debug_joins_to_seed: int, open_settings: bool) -> void:
 	_transitioning = true
 	_set_buttons_enabled(false)
 	LaunchState.request_lobby(debug_joins_to_seed, open_settings)
-	var error: Error = get_tree().change_scene_to_file(game_scene_path)
+
+	var packed: PackedScene = _take_preloaded_game_scene()
+	var error: Error
+	if packed != null:
+		error = get_tree().change_scene_to_packed(packed)
+	else:
+		error = get_tree().change_scene_to_file(game_scene_path)
+
 	if error != OK:
 		_transitioning = false
 		_set_buttons_enabled(true)
 		push_error("Unable to load game scene: %s" % game_scene_path)
+
+func _take_preloaded_game_scene() -> PackedScene:
+	var status: ResourceLoader.ThreadLoadStatus = ResourceLoader.load_threaded_get_status(game_scene_path)
+	if status == ResourceLoader.THREAD_LOAD_IN_PROGRESS or status == ResourceLoader.THREAD_LOAD_LOADED:
+		return ResourceLoader.load_threaded_get(game_scene_path) as PackedScene
+	return null
 
 func _set_buttons_enabled(enabled: bool) -> void:
 	for button in _menu_buttons:

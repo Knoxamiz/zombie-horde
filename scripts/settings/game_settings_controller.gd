@@ -735,9 +735,6 @@ func _collect_peer_world_roots() -> Array[Node3D]:
 		"WorldMenus3D/LobbyBoards",
 		"WorldMenus3D/RaceBoards",
 		"WorldMenus3D/StreamerSettingsBoards",
-		"Menu3DOverlay/ButtonRack",
-		"Menu3DOverlay/ChatRoadSign",
-		"Menu3DOverlay/JoinPrompt3D",
 	]
 	for root_path in root_paths:
 		var root: Node3D = camera.get_node_or_null(root_path) as Node3D
