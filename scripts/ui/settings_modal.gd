@@ -23,15 +23,17 @@ func _build() -> void:
 	dim.color = Color(0.0, 0.0, 0.0, 0.56)
 	add_child(dim)
 
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(center)
+
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(940, 760)
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.offset_left = -470
-	panel.offset_top = -380
-	panel.offset_right = 470
-	panel.offset_bottom = 380
+	panel.custom_minimum_size = Vector2(820, 680)
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	panel.add_theme_stylebox_override("panel", ControlRoomTheme.panel_style(ControlRoomTheme.COLOR_ORANGE, Color(0.018, 0.024, 0.02, 0.98), 3))
-	add_child(panel)
+	center.add_child(panel)
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 26)
@@ -62,7 +64,7 @@ func _build() -> void:
 	header.add_child(close_button)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(0, 600)
+	scroll.custom_minimum_size = Vector2(0, 520)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(scroll)
 
