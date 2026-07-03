@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/pre_round_ui_controller.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/ui/zombie_horde_theme.tres" id="2_theme"]
+[ext_resource type="Script" path="res://scripts/ui/hold_to_confirm_button.gd" id="3_hold_button"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_board_header"]
 content_margin_left = 16.0
@@ -122,38 +123,46 @@ autowrap_mode = 2
 clip_text = true
 max_lines_visible = 1
 
-[node name="ButtonRow" type="HBoxContainer" parent="Root/LobbyPanel/Margin/VBox"]
+[node name="SecondaryButtonRow" type="HBoxContainer" parent="Root/LobbyPanel/Margin/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ReadyButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/ButtonRow"]
-custom_minimum_size = Vector2(142, 48)
+[node name="ResetButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/SecondaryButtonRow"]
+custom_minimum_size = Vector2(108, 40)
 layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("3_hold_button")
+hold_seconds = 3.0
+text = "Hold Reset"
+
+[node name="AddNpcButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/SecondaryButtonRow"]
+custom_minimum_size = Vector2(108, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Add NPC"
+
+[node name="ReadyButton" type="Button" parent="Root/LobbyPanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
 text = "Ready"
 
-[node name="ResetButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/ButtonRow"]
-custom_minimum_size = Vector2(116, 48)
-layout_mode = 2
-text = "Reset"
-
-[node name="AddJoinButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/ButtonRow"]
-custom_minimum_size = Vector2(156, 48)
-layout_mode = 2
-text = "Add Join"
-
-[node name="MenuRow" type="HBoxContainer" parent="Root/LobbyPanel/Margin/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="SettingsButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/MenuRow"]
-custom_minimum_size = Vector2(164, 46)
-layout_mode = 2
-text = "Settings"
-
-[node name="MainMenuButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/MenuRow"]
-custom_minimum_size = Vector2(178, 46)
-layout_mode = 2
-text = "Back to Menu"
+[node name="MainMenuButton" type="Button" parent="Root"]
+custom_minimum_size = Vector2(200, 46)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -240.0
+offset_top = -62.0
+offset_right = -40.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Return to Main Menu"
 
 [node name="ScoresPanel" type="PanelContainer" parent="Root"]
 custom_minimum_size = Vector2(330, 0)

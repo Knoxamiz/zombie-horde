@@ -2,7 +2,6 @@ class_name PreRoundUIController
 extends CanvasLayer
 
 signal ready_requested()
-signal settings_requested()
 signal main_menu_requested()
 
 @export var round_manager_path: NodePath
@@ -15,7 +14,6 @@ signal main_menu_requested()
 @export var world_ready_button_path: NodePath
 @export var world_reset_button_path: NodePath
 @export var world_join_button_path: NodePath
-@export var world_settings_button_path: NodePath
 @export var world_main_menu_button_path: NodePath
 @export var world_boards_root_path: NodePath
 
@@ -28,7 +26,6 @@ var _world_scores_board: WorldTextBoard
 var _world_ready_button: MainMenu3DButton
 var _world_reset_button: MainMenu3DButton
 var _world_join_button: MainMenu3DButton
-var _world_settings_button: MainMenu3DButton
 var _world_main_menu_button: MainMenu3DButton
 var _world_boards_root: Node3D
 var _queued_names: PackedStringArray = PackedStringArray()
@@ -39,11 +36,10 @@ var _state_text: String = "Joining"
 @onready var _lobby_count_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyCountLabel") as Label
 @onready var _lobby_names_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyNamesLabel") as Label
 @onready var _lobby_chat_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyChatLabel") as Label
-@onready var _ready_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ButtonRow/ReadyButton") as Button
-@onready var _reset_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ButtonRow/ResetButton") as Button
-@onready var _lobby_join_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ButtonRow/AddJoinButton") as Button
-@onready var _settings_button: Button = get_node("Root/LobbyPanel/Margin/VBox/MenuRow/SettingsButton") as Button
-@onready var _main_menu_button: Button = get_node("Root/LobbyPanel/Margin/VBox/MenuRow/MainMenuButton") as Button
+@onready var _ready_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ReadyButton") as Button
+@onready var _reset_button: HoldToConfirmButton = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/ResetButton") as HoldToConfirmButton
+@onready var _lobby_join_button: Button = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/AddNpcButton") as Button
+@onready var _main_menu_button: Button = get_node("Root/MainMenuButton") as Button
 @onready var _scores_panel: PanelContainer = get_node("Root/ScoresPanel") as PanelContainer
 @onready var _fastest_label: Label = get_node("Root/ScoresPanel/Margin/VBox/FastestLabel") as Label
 @onready var _recent_winners_label: Label = get_node("Root/ScoresPanel/Margin/VBox/RecentWinnersLabel") as Label
@@ -58,19 +54,16 @@ func _ready() -> void:
 	_world_ready_button = get_node_or_null(world_ready_button_path) as MainMenu3DButton
 	_world_reset_button = get_node_or_null(world_reset_button_path) as MainMenu3DButton
 	_world_join_button = get_node_or_null(world_join_button_path) as MainMenu3DButton
-	_world_settings_button = get_node_or_null(world_settings_button_path) as MainMenu3DButton
 	_world_main_menu_button = get_node_or_null(world_main_menu_button_path) as MainMenu3DButton
 	_world_boards_root = get_node_or_null(world_boards_root_path) as Node3D
 
-	_lobby_join_button.pressed.connect(_on_add_join_pressed)
+	_lobby_join_button.pressed.connect(_on_add_npc_pressed)
 	_ready_button.pressed.connect(_on_ready_pressed)
-	_reset_button.pressed.connect(_on_reset_pressed)
-	_settings_button.pressed.connect(_on_settings_pressed)
+	_reset_button.hold_confirmed.connect(_on_reset_confirmed)
 	_main_menu_button.pressed.connect(_on_main_menu_pressed)
 	_connect_world_button(_world_ready_button)
 	_connect_world_button(_world_reset_button)
 	_connect_world_button(_world_join_button)
-	_connect_world_button(_world_settings_button)
 	_connect_world_button(_world_main_menu_button)
 
 	GameEvents.participant_queue_changed.connect(_on_participant_queue_changed)
@@ -99,17 +92,14 @@ func set_screen_mode(mode: String) -> void:
 func _on_ready_pressed() -> void:
 	ready_requested.emit()
 
-func _on_reset_pressed() -> void:
+func _on_reset_confirmed() -> void:
 	if _round_manager != null:
 		_round_manager.reset_round()
 
-func _on_add_join_pressed() -> void:
+func _on_add_npc_pressed() -> void:
 	var debug_source: DebugJoinSource = _join_source as DebugJoinSource
 	if debug_source != null:
 		debug_source.request_random_join()
-
-func _on_settings_pressed() -> void:
-	settings_requested.emit()
 
 func _on_main_menu_pressed() -> void:
 	main_menu_requested.emit()
@@ -249,11 +239,6 @@ func _refresh_ready_button() -> void:
 	if _world_ready_button != null:
 		_world_ready_button.set_button_text(_ready_button.text.to_upper())
 		_world_ready_button.set_interactable(can_ready)
-	if _settings_button != null:
-		_settings_button.visible = true
-		_settings_button.disabled = false
-	if _world_settings_button != null:
-		_world_settings_button.set_interactable(true)
 	if _main_menu_button != null:
 		_main_menu_button.disabled = _state_text != "Joining"
 	if _world_main_menu_button != null:
@@ -294,11 +279,9 @@ func _on_world_button_pressed(action_id: StringName) -> void:
 		&"ready":
 			_on_ready_pressed()
 		&"reset":
-			_on_reset_pressed()
+			_on_reset_confirmed()
 		&"add_join":
-			_on_add_join_pressed()
-		&"settings":
-			_on_settings_pressed()
+			_on_add_npc_pressed()
 		&"main_menu":
 			_on_main_menu_pressed()
 
@@ -315,7 +298,6 @@ func _set_world_buttons_interactable(enabled: bool) -> void:
 		_world_ready_button,
 		_world_reset_button,
 		_world_join_button,
-		_world_settings_button,
 		_world_main_menu_button,
 	]
 	for button in buttons:

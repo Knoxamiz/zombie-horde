@@ -82,7 +82,6 @@ func _initialize_flow() -> void:
 
 	if _pre_round_ui != null:
 		_pre_round_ui.ready_requested.connect(_on_ready_requested)
-		_pre_round_ui.settings_requested.connect(_on_settings_requested)
 		_pre_round_ui.main_menu_requested.connect(_on_main_menu_requested)
 	if _race_map_controller != null:
 		_race_map_controller.active_map_changed.connect(_on_active_map_changed)
@@ -106,9 +105,6 @@ func show_race() -> void:
 func _on_ready_requested() -> void:
 	if _round_manager != null:
 		_round_manager.start_round()
-
-func _on_settings_requested() -> void:
-	_open_game_settings()
 
 func _on_main_menu_requested() -> void:
 	if _returning_to_main_menu:
