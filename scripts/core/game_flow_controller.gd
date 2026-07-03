@@ -66,7 +66,7 @@ func _initialize_flow() -> void:
 	_round_manager = get_node_or_null(round_manager_path) as RoundManager
 	_race_world = get_node_or_null(race_world_path)
 	_lobby_world = get_node_or_null(lobby_world_path)
-	_zombie_manager = get_node_or_null(zombie_manager_path)
+	_zombie_manager = get_node_or_null(zombie_manager_path) as ZombieManager
 	_hazard_manager = get_node_or_null(hazard_manager_path)
 	_powerup_manager = get_node_or_null(powerup_manager_path)
 	_defender_manager = get_node_or_null(defender_manager_path)
@@ -79,7 +79,6 @@ func _initialize_flow() -> void:
 	_world_environment = get_node_or_null(world_environment_path) as WorldEnvironment
 	_transition_overlay = get_node_or_null(transition_overlay_path) as ColorRect
 	_music_controller = _get_or_create_music_controller()
-	_bind_hud_managers()
 
 	if _pre_round_ui != null:
 		_pre_round_ui.ready_requested.connect(_on_ready_requested)
@@ -132,8 +131,7 @@ func _on_round_state_changed(state_text: String) -> void:
 			else:
 				show_lobby()
 		"Countdown", "Running", "Ended":
-			_bind_hud_managers()
-			show_race()
+			_activate_race_phase()
 
 func _on_round_reset() -> void:
 	_intro_active = false
@@ -282,22 +280,21 @@ func _get_or_create_game_settings() -> GameSettingsController:
 	get_tree().root.add_child(game_settings)
 	return game_settings
 
-func _refresh_hud_display() -> void:
-	_bind_hud_managers()
-	if _hud == null:
+func _activate_race_phase() -> void:
+	if _current_phase != "race":
+		_apply_phase("race")
 		return
-	if _hud.has_method("refresh_display"):
-		_hud.call("refresh_display")
+	_refresh_hud_display()
 
-func _bind_hud_managers() -> void:
-	if _hud == null:
+func _refresh_hud_display() -> void:
+	var hud_controller: HudController = _hud as HudController
+	if hud_controller == null:
 		return
-	if not _hud.has_method("bind_managers"):
-		return
-	var twitch_join_source: TwitchJoinSource = get_node_or_null(
-		"../TwitchJoinSource"
-	) as TwitchJoinSource
-	_hud.call("bind_managers", _round_manager, _zombie_manager, twitch_join_source)
+	hud_controller.bind_managers(_round_manager, _zombie_manager, _get_twitch_join_source())
+	hud_controller.refresh_display()
+
+func _get_twitch_join_source() -> TwitchJoinSource:
+	return get_node_or_null("../TwitchJoinSource") as TwitchJoinSource
 
 func _set_node_visible(node: Node, visible: bool) -> void:
 	if node == null:

@@ -41,7 +41,6 @@ var _last_stats: Dictionary = {}
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_apply_visual_style()
-	_resolve_managers()
 
 	GameEvents.round_state_changed.connect(_on_round_state_changed)
 	GameEvents.round_started.connect(_on_round_started)
@@ -58,6 +57,10 @@ func _ready() -> void:
 	if _results_overlay != null:
 		_results_overlay.reset_requested.connect(_on_results_reset_requested)
 
+	call_deferred("_finalize_setup")
+
+func _finalize_setup() -> void:
+	_force_resolve_managers()
 	_sync_from_managers()
 	_countdown_label.visible = false
 	if _results_overlay != null:
@@ -113,6 +116,9 @@ func _process(delta: float) -> void:
 	_refresh_all_labels()
 
 func _resolve_managers() -> void:
+	_force_resolve_managers()
+
+func _force_resolve_managers() -> void:
 	if _round_manager == null and not round_manager_path.is_empty():
 		_round_manager = get_node_or_null(round_manager_path) as RoundManager
 	if _zombie_manager == null and not zombie_manager_path.is_empty():
