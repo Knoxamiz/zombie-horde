@@ -164,46 +164,54 @@ func _refresh_scoreboards() -> void:
 
 func _format_fastest_times() -> String:
 	if _leaderboard_store == null:
-		return "Fastest Times\n-"
+		return "FASTEST RUNS\n—"
 
 	var entries: Array = _leaderboard_store.get_entries()
 	if entries.is_empty():
-		return "Fastest Times\n-"
+		return "FASTEST RUNS\n—"
 
-	var lines: Array[String] = ["Fastest Times"]
-	var max_entries: int = mini(entries.size(), 10)
+	var lines: Array[String] = ["FASTEST RUNS"]
+	var max_entries: int = mini(entries.size(), 8)
 	for index in range(max_entries):
 		if typeof(entries[index]) != TYPE_DICTIONARY:
 			continue
 		var entry: Dictionary = entries[index]
-		lines.append("%d. %s  %s" % [
+		lines.append(_format_board_row(
 			index + 1,
 			str(entry.get("display_name", "Zombie")),
 			_format_finish_time(float(entry.get("elapsed_seconds", 0.0)))
-		])
+		))
 	return _join_strings(lines, "\n")
 
 func _format_recent_winners() -> String:
 	if _leaderboard_store == null:
-		return "Recent Winners\n-"
+		return "RECENT WINNERS\n—"
 
 	var entries: Array = _leaderboard_store.get_recent_winners()
 	if entries.is_empty():
-		return "Recent Winners\n-"
+		return "RECENT WINNERS\n—"
 
-	var lines: Array[String] = ["Recent Winners"]
-	var max_entries: int = mini(entries.size(), 10)
+	var lines: Array[String] = ["RECENT WINNERS"]
+	var max_entries: int = mini(entries.size(), 8)
 	for index in range(max_entries):
 		if typeof(entries[index]) != TYPE_DICTIONARY:
 			continue
 		var entry: Dictionary = entries[index]
 		var display_name: String = "Streamer Base" if bool(entry.get("base_won", false)) else str(entry.get("display_name", "Zombie"))
-		lines.append("%d. %s  %s" % [
+		lines.append(_format_board_row(
 			index + 1,
 			display_name,
 			_format_finish_time(float(entry.get("elapsed_seconds", 0.0)))
-		])
+		))
 	return _join_strings(lines, "\n")
+
+func _format_board_row(rank: int, display_name: String, value_text: String) -> String:
+	var name_text: String = display_name
+	if name_text.length() > 14:
+		name_text = "%s…" % name_text.substr(0, 13)
+	while name_text.length() < 15:
+		name_text += " "
+	return "%2d.  %s %s" % [rank, name_text, value_text]
 
 func _format_queue_summary() -> String:
 	if _queued_names.is_empty():
