@@ -40,7 +40,7 @@ const META_PROCESS_MODE := "_zh_saved_process_mode"
 var _round_manager: RoundManager
 var _race_world: Node
 var _lobby_world: Node
-var _zombie_manager: Node
+var _zombie_manager: ZombieManager
 var _hazard_manager: Node
 var _powerup_manager: Node
 var _defender_manager: Node
@@ -79,6 +79,7 @@ func _initialize_flow() -> void:
 	_world_environment = get_node_or_null(world_environment_path) as WorldEnvironment
 	_transition_overlay = get_node_or_null(transition_overlay_path) as ColorRect
 	_music_controller = _get_or_create_music_controller()
+	_bind_hud_managers()
 
 	if _pre_round_ui != null:
 		_pre_round_ui.ready_requested.connect(_on_ready_requested)
@@ -131,6 +132,7 @@ func _on_round_state_changed(state_text: String) -> void:
 			else:
 				show_lobby()
 		"Countdown", "Running", "Ended":
+			_bind_hud_managers()
 			show_race()
 
 func _on_round_reset() -> void:
@@ -281,9 +283,21 @@ func _get_or_create_game_settings() -> GameSettingsController:
 	return game_settings
 
 func _refresh_hud_display() -> void:
-	var hud_controller: HudController = _hud as HudController
-	if hud_controller != null:
-		hud_controller.call_deferred("refresh_display")
+	_bind_hud_managers()
+	if _hud == null:
+		return
+	if _hud.has_method("refresh_display"):
+		_hud.call("refresh_display")
+
+func _bind_hud_managers() -> void:
+	if _hud == null:
+		return
+	if not _hud.has_method("bind_managers"):
+		return
+	var twitch_join_source: TwitchJoinSource = get_node_or_null(
+		"../TwitchJoinSource"
+	) as TwitchJoinSource
+	_hud.call("bind_managers", _round_manager, _zombie_manager, twitch_join_source)
 
 func _set_node_visible(node: Node, visible: bool) -> void:
 	if node == null:
