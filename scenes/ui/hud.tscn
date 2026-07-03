@@ -1,44 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://klfmkohhxs15"]
+[gd_scene load_steps=3 format=3 uid="uid://klfmkohhxs15"]
 
 [ext_resource type="Script" uid="uid://u81cp382hnt1" path="res://scripts/ui/hud_controller.gd" id="1_script"]
-[ext_resource type="Theme" path="res://assets/ui/zombie_horde_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://scenes/ui/round_results_overlay.tscn" id="3_results_overlay"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_hud_panel"]
-content_margin_left = 14.0
-content_margin_top = 12.0
-content_margin_right = 14.0
-content_margin_bottom = 12.0
-bg_color = Color(0.016, 0.022, 0.014, 0.84)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.54, 0.72, 0.25, 0.42)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.45)
-shadow_size = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_countdown"]
-content_margin_left = 18.0
-content_margin_top = 12.0
-content_margin_right = 18.0
-content_margin_bottom = 12.0
-bg_color = Color(0.04, 0.03, 0.02, 0.9)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.65, 0.12, 0.9)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-shadow_color = Color(1, 0.55, 0.08, 0.35)
-shadow_size = 18
 
 [node name="HUD" type="CanvasLayer"]
 layer = 15
@@ -52,167 +15,145 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme = ExtResource("2_theme")
 
-[node name="TopPanel" type="PanelContainer" parent="Root"]
+[node name="TopLeftTint" type="ColorRect" parent="Root"]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 16.0
-offset_right = 360.0
-offset_bottom = 118.0
-theme_override_styles/panel = SubResource("StyleBox_hud_panel")
+offset_right = 380.0
+offset_bottom = 150.0
+mouse_filter = 2
+color = Color(0.01, 0.02, 0.01, 0.1)
 
-[node name="Margin" type="MarginContainer" parent="Root/TopPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 12
-
-[node name="VBox" type="VBoxContainer" parent="Root/TopPanel/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="HeaderLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
-theme_override_font_sizes/font_size = 18
-text = "RACE STATUS"
-
-[node name="StateLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
-layout_mode = 2
-text = "Idle | Queued: 0"
-
-[node name="CountLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
-layout_mode = 2
-text = "0 alive / 0 total"
-
-[node name="RosterPanel" type="PanelContainer" parent="Root"]
+[node name="TopRightTint" type="ColorRect" parent="Root"]
 layout_mode = 0
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -392.0
-offset_top = 16.0
-offset_right = -16.0
-offset_bottom = 248.0
-theme_override_styles/panel = SubResource("StyleBox_hud_panel")
+offset_left = -400.0
+offset_bottom = 260.0
+grow_horizontal = 0
+mouse_filter = 2
+color = Color(0.02, 0.01, 0.01, 0.09)
 
-[node name="Margin" type="MarginContainer" parent="Root/RosterPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 12
+[node name="BottomRightTint" type="ColorRect" parent="Root"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -300.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+color = Color(0.02, 0.015, 0.01, 0.1)
 
-[node name="VBox" type="VBoxContainer" parent="Root/RosterPanel/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 8
+[node name="BottomLeftTint" type="ColorRect" parent="Root"]
+layout_mode = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -120.0
+offset_right = 440.0
+grow_vertical = 0
+mouse_filter = 2
+color = Color(0.01, 0.015, 0.02, 0.09)
 
-[node name="FeedHeaderLabel" type="Label" parent="Root/RosterPanel/Margin/VBox"]
+[node name="TopLeft" type="VBoxContainer" parent="Root"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 372.0
+offset_bottom = 132.0
+theme_override_constants/separation = 4
+
+[node name="HeaderLabel" type="Label" parent="Root/TopLeft"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.48, 0.34, 1)
-theme_override_font_sizes/font_size = 18
+text = "RACE STATUS"
+
+[node name="StateLabel" type="Label" parent="Root/TopLeft"]
+layout_mode = 2
+text = "Joining | Queued: 0"
+
+[node name="CountLabel" type="Label" parent="Root/TopLeft"]
+layout_mode = 2
+text = "0 alive / 0 total"
+
+[node name="TopRight" type="VBoxContainer" parent="Root"]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -384.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = 252.0
+grow_horizontal = 0
+theme_override_constants/separation = 6
+
+[node name="FeedHeaderLabel" type="Label" parent="Root/TopRight"]
+layout_mode = 2
 text = "LIVE FEED"
 
-[node name="QueueLabel" type="Label" parent="Root/RosterPanel/Margin/VBox"]
+[node name="QueueLabel" type="Label" parent="Root/TopRight"]
 layout_mode = 2
 text = "Lotto: waiting for !brains"
 autowrap_mode = 2
 
-[node name="RosterLabel" type="Label" parent="Root/RosterPanel/Margin/VBox"]
+[node name="RosterLabel" type="Label" parent="Root/TopRight"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.92, 0.94, 0.86, 1)
 text = "Kills:\n-"
 autowrap_mode = 2
 
-[node name="StandingsPanel" type="PanelContainer" parent="Root"]
+[node name="BottomRight" type="VBoxContainer" parent="Root"]
 layout_mode = 0
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -392.0
-offset_top = -292.0
-offset_right = -16.0
-offset_bottom = -16.0
-theme_override_styles/panel = SubResource("StyleBox_hud_panel")
+offset_left = -384.0
+offset_top = -288.0
+offset_right = -24.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_constants/separation = 6
 
-[node name="Margin" type="MarginContainer" parent="Root/StandingsPanel"]
+[node name="StandingsHeaderLabel" type="Label" parent="Root/BottomRight"]
 layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 12
-
-[node name="VBox" type="VBoxContainer" parent="Root/StandingsPanel/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="StandingsHeaderLabel" type="Label" parent="Root/StandingsPanel/Margin/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
-theme_override_font_sizes/font_size = 18
 text = "TOP 10"
 
-[node name="StandingsLabel" type="Label" parent="Root/StandingsPanel/Margin/VBox"]
+[node name="StandingsLabel" type="Label" parent="Root/BottomRight"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.92, 0.94, 0.86, 1)
-theme_override_font_sizes/font_size = 15
+size_flags_vertical = 3
 text = "-"
 autowrap_mode = 2
 
-[node name="BottomLeftPanel" type="PanelContainer" parent="Root"]
+[node name="BottomLeft" type="VBoxContainer" parent="Root"]
 layout_mode = 0
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 16.0
-offset_top = -108.0
+offset_left = 24.0
+offset_top = -104.0
 offset_right = 420.0
-offset_bottom = -16.0
-theme_override_styles/panel = SubResource("StyleBox_hud_panel")
+offset_bottom = -20.0
+grow_vertical = 0
+theme_override_constants/separation = 4
 
-[node name="Margin" type="MarginContainer" parent="Root/BottomLeftPanel"]
+[node name="CommandLabel" type="Label" parent="Root/BottomLeft"]
 layout_mode = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 12
-
-[node name="VBox" type="VBoxContainer" parent="Root/BottomLeftPanel/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="CommandLabel" type="Label" parent="Root/BottomLeftPanel/Margin/VBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
-theme_override_font_sizes/font_size = 20
 text = "TYPE !BRAINS TO JOIN"
 
-[node name="ChatStatusLabel" type="Label" parent="Root/BottomLeftPanel/Margin/VBox"]
+[node name="ChatStatusLabel" type="Label" parent="Root/BottomLeft"]
 layout_mode = 2
 text = "Chat: Debug only"
 
-[node name="CountdownPanel" type="PanelContainer" parent="Root"]
+[node name="CountdownLabel" type="Label" parent="Root"]
+visible = false
 layout_mode = 0
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -82.0
-offset_top = 16.0
-offset_right = 82.0
-offset_bottom = 180.0
-theme_override_styles/panel = SubResource("StyleBox_countdown")
-
-[node name="Margin" type="MarginContainer" parent="Root/CountdownPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 18
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 18
-theme_override_constants/margin_bottom = 12
-
-[node name="CountdownLabel" type="Label" parent="Root/CountdownPanel/Margin"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.78, 0.12, 1)
-theme_override_font_sizes/font_size = 104
+offset_left = -90.0
+offset_top = 18.0
+offset_right = 90.0
+offset_bottom = 170.0
+grow_horizontal = 2
 text = "5"
 horizontal_alignment = 1
 vertical_alignment = 1
