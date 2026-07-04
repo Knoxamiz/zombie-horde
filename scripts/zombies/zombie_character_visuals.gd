@@ -14,9 +14,7 @@ const TINT_STRENGTH_BITS: float = 0.68
 const TINT_EMISSION_SUBSCRIBER: float = 0.22
 const GLOW_PULSE_BASE_ENERGY: float = 1.35
 
-const SKIP_TINT_MESH_NAMES: PackedStringArray = PackedStringArray([
-	"SupporterUpgrades",
-])
+const SKIP_TINT_ROOT_NAME: String = "SupporterUpgrades"
 
 
 static func get_body_color_for_join_info(join_info: ParticipantJoinInfo, crawler: bool = false) -> Color:
@@ -192,7 +190,7 @@ static func _get_tint_strength(tier: ParticipantJoinInfo.SupporterTier) -> float
 static func _should_tint_mesh(mesh_instance: MeshInstance3D) -> bool:
 	var node: Node = mesh_instance
 	while node != null:
-		if node.name in SKIP_TINT_MESH_NAMES:
+		if node.name == SKIP_TINT_ROOT_NAME:
 			return false
 		node = node.get_parent()
 	return true
