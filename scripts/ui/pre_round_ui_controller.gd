@@ -31,6 +31,10 @@ var _state_text: String = "Joining"
 @onready var _ready_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ReadyButton") as Button
 @onready var _reset_button: HoldToConfirmButton = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/ResetButton") as HoldToConfirmButton
 @onready var _lobby_join_button: Button = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/AddNpcButton") as Button
+@onready var _join_viewer_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinViewerButton") as Button
+@onready var _join_sub_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinSubButton") as Button
+@onready var _join_gift_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinGiftButton") as Button
+@onready var _join_bits_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinBitsButton") as Button
 @onready var _options_button: Button = get_node("Root/OptionsButton") as Button
 @onready var _main_menu_button: Button = get_node("Root/MainMenuButton") as Button
 @onready var _recent_winners_label: Label = get_node("Root/ScoresPanel/Margin/VBox/RecentWinnersLabel") as Label
@@ -45,6 +49,10 @@ func _ready() -> void:
 	_leaderboard_store = get_node_or_null(leaderboard_store_path) as LeaderboardStore
 
 	_lobby_join_button.pressed.connect(_on_add_npc_pressed)
+	_join_viewer_button.pressed.connect(_on_join_viewer_pressed)
+	_join_sub_button.pressed.connect(_on_join_sub_pressed)
+	_join_gift_button.pressed.connect(_on_join_gift_pressed)
+	_join_bits_button.pressed.connect(_on_join_bits_pressed)
 	_ready_button.pressed.connect(_on_ready_pressed)
 	_reset_button.hold_confirmed.connect(_on_reset_confirmed)
 	_options_button.pressed.connect(_on_options_pressed)
@@ -86,6 +94,23 @@ func _on_add_npc_pressed() -> void:
 	var debug_source: DebugJoinSource = _get_debug_join_source()
 	if debug_source != null:
 		debug_source.request_random_join()
+
+func _on_join_viewer_pressed() -> void:
+	_request_test_tier_join(ParticipantJoinInfo.SupporterTier.NONE)
+
+func _on_join_sub_pressed() -> void:
+	_request_test_tier_join(ParticipantJoinInfo.SupporterTier.SUBSCRIBER)
+
+func _on_join_gift_pressed() -> void:
+	_request_test_tier_join(ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT)
+
+func _on_join_bits_pressed() -> void:
+	_request_test_tier_join(ParticipantJoinInfo.SupporterTier.BITS_DONOR)
+
+func _request_test_tier_join(tier: ParticipantJoinInfo.SupporterTier) -> void:
+	var debug_source: DebugJoinSource = _get_debug_join_source()
+	if debug_source != null:
+		debug_source.request_test_tier_join(tier)
 
 func _get_debug_join_source() -> DebugJoinSource:
 	if _debug_join_source != null:

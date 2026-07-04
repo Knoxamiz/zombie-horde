@@ -21,6 +21,36 @@ static func for_name(name: String) -> ParticipantJoinInfo:
 	return info
 
 
+static func create_test_join(tier: SupporterTier, sequence: int = 1) -> ParticipantJoinInfo:
+	var info: ParticipantJoinInfo = ParticipantJoinInfo.new()
+	match tier:
+		SupporterTier.BITS_DONOR:
+			info.display_name = "TestBits_%02d" % sequence
+			info.is_bits_donor = true
+			info.bits_amount = 100
+		SupporterTier.GIFT_RECIPIENT:
+			info.display_name = "TestGift_%02d" % sequence
+			info.is_gift_recipient = true
+			info.is_subscriber = true
+		SupporterTier.SUBSCRIBER:
+			info.display_name = "TestSub_%02d" % sequence
+			info.is_subscriber = true
+		_:
+			info.display_name = "TestViewer_%02d" % sequence
+	return info
+
+
+func get_tier_label() -> String:
+	match get_supporter_tier():
+		SupporterTier.BITS_DONOR:
+			return "Bits Cheer"
+		SupporterTier.GIFT_RECIPIENT:
+			return "Gift Sub"
+		SupporterTier.SUBSCRIBER:
+			return "Subscriber"
+	return "Viewer"
+
+
 func get_supporter_tier() -> SupporterTier:
 	if is_bits_donor:
 		return SupporterTier.BITS_DONOR

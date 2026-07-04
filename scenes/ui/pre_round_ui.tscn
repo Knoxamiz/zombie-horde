@@ -77,13 +77,13 @@ mouse_filter = 2
 color = Color(0.004, 0.008, 0.005, 0.42)
 
 [node name="LobbyPanel" type="PanelContainer" parent="Root"]
-custom_minimum_size = Vector2(520, 280)
+custom_minimum_size = Vector2(520, 360)
 layout_mode = 1
 anchors_preset = 0
 offset_left = 40.0
 offset_top = 40.0
 offset_right = 560.0
-offset_bottom = 320.0
+offset_bottom = 400.0
 theme_override_styles/panel = SubResource("StyleBox_lobby_glow")
 
 [node name="Margin" type="MarginContainer" parent="Root/LobbyPanel"]
@@ -148,6 +148,48 @@ custom_minimum_size = Vector2(108, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Add NPC"
+
+[node name="TestJoinSection" type="VBoxContainer" parent="Root/LobbyPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TestJoinLabel" type="Label" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.82, 0.7, 1)
+theme_override_font_sizes/font_size = 14
+text = "Test Join (supporter tiers)"
+
+[node name="TestJoinRow" type="HBoxContainer" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="JoinViewerButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Viewer"
+
+[node name="JoinSubButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Sub"
+
+[node name="JoinGiftButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Gift"
+
+[node name="JoinBitsButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Bits"
 
 [node name="OptionsButton" type="Button" parent="Root"]
 custom_minimum_size = Vector2(140, 46)

@@ -6,9 +6,33 @@ extends JoinSource
 
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _generated_count: int = 0
+var _test_join_counts: Dictionary = {}
+
 
 func _ready() -> void:
 	_rng.randomize()
+	_reset_test_join_counts()
+	GameEvents.round_reset.connect(_on_round_reset)
+
+
+func _on_round_reset() -> void:
+	_reset_test_join_counts()
+
+
+func _reset_test_join_counts() -> void:
+	_test_join_counts = {
+		ParticipantJoinInfo.SupporterTier.NONE: 0,
+		ParticipantJoinInfo.SupporterTier.SUBSCRIBER: 0,
+		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT: 0,
+		ParticipantJoinInfo.SupporterTier.BITS_DONOR: 0,
+	}
+
+
+func request_test_tier_join(tier: ParticipantJoinInfo.SupporterTier) -> void:
+	var sequence: int = int(_test_join_counts.get(tier, 0)) + 1
+	_test_join_counts[tier] = sequence
+	var join_info: ParticipantJoinInfo = ParticipantJoinInfo.create_test_join(tier, sequence)
+	submit_join(join_info.display_name, join_info)
 
 func seed_default_participants() -> void:
 	if round_config == null or not round_config.auto_seed_debug_roster:
