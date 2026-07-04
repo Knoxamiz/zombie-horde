@@ -15,6 +15,8 @@ extends Node3D
 @export var body_color: Color = Color(1.0, 0.94, 0.74, 1.0)
 @export var glow_strength: float = 0.18
 @export_range(0.0, 1.0, 0.05) var texture_strength: float = 0.75
+@export var flat_mode: bool = false
+@export var border_thickness: float = 0.055
 @export var title_z: float = 0.16
 @export var body_z: float = 0.17
 
@@ -97,6 +99,10 @@ func _get_or_create_label(node_name: String) -> Label3D:
 	return label
 
 func _apply_layout() -> void:
+	if flat_mode:
+		_apply_flat_layout()
+		return
+
 	_face_material = _make_material(face_color, glow_strength)
 	_frame_material = _make_material(frame_color, glow_strength * 1.8)
 	_detail_material = _make_material(_shift_color(face_color, 0.055), glow_strength * 0.7)
@@ -108,10 +114,63 @@ func _apply_layout() -> void:
 	_set_box(_left_rim, Vector3(0.13, board_size.y + 0.18, board_depth + 0.08), Vector3(-board_size.x * 0.5 - 0.06, 0.0, 0.03), _frame_material)
 	_set_box(_right_rim, Vector3(0.13, board_size.y + 0.18, board_depth + 0.08), Vector3(board_size.x * 0.5 + 0.06, 0.0, 0.03), _frame_material)
 	_apply_surface_detail()
+	_set_detail_visible(true)
 
 	var left_edge: float = -board_size.x * 0.43
 	_title_label.position = Vector3(left_edge, board_size.y * 0.4, board_depth * 0.5 + title_z)
 	_body_label.position = Vector3(left_edge, board_size.y * 0.22, board_depth * 0.5 + body_z)
+
+func _apply_flat_layout() -> void:
+	var flat_depth: float = 0.02
+	var border: float = max(border_thickness, 0.03)
+	var inner_size: Vector2 = Vector2(
+		max(board_size.x - border * 2.0, 0.2),
+		max(board_size.y - border * 2.0, 0.2)
+	)
+	var flat_glow: float = glow_strength * 0.2
+
+	_face_material = _make_material(face_color, flat_glow)
+	_frame_material = _make_material(frame_color, flat_glow * 1.2)
+
+	_set_box(_face, Vector3(inner_size.x, inner_size.y, flat_depth), Vector3(0.0, 0.0, 0.0), _face_material)
+	_set_box(
+		_top_rim,
+		Vector3(board_size.x, border, flat_depth),
+		Vector3(0.0, board_size.y * 0.5 - border * 0.5, 0.0),
+		_frame_material
+	)
+	_set_box(
+		_bottom_rim,
+		Vector3(board_size.x, border, flat_depth),
+		Vector3(0.0, -board_size.y * 0.5 + border * 0.5, 0.0),
+		_frame_material
+	)
+	_set_box(
+		_left_rim,
+		Vector3(border, inner_size.y, flat_depth),
+		Vector3(-board_size.x * 0.5 + border * 0.5, 0.0, 0.0),
+		_frame_material
+	)
+	_set_box(
+		_right_rim,
+		Vector3(border, inner_size.y, flat_depth),
+		Vector3(board_size.x * 0.5 - border * 0.5, 0.0, 0.0),
+		_frame_material
+	)
+	_set_detail_visible(false)
+
+	var text_z: float = flat_depth * 0.5 + 0.01
+	var left_edge: float = -inner_size.x * 0.43
+	_title_label.position = Vector3(left_edge, board_size.y * 0.4, text_z + title_z * 0.08)
+	_body_label.position = Vector3(left_edge, board_size.y * 0.22, text_z + body_z * 0.08)
+
+func _set_detail_visible(enabled: bool) -> void:
+	for detail_node in _face_detail_nodes:
+		if detail_node != null:
+			detail_node.visible = enabled
+	for bolt_node in _bolt_nodes:
+		if bolt_node != null:
+			bolt_node.visible = enabled
 
 func _apply_surface_detail() -> void:
 	var detail_alpha: float = clamp(texture_strength, 0.0, 1.0)
