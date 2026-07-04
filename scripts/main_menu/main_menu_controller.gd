@@ -4,14 +4,11 @@ extends Control
 const AUDIO_MANAGER_SCENE: PackedScene = preload("res://scenes/audio/audio_manager.tscn")
 const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_settings_menu.tscn")
 const MENU_ART: Texture2D = preload("res://assets/ui/main_menu/zombie_chat_horde_menu_art.png")
-const JOIN_FEED_LINES: Array[String] = [
-	"TacoKing joined the horde!\nPixelPunk: !BRAINS\nNotSleepy: !CHAOS\nHexHunger: !NUKE\nDoomSprint: !SLOWMO\nGraveSnarl: !BRAINS\nMossFang: !CHAOS\nRustJaw: !BRAINS\nViperGut: !NUKE\nHollowKid: !SLOWMO\n>>> HORDE GROWING!",
-	"ByteBiter joined the horde!\nRoadRage: !NUKE\nSnackStack: !BRAINS\nMoldMode: !CHAOS\nCrateLord: !BRAINS\nNeonRot: !SLOWMO\nAshCrawl: !BRAINS\nDripFang: !CHAOS\nBoltHusk: !NUKE\nGnashPit: !BRAINS\n>>> CHAOS RISING!",
-	"CrawlerQ joined the horde!\nEchoRot: !BRAINS\nAdaBites: !CHAOS\nCaptainDecay: !BRAINS\nGlitchGnaw: !SLOWMO\nPixelMunch: !NUKE\nSludgeRun: !BRAINS\nFrostMaw: !CHAOS\nZeroPulse: !BRAINS\nVoidSnarl: !SLOWMO\n>>> TOO MANY BRAINS!",
-]
+const MAX_JOIN_FEED_LINES: int = 14
 
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/main/main_game.tscn"
 @export var camera_path: NodePath = NodePath("MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera")
+@export var twitch_join_source_path: NodePath
 @export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.06
 @export_range(0.0, 1.0, 0.01) var logo_wobble_strength: float = 1.0
 @export var button_stack_start_y: float = -0.72
@@ -27,9 +24,11 @@ var _logo_base_scale: Vector3 = Vector3.ONE
 var _menu_buttons: Array[MainMenuBlockButton] = []
 var _viewport_container: SubViewportContainer
 var _pressed_button: MainMenuBlockButton
-var _feed_index: int = 0
-var _feed_elapsed: float = 0.0
 var _prompt_time: float = 0.0
+var _twitch_join_source: TwitchJoinSource
+var _join_feed_lines: Array[String] = []
+var _chat_status_text: String = "Connecting to chat..."
+var _chat_status_detail: String = ""
 
 @onready var _background: TextureRect = $Background
 @onready var _viewport: SubViewport = $MenuViewportContainer/MenuViewport
@@ -57,12 +56,23 @@ func _ready() -> void:
 	_fit_layout()
 	ResourceLoader.load_threaded_request(game_scene_path)
 
+	_twitch_join_source = get_node_or_null(twitch_join_source_path) as TwitchJoinSource
+	if _twitch_join_source != null:
+		_twitch_join_source.participant_join_requested.connect(_on_chat_participant_join_requested)
+		_refresh_chat_status_from_source()
+	else:
+		_chat_status_text = "Chat unavailable"
+		_chat_status_detail = "Twitch join source not configured."
+
+	GameEvents.chat_connection_status_changed.connect(_on_chat_connection_status_changed)
+
 	var music_controller: MusicController = _get_or_create_music_controller()
 	if music_controller != null:
 		music_controller.play_menu_music()
 
 	_connect_buttons()
 	call_deferred("_layout_menu_buttons")
+	_refresh_join_feed()
 
 	if _camera != null:
 		_camera_base_position = _camera.position
@@ -73,8 +83,6 @@ func _ready() -> void:
 		_logo_base_position = _logo_rig.position
 		_logo_base_scale = _logo_rig.scale
 
-	_refresh_join_feed()
-
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_SIZE_CHANGED:
 		_fit_layout()
@@ -83,22 +91,59 @@ func _process(delta: float) -> void:
 	_time += delta
 	_update_camera_idle()
 	_update_logo_rig()
-	_update_join_feed(delta)
 	_update_join_prompt(delta)
 
-func _update_join_feed(delta: float) -> void:
-	if _feed_body == null:
+func _on_chat_participant_join_requested(display_name: String) -> void:
+	var clean_name: String = display_name.strip_edges()
+	if clean_name.is_empty():
 		return
-	_feed_elapsed += delta
-	if _feed_elapsed < 2.6:
-		return
-	_feed_elapsed = 0.0
-	_feed_index = (_feed_index + 1) % JOIN_FEED_LINES.size()
+
+	_join_feed_lines.append("%s joins the horde." % clean_name)
+	while _join_feed_lines.size() > MAX_JOIN_FEED_LINES:
+		_join_feed_lines.remove_at(0)
 	_refresh_join_feed()
 
+func _on_chat_connection_status_changed(status_text: String, detail_text: String) -> void:
+	_chat_status_text = status_text
+	_chat_status_detail = detail_text
+	_refresh_join_feed()
+
+func _refresh_chat_status_from_source() -> void:
+	if _twitch_join_source == null:
+		return
+	_on_chat_connection_status_changed(
+		_twitch_join_source.get_status_text(),
+		_twitch_join_source.get_status_detail()
+	)
+
 func _refresh_join_feed() -> void:
-	if _feed_body != null:
-		_feed_body.text = JOIN_FEED_LINES[_feed_index]
+	if _feed_body == null:
+		return
+
+	if _join_feed_lines.is_empty():
+		var waiting_text: String = _format_waiting_text()
+		_feed_body.text = waiting_text
+		return
+
+	_feed_body.text = _join_strings(_join_feed_lines, "\n")
+
+func _format_waiting_text() -> String:
+	var lines: Array[String] = []
+	if not _chat_status_text.is_empty():
+		lines.append(_chat_status_text)
+	if not _chat_status_detail.is_empty():
+		lines.append(_chat_status_detail)
+	if lines.is_empty():
+		lines.append("Waiting for viewers to type !brains...")
+	return _join_strings(lines, "\n")
+
+func _join_strings(values: Array[String], separator: String) -> String:
+	var result: String = ""
+	for index in range(values.size()):
+		if index > 0:
+			result += separator
+		result += values[index]
+	return result
 
 func _update_join_prompt(delta: float) -> void:
 	if _join_prompt == null:
