@@ -16,6 +16,7 @@ var _was_falling: bool = true
 var _landings: int = 0
 
 @onready var _name_label: Label3D = get_node_or_null("NameLabel") as Label3D
+@onready var _visual_root: Node3D = get_node_or_null("VisualRoot") as Node3D
 
 func _ready() -> void:
 	_rng.randomize()
@@ -31,6 +32,7 @@ func configure_lobby_zombie(new_display_name: String, random_seed: int) -> void:
 	_landings = 0
 	_was_falling = true
 	_refresh_name_label()
+	_apply_zombie_color_tint()
 	call_deferred("_kick")
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
@@ -89,6 +91,14 @@ func _get_random_spin(strength: float) -> Vector3:
 func _refresh_name_label() -> void:
 	if _name_label != null:
 		_name_label.text = display_name
+
+func _apply_zombie_color_tint() -> void:
+	if _visual_root == null:
+		return
+	ZombieCharacterVisuals.apply_color_tint(
+		_visual_root,
+		ZombieCharacterVisuals.get_color_for_identity(display_name)
+	)
 
 func _play_idle_animation() -> void:
 	if _animation_player == null:

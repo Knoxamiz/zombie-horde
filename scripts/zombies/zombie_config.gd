@@ -31,3 +31,4 @@ extends Resource
 @export var out_of_bounds_max_z: float = 48.0
 @export var out_of_bounds_min_y: float = -3.0
 @export_range(0, 256, 1) var name_label_full_roster_limit: int = 24
+@export var color_variants_enabled: bool = true

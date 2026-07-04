@@ -33,6 +33,7 @@ var _active_animation_player: AnimationPlayer
 var _active_animation_name: String = ""
 var _reaction_animation_timer: float = 0.0
 var _selected_visual_variant: Node3D
+var _zombie_tint_color: Color = Color.WHITE
 var _total_zombie_count: int = 0
 var _is_current_leader: bool = false
 
@@ -48,6 +49,7 @@ func _ready() -> void:
 	if _collision_shape != null and _collision_shape.shape != null:
 		_collision_shape.shape = _collision_shape.shape.duplicate()
 	_disable_visual_colliders(_visual_root)
+	_assign_zombie_tint_color()
 	health = _get_config().max_health
 	_start_position = global_position
 	_select_visual_variant()
@@ -70,6 +72,7 @@ func configure_zombie(
 	_rng.seed = random_seed
 	health = _get_config().max_health
 	_is_current_leader = false
+	_assign_zombie_tint_color()
 	_select_visual_variant()
 	_refresh_name_label()
 	_apply_state_visuals()
@@ -479,6 +482,7 @@ func _activate_visual_variant_for_state() -> void:
 	_selected_visual_variant.visible = true
 	_active_animation_player = _find_animation_player(_selected_visual_variant)
 	_active_animation_name = ""
+	_apply_zombie_color_tint()
 	_play_animation_for_state(true)
 
 func _hide_variant_root(root: Node3D) -> void:
@@ -496,6 +500,22 @@ func _hide_dead_visuals() -> void:
 	_visual_root.visible = false
 	_set_name_label_visible(false)
 	_set_collision_enabled(false)
+
+func _assign_zombie_tint_color() -> void:
+	if _get_config().color_variants_enabled:
+		_zombie_tint_color = ZombieCharacterVisuals.get_color_for_identity(display_name)
+	else:
+		_zombie_tint_color = Color.WHITE
+
+func _apply_zombie_color_tint() -> void:
+	if not _get_config().color_variants_enabled or _selected_visual_variant == null:
+		return
+
+	ZombieCharacterVisuals.apply_color_tint(
+		_selected_visual_variant,
+		_zombie_tint_color,
+		mobility_state == MobilityState.CRAWLER
+	)
 
 func _find_animation_player(root: Node) -> AnimationPlayer:
 	var animation_player: AnimationPlayer = root as AnimationPlayer
