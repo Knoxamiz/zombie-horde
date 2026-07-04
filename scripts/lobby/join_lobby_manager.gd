@@ -76,7 +76,7 @@ func _spawn_lobby_zombie(display_name: String, key: String) -> void:
 	_zombie_container.add_child(lobby_zombie)
 	lobby_zombie.name = "LobbyZombie_%s" % _get_node_safe_name(display_name)
 	lobby_zombie.position = _get_spawn_position()
-	lobby_zombie.configure_lobby_zombie(display_name, int(_rng.randi()))
+	lobby_zombie.configure_lobby_zombie(display_name, int(_rng.randi()), _get_join_info(display_name))
 	_lobby_zombies[key] = lobby_zombie
 
 func _remove_lobby_zombie(key: String) -> void:
@@ -89,6 +89,11 @@ func _clear_lobby() -> void:
 	var existing_keys: Array = _lobby_zombies.keys()
 	for existing_key in existing_keys:
 		_remove_lobby_zombie(str(existing_key))
+
+func _get_join_info(display_name: String) -> ParticipantJoinInfo:
+	if _round_manager == null:
+		return ParticipantJoinInfo.for_name(display_name)
+	return _round_manager.get_join_info_for_name(display_name)
 
 func _get_spawn_position() -> Vector3:
 	return Vector3(

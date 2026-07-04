@@ -34,6 +34,10 @@ var _active_animation_name: String = ""
 var _reaction_animation_timer: float = 0.0
 var _selected_visual_variant: Node3D
 var _zombie_tint_color: Color = Color.WHITE
+var _join_info: ParticipantJoinInfo
+var _supporter_glow_materials: Array[StandardMaterial3D] = []
+var _supporter_glow_tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
+var _glow_pulse_time: float = 0.0
 var _total_zombie_count: int = 0
 var _is_current_leader: bool = false
 
@@ -49,6 +53,7 @@ func _ready() -> void:
 	if _collision_shape != null and _collision_shape.shape != null:
 		_collision_shape.shape = _collision_shape.shape.duplicate()
 	_disable_visual_colliders(_visual_root)
+	_join_info = ParticipantJoinInfo.for_name(display_name)
 	_assign_zombie_tint_color()
 	health = _get_config().max_health
 	_start_position = global_position
@@ -63,13 +68,15 @@ func configure_zombie(
 	new_config: ZombieConfig,
 	new_goal_position: Vector3,
 	new_start_position: Vector3,
-	random_seed: int
+	random_seed: int,
+	join_info: ParticipantJoinInfo = null
 ) -> void:
 	display_name = new_display_name
 	config = new_config
 	goal_position = new_goal_position
 	_start_position = new_start_position
 	_rng.seed = random_seed
+	_join_info = join_info if join_info != null else ParticipantJoinInfo.for_name(new_display_name)
 	health = _get_config().max_health
 	_is_current_leader = false
 	_assign_zombie_tint_color()
@@ -155,6 +162,7 @@ func kill(cause: String) -> void:
 func _physics_process(delta: float) -> void:
 	var active_config: ZombieConfig = _get_config()
 	_update_timers(delta)
+	_update_supporter_glow_pulse(delta)
 	_update_animation_playback(active_config)
 
 	if mobility_state == MobilityState.DEAD:
@@ -509,12 +517,39 @@ func _assign_zombie_tint_color() -> void:
 
 func _apply_zombie_color_tint() -> void:
 	if not _get_config().color_variants_enabled or _selected_visual_variant == null:
+		_apply_supporter_glow()
 		return
 
 	ZombieCharacterVisuals.apply_color_tint(
 		_selected_visual_variant,
 		_zombie_tint_color,
 		mobility_state == MobilityState.CRAWLER
+	)
+	_apply_supporter_glow()
+
+func _apply_supporter_glow() -> void:
+	_supporter_glow_materials.clear()
+	if not _get_config().supporter_glow_enabled or _selected_visual_variant == null:
+		_supporter_glow_tier = ParticipantJoinInfo.SupporterTier.NONE
+		return
+	if _join_info == null or not _join_info.has_supporter_glow():
+		_supporter_glow_tier = ParticipantJoinInfo.SupporterTier.NONE
+		return
+
+	_supporter_glow_tier = _join_info.get_supporter_tier()
+	_supporter_glow_materials = ZombieCharacterVisuals.apply_supporter_glow(
+		_selected_visual_variant,
+		_supporter_glow_tier
+	)
+
+func _update_supporter_glow_pulse(delta: float) -> void:
+	if _supporter_glow_materials.is_empty():
+		return
+	_glow_pulse_time += delta
+	ZombieCharacterVisuals.update_supporter_glow_pulse(
+		_supporter_glow_materials,
+		_glow_pulse_time,
+		_supporter_glow_tier
 	)
 
 func _find_animation_player(root: Node) -> AnimationPlayer:

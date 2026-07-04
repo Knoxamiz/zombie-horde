@@ -35,6 +35,6 @@ func _register_source(source: JoinSource) -> void:
 	_sources.append(source)
 	source.participant_join_requested.connect(_on_source_participant_join_requested)
 
-func _on_source_participant_join_requested(display_name: String) -> void:
-	submit_join(display_name)
+func _on_source_participant_join_requested(join_info: ParticipantJoinInfo) -> void:
+	submit_join(join_info.display_name, join_info)
 

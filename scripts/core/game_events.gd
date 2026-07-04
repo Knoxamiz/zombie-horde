@@ -1,7 +1,7 @@
 extends Node
 
 signal join_requested(display_name: String)
-signal participant_registered(display_name: String, queued_count: int)
+signal participant_registered(join_info: ParticipantJoinInfo, queued_count: int)
 signal participant_queue_changed(display_names: PackedStringArray)
 signal round_state_changed(state: String)
 signal round_countdown_changed(seconds_remaining: int)

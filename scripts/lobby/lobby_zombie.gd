@@ -14,6 +14,10 @@ var _motion_timer: float = 0.0
 var _animation_player: AnimationPlayer
 var _was_falling: bool = true
 var _landings: int = 0
+var _join_info: ParticipantJoinInfo
+var _supporter_glow_materials: Array[StandardMaterial3D] = []
+var _supporter_glow_tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
+var _glow_pulse_time: float = 0.0
 
 @onready var _name_label: Label3D = get_node_or_null("NameLabel") as Label3D
 @onready var _visual_root: Node3D = get_node_or_null("VisualRoot") as Node3D
@@ -21,18 +25,21 @@ var _landings: int = 0
 func _ready() -> void:
 	_rng.randomize()
 	can_sleep = false
+	_join_info = ParticipantJoinInfo.for_name(display_name)
 	_refresh_name_label()
+	_apply_zombie_visuals()
 	_animation_player = _find_animation_player(self)
 	_play_idle_animation()
 	call_deferred("_kick")
 
-func configure_lobby_zombie(new_display_name: String, random_seed: int) -> void:
+func configure_lobby_zombie(new_display_name: String, random_seed: int, join_info: ParticipantJoinInfo = null) -> void:
 	display_name = new_display_name
+	_join_info = join_info if join_info != null else ParticipantJoinInfo.for_name(new_display_name)
 	_rng.seed = random_seed
 	_landings = 0
 	_was_falling = true
 	_refresh_name_label()
-	_apply_zombie_color_tint()
+	_apply_zombie_visuals()
 	call_deferred("_kick")
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
@@ -54,6 +61,8 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		state.linear_velocity = Vector3(velocity.x, velocity.y * later_bounce_boost, velocity.z)
 
 func _physics_process(delta: float) -> void:
+	_update_supporter_glow_pulse(delta)
+
 	_motion_timer -= delta
 	if _motion_timer > 0.0:
 		return
@@ -78,7 +87,7 @@ func _get_random_impulse(strength: float) -> Vector3:
 	)
 	if direction.length_squared() <= 0.001:
 		direction = Vector3.FORWARD
-	direction = direction.normalized()
+	direction = direction.normalize()
 	return direction * strength + Vector3.UP * upward_impulse
 
 func _get_random_spin(strength: float) -> Vector3:
@@ -89,15 +98,41 @@ func _get_random_spin(strength: float) -> Vector3:
 	)
 
 func _refresh_name_label() -> void:
-	if _name_label != null:
-		_name_label.text = display_name
+	if _name_label == null:
+		return
+	_name_label.text = display_name
+	if _join_info != null and _join_info.has_supporter_glow():
+		_name_label.modulate = ZombieCharacterVisuals.get_label_glow_color(_join_info.get_supporter_tier())
+	else:
+		_name_label.modulate = Color(0.9, 1.0, 0.82, 1.0)
 
-func _apply_zombie_color_tint() -> void:
+func _apply_zombie_visuals() -> void:
 	if _visual_root == null:
 		return
+
 	ZombieCharacterVisuals.apply_color_tint(
 		_visual_root,
 		ZombieCharacterVisuals.get_color_for_identity(display_name)
+	)
+	_supporter_glow_materials.clear()
+	if _join_info == null or not _join_info.has_supporter_glow():
+		_supporter_glow_tier = ParticipantJoinInfo.SupporterTier.NONE
+		return
+
+	_supporter_glow_tier = _join_info.get_supporter_tier()
+	_supporter_glow_materials = ZombieCharacterVisuals.apply_supporter_glow(
+		_visual_root,
+		_supporter_glow_tier
+	)
+
+func _update_supporter_glow_pulse(delta: float) -> void:
+	if _supporter_glow_materials.is_empty():
+		return
+	_glow_pulse_time += delta
+	ZombieCharacterVisuals.update_supporter_glow_pulse(
+		_supporter_glow_materials,
+		_glow_pulse_time,
+		_supporter_glow_tier
 	)
 
 func _play_idle_animation() -> void:

@@ -93,12 +93,12 @@ func _process(delta: float) -> void:
 	_update_logo_rig()
 	_update_join_prompt(delta)
 
-func _on_chat_participant_join_requested(display_name: String) -> void:
-	var clean_name: String = display_name.strip_edges()
+func _on_chat_participant_join_requested(join_info: ParticipantJoinInfo) -> void:
+	var clean_name: String = join_info.display_name.strip_edges()
 	if clean_name.is_empty():
 		return
 
-	_join_feed_lines.append("%s joins the horde." % clean_name)
+	_join_feed_lines.append("%s joins the horde.%s" % [clean_name, join_info.get_join_feed_suffix()])
 	while _join_feed_lines.size() > MAX_JOIN_FEED_LINES:
 		_join_feed_lines.remove_at(0)
 	_refresh_join_feed()

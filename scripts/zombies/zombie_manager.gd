@@ -29,7 +29,15 @@ func spawn_participants(display_names: Array[String]) -> void:
 	for display_name in display_names:
 		spawn_zombie(display_name)
 
-func spawn_zombie(display_name: String) -> Zombie:
+func spawn_participants_with_info(display_names: Array[String], join_info_lookup: Dictionary) -> void:
+	for display_name in display_names:
+		var lookup_key: String = str(display_name).to_lower()
+		var join_info: ParticipantJoinInfo = join_info_lookup.get(lookup_key) as ParticipantJoinInfo
+		if join_info == null:
+			join_info = ParticipantJoinInfo.for_name(str(display_name))
+		spawn_zombie(str(display_name), join_info)
+
+func spawn_zombie(display_name: String, join_info: ParticipantJoinInfo = null) -> Zombie:
 	if zombie_scene == null:
 		return null
 
@@ -41,7 +49,10 @@ func spawn_zombie(display_name: String) -> Zombie:
 	add_child(zombie)
 	zombie.name = "Zombie_%03d" % (_all_zombies.size() + 1)
 	zombie.global_position = spawn_position
-	zombie.configure_zombie(display_name, zombie_config, goal_position, spawn_position, int(_rng.randi()))
+	var payload: ParticipantJoinInfo = join_info
+	if payload == null:
+		payload = ParticipantJoinInfo.for_name(display_name)
+	zombie.configure_zombie(display_name, zombie_config, goal_position, spawn_position, int(_rng.randi()), payload)
 	zombie.set_round_active(_round_active)
 	zombie.died.connect(_on_zombie_died)
 

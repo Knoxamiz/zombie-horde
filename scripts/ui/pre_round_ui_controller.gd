@@ -102,12 +102,12 @@ func _on_fastest_times_pressed() -> void:
 	if _leaderboard_menu != null:
 		_leaderboard_menu.open_menu()
 
-func _on_participant_registered(display_name: String, _queued_count: int) -> void:
-	var clean_name: String = display_name.strip_edges()
+func _on_participant_registered(join_info: ParticipantJoinInfo, _queued_count: int) -> void:
+	var clean_name: String = join_info.display_name.strip_edges()
 	if clean_name.is_empty():
 		return
 
-	_join_feed_lines.append("%s joins the horde." % clean_name)
+	_join_feed_lines.append("%s joins the horde.%s" % [clean_name, join_info.get_join_feed_suffix()])
 	while _join_feed_lines.size() > MAX_JOIN_FEED_LINES:
 		_join_feed_lines.remove_at(0)
 	_refresh_labels()

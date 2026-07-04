@@ -367,7 +367,7 @@ func _on_round_ended(winner_name: String, base_won: bool) -> void:
 	_show_result_panel(winner_name, base_won)
 	_refresh_static_labels()
 
-func _on_participant_registered(_display_name: String, queued_count: int) -> void:
+func _on_participant_registered(_join_info: ParticipantJoinInfo, queued_count: int) -> void:
 	_queued_count = queued_count
 	_refresh_static_labels()
 

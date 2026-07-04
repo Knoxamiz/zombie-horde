@@ -2,6 +2,7 @@ class_name TwitchJoinSource
 extends JoinSource
 
 const ANONYMOUS_PASSWORD: String = "SCHMOOPIIE"
+const BITS_DONOR_MEMORY_SECONDS: float = 86400.0
 
 @export var config: TwitchChatConfig
 
@@ -15,6 +16,9 @@ var _reconnect_attempts: int = 0
 var _reconnect_timer: float = 0.0
 var _anonymous_id: int = 0
 var _pending_buffer: String = ""
+var _gift_recipient_logins: Dictionary = {}
+var _recent_bits_donors: Dictionary = {}
+
 
 func _ready() -> void:
 	_anonymous_id = int(Time.get_ticks_msec() % 90000) + 10000
@@ -34,6 +38,8 @@ func _process(delta: float) -> void:
 		_reconnect_timer -= delta
 		if _reconnect_timer <= 0.0:
 			connect_to_chat()
+
+	_prune_bits_donors()
 
 	if _socket == null:
 		return
@@ -136,8 +142,17 @@ func _handle_irc_line(line: String) -> void:
 		_send_raw("PONG :tmi.twitch.tv")
 		return
 
+	if line.find(" USERNOTICE ") != -1:
+		_handle_user_notice(line)
+		return
+
 	if line.find(" PRIVMSG ") == -1:
 		return
+
+	var tags: Dictionary = TwitchIrcTags.parse_line_tags(line)
+	var bits_amount: int = max(int(str(tags.get("bits", "0"))), 0)
+	if bits_amount > 0:
+		_mark_bits_donor(tags, bits_amount)
 
 	var message_text: String = _extract_chat_message(line)
 	if message_text.is_empty():
@@ -148,11 +163,91 @@ func _handle_irc_line(line: String) -> void:
 	if lower_message != command and not lower_message.begins_with("%s " % command):
 		return
 
-	var display_name: String = _sanitize_display_name(_extract_display_name(line))
-	if display_name.is_empty():
+	var join_info: ParticipantJoinInfo = _build_join_info(line, tags, bits_amount)
+	if join_info.display_name.is_empty():
 		return
 
-	submit_join(display_name)
+	submit_join(join_info.display_name, join_info)
+
+func _handle_user_notice(line: String) -> void:
+	var tags: Dictionary = TwitchIrcTags.parse_line_tags(line)
+	var msg_id: String = str(tags.get("msg-id", ""))
+	if msg_id != "subgift" and msg_id != "anonsubgift":
+		return
+
+	var recipient_login: String = str(tags.get("msg-param-recipient-user-name", "")).strip_edges().to_lower()
+	if recipient_login.is_empty():
+		recipient_login = str(tags.get("msg-param-recipient-login", "")).strip_edges().to_lower()
+	if recipient_login.is_empty():
+		return
+
+	_gift_recipient_logins[recipient_login] = Time.get_unix_time_from_system()
+
+func _build_join_info(line: String, tags: Dictionary, bits_amount: int) -> ParticipantJoinInfo:
+	var join_info: ParticipantJoinInfo = ParticipantJoinInfo.new()
+	join_info.display_name = _sanitize_display_name(TwitchIrcTags.get_display_name(line, tags))
+	join_info.bits_amount = bits_amount
+	join_info.is_bits_donor = bits_amount > 0 or _is_recent_bits_donor(tags)
+	join_info.is_subscriber = _is_subscriber(tags)
+	join_info.is_gift_recipient = _is_gift_recipient(tags)
+	return join_info
+
+func _is_subscriber(tags: Dictionary) -> bool:
+	if str(tags.get("subscriber", "0")) == "1":
+		return true
+
+	var badges: String = str(tags.get("badges", ""))
+	return badges.contains("subscriber/") or badges.contains("founder/")
+
+func _is_gift_recipient(tags: Dictionary) -> bool:
+	var login_name: String = TwitchIrcTags.get_login_name(tags)
+	if not login_name.is_empty() and _gift_recipient_logins.has(login_name):
+		return true
+
+	var badge_info: String = str(tags.get("badge-info", ""))
+	if badge_info.contains("subscriber/0"):
+		return true
+
+	var badges: String = str(tags.get("badges", ""))
+	return badges.begins_with("subscriber/0") or badges.contains(",subscriber/0")
+
+func _mark_bits_donor(tags: Dictionary, bits_amount: int) -> void:
+	var login_name: String = TwitchIrcTags.get_login_name(tags)
+	if login_name.is_empty():
+		return
+
+	_recent_bits_donors[login_name] = {
+		"expires_at": Time.get_unix_time_from_system() + int(BITS_DONOR_MEMORY_SECONDS),
+		"bits_amount": bits_amount,
+	}
+
+func _is_recent_bits_donor(tags: Dictionary) -> bool:
+	var login_name: String = TwitchIrcTags.get_login_name(tags)
+	if login_name.is_empty():
+		return false
+
+	if not _recent_bits_donors.has(login_name):
+		return false
+
+	var donor_data: Variant = _recent_bits_donors[login_name]
+	if typeof(donor_data) != TYPE_DICTIONARY:
+		return false
+
+	return int(donor_data.get("expires_at", 0)) > Time.get_unix_time_from_system()
+
+func _prune_bits_donors() -> void:
+	var now: int = Time.get_unix_time_from_system()
+	var expired_logins: Array[String] = []
+	for login_name in _recent_bits_donors.keys():
+		var donor_data: Variant = _recent_bits_donors[login_name]
+		if typeof(donor_data) != TYPE_DICTIONARY:
+			expired_logins.append(str(login_name))
+			continue
+		if int(donor_data.get("expires_at", 0)) <= now:
+			expired_logins.append(str(login_name))
+
+	for login_name in expired_logins:
+		_recent_bits_donors.erase(login_name)
 
 func _extract_chat_message(line: String) -> String:
 	var privmsg_index: int = line.find(" PRIVMSG ")
@@ -165,43 +260,6 @@ func _extract_chat_message(line: String) -> String:
 		return ""
 
 	return line.substr(message_index + message_marker.length()).strip_edges()
-
-func _extract_display_name(line: String) -> String:
-	var display_name: String = _extract_display_name_from_tags(line)
-	if not display_name.is_empty():
-		return display_name
-
-	var working_line: String = line
-	if working_line.begins_with("@"):
-		var first_space: int = working_line.find(" ")
-		if first_space != -1:
-			working_line = working_line.substr(first_space + 1)
-
-	if working_line.begins_with(":"):
-		var bang_index: int = working_line.find("!")
-		if bang_index > 1:
-			return working_line.substr(1, bang_index - 1)
-
-	return ""
-
-func _extract_display_name_from_tags(line: String) -> String:
-	if not line.begins_with("@"):
-		return ""
-
-	var first_space: int = line.find(" ")
-	if first_space == -1:
-		return ""
-
-	var tag_block: String = line.substr(1, first_space - 1)
-	var tags: PackedStringArray = tag_block.split(";")
-	for tag in tags:
-		var pair: PackedStringArray = tag.split("=", false, 1)
-		if pair.size() == 2 and pair[0] == "display-name":
-			return _decode_irc_tag_value(pair[1])
-	return ""
-
-func _decode_irc_tag_value(value: String) -> String:
-	return value.replace("\\s", " ").replace("\\:", ";").replace("\\r", "").replace("\\n", "")
 
 func _sanitize_display_name(raw_name: String) -> String:
 	var trimmed: String = raw_name.strip_edges()

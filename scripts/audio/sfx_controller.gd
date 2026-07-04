@@ -168,7 +168,7 @@ func _ensure_audio_bus(bus_name: StringName) -> void:
 func _on_button_pressed(_button: Button) -> void:
 	play_ui_select()
 
-func _on_participant_registered(_display_name: String, _queued_count: int) -> void:
+func _on_participant_registered(_join_info: ParticipantJoinInfo, _queued_count: int) -> void:
 	_play_stream(participant_join_stream, "participant_join", -1.5, Vector2(0.96, 1.06), 0.08)
 
 func _on_round_countdown_changed(seconds_remaining: int) -> void:

@@ -24,6 +24,7 @@ var round_number: int = 0
 var pending_participants: Array[String] = []
 
 var _stats: RoundStats = RoundStats.new()
+var _pending_join_info: Dictionary = {}
 var _join_source: JoinSource
 var _debug_join_source: DebugJoinSource
 var _zombie_manager: ZombieManager
@@ -115,8 +116,9 @@ func start_round() -> void:
 	if _base_goal != null:
 		_base_goal.set_goal_enabled(false)
 
-	_zombie_manager.spawn_participants(pending_participants)
+	_zombie_manager.spawn_participants_with_info(pending_participants, _pending_join_info)
 	pending_participants.clear()
+	_pending_join_info.clear()
 	_publish_queue()
 	_publish_stats()
 
@@ -127,6 +129,7 @@ func reset_round() -> void:
 	_round_token += 1
 	state = RoundState.IDLE
 	pending_participants.clear()
+	_pending_join_info.clear()
 	_stats.reset_for_round(0)
 	_round_started_msec = 0
 
@@ -152,16 +155,16 @@ func reset_round() -> void:
 	_publish_state()
 	_seed_debug_roster_if_enabled()
 
-func _on_participant_join_requested(display_name: String) -> void:
-	var clean_name: String = display_name.strip_edges()
+func _on_participant_join_requested(join_info: ParticipantJoinInfo) -> void:
+	var clean_name: String = join_info.display_name.strip_edges()
 	if clean_name.is_empty() or _has_participant_name(clean_name):
 		return
 
 	if state == RoundState.COUNTDOWN and _zombie_manager != null:
-		var spawned_zombie: Zombie = _zombie_manager.spawn_zombie(clean_name)
+		var spawned_zombie: Zombie = _zombie_manager.spawn_zombie(clean_name, join_info)
 		if spawned_zombie != null:
 			spawned_zombie.set_round_active(false)
-		GameEvents.participant_registered.emit(clean_name, pending_participants.size())
+		GameEvents.participant_registered.emit(join_info, pending_participants.size())
 		_publish_queue()
 		return
 
@@ -176,8 +179,15 @@ func _on_participant_join_requested(display_name: String) -> void:
 		return
 
 	pending_participants.append(clean_name)
-	GameEvents.participant_registered.emit(clean_name, pending_participants.size())
+	_pending_join_info[clean_name.to_lower()] = join_info
+	GameEvents.participant_registered.emit(join_info, pending_participants.size())
 	_publish_queue()
+
+func get_join_info_for_name(display_name: String) -> ParticipantJoinInfo:
+	var lookup_key: String = display_name.to_lower()
+	if _pending_join_info.has(lookup_key):
+		return _pending_join_info[lookup_key] as ParticipantJoinInfo
+	return ParticipantJoinInfo.for_name(display_name)
 
 func get_pending_count() -> int:
 	return pending_participants.size()
