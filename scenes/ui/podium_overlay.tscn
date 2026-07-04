@@ -1,0 +1,188 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/podium_overlay.gd" id="1_script"]
+[ext_resource type="Theme" path="res://assets/ui/zombie_horde_theme.tres" id="2_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_podium_card"]
+content_margin_left = 28.0
+content_margin_top = 24.0
+content_margin_right = 28.0
+content_margin_bottom = 24.0
+bg_color = Color(0.026, 0.02, 0.012, 0.94)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(1, 0.7, 0.18, 0.42)
+shadow_size = 34
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button_primary"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.2, 0.13, 0.04, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.65, 0.18, 0.95)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button_primary_hover"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.12, 0.22, 0.07, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 1, 0.3, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.2, 1, 0.08, 0.22)
+shadow_size = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button_secondary"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.05, 0.05, 0.05, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.55, 0.55, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_button_secondary_hover"]
+content_margin_left = 24.0
+content_margin_top = 12.0
+content_margin_right = 24.0
+content_margin_bottom = 12.0
+bg_color = Color(0.1, 0.1, 0.1, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.8, 0.8, 0.8, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="PodiumOverlay" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="ScreenDim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.42)
+
+[node name="PodiumCard" type="PanelContainer" parent="."]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -470.0
+offset_top = -300.0
+offset_right = 470.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBox_podium_card")
+
+[node name="Margin" type="MarginContainer" parent="PodiumCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="PodiumCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="AccentBar" type="ColorRect" parent="PodiumCard/Margin/VBox"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+color = Color(1, 0.62, 0.12, 1)
+
+[node name="TitleLabel" type="Label" parent="PodiumCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.62, 0.12, 1)
+theme_override_font_sizes/font_size = 48
+text = "ZOMBIE WINS!"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="PodiumCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.78, 0.32, 1)
+theme_override_font_sizes/font_size = 18
+text = "Top 3 finishers"
+horizontal_alignment = 1
+
+[node name="PodiumRow" type="HBoxContainer" parent="PodiumCard/Margin/VBox"]
+custom_minimum_size = Vector2(0, 360)
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="EmptyLabel" type="Label" parent="PodiumCard/Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.86, 0.74, 1)
+theme_override_font_sizes/font_size = 20
+text = "No finishers to display."
+horizontal_alignment = 1
+
+[node name="ButtonRow" type="HBoxContainer" parent="PodiumCard/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="ViewStatsButton" type="Button" parent="PodiumCard/Margin/VBox/ButtonRow"]
+custom_minimum_size = Vector2(220, 52)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.9, 0.72, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/hover = SubResource("StyleBox_button_primary_hover")
+theme_override_styles/normal = SubResource("StyleBox_button_primary")
+text = "VIEW STATS"
+
+[node name="ReturnLobbyButton" type="Button" parent="PodiumCard/Margin/VBox/ButtonRow"]
+custom_minimum_size = Vector2(220, 52)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.88, 0.88, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/hover = SubResource("StyleBox_button_secondary_hover")
+theme_override_styles/normal = SubResource("StyleBox_button_secondary")
+text = "RETURN TO LOBBY"

@@ -1,9 +1,10 @@
-[gd_scene load_steps=9 format=3 uid="uid://klfmkohhxs15"]
+[gd_scene load_steps=10 format=3 uid="uid://klfmkohhxs15"]
 
 [ext_resource type="Script" uid="uid://u81cp382hnt1" path="res://scripts/ui/hud_controller.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/ui/zombie_horde_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://scenes/ui/round_results_overlay.tscn" id="3_results_overlay"]
-[ext_resource type="Script" path="res://scripts/ui/hud_layout_panel.gd" id="4_layout_panel"]
+[ext_resource type="PackedScene" path="res://scenes/ui/podium_overlay.tscn" id="4_podium_overlay"]
+[ext_resource type="Script" path="res://scripts/ui/hud_layout_panel.gd" id="5_layout_panel"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_board_header"]
 content_margin_left = 16.0
@@ -101,7 +102,7 @@ offset_top = 40.0
 offset_right = 400.0
 offset_bottom = 420.0
 clip_contents = true
-script = ExtResource("4_layout_panel")
+script = ExtResource("5_layout_panel")
 panel_id = "top"
 
 [node name="Background" type="PanelContainer" parent="Root/TopPanel"]
@@ -178,7 +179,7 @@ offset_top = 40.0
 offset_right = 1560.0
 offset_bottom = 260.0
 clip_contents = true
-script = ExtResource("4_layout_panel")
+script = ExtResource("5_layout_panel")
 panel_id = "roster"
 
 [node name="Background" type="PanelContainer" parent="Root/RosterPanel"]
@@ -244,7 +245,7 @@ offset_top = 280.0
 offset_right = 1560.0
 offset_bottom = 828.0
 clip_contents = true
-script = ExtResource("4_layout_panel")
+script = ExtResource("5_layout_panel")
 panel_id = "leaderboard"
 
 [node name="Background" type="PanelContainer" parent="Root/LeaderboardPanel"]
@@ -303,7 +304,7 @@ offset_top = 844.0
 offset_right = 460.0
 offset_bottom = 900.0
 clip_contents = true
-script = ExtResource("4_layout_panel")
+script = ExtResource("5_layout_panel")
 panel_id = "command"
 
 [node name="Background" type="PanelContainer" parent="Root/CommandPanel"]
@@ -361,7 +362,7 @@ offset_top = 340.0
 offset_right = 910.0
 offset_bottom = 560.0
 clip_contents = true
-script = ExtResource("4_layout_panel")
+script = ExtResource("5_layout_panel")
 panel_id = "countdown"
 
 [node name="Background" type="PanelContainer" parent="Root/CountdownPanel"]
@@ -442,5 +443,7 @@ text = "Reset"
 [node name="JoinButton" type="Button" parent="Root/ControlPanel/Margin/HBox"]
 layout_mode = 2
 text = "Add NPC"
+
+[node name="PodiumOverlay" parent="Root" instance=ExtResource("4_podium_overlay")]
 
 [node name="RoundResultsOverlay" parent="Root" instance=ExtResource("3_results_overlay")]

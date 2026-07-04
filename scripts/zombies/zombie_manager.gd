@@ -128,11 +128,7 @@ func get_ranked_results(max_results: int, excluded_display_name: String = "") ->
 		if not excluded_lower_name.is_empty() and zombie.display_name.to_lower() == excluded_lower_name:
 			continue
 
-		results.append({
-			"display_name": zombie.display_name,
-			"progress": zombie.get_progress(),
-			"alive": zombie.is_alive()
-		})
+		results.append(_build_result_entry(zombie))
 
 	results.sort_custom(_sort_result_by_progress)
 	while results.size() > max_results:
@@ -190,6 +186,38 @@ func _remove_invalid_all() -> void:
 	for index in range(_all_zombies.size() - 1, -1, -1):
 		if not is_instance_valid(_all_zombies[index]):
 			_all_zombies.remove_at(index)
+
+func get_result_for_display_name(display_name: String) -> Dictionary:
+	_remove_invalid_all()
+	var lower_name: String = display_name.to_lower()
+	for zombie in _all_zombies:
+		if zombie.display_name.to_lower() == lower_name:
+			return _build_result_entry(zombie)
+	return {
+		"display_name": display_name,
+		"progress": 1.0,
+		"alive": true,
+		"tier": ParticipantJoinInfo.SupporterTier.NONE,
+		"tier_label": "Viewer",
+	}
+
+
+func _build_result_entry(zombie: Zombie) -> Dictionary:
+	var tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
+	var tier_label: String = "Viewer"
+	var join_info: ParticipantJoinInfo = zombie.get_join_info()
+	if join_info != null:
+		tier = join_info.get_supporter_tier()
+		tier_label = join_info.get_tier_label()
+
+	return {
+		"display_name": zombie.display_name,
+		"progress": zombie.get_progress(),
+		"alive": zombie.is_alive(),
+		"tier": tier,
+		"tier_label": tier_label,
+	}
+
 
 func _sort_result_by_progress(a: Dictionary, b: Dictionary) -> bool:
 	return float(a.get("progress", 0.0)) > float(b.get("progress", 0.0))

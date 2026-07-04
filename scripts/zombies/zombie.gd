@@ -68,6 +68,10 @@ func _ready() -> void:
 	GameEvents.leader_changed.connect(_on_leader_changed)
 	GameEvents.zombie_count_changed.connect(_on_zombie_count_changed)
 
+func get_join_info() -> ParticipantJoinInfo:
+	return _join_info
+
+
 func configure_zombie(
 	new_display_name: String,
 	new_config: ZombieConfig,

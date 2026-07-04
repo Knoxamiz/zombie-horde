@@ -57,6 +57,7 @@ var _leaderboard_text: String = "Fastest Winners\n-"
 var _last_winner_name: String = ""
 var _last_base_won: bool = false
 var _results_showing: bool = false
+var _podium_showing: bool = false
 var _last_visible_state: bool = false
 var _standings_refresh_timer: float = 0.0
 var _queued_names: PackedStringArray = PackedStringArray()
@@ -85,6 +86,7 @@ var _hud_visible_before_layout_edit: bool = false
 @onready var _leaderboard_label: Label = get_node("Root/LeaderboardPanel/Margin/VBox/LeaderboardLabel") as Label
 @onready var _countdown_panel: HudLayoutPanel = get_node("Root/CountdownPanel") as HudLayoutPanel
 @onready var _countdown_label: Label = get_node("Root/CountdownPanel/Margin/VBox/CountdownLabel") as Label
+@onready var _podium_overlay: PodiumOverlay = get_node("Root/PodiumOverlay") as PodiumOverlay
 @onready var _results_overlay: RoundResultsOverlay = get_node("Root/RoundResultsOverlay") as RoundResultsOverlay
 @onready var _start_button: Button = get_node("Root/ControlPanel/Margin/HBox/StartButton") as Button
 @onready var _reset_button: Button = get_node("Root/ControlPanel/Margin/HBox/ResetButton") as Button
@@ -128,6 +130,9 @@ func _ready() -> void:
 	GameEvents.chat_connection_status_changed.connect(_on_chat_connection_status_changed)
 	if _leaderboard_store != null:
 		_leaderboard_store.leaderboard_changed.connect(_on_leaderboard_changed)
+	if _podium_overlay != null:
+		_podium_overlay.continue_requested.connect(_on_podium_continue_requested)
+		_podium_overlay.reset_requested.connect(_on_results_reset_requested)
 	if _results_overlay != null:
 		_results_overlay.reset_requested.connect(_on_results_reset_requested)
 	if _world_results_reset_button != null:
@@ -142,6 +147,8 @@ func _ready() -> void:
 		_state_text = _round_manager.get_state_text()
 		_queued_names = _round_manager.get_pending_names()
 	_countdown_panel.visible = false
+	if _podium_overlay != null:
+		_podium_overlay.hide_podium(true)
 	if _results_overlay != null:
 		_results_overlay.hide_results(true)
 	_refresh_chat_status_from_source()
@@ -197,6 +204,8 @@ func begin_layout_edit() -> void:
 	_hide_pre_round_ui_for_layout_edit()
 	_populate_layout_preview()
 	_ensure_layout_panels_visible_for_edit()
+	if _podium_overlay != null:
+		_podium_overlay.hide_podium(true)
 	if _results_overlay != null:
 		_results_overlay.hide_results(true)
 	if _root != null:
@@ -331,6 +340,9 @@ func _on_round_state_changed(state_text: String) -> void:
 func _on_round_started(round_number: int) -> void:
 	_winner_text = "Winner: -"
 	_results_showing = false
+	_podium_showing = false
+	if _podium_overlay != null:
+		_podium_overlay.hide_podium()
 	if _results_overlay != null:
 		_results_overlay.hide_results()
 	_set_world_results_visible(false)
@@ -350,7 +362,10 @@ func _on_round_reset() -> void:
 	_last_winner_name = ""
 	_last_base_won = false
 	_results_showing = false
+	_podium_showing = false
 	_countdown_panel.visible = false
+	if _podium_overlay != null:
+		_podium_overlay.hide_podium()
 	if _results_overlay != null:
 		_results_overlay.hide_results()
 	_set_world_results_visible(false)
@@ -496,8 +511,15 @@ func _format_roster_text() -> String:
 
 func _show_result_panel(winner_name: String, base_won: bool) -> void:
 	_results_showing = true
+	_podium_showing = true
 	_refresh_world_results()
-	_set_world_results_visible(visible)
+	_set_podium_visible(true)
+
+func _on_podium_continue_requested() -> void:
+	_podium_showing = false
+	if _podium_overlay != null:
+		_podium_overlay.hide_podium()
+	_set_world_results_visible(true)
 
 func _join_strings(values: Array[String], separator: String) -> String:
 	var result: String = ""
@@ -564,13 +586,15 @@ func _set_world_visible(should_show: bool) -> void:
 	if _root != null:
 		_root.visible = should_show or _layout_edit_active
 	if not should_show and not _layout_edit_active:
+		_set_podium_visible(false)
 		_set_world_results_visible(false)
 		return
 	_refresh_static_labels()
 	_refresh_roster()
 	_refresh_world_leaders_board()
 	_refresh_world_command_board()
-	_set_world_results_visible(_results_showing)
+	_set_podium_visible(_podium_showing)
+	_set_world_results_visible(_results_showing and not _podium_showing)
 
 func _set_world_results_visible(should_show: bool) -> void:
 	if _world_results_board != null:
@@ -578,11 +602,22 @@ func _set_world_results_visible(should_show: bool) -> void:
 	if _world_results_reset_button != null:
 		_world_results_reset_button.visible = false
 		_world_results_reset_button.set_interactable(false)
+	if _podium_showing:
+		should_show = false
 	if _results_overlay != null:
 		if should_show:
 			_results_overlay.show_results(_last_winner_name, _last_base_won, _last_stats)
 		else:
 			_results_overlay.hide_results()
+
+
+func _set_podium_visible(should_show: bool) -> void:
+	if _podium_overlay == null:
+		return
+	if should_show:
+		_podium_overlay.show_podium(_last_winner_name, _last_base_won, _last_stats, _zombie_manager)
+	else:
+		_podium_overlay.hide_podium()
 
 func _refresh_world_leaders_board() -> void:
 	if _is_race_live():
