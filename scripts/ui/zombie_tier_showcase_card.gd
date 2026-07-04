@@ -21,7 +21,6 @@ const PREVIEW_CAMERA_TRANSFORM := Transform3D(
 	Vector3(0.0, 1.05, 3.75)
 )
 const PREVIEW_HEIGHT := 180
-const CARD_WIDTH := 160
 
 var _tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
 var _glow_materials: Array[ShaderMaterial] = []
@@ -31,22 +30,18 @@ var _bits_champion_light: OmniLight3D
 
 func setup(tier: ParticipantJoinInfo.SupporterTier, title_text: String, perk_text: String, accent_color: Color) -> void:
 	_tier = tier
-	custom_minimum_size = Vector2(CARD_WIDTH, 0)
+	custom_minimum_size = Vector2(PREVIEW_HEIGHT, 0)
 	size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	add_theme_constant_override("separation", 6)
 	_build_slot(title_text, perk_text, accent_color)
 
 
 func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> void:
-	var preview_root: Control = Control.new()
-	preview_root.custom_minimum_size = Vector2(0, PREVIEW_HEIGHT)
-	preview_root.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	add_child(preview_root)
-
 	var viewport_container: SubViewportContainer = SubViewportContainer.new()
-	viewport_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	viewport_container.custom_minimum_size = Vector2(PREVIEW_HEIGHT, PREVIEW_HEIGHT)
+	viewport_container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	viewport_container.stretch = true
-	preview_root.add_child(viewport_container)
+	add_child(viewport_container)
 
 	var viewport: SubViewport = SubViewport.new()
 	viewport.size = Vector2i(PREVIEW_HEIGHT, PREVIEW_HEIGHT)
