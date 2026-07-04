@@ -3,9 +3,9 @@ extends RefCounted
 
 const SAVE_PATH := "user://hud_layout.cfg"
 const SECTION := "hud_layout"
-const SAVE_VERSION := 3
-const MIN_PANEL_WIDTH := 180.0
-const MIN_PANEL_HEIGHT := 96.0
+const SAVE_VERSION := 4
+const MIN_PANEL_WIDTH := 120.0
+const MIN_PANEL_HEIGHT := 48.0
 
 static var PANEL_IDS: Array[String] = ["top", "roster", "leaderboard", "command", "countdown"]
 
@@ -45,39 +45,25 @@ static func load_from_disk(viewport_size: Vector2 = Vector2(1600.0, 900.0)):
 static func create_default_profile(viewport_size: Vector2 = Vector2(1600.0, 900.0)) -> HudLayoutProfile:
 	var profile: HudLayoutProfile = HudLayoutProfile.new()
 	var margin: float = 40.0
-	var top_width: float = 420.0
-	var top_height: float = 208.0
-	var roster_width: float = 360.0
-	var roster_height: float = 260.0
-	var board_width: float = 330.0
-	var command_height: float = 56.0
-	var command_width: float = 420.0
-	var countdown_size: float = 220.0
 	var right: float = viewport_size.x - margin
 	var bottom: float = viewport_size.y - margin
 
+	# Corner layout matching the streamer default screenshot (1600x900).
 	profile.panels = {
-		"top": _panel_dict(margin, margin, margin + top_width, margin + top_height, true),
-		"roster": _panel_dict(right - roster_width, margin, right, margin + roster_height, true),
-		"leaderboard": _panel_dict(
-			right - board_width,
-			margin + roster_height + 30.0,
-			right,
-			bottom - command_height - 20.0,
-			true
-		),
-		"command": _panel_dict(
-			margin,
-			bottom - command_height,
-			margin + command_width,
-			bottom,
-			true
-		),
+		# Top-left tall: Race Status
+		"top": _panel_dict(margin, margin, margin + 360.0, margin + 380.0, true),
+		# Bottom-left strip: Chat Command
+		"command": _panel_dict(margin, bottom - 56.0, margin + 420.0, bottom, true),
+		# Top-right wide: Live Feed
+		"roster": _panel_dict(right - 680.0, margin, right, margin + 220.0, true),
+		# Bottom-right tall: Top 10 Standings
+		"leaderboard": _panel_dict(right - 360.0, margin + 240.0, right, bottom - 72.0, true),
+		# Countdown stays centered; hidden during layout edit
 		"countdown": _panel_dict(
-			viewport_size.x * 0.5 - countdown_size * 0.5,
-			viewport_size.y * 0.5 - countdown_size * 0.5,
-			viewport_size.x * 0.5 + countdown_size * 0.5,
-			viewport_size.y * 0.5 + countdown_size * 0.5,
+			viewport_size.x * 0.5 - 110.0,
+			viewport_size.y * 0.5 - 110.0,
+			viewport_size.x * 0.5 + 110.0,
+			viewport_size.y * 0.5 + 110.0,
 			true
 		),
 	}

@@ -98,8 +98,8 @@ color = Color(0.004, 0.008, 0.005, 0.42)
 layout_mode = 0
 offset_left = 40.0
 offset_top = 40.0
-offset_right = 460.0
-offset_bottom = 248.0
+offset_right = 400.0
+offset_bottom = 420.0
 clip_contents = true
 script = ExtResource("4_layout_panel")
 panel_id = "top"
@@ -173,10 +173,10 @@ text = "Chat: Debug only"
 
 [node name="RosterPanel" type="Control" parent="Root"]
 layout_mode = 0
-offset_left = 1200.0
+offset_left = 880.0
 offset_top = 40.0
 offset_right = 1560.0
-offset_bottom = 300.0
+offset_bottom = 260.0
 clip_contents = true
 script = ExtResource("4_layout_panel")
 panel_id = "roster"
@@ -239,10 +239,10 @@ autowrap_mode = 2
 
 [node name="LeaderboardPanel" type="Control" parent="Root"]
 layout_mode = 0
-offset_left = 1230.0
-offset_top = 330.0
+offset_left = 1200.0
+offset_top = 280.0
 offset_right = 1560.0
-offset_bottom = 750.0
+offset_bottom = 828.0
 clip_contents = true
 script = ExtResource("4_layout_panel")
 panel_id = "leaderboard"
@@ -299,9 +299,9 @@ autowrap_mode = 2
 [node name="CommandPanel" type="Control" parent="Root"]
 layout_mode = 0
 offset_left = 40.0
-offset_top = 804.0
+offset_top = 844.0
 offset_right = 460.0
-offset_bottom = 860.0
+offset_bottom = 900.0
 clip_contents = true
 script = ExtResource("4_layout_panel")
 panel_id = "command"

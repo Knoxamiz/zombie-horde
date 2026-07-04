@@ -12,7 +12,7 @@ func _initialize() -> void:
 
 
 func _run_test() -> void:
-	print("=== HUD layout panel test ===")
+	print("=== HUD layout defaults test ===")
 	var packed: PackedScene = load(MAIN_GAME_SCENE)
 	if packed == null:
 		_fail("Could not load main game scene")
@@ -29,28 +29,28 @@ func _run_test() -> void:
 		_finish(FAIL)
 		return
 
-	hud.visible = true
-	hud.get_node("Root").visible = true
-	await create_timer(0.1).timeout
+	hud.reset_layout_to_defaults()
+	await create_timer(0.05).timeout
 
 	var viewport_size: Vector2 = hud.get_node("Root").get_rect().size
+	var profile: HudLayoutProfile = HudLayoutProfile.create_default_profile(viewport_size)
+	var expected: Dictionary = profile.panels
+
 	for panel_id in ["top", "roster", "leaderboard", "command"]:
 		var panel: HudLayoutPanel = hud.get_layout_panel(panel_id)
 		if panel == null:
 			_fail("Missing panel: %s" % panel_id)
 			continue
 		var rect: Rect2 = panel.get_layout_rect()
-		if rect.size.x < 120.0 or rect.size.y < 48.0:
-			_fail("%s too small: %s" % [panel_id, rect.size])
-		if rect.position.x < -40.0 or rect.position.y < -40.0:
-			_fail("%s off-screen left/top: %s" % [panel_id, rect.position])
-		if rect.position.x + rect.size.x > viewport_size.x + 40.0:
-			_fail("%s off-screen right: %s" % [panel_id, rect.end])
-		if rect.position.y + rect.size.y > viewport_size.y + 40.0:
-			_fail("%s off-screen bottom: %s" % [panel_id, rect.end])
+		var data: Dictionary = expected.get(panel_id, {})
+		var want: Rect2 = HudLayoutProfile.get_absolute_rect_from_data(data)
+		if rect.position.distance_to(want.position) > 2.0:
+			_fail("%s position mismatch: got %s want %s" % [panel_id, rect.position, want.position])
+		if rect.size.distance_to(want.size) > 2.0:
+			_fail("%s size mismatch: got %s want %s" % [panel_id, rect.size, want.size])
 
 	if _failures.is_empty():
-		print("PASS: all layout panels within viewport")
+		print("PASS: default corner layout applied")
 		_finish(PASS)
 		return
 
