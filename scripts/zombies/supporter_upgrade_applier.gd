@@ -18,7 +18,11 @@ static func clear_upgrades(attach_root: Node3D) -> void:
 		existing.free()
 
 
-static func apply_upgrades(attach_root: Node3D, join_info: ParticipantJoinInfo) -> SupporterUpgradeState:
+static func apply_upgrades(
+	attach_root: Node3D,
+	join_info: ParticipantJoinInfo,
+	icon_scale_multiplier: float = 1.0
+) -> SupporterUpgradeState:
 	var state: SupporterUpgradeState = SupporterUpgradeState.new()
 	clear_upgrades(attach_root)
 	if attach_root == null or join_info == null:
@@ -42,9 +46,19 @@ static func apply_upgrades(attach_root: Node3D, join_info: ParticipantJoinInfo) 
 
 	match state.tier:
 		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT:
-			_add_twitch_icon(head_attach, ZombieTierVisuals.TWITCH_GIFT_ICON, GIFT_ICON_OFFSET, 1.0)
+			_add_twitch_icon(
+				head_attach,
+				ZombieTierVisuals.TWITCH_GIFT_ICON,
+				GIFT_ICON_OFFSET,
+				1.0 * icon_scale_multiplier
+			)
 		ParticipantJoinInfo.SupporterTier.BITS_DONOR:
-			_add_twitch_icon(head_attach, ZombieTierVisuals.TWITCH_BITS_ICON, BITS_ICON_OFFSET, 1.08)
+			_add_twitch_icon(
+				head_attach,
+				ZombieTierVisuals.TWITCH_BITS_ICON,
+				BITS_ICON_OFFSET,
+				1.08 * icon_scale_multiplier
+			)
 			_add_bits_sparkles(head_attach)
 
 	return state

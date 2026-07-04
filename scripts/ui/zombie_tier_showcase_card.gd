@@ -6,7 +6,7 @@ const PREVIEW_MODEL_TRANSFORM := Transform3D(
 	Vector3(PREVIEW_MODEL_SCALE, 0.0, 0.0),
 	Vector3(0.0, PREVIEW_MODEL_SCALE, 0.0),
 	Vector3(0.0, 0.0, PREVIEW_MODEL_SCALE),
-	Vector3(0.0, -0.95, 0.0)
+	Vector3(0.0, -1.12, 0.0)
 )
 const PREVIEW_LIGHT_TRANSFORM := Transform3D(
 	Vector3(0.866025, 0.0, -0.5),
@@ -18,8 +18,9 @@ const PREVIEW_CAMERA_TRANSFORM := Transform3D(
 	Vector3(1.0, 0.0, 0.0),
 	Vector3(0.0, 0.965926, -0.258819),
 	Vector3(0.0, 0.258819, 0.965926),
-	Vector3(0.0, 1.05, 3.75)
+	Vector3(0.0, 0.98, 4.55)
 )
+const PREVIEW_FOV := 48.0
 const PREVIEW_HEIGHT := 180
 
 var _tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
@@ -72,7 +73,7 @@ func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> 
 
 	var camera: Camera3D = Camera3D.new()
 	camera.transform = PREVIEW_CAMERA_TRANSFORM
-	camera.fov = 42.0
+	camera.fov = PREVIEW_FOV
 	camera.current = true
 	viewport.add_child(camera)
 
@@ -103,7 +104,7 @@ func _apply_preview_visuals(zombie_visual: Node3D) -> void:
 	if join_info.has_supporter_glow():
 		_glow_materials = ZombieCharacterVisuals.apply_supporter_glow(zombie_visual, _tier)
 		_bits_champion_light = ZombieCharacterVisuals.attach_bits_champion_glow(zombie_visual)
-	SupporterUpgradeApplier.apply_upgrades(zombie_visual, join_info)
+		SupporterUpgradeApplier.apply_upgrades(zombie_visual, join_info, 1.2)
 	_play_idle_animation(zombie_visual)
 
 
