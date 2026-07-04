@@ -15,7 +15,7 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 
 	var zombie: Zombie = body as Zombie
-	if zombie == null or not zombie.is_alive():
+	if zombie == null or not zombie.is_alive() or zombie.has_finished_race():
 		return
 
 	GameEvents.zombie_reached_base.emit(zombie)

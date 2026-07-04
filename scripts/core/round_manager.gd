@@ -36,6 +36,8 @@ var _minigun: BaseMinigun
 var _base_goal: StreamerBaseGoal
 var _round_token: int = 0
 var _round_started_msec: int = 0
+var _race_winner_name: String = ""
+var _next_finish_place: int = 1
 
 func _ready() -> void:
 	_join_source = get_node_or_null(join_source_path) as JoinSource
@@ -132,6 +134,8 @@ func reset_round() -> void:
 	_pending_join_info.clear()
 	_stats.reset_for_round(0)
 	_round_started_msec = 0
+	_race_winner_name = ""
+	_next_finish_place = 1
 
 	if _zombie_manager != null:
 		_zombie_manager.set_round_active(false)
@@ -205,8 +209,22 @@ func _on_zombie_reached_base(zombie_node: Node) -> void:
 	var zombie: Zombie = zombie_node as Zombie
 	if state != RoundState.RUNNING or zombie == null or not zombie.is_alive():
 		return
+	if zombie.has_finished_race():
+		return
 
-	_end_round(zombie.display_name, false)
+	zombie.mark_race_finished(_next_finish_place)
+	_next_finish_place += 1
+
+	if _race_winner_name.is_empty():
+		_race_winner_name = zombie.display_name
+		GameEvents.camera_shake_requested.emit(0.26, 0.28)
+
+	GameEvents.zombie_status_changed.emit(
+		zombie.display_name,
+		"Finished #%d" % zombie.get_finish_place()
+	)
+	_publish_stats()
+	_try_complete_round()
 
 func _on_zombie_died(zombie_node: Node, cause: String) -> void:
 	if state != RoundState.RUNNING or _zombie_manager == null:
@@ -218,8 +236,23 @@ func _on_zombie_died(zombie_node: Node, cause: String) -> void:
 	_stats.record_death(cause)
 	_publish_stats()
 
-	if _zombie_manager.get_living_count() <= 0:
+	if _zombie_manager.get_living_count() <= 0 and _race_winner_name.is_empty():
 		_end_round("Streamer Base", true)
+		return
+
+	_try_complete_round()
+
+func _try_complete_round() -> void:
+	if state != RoundState.RUNNING or _zombie_manager == null:
+		return
+
+	if _race_winner_name.is_empty():
+		return
+
+	if _zombie_manager.get_racing_count() > 0:
+		return
+
+	_end_round(_race_winner_name, false)
 
 func _end_round(winner_name: String, base_won: bool) -> void:
 	state = RoundState.ENDED
@@ -243,7 +276,8 @@ func _end_round(winner_name: String, base_won: bool) -> void:
 	if not base_won:
 		GameEvents.zombie_status_changed.emit(winner_name, "Winner")
 	_publish_stats()
-	GameEvents.camera_shake_requested.emit(0.18 if base_won else 0.26, 0.28)
+	if base_won:
+		GameEvents.camera_shake_requested.emit(0.18, 0.28)
 	GameEvents.round_countdown_changed.emit(0)
 	GameEvents.round_ended.emit(winner_name, base_won)
 	_publish_state()
@@ -301,6 +335,8 @@ func _run_countdown(token: int) -> void:
 func _launch_round() -> void:
 	state = RoundState.RUNNING
 	_round_started_msec = Time.get_ticks_msec()
+	_race_winner_name = ""
+	_next_finish_place = 1
 	if _zombie_manager != null:
 		_zombie_manager.set_round_active(true)
 		for zombie in _zombie_manager.get_living_zombies():

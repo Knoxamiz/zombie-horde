@@ -35,6 +35,8 @@ var _reaction_animation_timer: float = 0.0
 var _selected_visual_variant: Node3D
 var _zombie_tint_color: Color = Color.WHITE
 var _join_info: ParticipantJoinInfo
+var _has_finished_race: bool = false
+var _finish_place: int = 0
 var _supporter_glow_materials: Array[ShaderMaterial] = []
 var _supporter_glow_tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
 var _bits_champion_light: OmniLight3D
@@ -86,6 +88,8 @@ func configure_zombie(
 	_start_position = new_start_position
 	_rng.seed = random_seed
 	_join_info = join_info if join_info != null else ParticipantJoinInfo.for_name(new_display_name)
+	_has_finished_race = false
+	_finish_place = 0
 	health = _get_config().max_health
 	_is_current_leader = false
 	_assign_zombie_tint_color()
@@ -103,10 +107,27 @@ func is_alive() -> bool:
 func is_crawler() -> bool:
 	return mobility_state == MobilityState.CRAWLER
 
+func has_finished_race() -> bool:
+	return _has_finished_race
+
+func get_finish_place() -> int:
+	return _finish_place
+
+func mark_race_finished(finish_place: int) -> void:
+	if _has_finished_race or not is_alive():
+		return
+
+	_has_finished_race = true
+	_finish_place = maxi(finish_place, 1)
+	velocity = Vector3.ZERO
+
 func get_race_forward_direction() -> Vector3:
 	return _get_race_forward()
 
 func get_progress() -> float:
+	if _has_finished_race:
+		return 1.0
+
 	var path: Vector3 = goal_position - _start_position
 	path.y = 0.0
 	var path_length: float = path.length()
@@ -185,7 +206,7 @@ func _physics_process(delta: float) -> void:
 	elif vertical_velocity < 0.0:
 		vertical_velocity = -0.1
 
-	if not _round_active:
+	if not _round_active or _has_finished_race:
 		velocity = Vector3(
 			move_toward(velocity.x, 0.0, active_config.launch_damping * delta),
 			vertical_velocity,

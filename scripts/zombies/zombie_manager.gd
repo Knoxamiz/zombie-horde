@@ -84,6 +84,15 @@ func get_living_count() -> int:
 	_remove_invalid_living()
 	return _living_zombies.size()
 
+
+func get_racing_count() -> int:
+	_remove_invalid_living()
+	var count: int = 0
+	for zombie in _living_zombies:
+		if not zombie.has_finished_race():
+			count += 1
+	return count
+
 func get_total_count() -> int:
 	_remove_invalid_all()
 	return _all_zombies.size()
@@ -106,14 +115,13 @@ func get_living_zombies_in_range(origin: Vector3, radius: float) -> Array[Zombie
 
 func get_leader_zombie() -> Zombie:
 	_remove_invalid_living()
-	if _living_zombies.is_empty():
-		return null
-
-	var leader: Zombie = _living_zombies[0]
-	var leader_progress: float = leader.get_progress()
+	var leader: Zombie = null
+	var leader_progress: float = -1.0
 	for zombie in _living_zombies:
+		if zombie.has_finished_race():
+			continue
 		var progress: float = zombie.get_progress()
-		if progress > leader_progress:
+		if leader == null or progress > leader_progress:
 			leader = zombie
 			leader_progress = progress
 	return leader
@@ -214,10 +222,19 @@ func _build_result_entry(zombie: Zombie) -> Dictionary:
 		"display_name": zombie.display_name,
 		"progress": zombie.get_progress(),
 		"alive": zombie.is_alive(),
+		"finish_place": zombie.get_finish_place(),
 		"tier": tier,
 		"tier_label": tier_label,
 	}
 
 
 func _sort_result_by_progress(a: Dictionary, b: Dictionary) -> bool:
+	var a_place: int = int(a.get("finish_place", 0))
+	var b_place: int = int(b.get("finish_place", 0))
+	if a_place > 0 and b_place > 0:
+		return a_place < b_place
+	if a_place > 0:
+		return true
+	if b_place > 0:
+		return false
 	return float(a.get("progress", 0.0)) > float(b.get("progress", 0.0))
