@@ -1,10 +1,11 @@
 class_name ZombieTierShowcaseCard
 extends VBoxContainer
 
+const PREVIEW_MODEL_SCALE := 1.55
 const PREVIEW_MODEL_TRANSFORM := Transform3D(
-	Vector3(1.62, 0.0, 0.0),
-	Vector3(0.0, 1.62, 0.0),
-	Vector3(0.0, 0.0, 1.62),
+	Vector3(PREVIEW_MODEL_SCALE, 0.0, 0.0),
+	Vector3(0.0, PREVIEW_MODEL_SCALE, 0.0),
+	Vector3(0.0, 0.0, PREVIEW_MODEL_SCALE),
 	Vector3(0.0, -0.95, 0.0)
 )
 const PREVIEW_LIGHT_TRANSFORM := Transform3D(
@@ -17,9 +18,10 @@ const PREVIEW_CAMERA_TRANSFORM := Transform3D(
 	Vector3(1.0, 0.0, 0.0),
 	Vector3(0.0, 0.965926, -0.258819),
 	Vector3(0.0, 0.258819, 0.965926),
-	Vector3(0.0, 1.05, 2.15)
+	Vector3(0.0, 1.05, 3.75)
 )
-const PREVIEW_HEIGHT := 222
+const PREVIEW_HEIGHT := 180
+const CARD_WIDTH := 160
 
 var _tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
 var _glow_materials: Array[ShaderMaterial] = []
@@ -29,16 +31,16 @@ var _bits_champion_light: OmniLight3D
 
 func setup(tier: ParticipantJoinInfo.SupporterTier, title_text: String, perk_text: String, accent_color: Color) -> void:
 	_tier = tier
-	custom_minimum_size = Vector2(132, 0)
-	size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	add_theme_constant_override("separation", 4)
+	custom_minimum_size = Vector2(CARD_WIDTH, 0)
+	size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	add_theme_constant_override("separation", 6)
 	_build_slot(title_text, perk_text, accent_color)
 
 
 func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> void:
 	var preview_root: Control = Control.new()
 	preview_root.custom_minimum_size = Vector2(0, PREVIEW_HEIGHT)
-	preview_root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	preview_root.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	add_child(preview_root)
 
 	var viewport_container: SubViewportContainer = SubViewportContainer.new()
@@ -75,7 +77,7 @@ func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> 
 
 	var camera: Camera3D = Camera3D.new()
 	camera.transform = PREVIEW_CAMERA_TRANSFORM
-	camera.fov = 38.0
+	camera.fov = 42.0
 	camera.current = true
 	viewport.add_child(camera)
 

@@ -34,14 +34,10 @@ func _ready() -> void:
 
 
 func _build_showcase() -> void:
-	add_theme_constant_override("separation", 8)
-	alignment = BoxContainer.ALIGNMENT_END
+	add_theme_constant_override("separation", 28)
+	alignment = BoxContainer.ALIGNMENT_CENTER
 
-	for index in range(SHOWCASE_ENTRIES.size()):
-		if index > 0:
-			add_child(_make_divider())
-
-		var entry: Dictionary = SHOWCASE_ENTRIES[index]
+	for entry in SHOWCASE_ENTRIES:
 		var card: ZombieTierShowcaseCard = ZombieTierShowcaseCard.new()
 		card.setup(
 			entry["tier"],
@@ -50,10 +46,3 @@ func _build_showcase() -> void:
 			entry["accent"]
 		)
 		add_child(card)
-
-
-func _make_divider() -> Control:
-	var divider: ColorRect = ColorRect.new()
-	divider.custom_minimum_size = Vector2(2, 222)
-	divider.color = Color(1.0, 0.55, 0.1, 0.75)
-	return divider
