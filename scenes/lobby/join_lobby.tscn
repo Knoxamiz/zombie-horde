@@ -91,8 +91,8 @@ friction = 0.14
 [node name="JoinLobby" type="Node3D"]
 script = ExtResource("1_script")
 lobby_zombie_scene = ExtResource("2_lobby_zombie")
-spawn_area_size = Vector3(9.8, 0, 6.2)
-drop_height = 5.85
+spawn_area_size = Vector3(8.4, 0, 5.4)
+drop_height = 7.6
 
 [node name="VoidStage" type="Node3D" parent="."]
 

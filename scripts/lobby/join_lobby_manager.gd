@@ -4,7 +4,7 @@ extends Node3D
 @export var lobby_zombie_scene: PackedScene
 @export var round_manager_path: NodePath
 @export var spawn_area_size: Vector3 = Vector3(5.4, 0.0, 4.0)
-@export var drop_height: float = 5.85
+@export var 	drop_height: float = 7.6
 @export_range(1, 160, 1) var max_displayed_zombies: int = 96
 
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()

@@ -18,6 +18,7 @@ var _join_info: ParticipantJoinInfo
 var _supporter_glow_materials: Array[StandardMaterial3D] = []
 var _supporter_glow_tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
 var _supporter_upgrade_state: SupporterUpgradeState
+var _awaiting_cage_drop: bool = true
 var _gift_spotlight_played: bool = false
 var _base_visual_scale: Vector3 = Vector3.ONE
 var _glow_pulse_time: float = 0.0
@@ -38,7 +39,6 @@ func _ready() -> void:
 	_apply_zombie_visuals()
 	_animation_player = _find_animation_player(self)
 	_play_idle_animation()
-	call_deferred("_kick")
 
 func configure_lobby_zombie(new_display_name: String, random_seed: int, join_info: ParticipantJoinInfo = null) -> void:
 	display_name = new_display_name
@@ -46,12 +46,13 @@ func configure_lobby_zombie(new_display_name: String, random_seed: int, join_inf
 	_rng.seed = random_seed
 	_landings = 0
 	_was_falling = true
+	_awaiting_cage_drop = true
 	_gift_spotlight_played = false
 	if _visual_root != null:
 		_visual_root.scale = _base_visual_scale
 	_refresh_name_label()
 	_apply_zombie_visuals()
-	call_deferred("_kick")
+	call_deferred("_drop_into_cage")
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	var velocity: Vector3 = state.get_linear_velocity()
@@ -67,6 +68,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	_landings += 1
 
 	if _landings == 1:
+		_awaiting_cage_drop = false
 		_trigger_drop_upgrade_effects()
 
 	if _landings == 1:
@@ -79,6 +81,9 @@ func _physics_process(delta: float) -> void:
 	_update_supporter_upgrade_pulse(delta)
 
 	_motion_timer -= delta
+	if _awaiting_cage_drop:
+		return
+
 	if _motion_timer > 0.0:
 		return
 
@@ -86,6 +91,19 @@ func _physics_process(delta: float) -> void:
 	if linear_velocity.length_squared() < settle_velocity_threshold:
 		apply_central_impulse(_get_random_impulse(impulse_strength * 0.55))
 		angular_velocity += _get_random_spin(spin_strength * 0.5)
+
+func _drop_into_cage() -> void:
+	if not is_inside_tree():
+		return
+
+	sleeping = false
+	linear_velocity = Vector3(
+		_rng.randf_range(-0.2, 0.2),
+		-0.35,
+		_rng.randf_range(-0.2, 0.2)
+	)
+	angular_velocity = _get_random_spin(spin_strength * 0.4)
+	_was_falling = true
 
 func _kick() -> void:
 	if not is_inside_tree():
@@ -122,10 +140,7 @@ func _apply_zombie_visuals() -> void:
 	if _visual_root == null:
 		return
 
-	ZombieCharacterVisuals.apply_color_tint(
-		_visual_root,
-		ZombieCharacterVisuals.get_body_color_for_join_info(_join_info)
-	)
+	ZombieCharacterVisuals.apply_color_tint_for_join_info(_visual_root, _join_info)
 	_supporter_glow_materials.clear()
 	_supporter_glow_tier = ParticipantJoinInfo.SupporterTier.NONE
 	if _join_info != null and _join_info.has_supporter_glow():
@@ -164,8 +179,8 @@ func _play_gift_spotlight() -> void:
 	var spotlight: OmniLight3D = OmniLight3D.new()
 	spotlight.name = "GiftSpotlight"
 	spotlight.light_color = ZombieCharacterVisuals.COLOR_SUBSCRIBER
-	spotlight.light_energy = 2.6
-	spotlight.omni_range = 2.5
+	spotlight.light_energy = 4.2
+	spotlight.omni_range = 3.4
 	spotlight.position = Vector3(0.0, 0.45, 0.0)
 	add_child(spotlight)
 
@@ -177,7 +192,7 @@ func _play_bits_drop_scale() -> void:
 	if _visual_root == null:
 		return
 
-	var boosted_scale: Vector3 = _base_visual_scale * 1.14
+	var boosted_scale: Vector3 = _base_visual_scale * 1.2
 	var tween: Tween = create_tween()
 	tween.tween_property(_visual_root, "scale", boosted_scale, 0.12)
 	tween.tween_property(_visual_root, "scale", _base_visual_scale, 0.28)

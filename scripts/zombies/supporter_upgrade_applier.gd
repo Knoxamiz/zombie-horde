@@ -50,17 +50,17 @@ static func update_pulse(state: SupporterUpgradeState, delta: float) -> void:
 		return
 
 	state.pulse_time += delta
-	var pulse: float = 0.72 + 0.28 * sin(state.pulse_time * 5.2)
+	var pulse: float = 0.65 + 0.35 * sin(state.pulse_time * 5.4)
 	for material in state.pulse_materials:
 		if material == null:
 			continue
-		material.emission_energy_multiplier = 1.1 * pulse
+		material.emission_energy_multiplier = 1.45 * pulse
 
 
 static func _add_sub_horns(head_attach: Node3D, state: SupporterUpgradeState) -> void:
 	var horn_material: StandardMaterial3D = _make_emissive_material(
 		ZombieCharacterVisuals.COLOR_SUBSCRIBER,
-		0.35
+		0.85
 	)
 	_add_horn(head_attach, horn_material, Vector3(-0.11, 0.04, 0.0), 18.0)
 	_add_horn(head_attach, horn_material, Vector3(0.11, 0.04, 0.0), -18.0)
@@ -88,8 +88,8 @@ static func _add_horn(
 
 static func _add_gift_bandana(head_attach: Node3D, state: SupporterUpgradeState) -> void:
 	var bandana_material: StandardMaterial3D = _make_emissive_material(
-		ZombieCharacterVisuals.COLOR_SUBSCRIBER.darkened(0.12),
-		0.42
+		ZombieCharacterVisuals.COLOR_SUBSCRIBER.darkened(0.08),
+		0.95
 	)
 	var bandana_mesh: BoxMesh = BoxMesh.new()
 	bandana_mesh.size = Vector3(0.4, 0.07, 0.24)
@@ -115,7 +115,7 @@ static func _add_gift_bandana(head_attach: Node3D, state: SupporterUpgradeState)
 static func _add_bits_crown(head_attach: Node3D, bits_amount: int, state: SupporterUpgradeState) -> void:
 	var crown_material: StandardMaterial3D = _make_emissive_material(
 		ZombieCharacterVisuals.COLOR_BITS_CHEER,
-		0.55
+		1.15
 	)
 	var spike_count: int = 5
 	if bits_amount >= 500:
@@ -147,7 +147,7 @@ static func _add_bits_crown(head_attach: Node3D, bits_amount: int, state: Suppor
 
 	var sparkles: CPUParticles3D = CPUParticles3D.new()
 	sparkles.name = "BitsSparkles"
-	sparkles.amount = 18
+	sparkles.amount = 28
 	sparkles.lifetime = 0.7
 	sparkles.explosiveness = 0.15
 	sparkles.randomness = 0.45
@@ -170,8 +170,8 @@ static func _make_emissive_material(base_color: Color, emission_energy: float) -
 	material.resource_local_to_scene = true
 	material.albedo_color = base_color
 	material.emission_enabled = true
-	material.emission = base_color.lerp(Color.WHITE, 0.18)
+	material.emission = base_color.lerp(Color.WHITE, 0.28)
 	material.emission_energy_multiplier = emission_energy
-	material.metallic = 0.35
-	material.roughness = 0.38
+	material.metallic = 0.42
+	material.roughness = 0.3
 	return material

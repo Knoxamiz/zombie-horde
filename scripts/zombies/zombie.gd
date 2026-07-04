@@ -527,11 +527,11 @@ func _apply_zombie_color_tint() -> void:
 		_apply_supporter_glow()
 		return
 
-	var body_color: Color = ZombieCharacterVisuals.get_body_color_for_join_info(
+	ZombieCharacterVisuals.apply_color_tint_for_join_info(
+		_selected_visual_variant,
 		_join_info,
 		mobility_state == MobilityState.CRAWLER
 	)
-	ZombieCharacterVisuals.apply_color_tint(_selected_visual_variant, body_color)
 	_apply_supporter_glow()
 
 func _apply_supporter_glow() -> void:
