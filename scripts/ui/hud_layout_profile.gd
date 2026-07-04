@@ -1,3 +1,4 @@
+class_name HudLayoutProfile
 extends RefCounted
 
 const SAVE_PATH := "user://hud_layout.cfg"
@@ -175,4 +176,9 @@ static func set_absolute_rect(panel: Control, rect: Rect2) -> void:
 	panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 
 static func get_absolute_rect(panel: Control) -> Rect2:
-	return Rect2(panel.position, panel.size)
+	return Rect2(
+		panel.offset_left,
+		panel.offset_top,
+		panel.offset_right - panel.offset_left,
+		panel.offset_bottom - panel.offset_top
+	)

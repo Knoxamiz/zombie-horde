@@ -74,7 +74,7 @@ var _hud_visible_before_layout_edit: bool = false
 @onready var _leader_label: Label = get_node("Root/TopPanel/Margin/VBox/LeaderLabel") as Label
 @onready var _winner_label: Label = get_node("Root/TopPanel/Margin/VBox/WinnerLabel") as Label
 @onready var _chat_status_label: Label = get_node("Root/TopPanel/Margin/VBox/ChatStatusLabel") as Label
-@onready var _command_label: Label = get_node("Root/CommandPanel/Margin/CommandLabel") as Label
+@onready var _command_label: Label = get_node("Root/CommandPanel/Margin/VBox/CommandLabel") as Label
 @onready var _queue_label: Label = get_node("Root/RosterPanel/Margin/VBox/QueueLabel") as Label
 @onready var _roster_label: Label = get_node("Root/RosterPanel/Margin/VBox/RosterLabel") as Label
 @onready var _standings_header_label: Label = (
@@ -82,7 +82,7 @@ var _hud_visible_before_layout_edit: bool = false
 )
 @onready var _leaderboard_label: Label = get_node("Root/LeaderboardPanel/Margin/VBox/LeaderboardLabel") as Label
 @onready var _countdown_panel: PanelContainer = get_node("Root/CountdownPanel") as PanelContainer
-@onready var _countdown_label: Label = get_node("Root/CountdownPanel/Margin/CountdownLabel") as Label
+@onready var _countdown_label: Label = get_node("Root/CountdownPanel/Margin/VBox/CountdownLabel") as Label
 @onready var _results_overlay: RoundResultsOverlay = get_node("Root/RoundResultsOverlay") as RoundResultsOverlay
 @onready var _start_button: Button = get_node("Root/ControlPanel/Margin/HBox/StartButton") as Button
 @onready var _reset_button: Button = get_node("Root/ControlPanel/Margin/HBox/ResetButton") as Button
@@ -164,11 +164,11 @@ func _apply_saved_layout() -> void:
 	_layout_profile = HUD_LAYOUT_PROFILE.load_from_disk()
 	_layout_profile.apply_to(self)
 
-func get_layout_panel(panel_id: String) -> Control:
+func get_layout_panel(panel_id: String) -> HudLayoutPanel:
 	var path: String = str(PANEL_PATHS.get(panel_id, ""))
 	if path.is_empty():
 		return null
-	return get_node_or_null(path) as Control
+	return get_node_or_null(path) as HudLayoutPanel
 
 func begin_layout_edit() -> void:
 	_layout_edit_snapshot = HUD_LAYOUT_PROFILE.capture_from(self)
