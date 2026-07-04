@@ -1,5 +1,5 @@
 class_name HudLayoutPanel
-extends PanelContainer
+extends Control
 
 signal edit_interaction_started(panel_id: String, mode: String, corner: String)
 signal edit_hide_requested(panel_id: String)
@@ -20,8 +20,10 @@ var _header_drag_wired: bool = false
 
 
 func _ready() -> void:
-	clip_contents = false
+	clip_contents = true
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	resized.connect(_on_resized)
+	_ensure_scene_children_fill()
 	_build_edit_chrome()
 
 
@@ -34,29 +36,34 @@ func set_edit_active(active: bool) -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS if active else Control.MOUSE_FILTER_IGNORE
 	z_index = 10 if active else 0
 	_wire_header_drag()
-	_update_handle_positions()
+	call_deferred("_update_handle_positions")
 
 
 func get_layout_rect() -> Rect2:
-	return Rect2(
-		offset_left,
-		offset_top,
-		offset_right - offset_left,
-		offset_bottom - offset_top
-	)
+	return HudLayoutProfile.get_absolute_rect(self)
 
 
 func set_layout_rect(rect: Rect2) -> void:
 	HudLayoutProfile.set_absolute_rect(self, rect)
-	custom_minimum_size = Vector2(
-		maxf(rect.size.x, MIN_PANEL_SIZE.x),
-		maxf(rect.size.y, MIN_PANEL_SIZE.y)
-	)
 	call_deferred("_update_handle_positions")
 
 
 func flatten_to_absolute() -> void:
 	HudLayoutProfile.flatten_panel_to_absolute(self)
+
+
+func _ensure_scene_children_fill() -> void:
+	for child in get_children():
+		if child == _edit_root or child.name == "EditChrome":
+			continue
+		if child is Control:
+			var control := child as Control
+			control.set_anchors_preset(Control.PRESET_FULL_RECT)
+			control.offset_left = 0.0
+			control.offset_top = 0.0
+			control.offset_right = 0.0
+			control.offset_bottom = 0.0
+			control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func _build_edit_chrome() -> void:
@@ -93,7 +100,7 @@ func _build_edit_chrome() -> void:
 		_edit_root.add_child(handle)
 		_handles[corner] = handle
 
-	_update_handle_positions()
+	call_deferred("_update_handle_positions")
 
 
 func _wire_header_drag() -> void:
@@ -165,11 +172,11 @@ func _update_handle_positions() -> void:
 	if _edit_root == null:
 		return
 
-	var panel_size: Vector2 = size
+	var panel_size: Vector2 = get_layout_rect().size
 	var inset: float = 2.0
 
 	if _hide_button != null:
-		_hide_button.position = Vector2(panel_size.x - 60.0, inset)
+		_hide_button.position = Vector2(maxf(panel_size.x - 60.0, inset), inset)
 		_hide_button.size = Vector2(52.0, 28.0)
 
 	if _handles.has("tl"):

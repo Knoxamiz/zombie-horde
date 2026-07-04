@@ -81,7 +81,7 @@ var _hud_visible_before_layout_edit: bool = false
 	get_node("Root/LeaderboardPanel/Margin/VBox/HeaderBar/HeaderLabel") as Label
 )
 @onready var _leaderboard_label: Label = get_node("Root/LeaderboardPanel/Margin/VBox/LeaderboardLabel") as Label
-@onready var _countdown_panel: PanelContainer = get_node("Root/CountdownPanel") as PanelContainer
+@onready var _countdown_panel: HudLayoutPanel = get_node("Root/CountdownPanel") as HudLayoutPanel
 @onready var _countdown_label: Label = get_node("Root/CountdownPanel/Margin/VBox/CountdownLabel") as Label
 @onready var _results_overlay: RoundResultsOverlay = get_node("Root/RoundResultsOverlay") as RoundResultsOverlay
 @onready var _start_button: Button = get_node("Root/ControlPanel/Margin/HBox/StartButton") as Button
@@ -161,8 +161,17 @@ func _setup_layout_editor() -> void:
 	_layout_editor.finished.connect(_on_layout_edit_finished)
 
 func _apply_saved_layout() -> void:
-	_layout_profile = HUD_LAYOUT_PROFILE.load_from_disk()
+	var viewport_size: Vector2 = _get_layout_viewport_size()
+	_layout_profile = HUD_LAYOUT_PROFILE.load_from_disk(viewport_size)
+	if not _layout_profile.is_valid_for_viewport(viewport_size):
+		_layout_profile = HUD_LAYOUT_PROFILE.create_default_profile(viewport_size)
 	_layout_profile.apply_to(self)
+
+
+func _get_layout_viewport_size() -> Vector2:
+	if _root != null:
+		return _root.get_rect().size
+	return get_viewport().get_visible_rect().size
 
 func get_layout_panel(panel_id: String) -> HudLayoutPanel:
 	var path: String = str(PANEL_PATHS.get(panel_id, ""))
@@ -171,6 +180,11 @@ func get_layout_panel(panel_id: String) -> HudLayoutPanel:
 	return get_node_or_null(path) as HudLayoutPanel
 
 func begin_layout_edit() -> void:
+	var viewport_size: Vector2 = _get_layout_viewport_size()
+	_layout_profile = HUD_LAYOUT_PROFILE.load_from_disk(viewport_size)
+	if not _layout_profile.is_valid_for_viewport(viewport_size):
+		_layout_profile = HUD_LAYOUT_PROFILE.create_default_profile(viewport_size)
+		_layout_profile.apply_to(self)
 	_layout_edit_snapshot = HUD_LAYOUT_PROFILE.capture_from(self)
 	_layout_edit_active = true
 	_hud_visible_before_layout_edit = visible
@@ -194,7 +208,7 @@ func _begin_layout_editor_deferred() -> void:
 
 func _ensure_layout_panels_visible_for_edit() -> void:
 	for panel_id in PANEL_PATHS.keys():
-		var panel: Control = get_layout_panel(panel_id)
+		var panel: HudLayoutPanel = get_layout_panel(panel_id)
 		if panel == null:
 			continue
 		if panel_id == "countdown":
@@ -235,7 +249,8 @@ func _restore_pre_round_ui_after_layout_edit() -> void:
 	_pre_round_hidden_for_layout_edit = false
 
 func reset_layout_to_defaults() -> void:
-	_layout_profile = HUD_LAYOUT_PROFILE.create_default_profile()
+	HUD_LAYOUT_PROFILE.clear_saved_layout()
+	_layout_profile = HUD_LAYOUT_PROFILE.create_default_profile(_get_layout_viewport_size())
 	_layout_profile.apply_to(self)
 
 func is_layout_edit_active() -> bool:

@@ -243,6 +243,7 @@ func _end_drag() -> void:
 
 func _on_reset_pressed() -> void:
 	if _hud_controller != null:
+		HUD_LAYOUT_PROFILE.clear_saved_layout()
 		_hud_controller.reset_layout_to_defaults()
 		if _hud_controller.has_method("_ensure_layout_panels_visible_for_edit"):
 			_hud_controller.call("_ensure_layout_panels_visible_for_edit")

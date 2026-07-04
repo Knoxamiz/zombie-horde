@@ -94,19 +94,34 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.004, 0.008, 0.005, 0.42)
 
-[node name="TopPanel" type="PanelContainer" parent="Root"]
-custom_minimum_size = Vector2(420, 208)
+[node name="TopPanel" type="Control" parent="Root"]
 layout_mode = 0
 offset_left = 40.0
 offset_top = 40.0
 offset_right = 460.0
 offset_bottom = 248.0
-theme_override_styles/panel = SubResource("StyleBox_lobby_glow")
+clip_contents = true
 script = ExtResource("4_layout_panel")
 panel_id = "top"
 
+[node name="Background" type="PanelContainer" parent="Root/TopPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_lobby_glow")
+
 [node name="Margin" type="MarginContainer" parent="Root/TopPanel"]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 22
 theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 22
@@ -118,6 +133,7 @@ theme_override_constants/separation = 8
 
 [node name="HeaderBar" type="PanelContainer" parent="Root/TopPanel/Margin/VBox"]
 layout_mode = 2
+size_flags_vertical = 0
 theme_override_styles/panel = SubResource("StyleBox_board_header")
 
 [node name="HeaderLabel" type="Label" parent="Root/TopPanel/Margin/VBox/HeaderBar"]
@@ -155,19 +171,34 @@ theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
 theme_override_font_sizes/font_size = 16
 text = "Chat: Debug only"
 
-[node name="RosterPanel" type="PanelContainer" parent="Root"]
-custom_minimum_size = Vector2(360, 260)
+[node name="RosterPanel" type="Control" parent="Root"]
 layout_mode = 0
 offset_left = 1200.0
 offset_top = 40.0
 offset_right = 1560.0
 offset_bottom = 300.0
-theme_override_styles/panel = SubResource("StyleBox_scores_glow")
+clip_contents = true
 script = ExtResource("4_layout_panel")
 panel_id = "roster"
 
+[node name="Background" type="PanelContainer" parent="Root/RosterPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_scores_glow")
+
 [node name="Margin" type="MarginContainer" parent="Root/RosterPanel"]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 20
@@ -179,6 +210,7 @@ theme_override_constants/separation = 12
 
 [node name="HeaderBar" type="PanelContainer" parent="Root/RosterPanel/Margin/VBox"]
 layout_mode = 2
+size_flags_vertical = 0
 theme_override_styles/panel = SubResource("StyleBox_board_header")
 
 [node name="HeaderLabel" type="Label" parent="Root/RosterPanel/Margin/VBox/HeaderBar"]
@@ -205,19 +237,34 @@ text = "Kills:
 -"
 autowrap_mode = 2
 
-[node name="LeaderboardPanel" type="PanelContainer" parent="Root"]
-custom_minimum_size = Vector2(330, 420)
+[node name="LeaderboardPanel" type="Control" parent="Root"]
 layout_mode = 0
 offset_left = 1230.0
 offset_top = 330.0
 offset_right = 1560.0
 offset_bottom = 750.0
-theme_override_styles/panel = SubResource("StyleBox_scores_glow")
+clip_contents = true
 script = ExtResource("4_layout_panel")
 panel_id = "leaderboard"
 
+[node name="Background" type="PanelContainer" parent="Root/LeaderboardPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_scores_glow")
+
 [node name="Margin" type="MarginContainer" parent="Root/LeaderboardPanel"]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 20
@@ -229,6 +276,7 @@ theme_override_constants/separation = 14
 
 [node name="HeaderBar" type="PanelContainer" parent="Root/LeaderboardPanel/Margin/VBox"]
 layout_mode = 2
+size_flags_vertical = 0
 theme_override_styles/panel = SubResource("StyleBox_board_header")
 
 [node name="HeaderLabel" type="Label" parent="Root/LeaderboardPanel/Margin/VBox/HeaderBar"]
@@ -248,19 +296,34 @@ text = "—"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="CommandPanel" type="PanelContainer" parent="Root"]
-custom_minimum_size = Vector2(420, 56)
+[node name="CommandPanel" type="Control" parent="Root"]
 layout_mode = 0
 offset_left = 40.0
 offset_top = 804.0
 offset_right = 460.0
 offset_bottom = 860.0
-theme_override_styles/panel = SubResource("StyleBox_lobby_glow")
+clip_contents = true
 script = ExtResource("4_layout_panel")
 panel_id = "command"
 
+[node name="Background" type="PanelContainer" parent="Root/CommandPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_lobby_glow")
+
 [node name="Margin" type="MarginContainer" parent="Root/CommandPanel"]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 20
@@ -272,6 +335,7 @@ theme_override_constants/separation = 10
 
 [node name="HeaderBar" type="PanelContainer" parent="Root/CommandPanel/Margin/VBox"]
 layout_mode = 2
+size_flags_vertical = 0
 theme_override_styles/panel = SubResource("StyleBox_board_header")
 
 [node name="HeaderLabel" type="Label" parent="Root/CommandPanel/Margin/VBox/HeaderBar"]
@@ -290,19 +354,34 @@ text = "Type !brains to join."
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="CountdownPanel" type="PanelContainer" parent="Root"]
-custom_minimum_size = Vector2(220, 220)
+[node name="CountdownPanel" type="Control" parent="Root"]
 layout_mode = 0
 offset_left = 690.0
 offset_top = 340.0
 offset_right = 910.0
 offset_bottom = 560.0
-theme_override_styles/panel = SubResource("StyleBox_countdown_glow")
+clip_contents = true
 script = ExtResource("4_layout_panel")
 panel_id = "countdown"
 
+[node name="Background" type="PanelContainer" parent="Root/CountdownPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_countdown_glow")
+
 [node name="Margin" type="MarginContainer" parent="Root/CountdownPanel"]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 18
@@ -314,6 +393,7 @@ theme_override_constants/separation = 8
 
 [node name="HeaderBar" type="PanelContainer" parent="Root/CountdownPanel/Margin/VBox"]
 layout_mode = 2
+size_flags_vertical = 0
 theme_override_styles/panel = SubResource("StyleBox_board_header")
 
 [node name="HeaderLabel" type="Label" parent="Root/CountdownPanel/Margin/VBox/HeaderBar"]
