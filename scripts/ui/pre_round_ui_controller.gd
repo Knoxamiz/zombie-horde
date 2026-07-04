@@ -5,19 +5,14 @@ signal ready_requested()
 signal options_requested()
 signal main_menu_requested()
 
+const MAX_JOIN_FEED_LINES: int = 12
+
 @export var round_manager_path: NodePath
 @export var join_source_path: NodePath
 @export var debug_join_source_path: NodePath
 @export var twitch_join_source_path: NodePath
 @export var leaderboard_store_path: NodePath
 @export var feature_config: FeatureAccessConfig
-@export var world_lobby_board_path: NodePath
-@export var world_scores_board_path: NodePath
-@export var world_ready_button_path: NodePath
-@export var world_reset_button_path: NodePath
-@export var world_join_button_path: NodePath
-@export var world_main_menu_button_path: NodePath
-@export var world_boards_root_path: NodePath
 
 var _round_manager: RoundManager
 var _join_source: JoinSource
@@ -25,15 +20,9 @@ var _debug_join_source: DebugJoinSource
 var _twitch_join_source: TwitchJoinSource
 var _leaderboard_store: LeaderboardStore
 var _queued_names: PackedStringArray = PackedStringArray()
+var _join_feed_lines: Array[String] = []
 var _command_text: String = "Type !brains to join."
 var _state_text: String = "Joining"
-var _world_lobby_board: WorldTextBoard
-var _world_scores_board: WorldTextBoard
-var _world_ready_button: MainMenu3DButton
-var _world_reset_button: MainMenu3DButton
-var _world_join_button: MainMenu3DButton
-var _world_main_menu_button: MainMenu3DButton
-var _world_boards_root: Node3D
 
 @onready var _root: Control = get_node("Root") as Control
 @onready var _lobby_count_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyCountLabel") as Label
@@ -54,13 +43,6 @@ func _ready() -> void:
 	_debug_join_source = get_node_or_null(debug_join_source_path) as DebugJoinSource
 	_twitch_join_source = get_node_or_null(twitch_join_source_path) as TwitchJoinSource
 	_leaderboard_store = get_node_or_null(leaderboard_store_path) as LeaderboardStore
-	_world_lobby_board = get_node_or_null(world_lobby_board_path) as WorldTextBoard
-	_world_scores_board = get_node_or_null(world_scores_board_path) as WorldTextBoard
-	_world_ready_button = get_node_or_null(world_ready_button_path) as MainMenu3DButton
-	_world_reset_button = get_node_or_null(world_reset_button_path) as MainMenu3DButton
-	_world_join_button = get_node_or_null(world_join_button_path) as MainMenu3DButton
-	_world_main_menu_button = get_node_or_null(world_main_menu_button_path) as MainMenu3DButton
-	_world_boards_root = get_node_or_null(world_boards_root_path) as Node3D
 
 	_lobby_join_button.pressed.connect(_on_add_npc_pressed)
 	_ready_button.pressed.connect(_on_ready_pressed)
@@ -68,15 +50,13 @@ func _ready() -> void:
 	_options_button.pressed.connect(_on_options_pressed)
 	_main_menu_button.pressed.connect(_on_main_menu_pressed)
 	_fastest_times_button.pressed.connect(_on_fastest_times_pressed)
-	_connect_world_button(_world_ready_button)
-	_connect_world_button(_world_reset_button)
-	_connect_world_button(_world_join_button)
-	_connect_world_button(_world_main_menu_button)
 
+	GameEvents.participant_registered.connect(_on_participant_registered)
 	GameEvents.participant_queue_changed.connect(_on_participant_queue_changed)
 	GameEvents.command_text_changed.connect(_on_command_text_changed)
 	GameEvents.chat_connection_status_changed.connect(_on_chat_connection_status_changed)
 	GameEvents.round_state_changed.connect(_on_round_state_changed)
+	GameEvents.round_reset.connect(_on_round_reset)
 	if _leaderboard_store != null:
 		_leaderboard_store.leaderboard_changed.connect(_on_leaderboard_changed)
 
@@ -92,10 +72,8 @@ func set_screen_mode(mode: String) -> void:
 	visible = true
 	if _root != null:
 		_root.visible = should_show
-	_set_world_boards_visible(should_show)
 	if should_show:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-		_refresh_world_boards()
 
 func _on_ready_pressed() -> void:
 	ready_requested.emit()
@@ -124,8 +102,23 @@ func _on_fastest_times_pressed() -> void:
 	if _leaderboard_menu != null:
 		_leaderboard_menu.open_menu()
 
+func _on_participant_registered(display_name: String, _queued_count: int) -> void:
+	var clean_name: String = display_name.strip_edges()
+	if clean_name.is_empty():
+		return
+
+	_join_feed_lines.append("%s joins the horde." % clean_name)
+	while _join_feed_lines.size() > MAX_JOIN_FEED_LINES:
+		_join_feed_lines.remove_at(0)
+	_refresh_labels()
+
 func _on_participant_queue_changed(display_names: PackedStringArray) -> void:
 	_queued_names = display_names
+	_refresh_labels()
+
+func _on_round_reset() -> void:
+	_join_feed_lines.clear()
+	_queued_names = PackedStringArray()
 	_refresh_labels()
 
 func _on_command_text_changed(text: String) -> void:
@@ -147,71 +140,21 @@ func _on_leaderboard_changed(_entries: Array) -> void:
 	_refresh_scoreboards()
 
 func _refresh_labels() -> void:
-	var queue_summary: String = _format_queue_summary()
 	var command_text: String = _command_text
 	if command_text.is_empty():
 		command_text = "Type !brains to join."
 
 	if _lobby_count_label != null:
-		_lobby_count_label.text = queue_summary
+		_lobby_count_label.text = _format_queue_summary()
 	if _lobby_names_label != null:
-		_lobby_names_label.text = _format_lobby_names()
+		_lobby_names_label.text = _format_join_feed()
 	if _lobby_chat_label != null:
 		_lobby_chat_label.text = command_text
 	_refresh_ready_button()
-	_refresh_world_boards()
-
-func _refresh_world_boards() -> void:
-	if _world_lobby_board != null:
-		_world_lobby_board.set_board_text("LOTTO CAGE", _format_world_lobby_body())
-	if _world_scores_board != null:
-		_world_scores_board.set_board_text("RECENT WINNERS", _format_recent_winners())
-	_refresh_world_buttons()
-
-func _format_world_lobby_body() -> String:
-	var lines: Array[String] = [_format_queue_summary()]
-	var names_text: String = _format_lobby_names()
-	if names_text != "-":
-		lines.append(names_text)
-	if not _command_text.is_empty():
-		lines.append(_command_text)
-	return _join_strings(lines, "\n")
-
-func _refresh_world_buttons() -> void:
-	var can_ready: bool = _state_text == "Joining" and not _queued_names.is_empty()
-	if _world_ready_button != null:
-		_world_ready_button.set_interactable(can_ready)
-		if _queued_names.is_empty():
-			_world_ready_button.set_button_text("READY")
-		else:
-			_world_ready_button.set_button_text("READY (%d)" % _queued_names.size())
-	if _world_main_menu_button != null:
-		_world_main_menu_button.set_interactable(_state_text == "Joining")
-
-func _set_world_boards_visible(should_show: bool) -> void:
-	if _world_boards_root != null:
-		_world_boards_root.visible = should_show
-
-func _connect_world_button(button: MainMenu3DButton) -> void:
-	if button != null and not button.pressed.is_connected(_on_world_button_pressed):
-		button.pressed.connect(_on_world_button_pressed)
-
-func _on_world_button_pressed(action_id: StringName) -> void:
-	match action_id:
-		&"ready":
-			_on_ready_pressed()
-		&"reset":
-			_on_reset_confirmed()
-		&"add_join":
-			_on_add_npc_pressed()
-		&"main_menu":
-			_on_main_menu_pressed()
 
 func _refresh_scoreboards() -> void:
 	if _recent_winners_label != null:
 		_recent_winners_label.text = _format_recent_winners()
-	if _world_scores_board != null:
-		_world_scores_board.set_board_text("RECENT WINNERS", _format_recent_winners())
 
 func _format_recent_winners() -> String:
 	if _leaderboard_store == null:
@@ -254,17 +197,10 @@ func _format_queue_summary() -> String:
 		return "Waiting for players — type !brains in chat"
 	return "%d player(s) in lobby" % _queued_names.size()
 
-func _format_lobby_names() -> String:
-	if _queued_names.is_empty():
+func _format_join_feed() -> String:
+	if _join_feed_lines.is_empty():
 		return "-"
-
-	var names: Array[String] = []
-	var max_names: int = mini(_queued_names.size(), 8)
-	for index in range(max_names):
-		names.append(str(_queued_names[index]))
-	if _queued_names.size() > max_names:
-		names.append("+%d more" % (_queued_names.size() - max_names))
-	return _join_strings(names, ", ")
+	return _join_strings(_join_feed_lines, "\n")
 
 func _refresh_ready_button() -> void:
 	if _ready_button == null:

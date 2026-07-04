@@ -619,13 +619,6 @@ debug_join_source_path = NodePath("../Systems/DebugJoinSource")
 twitch_join_source_path = NodePath("../Systems/TwitchJoinSource")
 leaderboard_store_path = NodePath("../Systems/LeaderboardStore")
 feature_config = ExtResource("42_feature_config")
-world_lobby_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/LobbyInfoBoard")
-world_scores_board_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/CageTimesBoard")
-world_ready_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/LobbyReadyButton3D")
-world_reset_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/LobbyResetButton3D")
-world_join_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/LobbyJoinButton3D")
-world_main_menu_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards/LobbyBackButton3D")
-world_boards_root_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards")
 
 [node name="TransitionLayer" type="CanvasLayer" parent="."]
 layer = 100
