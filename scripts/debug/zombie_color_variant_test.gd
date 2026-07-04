@@ -67,24 +67,21 @@ func _run_test() -> void:
 		quit(FAIL)
 		return
 
-	var body_material: StandardMaterial3D = mesh.get_active_material(0) as StandardMaterial3D
-	if body_material == null:
-		push_error("Missing body material")
+	var body_material: ShaderMaterial = mesh.get_surface_override_material(0) as ShaderMaterial
+	if body_material == null or body_material.shader != ZombieCharacterVisuals.BODY_TINT_SHADER:
+		push_error("Bits zombie should use body-only tint shader")
 		quit(FAIL)
 		return
 
-	if body_material.albedo_texture == null:
-		push_error("Bits zombie should preserve albedo texture detail")
+	var body_tint: Color = body_material.get_shader_parameter("body_tint")
+	if not body_tint.is_equal_approx(ZombieCharacterVisuals.COLOR_BITS_CHEER):
+		push_error("Bits zombie body tint should be gold")
 		quit(FAIL)
 		return
 
-	if body_material.albedo_color.g < body_material.albedo_color.b:
-		push_error("Bits zombie body tint should lean gold, not purple")
-		quit(FAIL)
-		return
-
-	if not body_material.emission_enabled:
-		push_error("Bits zombie should have purple pulse emission")
+	var glow_energy: float = float(body_material.get_shader_parameter("bits_glow_energy"))
+	if glow_energy <= 0.0:
+		push_error("Bits zombie should have active body glow energy")
 		quit(FAIL)
 		return
 
@@ -94,7 +91,7 @@ func _run_test() -> void:
 		quit(FAIL)
 		return
 
-	print("PASS: tier colors green/red/gold with cheer glow")
+	print("PASS: body-only tier tint shader with cheer glow")
 	quit(PASS)
 
 

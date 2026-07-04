@@ -60,7 +60,7 @@ func _run_test() -> void:
 		quit(FAIL)
 		return
 
-	var glow_materials: Array[StandardMaterial3D] = ZombieCharacterVisuals.apply_supporter_glow(
+	var glow_materials: Array[ShaderMaterial] = ZombieCharacterVisuals.apply_supporter_glow(
 		Node3D.new(),
 		ParticipantJoinInfo.SupporterTier.NONE
 	)

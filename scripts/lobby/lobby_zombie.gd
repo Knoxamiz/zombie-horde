@@ -15,7 +15,7 @@ var _animation_player: AnimationPlayer
 var _was_falling: bool = true
 var _landings: int = 0
 var _join_info: ParticipantJoinInfo
-var _supporter_glow_materials: Array[StandardMaterial3D] = []
+var _supporter_glow_materials: Array[ShaderMaterial] = []
 var _supporter_glow_tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
 var _supporter_upgrade_state: SupporterUpgradeState
 var _awaiting_cage_drop: bool = true

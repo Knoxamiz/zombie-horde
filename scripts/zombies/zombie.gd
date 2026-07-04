@@ -35,7 +35,7 @@ var _reaction_animation_timer: float = 0.0
 var _selected_visual_variant: Node3D
 var _zombie_tint_color: Color = Color.WHITE
 var _join_info: ParticipantJoinInfo
-var _supporter_glow_materials: Array[StandardMaterial3D] = []
+var _supporter_glow_materials: Array[ShaderMaterial] = []
 var _supporter_glow_tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
 var _supporter_upgrade_state: SupporterUpgradeState
 var _glow_pulse_time: float = 0.0
