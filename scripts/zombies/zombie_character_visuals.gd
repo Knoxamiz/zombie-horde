@@ -15,7 +15,11 @@ const TINT_STRENGTH_VIEWER: float = 0.58
 const TINT_STRENGTH_SUBSCRIBER: float = 0.72
 const TINT_STRENGTH_BITS: float = 0.68
 const TINT_EMISSION_SUBSCRIBER: float = 0.22
-const GLOW_PULSE_BASE_ENERGY: float = 1.35
+const GLOW_PULSE_BASE_ENERGY: float = 2.45
+const BITS_RIM_STRENGTH: float = 1.15
+const BITS_AURA_BASE_ENERGY: float = 2.1
+const BITS_AURA_RANGE: float = 2.8
+const BITS_CHAMPION_LIGHT_NAME: String = "BitsChampionGlow"
 
 const SKIP_TINT_ROOT_NAME: String = "SupporterUpgrades"
 
@@ -80,9 +84,43 @@ static func apply_supporter_glow(root: Node, tier: ParticipantJoinInfo.Supporter
 
 			shader_material.set_shader_parameter("bits_glow_energy", GLOW_PULSE_BASE_ENERGY)
 			shader_material.set_shader_parameter("bits_glow_color", GLOW_BITS_PULSE)
+			shader_material.set_shader_parameter("bits_rim_strength", BITS_RIM_STRENGTH)
 			glow_materials.append(shader_material)
 
 	return glow_materials
+
+
+static func attach_bits_champion_glow(parent: Node3D) -> OmniLight3D:
+	clear_bits_champion_glow(parent)
+	if parent == null:
+		return null
+
+	var light: OmniLight3D = OmniLight3D.new()
+	light.name = BITS_CHAMPION_LIGHT_NAME
+	light.light_color = GLOW_BITS_PULSE.lerp(COLOR_BITS_CHEER, 0.22)
+	light.light_energy = BITS_AURA_BASE_ENERGY
+	light.omni_range = BITS_AURA_RANGE
+	light.position = Vector3(0.0, 0.95, 0.0)
+	parent.add_child(light)
+	return light
+
+
+static func clear_bits_champion_glow(parent: Node3D) -> void:
+	if parent == null:
+		return
+
+	var existing: Node = parent.get_node_or_null(BITS_CHAMPION_LIGHT_NAME)
+	if existing != null:
+		existing.queue_free()
+
+
+static func update_bits_champion_glow(light: OmniLight3D, pulse_time: float) -> void:
+	if light == null:
+		return
+
+	var pulse: float = 0.58 + 0.42 * sin(pulse_time * 4.4)
+	light.light_energy = BITS_AURA_BASE_ENERGY * pulse + 0.55
+	light.light_color = GLOW_BITS_PULSE.lerp(COLOR_BITS_CHEER, 0.18 + 0.12 * pulse)
 
 
 static func update_supporter_glow_pulse(
@@ -93,12 +131,14 @@ static func update_supporter_glow_pulse(
 	if tier != ParticipantJoinInfo.SupporterTier.BITS_DONOR:
 		return
 
-	var pulse: float = 0.68 + 0.32 * sin(pulse_time * 5.0)
+	var pulse: float = 0.58 + 0.42 * sin(pulse_time * 4.4)
 	var energy: float = GLOW_PULSE_BASE_ENERGY * pulse
+	var rim_strength: float = BITS_RIM_STRENGTH * (0.82 + 0.18 * pulse)
 	for material in glow_materials:
 		if material == null:
 			continue
 		material.set_shader_parameter("bits_glow_energy", energy)
+		material.set_shader_parameter("bits_rim_strength", rim_strength)
 
 
 static func apply_name_label_style(label: Label3D, join_info: ParticipantJoinInfo, base_font_size: int) -> void:
@@ -175,6 +215,7 @@ static func _create_body_tint_material(
 	shader_material.set_shader_parameter("tint_strength", _get_tint_strength(tier))
 	shader_material.set_shader_parameter("bits_glow_color", GLOW_BITS_PULSE)
 	shader_material.set_shader_parameter("bits_glow_energy", 0.0)
+	shader_material.set_shader_parameter("bits_rim_strength", 0.0)
 
 	var roughness: float = 1.0
 	var metallic: float = 0.0

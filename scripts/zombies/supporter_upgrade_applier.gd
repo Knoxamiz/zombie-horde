@@ -50,11 +50,11 @@ static func update_pulse(state: SupporterUpgradeState, delta: float) -> void:
 		return
 
 	state.pulse_time += delta
-	var pulse: float = 0.65 + 0.35 * sin(state.pulse_time * 5.4)
+	var pulse: float = 0.58 + 0.42 * sin(state.pulse_time * 4.8)
 	for material in state.pulse_materials:
 		if material == null:
 			continue
-		material.emission_energy_multiplier = 1.45 * pulse
+		material.emission_energy_multiplier = 1.85 * pulse
 
 
 static func _add_sub_horns(head_attach: Node3D, state: SupporterUpgradeState) -> void:
@@ -115,7 +115,7 @@ static func _add_gift_bandana(head_attach: Node3D, state: SupporterUpgradeState)
 static func _add_bits_crown(head_attach: Node3D, bits_amount: int, state: SupporterUpgradeState) -> void:
 	var crown_material: StandardMaterial3D = _make_emissive_material(
 		ZombieCharacterVisuals.COLOR_BITS_CHEER,
-		1.15
+		1.65
 	)
 	var spike_count: int = 5
 	if bits_amount >= 500:
@@ -147,19 +147,19 @@ static func _add_bits_crown(head_attach: Node3D, bits_amount: int, state: Suppor
 
 	var sparkles: CPUParticles3D = CPUParticles3D.new()
 	sparkles.name = "BitsSparkles"
-	sparkles.amount = 28
-	sparkles.lifetime = 0.7
-	sparkles.explosiveness = 0.15
+	sparkles.amount = 36
+	sparkles.lifetime = 0.85
+	sparkles.explosiveness = 0.22
 	sparkles.randomness = 0.45
 	sparkles.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	sparkles.emission_sphere_radius = 0.16
+	sparkles.emission_sphere_radius = 0.2
 	sparkles.direction = Vector3(0.0, 1.0, 0.0)
-	sparkles.spread = 38.0
+	sparkles.spread = 42.0
 	sparkles.gravity = Vector3(0.0, -0.35, 0.0)
-	sparkles.initial_velocity_min = 0.35
-	sparkles.initial_velocity_max = 0.9
-	sparkles.scale_amount_min = 0.04
-	sparkles.scale_amount_max = 0.09
+	sparkles.initial_velocity_min = 0.45
+	sparkles.initial_velocity_max = 1.1
+	sparkles.scale_amount_min = 0.05
+	sparkles.scale_amount_max = 0.12
 	sparkles.color = ZombieCharacterVisuals.GLOW_BITS_PULSE
 	head_attach.add_child(sparkles)
 	sparkles.emitting = true

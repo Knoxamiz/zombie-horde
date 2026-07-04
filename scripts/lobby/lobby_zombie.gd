@@ -17,6 +17,7 @@ var _landings: int = 0
 var _join_info: ParticipantJoinInfo
 var _supporter_glow_materials: Array[ShaderMaterial] = []
 var _supporter_glow_tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
+var _bits_champion_light: OmniLight3D
 var _supporter_upgrade_state: SupporterUpgradeState
 var _awaiting_cage_drop: bool = true
 var _gift_spotlight_played: bool = false
@@ -143,12 +144,15 @@ func _apply_zombie_visuals() -> void:
 	ZombieCharacterVisuals.apply_color_tint_for_join_info(_visual_root, _join_info)
 	_supporter_glow_materials.clear()
 	_supporter_glow_tier = ParticipantJoinInfo.SupporterTier.NONE
+	ZombieCharacterVisuals.clear_bits_champion_glow(self)
+	_bits_champion_light = null
 	if _join_info != null and _join_info.has_supporter_glow():
 		_supporter_glow_tier = _join_info.get_supporter_tier()
 		_supporter_glow_materials = ZombieCharacterVisuals.apply_supporter_glow(
 			_visual_root,
 			_supporter_glow_tier
 		)
+		_bits_champion_light = ZombieCharacterVisuals.attach_bits_champion_glow(self)
 	_apply_supporter_upgrades()
 
 func _apply_supporter_upgrades() -> void:
@@ -198,7 +202,7 @@ func _play_bits_drop_scale() -> void:
 	tween.tween_property(_visual_root, "scale", _base_visual_scale, 0.28)
 
 func _update_supporter_glow_pulse(delta: float) -> void:
-	if _supporter_glow_materials.is_empty():
+	if _supporter_glow_materials.is_empty() and _bits_champion_light == null:
 		return
 	_glow_pulse_time += delta
 	ZombieCharacterVisuals.update_supporter_glow_pulse(
@@ -206,6 +210,7 @@ func _update_supporter_glow_pulse(delta: float) -> void:
 		_glow_pulse_time,
 		_supporter_glow_tier
 	)
+	ZombieCharacterVisuals.update_bits_champion_glow(_bits_champion_light, _glow_pulse_time)
 
 func _play_idle_animation() -> void:
 	if _animation_player == null:

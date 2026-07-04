@@ -37,6 +37,7 @@ var _zombie_tint_color: Color = Color.WHITE
 var _join_info: ParticipantJoinInfo
 var _supporter_glow_materials: Array[ShaderMaterial] = []
 var _supporter_glow_tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
+var _bits_champion_light: OmniLight3D
 var _supporter_upgrade_state: SupporterUpgradeState
 var _glow_pulse_time: float = 0.0
 var _base_name_font_size: int = 28
@@ -536,6 +537,8 @@ func _apply_zombie_color_tint() -> void:
 
 func _apply_supporter_glow() -> void:
 	_supporter_glow_materials.clear()
+	ZombieCharacterVisuals.clear_bits_champion_glow(self)
+	_bits_champion_light = null
 	if not _get_config().supporter_glow_enabled or _selected_visual_variant == null:
 		_supporter_glow_tier = ParticipantJoinInfo.SupporterTier.NONE
 		return
@@ -548,9 +551,10 @@ func _apply_supporter_glow() -> void:
 		_selected_visual_variant,
 		_supporter_glow_tier
 	)
+	_bits_champion_light = ZombieCharacterVisuals.attach_bits_champion_glow(self)
 
 func _update_supporter_glow_pulse(delta: float) -> void:
-	if _supporter_glow_materials.is_empty():
+	if _supporter_glow_materials.is_empty() and _bits_champion_light == null:
 		return
 	_glow_pulse_time += delta
 	ZombieCharacterVisuals.update_supporter_glow_pulse(
@@ -558,6 +562,7 @@ func _update_supporter_glow_pulse(delta: float) -> void:
 		_glow_pulse_time,
 		_supporter_glow_tier
 	)
+	ZombieCharacterVisuals.update_bits_champion_glow(_bits_champion_light, _glow_pulse_time)
 
 func _apply_supporter_upgrades() -> void:
 	var attach_root: Node3D = _selected_visual_variant if _selected_visual_variant != null else _visual_root
