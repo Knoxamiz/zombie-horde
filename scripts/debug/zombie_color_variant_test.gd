@@ -32,9 +32,9 @@ func _run_test() -> void:
 		return
 
 	if not ZombieCharacterVisuals.get_body_color_for_join_info(sub).is_equal_approx(
-		ZombieCharacterVisuals.COLOR_SUBSCRIBER
+		ZombieCharacterVisuals.COLOR_NON_SUB
 	):
-		push_error("Subscribers should be red")
+		push_error("Subscribers should be green")
 		quit(FAIL)
 		return
 

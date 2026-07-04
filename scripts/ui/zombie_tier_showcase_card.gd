@@ -1,7 +1,6 @@
 class_name ZombieTierShowcaseCard
 extends VBoxContainer
 
-const ZOMBIE_VISUAL_SCENE: PackedScene = preload("res://scenes/zombies/visuals/zombie_basic_visual.tscn")
 const PREVIEW_MODEL_TRANSFORM := Transform3D(
 	Vector3(0.82, 0.0, 0.0),
 	Vector3(0.0, 0.82, 0.0),
@@ -68,7 +67,8 @@ func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> 
 	world_environment.environment = environment
 	viewport.add_child(world_environment)
 
-	var zombie_visual: Node3D = ZOMBIE_VISUAL_SCENE.instantiate() as Node3D
+	var visual_scene: PackedScene = ZombieTierVisuals.get_visual_scene_for_tier(_tier)
+	var zombie_visual: Node3D = visual_scene.instantiate() as Node3D
 	zombie_visual.transform = PREVIEW_MODEL_TRANSFORM
 	viewport.add_child(zombie_visual)
 

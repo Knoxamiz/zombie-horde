@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Zombie_Ribcage.gltf" id="1_zombie_ribcage"]
+[ext_resource type="Script" path="res://scripts/core/visual_collision_sanitizer.gd" id="2_sanitizer"]
+
+[node name="ZombieRibcageVisual" type="Node3D"]
+
+[node name="VisualCollisionSanitizer" type="Node" parent="."]
+script = ExtResource("2_sanitizer")
+
+[node name="Model" parent="." instance=ExtResource("1_zombie_ribcage")]

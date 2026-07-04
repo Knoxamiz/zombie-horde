@@ -5,25 +5,25 @@ const SHOWCASE_ENTRIES: Array[Dictionary] = [
 	{
 		"tier": ParticipantJoinInfo.SupporterTier.NONE,
 		"title": "Viewer",
-		"perk": "!brains",
+		"perk": "Ribcage",
 		"accent": ZombieCharacterVisuals.COLOR_NON_SUB,
 	},
 	{
 		"tier": ParticipantJoinInfo.SupporterTier.SUBSCRIBER,
 		"title": "Sub",
-		"perk": "Red + horns",
-		"accent": ZombieCharacterVisuals.COLOR_SUBSCRIBER,
+		"perk": "Green zombie",
+		"accent": ZombieCharacterVisuals.COLOR_NON_SUB,
 	},
 	{
 		"tier": ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT,
 		"title": "Gift",
-		"perk": "Red + bandana",
+		"perk": "Red + gift",
 		"accent": ZombieCharacterVisuals.COLOR_SUBSCRIBER,
 	},
 	{
 		"tier": ParticipantJoinInfo.SupporterTier.BITS_DONOR,
 		"title": "Bits",
-		"perk": "Glow + crown",
+		"perk": "Glow + bits",
 		"accent": ZombieCharacterVisuals.GLOW_BITS_PULSE,
 	},
 ]

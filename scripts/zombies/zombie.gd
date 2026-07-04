@@ -482,10 +482,21 @@ func _select_variant_from_root(root: Node3D) -> Node3D:
 	if variants.is_empty():
 		return null
 
+	var preferred_name: String = _get_preferred_variant_name()
+	for variant in variants:
+		if variant.name == preferred_name:
+			return variant
+
 	var selected_index: int = 0
 	if randomize_visual_variant:
 		selected_index = _rng.randi_range(0, variants.size() - 1)
 	return variants[selected_index]
+
+
+func _get_preferred_variant_name() -> String:
+	if _join_info != null and ZombieTierVisuals.uses_ribcage_model(_join_info.get_supporter_tier()):
+		return "ZombieRibcageModel"
+	return "ZombieBasicModel"
 
 func _activate_visual_variant_for_state() -> void:
 	_hide_variant_root(_variant_root)

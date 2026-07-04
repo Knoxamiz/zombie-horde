@@ -1,6 +1,8 @@
 class_name LobbyZombie
 extends RigidBody3D
 
+const TIER_VISUAL_SLOT_NAME := "TierVisualModel"
+
 @export var display_name: String = "Zombie"
 @export var impulse_strength: float = 2.4
 @export var upward_impulse: float = 0.15
@@ -121,7 +123,7 @@ func _get_random_impulse(strength: float) -> Vector3:
 	)
 	if direction.length_squared() <= 0.001:
 		direction = Vector3.FORWARD
-	direction = direction.normalize()
+	direction = direction.normalized()
 	return direction * strength + Vector3.UP * upward_impulse
 
 func _get_random_spin(strength: float) -> Vector3:
@@ -141,6 +143,7 @@ func _apply_zombie_visuals() -> void:
 	if _visual_root == null:
 		return
 
+	_ensure_tier_visual_model()
 	ZombieCharacterVisuals.apply_color_tint_for_join_info(_visual_root, _join_info)
 	_supporter_glow_materials.clear()
 	_supporter_glow_tier = ParticipantJoinInfo.SupporterTier.NONE
@@ -154,6 +157,24 @@ func _apply_zombie_visuals() -> void:
 		)
 		_bits_champion_light = ZombieCharacterVisuals.attach_bits_champion_glow(self)
 	_apply_supporter_upgrades()
+	_animation_player = _find_animation_player(_visual_root)
+	_play_idle_animation()
+
+
+func _ensure_tier_visual_model() -> void:
+	var desired_scene: PackedScene = ZombieTierVisuals.get_visual_scene_for_join_info(_join_info)
+	var existing: Node = _visual_root.get_node_or_null(TIER_VISUAL_SLOT_NAME)
+	if existing != null and existing.scene_file_path == desired_scene.resource_path:
+		return
+
+	if existing != null:
+		_visual_root.remove_child(existing)
+		existing.queue_free()
+
+	var visual_model: Node3D = desired_scene.instantiate() as Node3D
+	visual_model.name = TIER_VISUAL_SLOT_NAME
+	_visual_root.add_child(visual_model)
+
 
 func _apply_supporter_upgrades() -> void:
 	if _visual_root == null:

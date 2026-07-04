@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://c0xi8ko8w3cfk"]
+[gd_scene load_steps=10 format=3 uid="uid://c0xi8ko8w3cfk"]
 
 [ext_resource type="Script" uid="uid://chu2kqu1rknu" path="res://scripts/zombies/zombie.gd" id="1_script"]
 [ext_resource type="Resource" uid="uid://bougddnnf1ab1" path="res://resources/config/zombie_config.tres" id="2_config"]
@@ -6,6 +6,7 @@
 [ext_resource type="Material" path="res://assets/materials/zombie_crawler.tres" id="4_crawler"]
 [ext_resource type="Material" path="res://assets/materials/zombie_dead.tres" id="5_dead"]
 [ext_resource type="PackedScene" path="res://scenes/zombies/visuals/zombie_basic_visual.tscn" id="6_zombie_basic"]
+[ext_resource type="PackedScene" path="res://scenes/zombies/visuals/zombie_ribcage_visual.tscn" id="7_zombie_ribcage"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.36
@@ -38,6 +39,8 @@ surface_material_override/0 = ExtResource("3_living")
 transform = Transform3D(1.15, 0, 0, 0, 1.15, 0, 0, 0, 1.15, 0, -0.78, 0)
 
 [node name="ZombieBasicModel" parent="VisualRoot/VariantModels" instance=ExtResource("6_zombie_basic")]
+
+[node name="ZombieRibcageModel" parent="VisualRoot/VariantModels" instance=ExtResource("7_zombie_ribcage")]
 
 [node name="NameLabel" type="Label3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0)

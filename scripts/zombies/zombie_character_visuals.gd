@@ -33,8 +33,10 @@ static func get_body_color_for_join_info(join_info: ParticipantJoinInfo, crawler
 	match tier:
 		ParticipantJoinInfo.SupporterTier.BITS_DONOR:
 			body_color = COLOR_BITS_CHEER
-		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT, ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
+		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT:
 			body_color = COLOR_SUBSCRIBER
+		ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
+			body_color = COLOR_NON_SUB
 
 	if crawler:
 		body_color = body_color.lerp(Color(0.72, 0.52, 0.18, 1.0), 0.28)
@@ -53,6 +55,8 @@ static func apply_color_tint_for_join_info(root: Node, join_info: ParticipantJoi
 	var tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
 	if join_info != null:
 		tier = join_info.get_supporter_tier()
+	if not ZombieTierVisuals.should_apply_body_tint(tier):
+		return
 	apply_color_tint(root, get_body_color_for_join_info(join_info, crawler), tier)
 
 
@@ -154,8 +158,10 @@ static func apply_name_label_style(label: Label3D, join_info: ParticipantJoinInf
 		ParticipantJoinInfo.SupporterTier.BITS_DONOR:
 			label.font_size = maxi(int(round(float(base_font_size) * BITS_NAME_SCALE)), base_font_size + 6)
 			label.modulate = GLOW_BITS_PULSE.lerp(Color.WHITE, 0.08)
-		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT, ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
+		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT:
 			label.modulate = COLOR_SUBSCRIBER.lerp(Color.WHITE, 0.12)
+		ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
+			label.modulate = COLOR_NON_SUB.lerp(Color.WHITE, 0.1)
 		_:
 			label.modulate = COLOR_NON_SUB.lerp(Color.WHITE, 0.1)
 
@@ -164,8 +170,10 @@ static func get_label_color_for_tier(tier: ParticipantJoinInfo.SupporterTier) ->
 	match tier:
 		ParticipantJoinInfo.SupporterTier.BITS_DONOR:
 			return GLOW_BITS_PULSE.lerp(Color.WHITE, 0.08)
-		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT, ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
+		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT:
 			return COLOR_SUBSCRIBER.lerp(Color.WHITE, 0.12)
+		ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
+			return COLOR_NON_SUB.lerp(Color.WHITE, 0.1)
 	return COLOR_NON_SUB.lerp(Color.WHITE, 0.1)
 
 
@@ -225,10 +233,7 @@ static func _create_body_tint_material(
 	shader_material.set_shader_parameter("material_roughness", roughness)
 	shader_material.set_shader_parameter("material_metallic", metallic)
 
-	if (
-		tier == ParticipantJoinInfo.SupporterTier.SUBSCRIBER
-		or tier == ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT
-	):
+	if tier == ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT:
 		shader_material.set_shader_parameter("supporter_emission", tint_color)
 		shader_material.set_shader_parameter("supporter_emission_energy", TINT_EMISSION_SUBSCRIBER)
 	else:
@@ -274,8 +279,10 @@ static func _get_tint_strength(tier: ParticipantJoinInfo.SupporterTier) -> float
 	match tier:
 		ParticipantJoinInfo.SupporterTier.BITS_DONOR:
 			return TINT_STRENGTH_BITS
-		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT, ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
+		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT:
 			return TINT_STRENGTH_SUBSCRIBER
+		ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
+			return TINT_STRENGTH_VIEWER
 	return TINT_STRENGTH_VIEWER
 
 

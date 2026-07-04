@@ -38,20 +38,20 @@ func _run_test() -> void:
 		return
 
 	var sub_state: SupporterUpgradeState = SupporterUpgradeApplier.apply_upgrades(attach_root, sub_info)
-	if sub_state.upgrade_root == null or not _has_child_named(sub_state.upgrade_root, "HeadAttach"):
-		push_error("Subscriber tier should create horn attachments")
+	if sub_state.upgrade_root != null:
+		push_error("Subscriber tier should not create upgrade attachments")
 		quit(FAIL)
 		return
 
 	var gift_state: SupporterUpgradeState = SupporterUpgradeApplier.apply_upgrades(attach_root, gift_info)
-	if gift_state.upgrade_root == null or gift_state.pulse_materials.is_empty():
-		push_error("Gift tier should create bandana attachments")
+	if gift_state.upgrade_root == null or gift_state.upgrade_root.get_node_or_null("HeadAttach") == null:
+		push_error("Gift tier should create gift icon attachment")
 		quit(FAIL)
 		return
 
 	var bits_state: SupporterUpgradeState = SupporterUpgradeApplier.apply_upgrades(attach_root, bits_info)
 	if bits_state.upgrade_root == null:
-		push_error("Bits tier should create crown attachments")
+		push_error("Bits tier should create bits icon attachments")
 		quit(FAIL)
 		return
 	if bits_state.upgrade_root.get_node_or_null("HeadAttach/BitsSparkles") == null:
@@ -67,7 +67,3 @@ func _run_test() -> void:
 
 	print("PASS: supporter tier upgrades attach and clear correctly")
 	quit(PASS)
-
-
-func _has_child_named(parent: Node, child_name: String) -> bool:
-	return parent.get_node_or_null(child_name) != null
