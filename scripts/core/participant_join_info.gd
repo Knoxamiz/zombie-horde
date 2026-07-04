@@ -32,7 +32,7 @@ func get_supporter_tier() -> SupporterTier:
 
 
 func has_supporter_glow() -> bool:
-	return get_supporter_tier() != SupporterTier.NONE
+	return get_supporter_tier() == SupporterTier.BITS_DONOR
 
 
 func get_join_feed_suffix() -> String:

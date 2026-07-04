@@ -18,6 +18,7 @@ var _join_info: ParticipantJoinInfo
 var _supporter_glow_materials: Array[StandardMaterial3D] = []
 var _supporter_glow_tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
 var _glow_pulse_time: float = 0.0
+var _base_name_font_size: int = 20
 
 @onready var _name_label: Label3D = get_node_or_null("NameLabel") as Label3D
 @onready var _visual_root: Node3D = get_node_or_null("VisualRoot") as Node3D
@@ -26,6 +27,8 @@ func _ready() -> void:
 	_rng.randomize()
 	can_sleep = false
 	_join_info = ParticipantJoinInfo.for_name(display_name)
+	if _name_label != null:
+		_base_name_font_size = _name_label.font_size
 	_refresh_name_label()
 	_apply_zombie_visuals()
 	_animation_player = _find_animation_player(self)
@@ -101,10 +104,7 @@ func _refresh_name_label() -> void:
 	if _name_label == null:
 		return
 	_name_label.text = display_name
-	if _join_info != null and _join_info.has_supporter_glow():
-		_name_label.modulate = ZombieCharacterVisuals.get_label_glow_color(_join_info.get_supporter_tier())
-	else:
-		_name_label.modulate = Color(0.9, 1.0, 0.82, 1.0)
+	ZombieCharacterVisuals.apply_name_label_style(_name_label, _join_info, _base_name_font_size)
 
 func _apply_zombie_visuals() -> void:
 	if _visual_root == null:
@@ -112,7 +112,7 @@ func _apply_zombie_visuals() -> void:
 
 	ZombieCharacterVisuals.apply_color_tint(
 		_visual_root,
-		ZombieCharacterVisuals.get_color_for_identity(display_name)
+		ZombieCharacterVisuals.get_body_color_for_join_info(_join_info)
 	)
 	_supporter_glow_materials.clear()
 	if _join_info == null or not _join_info.has_supporter_glow():

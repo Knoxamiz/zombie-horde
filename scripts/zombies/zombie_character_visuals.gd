@@ -1,42 +1,36 @@
 class_name ZombieCharacterVisuals
 extends RefCounted
 
-const COLOR_PALETTE: Array[Color] = [
-	Color(0.62, 1.0, 0.48, 1.0),
-	Color(1.0, 0.92, 0.34, 1.0),
-	Color(0.82, 0.52, 1.0, 1.0),
-	Color(1.0, 0.42, 0.38, 1.0),
-	Color(0.48, 0.82, 1.0, 1.0),
-	Color(1.0, 0.62, 0.22, 1.0),
-	Color(1.0, 0.52, 0.78, 1.0),
-	Color(0.72, 0.78, 0.66, 1.0),
-	Color(0.42, 1.0, 0.82, 1.0),
-	Color(0.95, 0.48, 0.95, 1.0),
-	Color(0.88, 1.0, 0.42, 1.0),
-	Color(0.58, 0.62, 1.0, 1.0),
-]
+const COLOR_NON_SUB: Color = Color(0.52, 1.0, 0.38, 1.0)
+const COLOR_SUBSCRIBER: Color = Color(1.0, 0.22, 0.18, 1.0)
+const COLOR_BITS_CHEER: Color = Color(1.0, 0.78, 0.12, 1.0)
+const GLOW_BITS_PULSE: Color = Color(0.72, 0.22, 1.0, 1.0)
+const BITS_NAME_SCALE: float = 1.28
 
 
-static func get_color_for_identity(identity: String) -> Color:
-	var trimmed: String = identity.strip_edges()
-	if trimmed.is_empty():
-		return COLOR_PALETTE[0]
+static func get_body_color_for_join_info(join_info: ParticipantJoinInfo, crawler: bool = false) -> Color:
+	var tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
+	if join_info != null:
+		tier = join_info.get_supporter_tier()
 
-	var hash_value: int = abs(trimmed.hash())
-	var palette_index: int = hash_value % COLOR_PALETTE.size()
-	return COLOR_PALETTE[palette_index]
+	var body_color: Color = COLOR_NON_SUB
+	match tier:
+		ParticipantJoinInfo.SupporterTier.BITS_DONOR:
+			body_color = COLOR_BITS_CHEER
+		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT, ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
+			body_color = COLOR_SUBSCRIBER
+
+	if crawler:
+		body_color = body_color.lerp(Color(0.72, 0.52, 0.18, 1.0), 0.28)
+	return body_color
 
 
-static func apply_color_tint(root: Node, tint_color: Color, crawler: bool = false) -> void:
+static func apply_color_tint(root: Node, tint_color: Color) -> void:
 	if root == null:
 		return
 
-	var final_tint: Color = tint_color
-	if crawler:
-		final_tint = tint_color.lerp(Color(0.72, 0.52, 0.18, 1.0), 0.28)
-
 	for mesh_instance in find_mesh_instances(root):
-		_tint_mesh_instance(mesh_instance, final_tint)
+		_tint_mesh_instance(mesh_instance, tint_color)
 
 
 static func find_mesh_instances(root: Node) -> Array[MeshInstance3D]:
@@ -66,11 +60,11 @@ static func _tint_mesh_instance(mesh_instance: MeshInstance3D, tint_color: Color
 
 static func apply_supporter_glow(root: Node, tier: ParticipantJoinInfo.SupporterTier) -> Array[StandardMaterial3D]:
 	var glow_materials: Array[StandardMaterial3D] = []
-	if tier == ParticipantJoinInfo.SupporterTier.NONE:
+	if tier != ParticipantJoinInfo.SupporterTier.BITS_DONOR:
 		return glow_materials
 
-	var glow_color: Color = _get_glow_color(tier)
-	var base_energy: float = _get_glow_energy(tier)
+	var glow_color: Color = GLOW_BITS_PULSE
+	var base_energy: float = 1.25
 
 	for mesh_instance in find_mesh_instances(root):
 		var mesh: Mesh = mesh_instance.mesh
@@ -93,8 +87,8 @@ static func apply_supporter_glow(root: Node, tier: ParticipantJoinInfo.Supporter
 			glow_material.emission = glow_color
 			glow_material.emission_energy_multiplier = base_energy
 			glow_material.rim_enabled = true
-			glow_material.rim = 0.35
-			glow_material.rim_tint = 0.65
+			glow_material.rim = 0.42
+			glow_material.rim_tint = 0.8
 			mesh_instance.set_surface_override_material(surface_index, glow_material)
 			glow_materials.append(glow_material)
 
@@ -106,38 +100,43 @@ static func update_supporter_glow_pulse(
 	pulse_time: float,
 	tier: ParticipantJoinInfo.SupporterTier
 ) -> void:
-	var pulse: float = 0.78 + 0.22 * sin(pulse_time * 4.2)
-	var base_energy: float = _get_glow_energy(tier)
+	if tier != ParticipantJoinInfo.SupporterTier.BITS_DONOR:
+		return
+
+	var pulse: float = 0.72 + 0.28 * sin(pulse_time * 4.6)
+	var base_energy: float = 1.25
 	for material in glow_materials:
 		if material == null:
 			continue
 		material.emission_energy_multiplier = base_energy * pulse
 
 
-static func _get_glow_color(tier: ParticipantJoinInfo.SupporterTier) -> Color:
+static func apply_name_label_style(label: Label3D, join_info: ParticipantJoinInfo, base_font_size: int) -> void:
+	if label == null:
+		return
+
+	var tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
+	if join_info != null:
+		tier = join_info.get_supporter_tier()
+
+	label.font_size = base_font_size
 	match tier:
 		ParticipantJoinInfo.SupporterTier.BITS_DONOR:
-			return Color(1.0, 0.82, 0.18, 1.0)
-		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT:
-			return Color(1.0, 0.42, 0.92, 1.0)
-		ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
-			return Color(0.62, 0.32, 1.0, 1.0)
-	return Color.WHITE
+			label.font_size = maxi(int(round(float(base_font_size) * BITS_NAME_SCALE)), base_font_size + 4)
+			label.modulate = GLOW_BITS_PULSE.lerp(Color.WHITE, 0.18)
+		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT, ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
+			label.modulate = COLOR_SUBSCRIBER.lerp(Color.WHITE, 0.28)
+		_:
+			label.modulate = COLOR_NON_SUB.lerp(Color.WHITE, 0.22)
 
 
-static func _get_glow_energy(tier: ParticipantJoinInfo.SupporterTier) -> float:
+static func get_label_color_for_tier(tier: ParticipantJoinInfo.SupporterTier) -> Color:
 	match tier:
 		ParticipantJoinInfo.SupporterTier.BITS_DONOR:
-			return 1.35
-		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT:
-			return 1.15
-		ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
-			return 0.95
-	return 0.0
-
-
-static func get_label_glow_color(tier: ParticipantJoinInfo.SupporterTier) -> Color:
-	return _get_glow_color(tier).lerp(Color.WHITE, 0.35)
+			return GLOW_BITS_PULSE.lerp(Color.WHITE, 0.18)
+		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT, ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
+			return COLOR_SUBSCRIBER.lerp(Color.WHITE, 0.28)
+	return COLOR_NON_SUB.lerp(Color.WHITE, 0.22)
 
 
 static func _collect_mesh_instances(node: Node, results: Array[MeshInstance3D]) -> void:

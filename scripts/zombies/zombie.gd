@@ -38,6 +38,7 @@ var _join_info: ParticipantJoinInfo
 var _supporter_glow_materials: Array[StandardMaterial3D] = []
 var _supporter_glow_tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
 var _glow_pulse_time: float = 0.0
+var _base_name_font_size: int = 28
 var _total_zombie_count: int = 0
 var _is_current_leader: bool = false
 
@@ -54,6 +55,8 @@ func _ready() -> void:
 		_collision_shape.shape = _collision_shape.shape.duplicate()
 	_disable_visual_colliders(_visual_root)
 	_join_info = ParticipantJoinInfo.for_name(display_name)
+	if _name_label != null:
+		_base_name_font_size = _name_label.font_size
 	_assign_zombie_tint_color()
 	health = _get_config().max_health
 	_start_position = global_position
@@ -421,7 +424,6 @@ func _apply_state_visuals() -> void:
 		_visual_root.rotation_degrees = Vector3.ZERO
 		_apply_collision_profile(true)
 		_set_body_material(crawler_material)
-		_set_name_label_color(Color(1.0, 0.78, 0.26, 1.0))
 	elif mobility_state == MobilityState.DEAD:
 		_hide_dead_visuals()
 	else:
@@ -431,7 +433,8 @@ func _apply_state_visuals() -> void:
 		_visual_root.rotation_degrees = Vector3.ZERO
 		_apply_collision_profile(false)
 		_set_body_material(runner_material)
-		_set_name_label_color(Color(0.9, 1.0, 0.82, 1.0))
+	if mobility_state != MobilityState.DEAD:
+		_apply_name_label_style()
 	if mobility_state == MobilityState.DEAD:
 		_stop_animation()
 	else:
@@ -448,9 +451,10 @@ func _set_body_material(material: Material) -> void:
 	if _body_mesh != null and material != null:
 		_body_mesh.material_override = material
 
-func _set_name_label_color(color: Color) -> void:
-	if _name_label != null:
-		_name_label.modulate = color
+func _apply_name_label_style() -> void:
+	if _name_label == null:
+		return
+	ZombieCharacterVisuals.apply_name_label_style(_name_label, _join_info, _base_name_font_size)
 
 func _set_name_label_visible(visible: bool) -> void:
 	if _name_label != null:
@@ -511,20 +515,20 @@ func _hide_dead_visuals() -> void:
 
 func _assign_zombie_tint_color() -> void:
 	if _get_config().color_variants_enabled:
-		_zombie_tint_color = ZombieCharacterVisuals.get_color_for_identity(display_name)
+		_zombie_tint_color = ZombieCharacterVisuals.get_body_color_for_join_info(_join_info)
 	else:
-		_zombie_tint_color = Color.WHITE
+		_zombie_tint_color = ZombieCharacterVisuals.COLOR_NON_SUB
 
 func _apply_zombie_color_tint() -> void:
 	if not _get_config().color_variants_enabled or _selected_visual_variant == null:
 		_apply_supporter_glow()
 		return
 
-	ZombieCharacterVisuals.apply_color_tint(
-		_selected_visual_variant,
-		_zombie_tint_color,
+	var body_color: Color = ZombieCharacterVisuals.get_body_color_for_join_info(
+		_join_info,
 		mobility_state == MobilityState.CRAWLER
 	)
+	ZombieCharacterVisuals.apply_color_tint(_selected_visual_variant, body_color)
 	_apply_supporter_glow()
 
 func _apply_supporter_glow() -> void:

@@ -1,7 +1,6 @@
 extends SceneTree
 
 const ZOMBIE_SCENE := "res://scenes/zombies/zombie.tscn"
-const LOBBY_ZOMBIE_SCENE := "res://scenes/lobby/lobby_zombie.tscn"
 const ZOMBIE_CONFIG := "res://resources/config/zombie_config.tres"
 const PASS := 0
 const FAIL := 1
@@ -12,68 +11,85 @@ func _initialize() -> void:
 
 
 func _run_test() -> void:
-	print("=== Zombie color variant test ===")
+	print("=== Zombie tier color test ===")
 	var config: ZombieConfig = load(ZOMBIE_CONFIG) as ZombieConfig
 	if config == null:
 		push_error("Could not load zombie config")
 		quit(FAIL)
 		return
 
-	var color_a: Color = ZombieCharacterVisuals.get_color_for_identity("ViewerAlpha")
-	var color_b: Color = ZombieCharacterVisuals.get_color_for_identity("ViewerBeta")
-	if color_a.is_equal_approx(color_b):
-		push_error("Different names should map to different zombie colors")
+	var regular: ParticipantJoinInfo = ParticipantJoinInfo.for_name("Viewer")
+	var sub: ParticipantJoinInfo = ParticipantJoinInfo.for_name("SubViewer")
+	sub.is_subscriber = true
+	var bits: ParticipantJoinInfo = ParticipantJoinInfo.for_name("BitsViewer")
+	bits.is_bits_donor = true
+
+	if not ZombieCharacterVisuals.get_body_color_for_join_info(regular).is_equal_approx(
+		ZombieCharacterVisuals.COLOR_NON_SUB
+	):
+		push_error("Regular viewers should be green")
 		quit(FAIL)
 		return
 
-	var same_again: Color = ZombieCharacterVisuals.get_color_for_identity("ViewerAlpha")
-	if not color_a.is_equal_approx(same_again):
-		push_error("Same name should keep the same zombie color")
+	if not ZombieCharacterVisuals.get_body_color_for_join_info(sub).is_equal_approx(
+		ZombieCharacterVisuals.COLOR_SUBSCRIBER
+	):
+		push_error("Subscribers should be red")
+		quit(FAIL)
+		return
+
+	if not ZombieCharacterVisuals.get_body_color_for_join_info(bits).is_equal_approx(
+		ZombieCharacterVisuals.COLOR_BITS_CHEER
+	):
+		push_error("Cheer viewers should be gold")
 		quit(FAIL)
 		return
 
 	var zombie_packed: PackedScene = load(ZOMBIE_SCENE)
-	var lobby_packed: PackedScene = load(LOBBY_ZOMBIE_SCENE)
-	if zombie_packed == null or lobby_packed == null:
-		push_error("Could not load zombie scenes")
+	if zombie_packed == null:
+		push_error("Could not load zombie scene")
 		quit(FAIL)
 		return
 
 	var zombie: Zombie = zombie_packed.instantiate() as Zombie
-	var lobby_zombie: LobbyZombie = lobby_packed.instantiate() as LobbyZombie
-	if zombie == null or lobby_zombie == null:
-		push_error("Could not instantiate zombies")
+	if zombie == null:
+		push_error("Could not instantiate zombie")
 		quit(FAIL)
 		return
 
 	root.add_child(zombie)
-	root.add_child(lobby_zombie)
-	zombie.configure_zombie("ViewerAlpha", config, Vector3.ZERO, Vector3.ZERO, 42)
-	lobby_zombie.configure_lobby_zombie("ViewerAlpha", 42)
+	zombie.configure_zombie("BitsViewer", config, Vector3.ZERO, Vector3.ZERO, 42, bits)
 	await create_timer(0.2).timeout
 
-	var race_mesh: MeshInstance3D = _find_first_mesh(zombie)
-	var lobby_mesh: MeshInstance3D = _find_first_mesh(lobby_zombie)
-	if race_mesh == null or lobby_mesh == null:
-		push_error("Could not find tinted zombie meshes")
+	var mesh: MeshInstance3D = _find_first_mesh(zombie)
+	if mesh == null:
+		push_error("Missing tinted mesh")
 		quit(FAIL)
 		return
 
-	var race_material: Material = race_mesh.get_active_material(0)
-	var lobby_material: Material = lobby_mesh.get_active_material(0)
-	if race_material == null or lobby_material == null:
-		push_error("Zombie meshes missing tinted materials")
+	var body_material: StandardMaterial3D = mesh.get_active_material(0) as StandardMaterial3D
+	if body_material == null:
+		push_error("Missing body material")
 		quit(FAIL)
 		return
 
-	var race_color: Color = (race_material as StandardMaterial3D).albedo_color
-	var lobby_color: Color = (lobby_material as StandardMaterial3D).albedo_color
-	if not race_color.is_equal_approx(color_a) or not lobby_color.is_equal_approx(color_a):
-		push_error("Tinted materials did not match palette color")
+	if not body_material.albedo_color.is_equal_approx(ZombieCharacterVisuals.COLOR_BITS_CHEER):
+		push_error("Bits zombie body should be gold")
 		quit(FAIL)
 		return
 
-	print("PASS: zombies get stable per-name color tints in race and lobby")
+	if not body_material.emission_enabled:
+		push_error("Bits zombie should have purple pulse emission")
+		quit(FAIL)
+		return
+
+	var name_label: Label3D = zombie.get_node_or_null("NameLabel") as Label3D
+	if name_label == null or name_label.font_size < 30:
+		push_error("Bits zombie name label should be larger")
+		quit(FAIL)
+		return
+
+	print("PASS: tier colors green/red/gold with cheer glow")
 	quit(PASS)
 
 

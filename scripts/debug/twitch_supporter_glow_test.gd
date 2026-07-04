@@ -22,6 +22,16 @@ func _run_test() -> void:
 		push_error("Expected subscriber tier")
 		quit(FAIL)
 		return
+	if sub_info.has_supporter_glow():
+		push_error("Subscribers should not pulse-glow")
+		quit(FAIL)
+		return
+	if not ZombieCharacterVisuals.get_body_color_for_join_info(sub_info).is_equal_approx(
+		ZombieCharacterVisuals.COLOR_SUBSCRIBER
+	):
+		push_error("Subscriber body should be red")
+		quit(FAIL)
+		return
 
 	var gift_tags: Dictionary = {
 		"display-name": "GiftViewer",
@@ -43,6 +53,10 @@ func _run_test() -> void:
 	)
 	if bits_info.get_supporter_tier() != ParticipantJoinInfo.SupporterTier.BITS_DONOR:
 		push_error("Expected bits donor tier")
+		quit(FAIL)
+		return
+	if not bits_info.has_supporter_glow():
+		push_error("Bits donors should pulse-glow")
 		quit(FAIL)
 		return
 
