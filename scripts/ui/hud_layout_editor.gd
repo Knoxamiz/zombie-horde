@@ -24,6 +24,7 @@ var _resize_handles: Dictionary = {}
 var _outline_nodes: Dictionary = {}
 var _panel_input_handlers: Dictionary = {}
 var _resize_input_handlers: Dictionary = {}
+var _drag_shields: Dictionary = {}
 
 func setup(hud_controller: Node) -> void:
 	_hud_controller = hud_controller
@@ -35,6 +36,7 @@ func begin() -> void:
 	if _hud_controller == null:
 		return
 	visible = true
+	await _hud_controller.get_tree().process_frame
 	_refresh_visibility_checks()
 	_rebuild_edit_chrome()
 
@@ -150,48 +152,60 @@ func _rebuild_edit_chrome() -> void:
 
 	for panel_id in PANEL_IDS:
 		var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control
-		if panel == null:
+		if panel == null or not panel.visible:
 			continue
-		HUD_LAYOUT_PROFILE.flatten_panel_to_absolute(panel)
-		panel.mouse_filter = Control.MOUSE_FILTER_STOP
-		if not _panel_input_handlers.has(panel_id):
-			var panel_handler := _on_panel_gui_input.bind(panel_id)
-			_panel_input_handlers[panel_id] = panel_handler
-			panel.gui_input.connect(panel_handler)
+		_add_panel_chrome(panel_id, panel)
 
-		var outline := Panel.new()
-		outline.name = "LayoutOutline_%s" % panel_id
-		outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		outline.set_anchors_preset(Control.PRESET_FULL_RECT)
-		var outline_style := StyleBoxFlat.new()
-		outline_style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
-		outline_style.border_color = Color(0.28, 0.95, 0.24, 0.95)
-		outline_style.set_border_width_all(2)
-		outline.add_theme_stylebox_override("panel", outline_style)
-		panel.add_child(outline)
-		_outline_nodes[panel_id] = outline
+func _add_panel_chrome(panel_id: String, panel: Control) -> void:
+	HUD_LAYOUT_PROFILE.flatten_panel_to_absolute(panel)
+	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 
-		var tag := Label.new()
-		tag.name = "LayoutTag"
-		tag.text = str(PANEL_LABELS.get(panel_id, panel_id))
-		tag.position = Vector2(8.0, 8.0)
-		tag.add_theme_color_override("font_color", Color(0.88, 1.0, 0.34, 1.0))
-		tag.add_theme_font_size_override("font_size", 14)
-		tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		outline.add_child(tag)
+	var drag_shield := ColorRect.new()
+	drag_shield.name = "LayoutDragShield"
+	drag_shield.color = Color(0.04, 0.12, 0.05, 0.12)
+	drag_shield.mouse_filter = Control.MOUSE_FILTER_STOP
+	drag_shield.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var panel_handler := _on_panel_gui_input.bind(panel_id)
+	_panel_input_handlers[panel_id] = panel_handler
+	drag_shield.gui_input.connect(panel_handler)
+	panel.add_child(drag_shield)
+	_drag_shields[panel_id] = drag_shield
 
-		var handle := ColorRect.new()
-		handle.name = "ResizeHandle"
-		handle.color = Color(1.0, 0.72, 0.16, 0.95)
-		handle.custom_minimum_size = Vector2(16.0, 16.0)
-		handle.size = Vector2(16.0, 16.0)
-		handle.mouse_filter = Control.MOUSE_FILTER_STOP
-		var resize_handler := _on_resize_gui_input.bind(panel_id)
-		_resize_input_handlers[panel_id] = resize_handler
-		handle.gui_input.connect(resize_handler)
-		panel.add_child(handle)
-		_resize_handles[panel_id] = handle
-		call_deferred("_position_resize_handle", panel_id)
+	var outline := Panel.new()
+	outline.name = "LayoutOutline_%s" % panel_id
+	outline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	outline.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var outline_style := StyleBoxFlat.new()
+	outline_style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
+	outline_style.border_color = Color(0.28, 0.95, 0.24, 0.95)
+	outline_style.set_border_width_all(2)
+	outline.add_theme_stylebox_override("panel", outline_style)
+	panel.add_child(outline)
+	_outline_nodes[panel_id] = outline
+	panel.move_child(outline, 0)
+
+	var tag := Label.new()
+	tag.name = "LayoutTag"
+	tag.text = str(PANEL_LABELS.get(panel_id, panel_id))
+	tag.position = Vector2(8.0, 8.0)
+	tag.add_theme_color_override("font_color", Color(0.88, 1.0, 0.34, 1.0))
+	tag.add_theme_font_size_override("font_size", 14)
+	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(tag)
+
+	var handle := ColorRect.new()
+	handle.name = "ResizeHandle"
+	handle.color = Color(1.0, 0.72, 0.16, 0.95)
+	handle.custom_minimum_size = Vector2(16.0, 16.0)
+	handle.size = Vector2(16.0, 16.0)
+	handle.mouse_filter = Control.MOUSE_FILTER_STOP
+	var resize_handler := _on_resize_gui_input.bind(panel_id)
+	_resize_input_handlers[panel_id] = resize_handler
+	handle.gui_input.connect(resize_handler)
+	panel.add_child(handle)
+	_resize_handles[panel_id] = handle
+	panel.move_child(handle, panel.get_child_count() - 1)
+	_position_resize_handle(panel_id)
 
 func _position_resize_handle(panel_id: String) -> void:
 	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control if _hud_controller != null else null
@@ -208,10 +222,13 @@ func _clear_edit_chrome() -> void:
 		if panel == null:
 			continue
 		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		if _panel_input_handlers.has(panel_id):
-			var panel_handler: Callable = _panel_input_handlers[panel_id]
-			if panel.gui_input.is_connected(panel_handler):
-				panel.gui_input.disconnect(panel_handler)
+		var drag_shield: ColorRect = _drag_shields.get(panel_id) as ColorRect
+		if drag_shield != null and is_instance_valid(drag_shield):
+			if _panel_input_handlers.has(panel_id):
+				var panel_handler: Callable = _panel_input_handlers[panel_id]
+				if drag_shield.gui_input.is_connected(panel_handler):
+					drag_shield.gui_input.disconnect(panel_handler)
+			drag_shield.queue_free()
 		var handle: ColorRect = _resize_handles.get(panel_id) as ColorRect
 		if handle != null and is_instance_valid(handle):
 			if _resize_input_handlers.has(panel_id):
@@ -226,6 +243,7 @@ func _clear_edit_chrome() -> void:
 	_resize_handles.clear()
 	_panel_input_handlers.clear()
 	_resize_input_handlers.clear()
+	_drag_shields.clear()
 
 func _on_visibility_toggled(enabled: bool, panel_id: String) -> void:
 	if _hud_controller == null:
@@ -233,6 +251,53 @@ func _on_visibility_toggled(enabled: bool, panel_id: String) -> void:
 	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control
 	if panel != null:
 		panel.visible = enabled
+		if panel_id == "countdown" and enabled and _hud_controller.has_method("get_layout_panel"):
+			var countdown_label: Label = panel.get_node_or_null("Margin/CountdownLabel") as Label
+			if countdown_label != null:
+				countdown_label.text = "3"
+	if enabled and panel != null:
+		call_deferred("_rebuild_single_panel_chrome", panel_id)
+	elif not enabled:
+		_remove_panel_chrome(panel_id)
+
+func _rebuild_single_panel_chrome(panel_id: String) -> void:
+	_remove_panel_chrome(panel_id)
+	if _hud_controller == null:
+		return
+	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control
+	if panel == null or not panel.visible:
+		return
+	_add_panel_chrome(panel_id, panel)
+
+func _remove_panel_chrome(panel_id: String) -> void:
+	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control if _hud_controller != null else null
+	if panel != null:
+		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var drag_shield: ColorRect = _drag_shields.get(panel_id) as ColorRect
+	if drag_shield != null and is_instance_valid(drag_shield):
+		if _panel_input_handlers.has(panel_id):
+			var panel_handler: Callable = _panel_input_handlers[panel_id]
+			if drag_shield.gui_input.is_connected(panel_handler):
+				drag_shield.gui_input.disconnect(panel_handler)
+		drag_shield.queue_free()
+	_drag_shields.erase(panel_id)
+	var handle: ColorRect = _resize_handles.get(panel_id) as ColorRect
+	if handle != null and is_instance_valid(handle):
+		if _resize_input_handlers.has(panel_id):
+			var resize_handler: Callable = _resize_input_handlers[panel_id]
+			if handle.gui_input.is_connected(resize_handler):
+				handle.gui_input.disconnect(resize_handler)
+		handle.queue_free()
+	_resize_handles.erase(panel_id)
+	var outline: Panel = _outline_nodes.get(panel_id) as Panel
+	if outline != null and is_instance_valid(outline):
+		outline.queue_free()
+	_outline_nodes.erase(panel_id)
+	var tag: Node = panel.get_node_or_null("LayoutTag")
+	if tag != null and is_instance_valid(tag):
+		tag.queue_free()
+	_panel_input_handlers.erase(panel_id)
+	_resize_input_handlers.erase(panel_id)
 
 func _on_panel_gui_input(event: InputEvent, panel_id: String) -> void:
 	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control if _hud_controller != null else null

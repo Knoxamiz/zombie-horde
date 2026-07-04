@@ -65,6 +65,8 @@ var _layout_editor
 var _layout_edit_active: bool = false
 var _layout_edit_snapshot
 var _pre_round_hidden_for_layout_edit: bool = false
+var _hud_layer_before_layout_edit: int = 6
+var _hud_visible_before_layout_edit: bool = false
 
 @onready var _root: Control = get_node("Root") as Control
 @onready var _state_label: Label = get_node("Root/TopPanel/Margin/VBox/StateLabel") as Label
@@ -171,15 +173,36 @@ func get_layout_panel(panel_id: String) -> Control:
 func begin_layout_edit() -> void:
 	_layout_edit_snapshot = HUD_LAYOUT_PROFILE.capture_from(self)
 	_layout_edit_active = true
+	_hud_visible_before_layout_edit = visible
+	_hud_layer_before_layout_edit = layer
+	layer = 15
+	visible = true
 	_hide_pre_round_ui_for_layout_edit()
 	_populate_layout_preview()
+	_ensure_layout_panels_visible_for_edit()
 	if _results_overlay != null:
 		_results_overlay.hide_results(true)
-	_countdown_panel.visible = false
 	if _root != null:
 		_root.visible = true
-	if _layout_editor != null:
-		_layout_editor.begin()
+		_root.move_to_front()
+	call_deferred("_begin_layout_editor_deferred")
+
+func _begin_layout_editor_deferred() -> void:
+	if not _layout_edit_active or _layout_editor == null:
+		return
+	_layout_editor.begin()
+
+func _ensure_layout_panels_visible_for_edit() -> void:
+	for panel_id in PANEL_PATHS.keys():
+		var panel: Control = get_layout_panel(panel_id)
+		if panel == null:
+			continue
+		if panel_id == "countdown":
+			panel.visible = false
+			if _countdown_label != null:
+				_countdown_label.text = "3"
+			continue
+		panel.visible = true
 
 func end_layout_edit(save_changes: bool) -> void:
 	if _layout_editor != null:
@@ -190,6 +213,8 @@ func end_layout_edit(save_changes: bool) -> void:
 	else:
 		_layout_edit_snapshot.apply_to(self)
 	_layout_edit_active = false
+	layer = _hud_layer_before_layout_edit
+	visible = _hud_visible_before_layout_edit
 	_restore_pre_round_ui_after_layout_edit()
 	_set_world_visible(visible)
 
