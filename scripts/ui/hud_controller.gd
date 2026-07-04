@@ -55,9 +55,12 @@ var _last_stats: Dictionary = {}
 @onready var _leader_label: Label = get_node("Root/TopPanel/Margin/VBox/LeaderLabel") as Label
 @onready var _winner_label: Label = get_node("Root/TopPanel/Margin/VBox/WinnerLabel") as Label
 @onready var _chat_status_label: Label = get_node("Root/TopPanel/Margin/VBox/ChatStatusLabel") as Label
-@onready var _command_label: Label = get_node("Root/CommandLabel") as Label
+@onready var _command_label: Label = get_node("Root/CommandPanel/Margin/CommandLabel") as Label
 @onready var _queue_label: Label = get_node("Root/RosterPanel/Margin/VBox/QueueLabel") as Label
 @onready var _roster_label: Label = get_node("Root/RosterPanel/Margin/VBox/RosterLabel") as Label
+@onready var _standings_header_label: Label = (
+	get_node("Root/LeaderboardPanel/Margin/VBox/HeaderBar/HeaderLabel") as Label
+)
 @onready var _leaderboard_label: Label = get_node("Root/LeaderboardPanel/Margin/VBox/LeaderboardLabel") as Label
 @onready var _countdown_panel: PanelContainer = get_node("Root/CountdownPanel") as PanelContainer
 @onready var _countdown_label: Label = get_node("Root/CountdownPanel/Margin/CountdownLabel") as Label
@@ -251,9 +254,7 @@ func _on_round_countdown_changed(seconds_remaining: int) -> void:
 	if seconds_remaining > 0:
 		_countdown_label.text = str(seconds_remaining)
 	if _world_countdown_board != null:
-		_world_countdown_board.set_board_visible(visible and seconds_remaining > 0)
-		if seconds_remaining > 0:
-			_world_countdown_board.set_board_text("COUNTDOWN", str(seconds_remaining))
+		_world_countdown_board.set_board_visible(false)
 
 func _on_round_stats_changed(stats: Dictionary) -> void:
 	_last_stats = stats
@@ -290,16 +291,12 @@ func _refresh_roster() -> void:
 func _refresh_leaderboard() -> void:
 	if _leaderboard_store == null:
 		_leaderboard_text = "Fastest Winners\n-"
-		if _leaderboard_label != null:
-			_leaderboard_label.text = _leaderboard_text
 		_refresh_world_leaders_board()
 		return
 
 	var entries: Array = _leaderboard_store.get_entries()
 	if entries.is_empty():
 		_leaderboard_text = "Fastest Winners\n-"
-		if _leaderboard_label != null:
-			_leaderboard_label.text = _leaderboard_text
 		_refresh_world_leaders_board()
 		return
 
@@ -312,8 +309,6 @@ func _refresh_leaderboard() -> void:
 			_format_finish_time(float(entry.get("elapsed_seconds", 0.0)))
 		])
 	_leaderboard_text = _join_strings(lines, "\n")
-	if _leaderboard_label != null:
-		_leaderboard_label.text = _leaderboard_text
 	_refresh_world_leaders_board()
 
 func _format_queue_text() -> String:
@@ -335,8 +330,6 @@ func _format_roster_text() -> String:
 	return _join_strings(lines, "\n")
 
 func _show_result_panel(winner_name: String, base_won: bool) -> void:
-	if _results_overlay != null:
-		_results_overlay.show_results(winner_name, base_won, _last_stats)
 	_results_showing = true
 	_refresh_world_results()
 	_set_world_results_visible(visible)
@@ -402,9 +395,9 @@ func _on_world_button_pressed(action_id: StringName) -> void:
 
 func _set_world_visible(should_show: bool) -> void:
 	if _world_boards_root != null:
-		_world_boards_root.visible = should_show
+		_world_boards_root.visible = false
 	if _root != null:
-		_root.visible = false
+		_root.visible = should_show
 	if not should_show:
 		_set_world_results_visible(false)
 		return
@@ -416,17 +409,25 @@ func _set_world_visible(should_show: bool) -> void:
 
 func _set_world_results_visible(should_show: bool) -> void:
 	if _world_results_board != null:
-		_world_results_board.set_board_visible(should_show)
+		_world_results_board.set_board_visible(false)
 	if _world_results_reset_button != null:
-		_world_results_reset_button.visible = should_show
-		_world_results_reset_button.set_interactable(should_show)
+		_world_results_reset_button.visible = false
+		_world_results_reset_button.set_interactable(false)
+	if _results_overlay != null:
+		if should_show:
+			_results_overlay.show_results(_last_winner_name, _last_base_won, _last_stats)
+		else:
+			_results_overlay.hide_results()
 
 func _refresh_world_leaders_board() -> void:
-	if _world_leaders_board == null:
-		return
-
 	if _is_race_live():
-		_world_leaders_board.set_board_text("TOP 10 STANDINGS", _format_live_standings_body())
+		var live_body: String = _format_live_standings_body()
+		if _standings_header_label != null:
+			_standings_header_label.text = "TOP 10 STANDINGS"
+		if _leaderboard_label != null:
+			_leaderboard_label.text = live_body
+		if _world_leaders_board != null:
+			_world_leaders_board.set_board_text("TOP 10 STANDINGS", live_body)
 		return
 
 	var body: String = _leaderboard_text
@@ -438,7 +439,14 @@ func _refresh_world_leaders_board() -> void:
 	for index in range(max_lines):
 		board_lines.append(source_lines[index])
 	body = _join_strings(board_lines, "\n")
-	_world_leaders_board.set_board_text("FASTEST WINNERS", body)
+	if body.is_empty() or body == "-":
+		body = "—"
+	if _standings_header_label != null:
+		_standings_header_label.text = "FASTEST WINNERS"
+	if _leaderboard_label != null:
+		_leaderboard_label.text = body
+	if _world_leaders_board != null:
+		_world_leaders_board.set_board_text("FASTEST WINNERS", body)
 
 func _format_live_standings_body() -> String:
 	if _zombie_manager == null:
