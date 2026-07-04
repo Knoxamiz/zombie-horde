@@ -4,6 +4,9 @@ signal finished(save_changes: bool)
 
 const HUD_LAYOUT_PROFILE := preload("res://scripts/ui/hud_layout_profile.gd")
 const PANEL_IDS: Array[String] = ["top", "roster", "leaderboard", "command", "countdown"]
+const RESIZE_CORNERS: Array[String] = ["tl", "tr", "bl", "br"]
+const MIN_PANEL_SIZE := Vector2(180.0, 96.0)
+const HANDLE_SIZE := Vector2(14.0, 14.0)
 
 const PANEL_LABELS: Dictionary = {
 	"top": "RACE STATUS",
@@ -19,13 +22,11 @@ var _hud_controller: Node
 var _toolbar: PanelContainer
 var _active_panel_id: String = ""
 var _drag_mode: String = ""
+var _resize_corner: String = ""
 var _drag_start_mouse: Vector2 = Vector2.ZERO
 var _drag_start_rect: Rect2 = Rect2()
 var _resize_handles: Dictionary = {}
 var _outline_nodes: Dictionary = {}
-var _panel_input_handlers: Dictionary = {}
-var _resize_input_handlers: Dictionary = {}
-var _drag_shields: Dictionary = {}
 var _header_bars: Dictionary = {}
 
 func setup(hud_controller: Node) -> void:
@@ -42,6 +43,7 @@ func begin() -> void:
 	_rebuild_edit_chrome()
 
 func end() -> void:
+	_end_drag()
 	visible = false
 	_clear_edit_chrome()
 
@@ -53,9 +55,9 @@ func _build_toolbar() -> void:
 
 	_toolbar = PanelContainer.new()
 	_toolbar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_toolbar.offset_left = -280.0
+	_toolbar.offset_left = -300.0
 	_toolbar.offset_top = -54.0
-	_toolbar.offset_right = 280.0
+	_toolbar.offset_right = 300.0
 	_toolbar.offset_bottom = -14.0
 	_toolbar.mouse_filter = Control.MOUSE_FILTER_STOP
 	var toolbar_style := StyleBoxFlat.new()
@@ -79,7 +81,7 @@ func _build_toolbar() -> void:
 	_toolbar.add_child(row)
 
 	var hint := Label.new()
-	hint.text = "Drag headers to move · orange grip = resize"
+	hint.text = "Drag header to move · drag corners to resize"
 	hint.add_theme_color_override("font_color", Color(0.82, 1.0, 0.45, 0.9))
 	hint.add_theme_font_size_override("font_size", 14)
 	row.add_child(hint)
@@ -129,7 +131,7 @@ func _rebuild_edit_chrome() -> void:
 		return
 
 	for panel_id in PANEL_IDS:
-		var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control
+		var panel: Control = _get_panel(panel_id)
 		if panel == null or not panel.visible:
 			continue
 		_add_panel_chrome(panel_id, panel)
@@ -137,7 +139,7 @@ func _rebuild_edit_chrome() -> void:
 func _add_panel_chrome(panel_id: String, panel: Control) -> void:
 	HUD_LAYOUT_PROFILE.flatten_panel_to_absolute(panel)
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
-	panel.z_index = 1
+	panel.z_index = 10
 
 	var outline := Panel.new()
 	outline.name = "LayoutOutline_%s" % panel_id
@@ -179,41 +181,51 @@ func _add_panel_chrome(panel_id: String, panel: Control) -> void:
 	hide_button.pressed.connect(_on_panel_hide_pressed.bind(panel_id))
 	header_row.add_child(hide_button)
 
-	var panel_handler := _on_panel_gui_input.bind(panel_id)
-	_panel_input_handlers[panel_id] = panel_handler
-	header.gui_input.connect(panel_handler)
+	header.gui_input.connect(_on_move_press.bind(panel_id))
 
-	var drag_shield := ColorRect.new()
-	drag_shield.name = "LayoutDragShield"
-	drag_shield.color = Color(0.04, 0.12, 0.05, 0.08)
-	drag_shield.mouse_filter = Control.MOUSE_FILTER_STOP
-	drag_shield.set_anchors_preset(Control.PRESET_FULL_RECT)
-	drag_shield.offset_top = HEADER_HEIGHT
-	drag_shield.gui_input.connect(panel_handler)
-	panel.add_child(drag_shield)
-	_drag_shields[panel_id] = drag_shield
+	_resize_handles[panel_id] = {}
+	for corner in RESIZE_CORNERS:
+		var handle := ColorRect.new()
+		handle.name = "ResizeHandle_%s" % corner
+		handle.color = Color(1.0, 0.72, 0.16, 0.95)
+		handle.custom_minimum_size = HANDLE_SIZE
+		handle.size = HANDLE_SIZE
+		handle.mouse_filter = Control.MOUSE_FILTER_STOP
+		handle.mouse_default_cursor_shape = _corner_cursor(corner)
+		handle.tooltip_text = "Resize"
+		handle.gui_input.connect(_on_resize_press.bind(panel_id, corner))
+		panel.add_child(handle)
+		_resize_handles[panel_id][corner] = handle
 
-	var handle := ColorRect.new()
-	handle.name = "ResizeHandle"
-	handle.color = Color(1.0, 0.72, 0.16, 0.95)
-	handle.custom_minimum_size = Vector2(18.0, 18.0)
-	handle.size = Vector2(18.0, 18.0)
-	handle.mouse_filter = Control.MOUSE_FILTER_STOP
-	handle.tooltip_text = "Resize"
-	var resize_handler := _on_resize_gui_input.bind(panel_id)
-	_resize_input_handlers[panel_id] = resize_handler
-	handle.gui_input.connect(resize_handler)
-	panel.add_child(handle)
-	_resize_handles[panel_id] = handle
-	panel.move_child(handle, panel.get_child_count() - 1)
-	_position_resize_handle(panel_id)
+	_position_resize_handles(panel_id)
+	panel.move_child(header, panel.get_child_count() - 1)
+	for corner in RESIZE_CORNERS:
+		var handle_node: ColorRect = _resize_handles[panel_id][corner] as ColorRect
+		panel.move_child(handle_node, panel.get_child_count() - 1)
 
-func _position_resize_handle(panel_id: String) -> void:
-	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control if _hud_controller != null else null
-	var handle: ColorRect = _resize_handles.get(panel_id) as ColorRect
-	if panel == null or handle == null:
+func _corner_cursor(corner: String) -> Control.CursorShape:
+	match corner:
+		"tl", "br":
+			return Control.CURSOR_FDIAGSIZE
+		"tr", "bl":
+			return Control.CURSOR_BDIAGSIZE
+	return Control.CURSOR_FDIAGSIZE
+
+func _position_resize_handles(panel_id: String) -> void:
+	var panel: Control = _get_panel(panel_id)
+	var handles: Dictionary = _resize_handles.get(panel_id, {})
+	if panel == null or handles.is_empty():
 		return
-	handle.position = panel.size - handle.size - Vector2(4.0, 4.0)
+	var panel_size: Vector2 = panel.size
+	var inset: float = 2.0
+	if handles.has("tl"):
+		(handles["tl"] as Control).position = Vector2(inset, HEADER_HEIGHT + inset)
+	if handles.has("tr"):
+		(handles["tr"] as Control).position = Vector2(panel_size.x - HANDLE_SIZE.x - inset, HEADER_HEIGHT + inset)
+	if handles.has("bl"):
+		(handles["bl"] as Control).position = Vector2(inset, panel_size.y - HANDLE_SIZE.y - inset)
+	if handles.has("br"):
+		(handles["br"] as Control).position = Vector2(panel_size.x - HANDLE_SIZE.x - inset, panel_size.y - HANDLE_SIZE.y - inset)
 
 func _clear_edit_chrome() -> void:
 	if _hud_controller == null:
@@ -222,80 +234,158 @@ func _clear_edit_chrome() -> void:
 		_remove_panel_chrome(panel_id)
 
 func _on_panel_hide_pressed(panel_id: String) -> void:
-	if _hud_controller == null:
-		return
-	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control
+	var panel: Control = _get_panel(panel_id)
 	if panel != null:
 		panel.visible = false
 	_remove_panel_chrome(panel_id)
 
-func _rebuild_single_panel_chrome(panel_id: String) -> void:
-	_remove_panel_chrome(panel_id)
-	if _hud_controller == null:
-		return
-	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control
-	if panel == null or not panel.visible:
-		return
-	_add_panel_chrome(panel_id, panel)
-
 func _remove_panel_chrome(panel_id: String) -> void:
-	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control if _hud_controller != null else null
+	var panel: Control = _get_panel(panel_id)
 	if panel != null:
 		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		panel.z_index = 0
-	var drag_shield: ColorRect = _drag_shields.get(panel_id) as ColorRect
-	if drag_shield != null and is_instance_valid(drag_shield):
-		if _panel_input_handlers.has(panel_id):
-			var panel_handler: Callable = _panel_input_handlers[panel_id]
-			if drag_shield.gui_input.is_connected(panel_handler):
-				drag_shield.gui_input.disconnect(panel_handler)
-		drag_shield.queue_free()
-	_drag_shields.erase(panel_id)
 	var header: PanelContainer = _header_bars.get(panel_id) as PanelContainer
 	if header != null and is_instance_valid(header):
-		if _panel_input_handlers.has(panel_id):
-			var panel_handler: Callable = _panel_input_handlers[panel_id]
-			if header.gui_input.is_connected(panel_handler):
-				header.gui_input.disconnect(panel_handler)
 		header.queue_free()
 	_header_bars.erase(panel_id)
-	var handle: ColorRect = _resize_handles.get(panel_id) as ColorRect
-	if handle != null and is_instance_valid(handle):
-		if _resize_input_handlers.has(panel_id):
-			var resize_handler: Callable = _resize_input_handlers[panel_id]
-			if handle.gui_input.is_connected(resize_handler):
-				handle.gui_input.disconnect(resize_handler)
-		handle.queue_free()
+	var handles: Dictionary = _resize_handles.get(panel_id, {})
+	for corner in handles.keys():
+		var handle: ColorRect = handles[corner] as ColorRect
+		if handle != null and is_instance_valid(handle):
+			handle.queue_free()
 	_resize_handles.erase(panel_id)
 	var outline: Panel = _outline_nodes.get(panel_id) as Panel
 	if outline != null and is_instance_valid(outline):
 		outline.queue_free()
 	_outline_nodes.erase(panel_id)
-	_panel_input_handlers.erase(panel_id)
-	_resize_input_handlers.erase(panel_id)
 
-func _on_panel_gui_input(event: InputEvent, panel_id: String) -> void:
-	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control if _hud_controller != null else null
+func _get_panel(panel_id: String) -> Control:
+	if _hud_controller == null:
+		return null
+	return _hud_controller.call("get_layout_panel", panel_id) as Control
+
+func _get_panel_parent(panel: Control) -> Control:
+	return panel.get_parent() as Control
+
+func _global_to_parent_local(parent: Control, global_pos: Vector2) -> Vector2:
+	return parent.get_global_transform_with_canvas().affine_inverse() * global_pos
+
+func _get_panel_rect(panel: Control) -> Rect2:
+	return Rect2(panel.offset_left, panel.offset_top, panel.size.x, panel.size.y)
+
+func _set_panel_rect(panel: Control, rect: Rect2) -> void:
+	HUD_LAYOUT_PROFILE.set_absolute_rect(panel, rect)
+	panel.custom_minimum_size = Vector2(max(rect.size.x, MIN_PANEL_SIZE.x), max(rect.size.y, MIN_PANEL_SIZE.y))
+
+func _on_move_press(event: InputEvent, panel_id: String) -> void:
+	if not (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed):
+		return
+	var panel: Control = _get_panel(panel_id)
 	if panel == null:
 		return
+	_active_panel_id = panel_id
+	_drag_mode = "move"
+	_resize_corner = ""
+	_drag_start_mouse = event.global_position
+	_drag_start_rect = _get_panel_rect(panel)
+	_highlight_panel(panel_id, true)
+	get_viewport().set_input_as_handled()
+
+func _on_resize_press(event: InputEvent, panel_id: String, corner: String) -> void:
+	if not (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed):
+		return
+	var panel: Control = _get_panel(panel_id)
+	if panel == null:
+		return
+	_active_panel_id = panel_id
+	_drag_mode = "resize"
+	_resize_corner = corner
+	_drag_start_mouse = event.global_position
+	_drag_start_rect = _get_panel_rect(panel)
+	_highlight_panel(panel_id, true)
+	get_viewport().set_input_as_handled()
+
+func _input(event: InputEvent) -> void:
+	if not visible:
+		return
+
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		finished.emit(false)
+		get_viewport().set_input_as_handled()
+		return
+
+	if _drag_mode.is_empty():
+		return
+
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		if event.pressed:
-			_active_panel_id = panel_id
-			_drag_mode = "move"
-			_drag_start_mouse = event.global_position
-			_drag_start_rect = Rect2(panel.offset_left, panel.offset_top, panel.size.x, panel.size.y)
-			_highlight_panel(panel_id, true)
+		if not event.pressed:
+			_end_drag()
+		return
+
+	if event is InputEventMouseMotion:
+		_apply_drag(event.global_position)
+		get_viewport().set_input_as_handled()
+
+func _apply_drag(global_mouse: Vector2) -> void:
+	var panel: Control = _get_panel(_active_panel_id)
+	if panel == null:
+		return
+	var parent: Control = _get_panel_parent(panel)
+	if parent == null:
+		return
+
+	var start_local: Vector2 = _global_to_parent_local(parent, _drag_start_mouse)
+	var current_local: Vector2 = _global_to_parent_local(parent, global_mouse)
+	var delta: Vector2 = current_local - start_local
+	var rect: Rect2 = _drag_start_rect
+
+	if _drag_mode == "move":
+		rect.position = _drag_start_rect.position + delta
+	elif _drag_mode == "resize":
+		rect = _resize_rect(_drag_start_rect, delta, _resize_corner)
+
+	_set_panel_rect(panel, rect)
+	_position_resize_handles(_active_panel_id)
+
+func _resize_rect(start_rect: Rect2, delta: Vector2, corner: String) -> Rect2:
+	var left: float = start_rect.position.x
+	var top: float = start_rect.position.y
+	var right: float = start_rect.position.x + start_rect.size.x
+	var bottom: float = start_rect.position.y + start_rect.size.y
+
+	match corner:
+		"br":
+			right += delta.x
+			bottom += delta.y
+		"bl":
+			left += delta.x
+			bottom += delta.y
+		"tr":
+			right += delta.x
+			top += delta.y
+		"tl":
+			left += delta.x
+			top += delta.y
+
+	if right - left < MIN_PANEL_SIZE.x:
+		if corner in ["bl", "tl"]:
+			left = right - MIN_PANEL_SIZE.x
 		else:
-			_highlight_panel(panel_id, false)
-			_active_panel_id = ""
-			_drag_mode = ""
-	elif event is InputEventMouseMotion and _drag_mode == "move" and _active_panel_id == panel_id:
-		var delta: Vector2 = event.global_position - _drag_start_mouse
-		panel.offset_left = _drag_start_rect.position.x + delta.x
-		panel.offset_top = _drag_start_rect.position.y + delta.y
-		panel.offset_right = panel.offset_left + _drag_start_rect.size.x
-		panel.offset_bottom = panel.offset_top + _drag_start_rect.size.y
-		_position_resize_handle(panel_id)
+			right = left + MIN_PANEL_SIZE.x
+	if bottom - top < MIN_PANEL_SIZE.y:
+		if corner in ["tl", "tr"]:
+			top = bottom - MIN_PANEL_SIZE.y
+		else:
+			bottom = top + MIN_PANEL_SIZE.y
+
+	return Rect2(Vector2(left, top), Vector2(right - left, bottom - top))
+
+func _end_drag() -> void:
+	if not _active_panel_id.is_empty():
+		_highlight_panel(_active_panel_id, false)
+	_active_panel_id = ""
+	_drag_mode = ""
+	_resize_corner = ""
 
 func _highlight_panel(panel_id: String, enabled: bool) -> void:
 	var outline: Panel = _outline_nodes.get(panel_id) as Panel
@@ -307,35 +397,12 @@ func _highlight_panel(panel_id: String, enabled: bool) -> void:
 	style.border_color = Color(0.5, 1.0, 0.35, 1.0) if enabled else Color(0.28, 0.95, 0.24, 0.95)
 	outline.add_theme_stylebox_override("panel", style)
 
-func _on_resize_gui_input(event: InputEvent, panel_id: String) -> void:
-	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control if _hud_controller != null else null
-	if panel == null:
-		return
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		if event.pressed:
-			_active_panel_id = panel_id
-			_drag_mode = "resize"
-			_drag_start_mouse = event.global_position
-			_drag_start_rect = Rect2(panel.offset_left, panel.offset_top, panel.size.x, panel.size.y)
-			get_viewport().set_input_as_handled()
-		else:
-			_active_panel_id = ""
-			_drag_mode = ""
-	elif event is InputEventMouseMotion and _drag_mode == "resize" and _active_panel_id == panel_id:
-		var delta: Vector2 = event.global_position - _drag_start_mouse
-		var new_width: float = max(_drag_start_rect.size.x + delta.x, 180.0)
-		var new_height: float = max(_drag_start_rect.size.y + delta.y, 96.0)
-		panel.offset_right = panel.offset_left + new_width
-		panel.offset_bottom = panel.offset_top + new_height
-		panel.custom_minimum_size = Vector2(new_width, 0.0)
-		_position_resize_handle(panel_id)
-		get_viewport().set_input_as_handled()
-
 func _on_reset_pressed() -> void:
 	if _hud_controller != null:
 		_hud_controller.reset_layout_to_defaults()
 		if _hud_controller.has_method("_ensure_layout_panels_visible_for_edit"):
 			_hud_controller.call("_ensure_layout_panels_visible_for_edit")
+	_end_drag()
 	_rebuild_edit_chrome()
 
 func _on_cancel_pressed() -> void:
@@ -343,10 +410,3 @@ func _on_cancel_pressed() -> void:
 
 func _on_save_pressed() -> void:
 	finished.emit(true)
-
-func _input(event: InputEvent) -> void:
-	if not visible:
-		return
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		finished.emit(false)
-		get_viewport().set_input_as_handled()

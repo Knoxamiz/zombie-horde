@@ -2,7 +2,7 @@ extends RefCounted
 
 const SAVE_PATH := "user://hud_layout.cfg"
 const SECTION := "hud_layout"
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 
 static var PANEL_IDS: Array[String] = ["top", "roster", "leaderboard", "command", "countdown"]
 
@@ -40,19 +40,15 @@ static func load_from_disk():
 static func create_default_profile():
 	var profile = load("res://scripts/ui/hud_layout_profile.gd").new()
 	profile.panels = {
-		"top": _panel_dict(0.0, 0.0, 0.0, 0.0, 40.0, 40.0, 460.0, 248.0, true, 420.0, 0.0),
-		"roster": _panel_dict(1.0, 0.0, 1.0, 0.0, -400.0, 40.0, -40.0, 300.0, true, 360.0, 0.0),
-		"leaderboard": _panel_dict(1.0, 0.5, 1.0, 0.5, -370.0, -120.0, -40.0, 300.0, true, 330.0, 0.0),
-		"command": _panel_dict(0.0, 1.0, 0.0, 1.0, 40.0, -96.0, 460.0, -40.0, true, 420.0, 0.0),
-		"countdown": _panel_dict(0.5, 0.5, 0.5, 0.5, -110.0, -110.0, 110.0, 110.0, true, 0.0, 0.0),
+		"top": _panel_dict(40.0, 40.0, 460.0, 248.0, true, 420.0, 208.0),
+		"roster": _panel_dict(1200.0, 40.0, 1560.0, 300.0, true, 360.0, 260.0),
+		"leaderboard": _panel_dict(1230.0, 330.0, 1560.0, 750.0, true, 330.0, 420.0),
+		"command": _panel_dict(40.0, 804.0, 460.0, 860.0, true, 420.0, 56.0),
+		"countdown": _panel_dict(690.0, 340.0, 910.0, 560.0, true, 220.0, 220.0),
 	}
 	return profile
 
 static func _panel_dict(
-	anchor_left: float,
-	anchor_top: float,
-	anchor_right: float,
-	anchor_bottom: float,
 	offset_left: float,
 	offset_top: float,
 	offset_right: float,
@@ -62,10 +58,10 @@ static func _panel_dict(
 	min_height: float
 ) -> Dictionary:
 	return {
-		"anchor_left": anchor_left,
-		"anchor_top": anchor_top,
-		"anchor_right": anchor_right,
-		"anchor_bottom": anchor_bottom,
+		"anchor_left": 0.0,
+		"anchor_top": 0.0,
+		"anchor_right": 0.0,
+		"anchor_bottom": 0.0,
 		"offset_left": offset_left,
 		"offset_top": offset_top,
 		"offset_right": offset_right,
@@ -120,34 +116,40 @@ func save_to_disk() -> Error:
 	return config.save(SAVE_PATH)
 
 static func _capture_panel(panel: Control) -> Dictionary:
+	flatten_panel_to_absolute(panel)
 	return {
-		"anchor_left": panel.anchor_left,
-		"anchor_top": panel.anchor_top,
-		"anchor_right": panel.anchor_right,
-		"anchor_bottom": panel.anchor_bottom,
+		"anchor_left": 0.0,
+		"anchor_top": 0.0,
+		"anchor_right": 0.0,
+		"anchor_bottom": 0.0,
 		"offset_left": panel.offset_left,
 		"offset_top": panel.offset_top,
 		"offset_right": panel.offset_right,
 		"offset_bottom": panel.offset_bottom,
 		"visible": panel.visible,
-		"min_width": panel.custom_minimum_size.x,
-		"min_height": panel.custom_minimum_size.y,
+		"min_width": panel.size.x,
+		"min_height": panel.size.y,
 	}
 
 static func _apply_panel(panel: Control, data: Dictionary) -> void:
-	panel.anchor_left = float(data.get("anchor_left", panel.anchor_left))
-	panel.anchor_top = float(data.get("anchor_top", panel.anchor_top))
-	panel.anchor_right = float(data.get("anchor_right", panel.anchor_right))
-	panel.anchor_bottom = float(data.get("anchor_bottom", panel.anchor_bottom))
+	panel.layout_mode = 0
+	panel.anchor_left = 0.0
+	panel.anchor_top = 0.0
+	panel.anchor_right = 0.0
+	panel.anchor_bottom = 0.0
 	panel.offset_left = float(data.get("offset_left", panel.offset_left))
 	panel.offset_top = float(data.get("offset_top", panel.offset_top))
 	panel.offset_right = float(data.get("offset_right", panel.offset_right))
 	panel.offset_bottom = float(data.get("offset_bottom", panel.offset_bottom))
 	panel.visible = bool(data.get("visible", true))
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var min_width: float = float(data.get("min_width", 0.0))
 	var min_height: float = float(data.get("min_height", 0.0))
-	if min_width > 0.0 or min_height > 0.0:
-		panel.custom_minimum_size = Vector2(min_width, min_height)
+	if min_width > 0.0:
+		panel.custom_minimum_size.x = min_width
+	if min_height > 0.0:
+		panel.custom_minimum_size.y = min_height
 
 static func flatten_panel_to_absolute(panel: Control) -> void:
 	var global_rect: Rect2 = panel.get_global_rect()
@@ -156,8 +158,21 @@ static func flatten_panel_to_absolute(panel: Control) -> void:
 		return
 	var parent_transform: Transform2D = parent.get_global_transform_with_canvas()
 	var local_pos: Vector2 = parent_transform.affine_inverse() * global_rect.position
+	set_absolute_rect(panel, Rect2(local_pos, global_rect.size))
+
+static func set_absolute_rect(panel: Control, rect: Rect2) -> void:
+	panel.layout_mode = 0
 	panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	panel.offset_left = local_pos.x
-	panel.offset_top = local_pos.y
-	panel.offset_right = local_pos.x + global_rect.size.x
-	panel.offset_bottom = local_pos.y + global_rect.size.y
+	panel.anchor_left = 0.0
+	panel.anchor_top = 0.0
+	panel.anchor_right = 0.0
+	panel.anchor_bottom = 0.0
+	panel.offset_left = rect.position.x
+	panel.offset_top = rect.position.y
+	panel.offset_right = rect.position.x + max(rect.size.x, 120.0)
+	panel.offset_bottom = rect.position.y + max(rect.size.y, 72.0)
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+
+static func get_absolute_rect(panel: Control) -> Rect2:
+	return Rect2(panel.position, panel.size)
