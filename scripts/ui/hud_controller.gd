@@ -1,8 +1,20 @@
 class_name HudController
 extends CanvasLayer
 
+signal layout_edit_finished(save_changes: bool)
+
 const STANDINGS_REFRESH_SECONDS: float = 0.25
 const STANDINGS_MAX_RESULTS: int = 10
+const LAYOUT_EDITOR_SCRIPT := preload("res://scripts/ui/hud_layout_editor.gd")
+const HUD_LAYOUT_PROFILE := preload("res://scripts/ui/hud_layout_profile.gd")
+
+const PANEL_PATHS: Dictionary = {
+	"top": "Root/TopPanel",
+	"roster": "Root/RosterPanel",
+	"leaderboard": "Root/LeaderboardPanel",
+	"command": "Root/CommandPanel",
+	"countdown": "Root/CountdownPanel",
+}
 
 @export var round_manager_path: NodePath
 @export var join_source_path: NodePath
@@ -48,6 +60,11 @@ var _standings_refresh_timer: float = 0.0
 var _queued_names: PackedStringArray = PackedStringArray()
 var _feed_lines: Array[String] = []
 var _last_stats: Dictionary = {}
+var _layout_profile
+var _layout_editor
+var _layout_edit_active: bool = false
+var _layout_edit_snapshot
+var _pre_round_hidden_for_layout_edit: bool = false
 
 @onready var _root: Control = get_node("Root") as Control
 @onready var _state_label: Label = get_node("Root/TopPanel/Margin/VBox/StateLabel") as Label
@@ -127,10 +144,110 @@ func _ready() -> void:
 	_refresh_static_labels()
 	_refresh_roster()
 	_refresh_world_command_board()
+	_setup_layout_editor()
+	_apply_saved_layout()
 	_set_world_visible(visible)
 	_last_visible_state = visible
 
+func _setup_layout_editor() -> void:
+	_layout_editor = LAYOUT_EDITOR_SCRIPT.new()
+	if _layout_editor == null:
+		return
+	_layout_editor.name = "LayoutEditor"
+	add_child(_layout_editor)
+	_layout_editor.setup(self)
+	_layout_editor.finished.connect(_on_layout_edit_finished)
+
+func _apply_saved_layout() -> void:
+	_layout_profile = HUD_LAYOUT_PROFILE.load_from_disk()
+	_layout_profile.apply_to(self)
+
+func get_layout_panel(panel_id: String) -> Control:
+	var path: String = str(PANEL_PATHS.get(panel_id, ""))
+	if path.is_empty():
+		return null
+	return get_node_or_null(path) as Control
+
+func begin_layout_edit() -> void:
+	_layout_edit_snapshot = HUD_LAYOUT_PROFILE.capture_from(self)
+	_layout_edit_active = true
+	_hide_pre_round_ui_for_layout_edit()
+	_populate_layout_preview()
+	if _results_overlay != null:
+		_results_overlay.hide_results(true)
+	_countdown_panel.visible = false
+	if _root != null:
+		_root.visible = true
+	if _layout_editor != null:
+		_layout_editor.begin()
+
+func end_layout_edit(save_changes: bool) -> void:
+	if _layout_editor != null:
+		_layout_editor.end()
+	if save_changes:
+		_layout_profile = HUD_LAYOUT_PROFILE.capture_from(self)
+		_layout_profile.save_to_disk()
+	else:
+		_layout_edit_snapshot.apply_to(self)
+	_layout_edit_active = false
+	_restore_pre_round_ui_after_layout_edit()
+	_set_world_visible(visible)
+
+func _hide_pre_round_ui_for_layout_edit() -> void:
+	var pre_round: PreRoundUIController = get_parent().get_node_or_null("PreRoundUI") as PreRoundUIController
+	if pre_round == null:
+		return
+	_pre_round_hidden_for_layout_edit = pre_round.visible
+	if _pre_round_hidden_for_layout_edit:
+		pre_round.set_screen_mode("hidden")
+
+func _restore_pre_round_ui_after_layout_edit() -> void:
+	if not _pre_round_hidden_for_layout_edit:
+		return
+	var pre_round: PreRoundUIController = get_parent().get_node_or_null("PreRoundUI") as PreRoundUIController
+	if pre_round != null:
+		pre_round.set_screen_mode("lobby")
+	_pre_round_hidden_for_layout_edit = false
+
+func reset_layout_to_defaults() -> void:
+	_layout_profile = HUD_LAYOUT_PROFILE.create_default_profile()
+	_layout_profile.apply_to(self)
+
+func is_layout_edit_active() -> bool:
+	return _layout_edit_active
+
+func _on_layout_edit_finished(save_changes: bool) -> void:
+	end_layout_edit(save_changes)
+	layout_edit_finished.emit(save_changes)
+
+func _populate_layout_preview() -> void:
+	_state_text = "Running"
+	_queued_count = 2
+	_queued_names = PackedStringArray(["Ada", "HexHunger"])
+	_living_count = 8
+	_total_count = 13
+	_leader_text = "Leader: GlitchGnaw (71%)"
+	_winner_text = "Winner: -"
+	_chat_status_text = "Chat: Twitch live (#knoxamiz)"
+	_command_text = "Type !brains to join."
+	_feed_lines = [
+		"PixelMunch - Out of Bounds",
+		"EchoRot - Sewer",
+		"Ada - Out of Bounds",
+	]
+	_refresh_static_labels()
+	_refresh_roster()
+	if _standings_header_label != null:
+		_standings_header_label.text = "TOP 10 STANDINGS"
+	if _leaderboard_label != null:
+		_leaderboard_label.text = "1. GlitchGnaw 100%\n2. DoomSprint 83% down\n3. HexHunger 71% down\n4. Ada 48%\n5. CaptainDecay 41%"
+	if _command_label != null:
+		_command_label.text = _command_text
+
 func _process(delta: float) -> void:
+	if _layout_edit_active:
+		return
+
 	if _last_visible_state != visible:
 		_last_visible_state = visible
 		_set_world_visible(visible)
@@ -397,8 +514,8 @@ func _set_world_visible(should_show: bool) -> void:
 	if _world_boards_root != null:
 		_world_boards_root.visible = false
 	if _root != null:
-		_root.visible = should_show
-	if not should_show:
+		_root.visible = should_show or _layout_edit_active
+	if not should_show and not _layout_edit_active:
 		_set_world_results_visible(false)
 		return
 	_refresh_static_labels()

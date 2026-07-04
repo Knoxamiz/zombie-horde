@@ -31,6 +31,7 @@ const SETTINGS_MODAL_SCRIPT: Script = preload("res://scripts/ui/settings_modal.g
 @export var world_preset_3_button_path: NodePath
 @export var world_preset_4_button_path: NodePath
 @export var world_reset_button_path: NodePath
+@export var hud_controller_path: NodePath
 
 var _round_manager: RoundManager
 var _hazard_manager: HazardManager
@@ -102,6 +103,7 @@ var _defender_meter_label: Label
 var _vehicle_weight_meter_label: Label
 var _cone_weight_meter_label: Label
 var _barrier_weight_meter_label: Label
+var _edit_hud_layout_button: Button
 @onready var _status_label: Label = get_node("Root/MenuPanel/Margin/VBox/StatusLabel") as Label
 @onready var _reroll_button: Button = get_node("Root/MenuPanel/Margin/VBox/RerollButton") as Button
 @onready var _character_overlay_wash: ColorRect = get_node("Root/CharacterOverlayWash") as ColorRect
@@ -185,6 +187,14 @@ func _ready() -> void:
 	_set_menu_open(false)
 	_set_character_select_open(false)
 	_set_status("Settings loaded")
+	call_deferred("_connect_hud_layout_signal")
+
+func _connect_hud_layout_signal() -> void:
+	var hud_controller: HudController = get_node_or_null(hud_controller_path) as HudController
+	if hud_controller == null:
+		return
+	if not hud_controller.layout_edit_finished.is_connected(_on_hud_layout_edit_finished):
+		hud_controller.layout_edit_finished.connect(_on_hud_layout_edit_finished)
 
 func _build_control_room_streamer_modal() -> void:
 	_settings_modal = SETTINGS_MODAL_SCRIPT.new() as SettingsModal
@@ -289,6 +299,11 @@ func _build_control_room_streamer_modal() -> void:
 	_barrier_weight_spin = barrier_meter["slider"] as SliderControl
 	_barrier_weight_meter_label = barrier_meter["label"] as Label
 
+	var hud_group: VBoxContainer = _settings_modal.add_group("HUD Layout")
+	_edit_hud_layout_button = _make_modal_button("CUSTOMIZE HUD LAYOUT", ControlRoomTheme.COLOR_GREEN)
+	hud_group.add_child(_edit_hud_layout_button)
+	_edit_hud_layout_button.pressed.connect(_on_edit_hud_layout_pressed)
+
 	_reroll_button = _make_modal_button("REROLL STREET PREVIEW", ControlRoomTheme.COLOR_BLUE)
 	premium_group.add_child(_reroll_button)
 	_status_label = Label.new()
@@ -358,6 +373,18 @@ func can_open_menu() -> bool:
 
 func close_menu() -> void:
 	_set_menu_open(false)
+
+func _on_edit_hud_layout_pressed() -> void:
+	var hud_controller: HudController = get_node_or_null(hud_controller_path) as HudController
+	if hud_controller == null:
+		_set_status("HUD not found")
+		return
+	close_menu()
+	hud_controller.begin_layout_edit()
+	_set_status("Editing HUD layout")
+
+func _on_hud_layout_edit_finished(_save_changes: bool) -> void:
+	open_menu()
 
 func _set_menu_open(open: bool) -> void:
 	if _root != null:
