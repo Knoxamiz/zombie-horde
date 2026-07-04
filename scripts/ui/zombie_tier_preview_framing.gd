@@ -2,15 +2,15 @@ class_name ZombieTierPreviewFraming
 extends RefCounted
 
 const MODEL_GROUND_Y := -0.95
-const MODEL_SCALE := 1.9
-const VIEWPORT_WIDTH := 220
-const VIEWPORT_HEIGHT := 300
-const SHOWCASE_ICON_SCALE := 1.32
+const MODEL_SCALE := 1.55
+const VIEWPORT_WIDTH := 188
+const VIEWPORT_HEIGHT := 248
+const SHOWCASE_ICON_SCALE := 1.05
 const CAMERA_FOV := 40.0
-const FEET_MARGIN := 0.12
-const TOP_MARGIN := 0.16
+const FEET_MARGIN := 0.1
+const TOP_MARGIN := 0.14
 const ICON_TEXTURE_HEIGHT := 128.0
-const REFERENCE_BODY_HEIGHT := 2.82
+const REFERENCE_BODY_HEIGHT := 2.3
 const REFERENCE_TIER: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT
 
 const PREVIEW_LIGHT_TRANSFORM := Transform3D(

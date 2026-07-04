@@ -62,7 +62,7 @@ func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> 
 	var title_label: Label = Label.new()
 	title_label.text = title_text
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_label.add_theme_font_size_override("font_size", 15)
+	title_label.add_theme_font_size_override("font_size", 14)
 	title_label.add_theme_color_override("font_color", accent_color.lightened(0.1))
 	add_child(title_label)
 
@@ -70,7 +70,7 @@ func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> 
 	perk_label.text = perk_text
 	perk_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	perk_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	perk_label.add_theme_font_size_override("font_size", 12)
+	perk_label.add_theme_font_size_override("font_size", 11)
 	perk_label.add_theme_color_override("font_color", Color(0.78, 0.86, 0.74, 1.0))
 	add_child(perk_label)
 

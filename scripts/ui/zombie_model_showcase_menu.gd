@@ -34,7 +34,7 @@ func _ready() -> void:
 
 
 func _build_showcase() -> void:
-	add_theme_constant_override("separation", 20)
+	add_theme_constant_override("separation", 18)
 	alignment = BoxContainer.ALIGNMENT_CENTER
 
 	for entry in SHOWCASE_ENTRIES:
