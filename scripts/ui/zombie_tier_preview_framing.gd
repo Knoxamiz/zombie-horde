@@ -7,6 +7,7 @@ const VIEWPORT_WIDTH := 188
 const VIEWPORT_HEIGHT := 248
 const SHOWCASE_ICON_SCALE := 1.05
 const CAMERA_FOV := 40.0
+const CAMERA_ZOOM_OUT := 1.2
 const FEET_MARGIN := 0.1
 const TOP_MARGIN := 0.14
 const ICON_TEXTURE_HEIGHT := 128.0
@@ -79,7 +80,7 @@ static func build_camera_transform(_tier: ParticipantJoinInfo.SupporterTier = RE
 	var top_y: float = _get_reference_content_top_y() + TOP_MARGIN
 	var center_y: float = (bottom_y + top_y) * 0.5
 	var content_height: float = max(top_y - bottom_y, 0.5)
-	var distance: float = _get_camera_distance_for_height(content_height, CAMERA_FOV)
+	var distance: float = _get_camera_distance_for_height(content_height, CAMERA_FOV) * CAMERA_ZOOM_OUT
 
 	var camera_position := Vector3(0.0, center_y, distance)
 	var look_target := Vector3(0.0, center_y, 0.0)
