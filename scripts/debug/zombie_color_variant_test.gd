@@ -79,6 +79,12 @@ func _run_test() -> void:
 		quit(FAIL)
 		return
 
+	var albedo_texture: Texture2D = body_material.get_shader_parameter("albedo_tex")
+	if albedo_texture == null:
+		push_error("Body tint shader should always receive an albedo texture")
+		quit(FAIL)
+		return
+
 	var glow_energy: float = float(body_material.get_shader_parameter("bits_glow_energy"))
 	if glow_energy <= 0.0:
 		push_error("Bits zombie should have active body glow energy")

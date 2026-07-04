@@ -8,6 +8,8 @@ uniform float supporter_emission_energy : hint_range(0.0, 4.0) = 0.0;
 uniform vec4 supporter_emission : source_color = vec4(1.0, 0.18, 0.12, 1.0);
 uniform float bits_glow_energy : hint_range(0.0, 4.0) = 0.0;
 uniform vec4 bits_glow_color : source_color = vec4(0.78, 0.22, 1.0, 1.0);
+uniform float material_roughness : hint_range(0.0, 1.0) = 1.0;
+uniform float material_metallic : hint_range(0.0, 1.0) = 0.0;
 
 
 float body_region_mask(vec3 color) {
@@ -44,6 +46,8 @@ void fragment() {
 
 	vec3 tinted = mix(base, base * body_tint.rgb, tint_strength * mask);
 	ALBEDO = tinted;
+	ROUGHNESS = material_roughness;
+	METALLIC = material_metallic;
 
 	vec3 emission = vec3(0.0);
 	if (supporter_emission_energy > 0.001) {

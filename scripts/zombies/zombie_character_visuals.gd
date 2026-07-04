@@ -2,6 +2,9 @@ class_name ZombieCharacterVisuals
 extends RefCounted
 
 const BODY_TINT_SHADER: Shader = preload("res://assets/shaders/zombie_body_tint.gdshader")
+const FALLBACK_ATLAS_TEXTURE: Texture2D = preload(
+	"res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Zombie_Basic_Zombie_Atlas.png"
+)
 
 const COLOR_NON_SUB: Color = Color(0.42, 1.0, 0.28, 1.0)
 const COLOR_SUBSCRIBER: Color = Color(1.0, 0.18, 0.12, 1.0)
@@ -141,6 +144,8 @@ static func _apply_body_tint_shader(
 	for surface_index in range(mesh.get_surface_count()):
 		var source_material: Material = mesh_instance.get_active_material(surface_index)
 		var shader_material: ShaderMaterial = _create_body_tint_material(
+			mesh_instance,
+			surface_index,
 			source_material,
 			tint_color,
 			tier
@@ -149,6 +154,8 @@ static func _apply_body_tint_shader(
 
 
 static func _create_body_tint_material(
+	mesh_instance: MeshInstance3D,
+	surface_index: int,
 	source_material: Material,
 	tint_color: Color,
 	tier: ParticipantJoinInfo.SupporterTier
@@ -157,14 +164,25 @@ static func _create_body_tint_material(
 	shader_material.resource_local_to_scene = true
 	shader_material.shader = BODY_TINT_SHADER
 
-	var source_standard: StandardMaterial3D = source_material as StandardMaterial3D
-	if source_standard != null and source_standard.albedo_texture != null:
-		shader_material.set_shader_parameter("albedo_tex", source_standard.albedo_texture)
-
+	var source_standard: StandardMaterial3D = _resolve_standard_material(
+		mesh_instance,
+		surface_index,
+		source_material
+	)
+	var albedo_texture: Texture2D = _resolve_albedo_texture(mesh_instance, surface_index, source_standard)
+	shader_material.set_shader_parameter("albedo_tex", albedo_texture)
 	shader_material.set_shader_parameter("body_tint", tint_color)
 	shader_material.set_shader_parameter("tint_strength", _get_tint_strength(tier))
 	shader_material.set_shader_parameter("bits_glow_color", GLOW_BITS_PULSE)
 	shader_material.set_shader_parameter("bits_glow_energy", 0.0)
+
+	var roughness: float = 1.0
+	var metallic: float = 0.0
+	if source_standard != null:
+		roughness = source_standard.roughness
+		metallic = source_standard.metallic
+	shader_material.set_shader_parameter("material_roughness", roughness)
+	shader_material.set_shader_parameter("material_metallic", metallic)
 
 	if (
 		tier == ParticipantJoinInfo.SupporterTier.SUBSCRIBER
@@ -176,6 +194,39 @@ static func _create_body_tint_material(
 		shader_material.set_shader_parameter("supporter_emission_energy", 0.0)
 
 	return shader_material
+
+
+static func _resolve_standard_material(
+	mesh_instance: MeshInstance3D,
+	surface_index: int,
+	source_material: Material
+) -> StandardMaterial3D:
+	var standard: StandardMaterial3D = source_material as StandardMaterial3D
+	if standard != null:
+		return standard
+
+	var mesh: Mesh = mesh_instance.mesh
+	if mesh == null:
+		return null
+
+	return mesh.surface_get_material(surface_index) as StandardMaterial3D
+
+
+static func _resolve_albedo_texture(
+	mesh_instance: MeshInstance3D,
+	surface_index: int,
+	source_standard: StandardMaterial3D
+) -> Texture2D:
+	if source_standard != null and source_standard.albedo_texture != null:
+		return source_standard.albedo_texture
+
+	var mesh: Mesh = mesh_instance.mesh
+	if mesh != null:
+		var surface_material: StandardMaterial3D = mesh.surface_get_material(surface_index) as StandardMaterial3D
+		if surface_material != null and surface_material.albedo_texture != null:
+			return surface_material.albedo_texture
+
+	return FALLBACK_ATLAS_TEXTURE
 
 
 static func _get_tint_strength(tier: ParticipantJoinInfo.SupporterTier) -> float:
