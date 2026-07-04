@@ -2,6 +2,24 @@ class_name ZombieTierShowcaseCard
 extends VBoxContainer
 
 const ZOMBIE_VISUAL_SCENE: PackedScene = preload("res://scenes/zombies/visuals/zombie_basic_visual.tscn")
+const PREVIEW_MODEL_TRANSFORM := Transform3D(
+	Vector3(0.82, 0.0, 0.0),
+	Vector3(0.0, 0.82, 0.0),
+	Vector3(0.0, 0.0, 0.82),
+	Vector3(0.0, -0.95, 0.0)
+)
+const PREVIEW_LIGHT_TRANSFORM := Transform3D(
+	Vector3(0.866025, 0.0, -0.5),
+	Vector3(-0.25, 0.866025, -0.433013),
+	Vector3(0.433013, 0.5, 0.75),
+	Vector3(0.0, 4.0, 4.0)
+)
+const PREVIEW_CAMERA_TRANSFORM := Transform3D(
+	Vector3(1.0, 0.0, 0.0),
+	Vector3(0.0, 0.965926, -0.258819),
+	Vector3(0.0, 0.258819, 0.965926),
+	Vector3(0.0, 1.05, 4.5)
+)
 
 var _tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
 var _glow_materials: Array[ShaderMaterial] = []
@@ -51,16 +69,16 @@ func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> 
 	viewport.add_child(world_environment)
 
 	var zombie_visual: Node3D = ZOMBIE_VISUAL_SCENE.instantiate() as Node3D
-	zombie_visual.transform = Transform3D(0.82, 0, 0, 0, 0.82, 0, 0, 0, 0.82, 0, -0.95, 0)
+	zombie_visual.transform = PREVIEW_MODEL_TRANSFORM
 	viewport.add_child(zombie_visual)
 
 	var light: DirectionalLight3D = DirectionalLight3D.new()
-	light.transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 4, 4)
+	light.transform = PREVIEW_LIGHT_TRANSFORM
 	light.light_energy = 1.35
 	viewport.add_child(light)
 
 	var camera: Camera3D = Camera3D.new()
-	camera.transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 1.05, 4.5)
+	camera.transform = PREVIEW_CAMERA_TRANSFORM
 	camera.fov = 42.0
 	camera.current = true
 	viewport.add_child(camera)
