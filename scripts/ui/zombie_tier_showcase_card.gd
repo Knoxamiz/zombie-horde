@@ -2,9 +2,9 @@ class_name ZombieTierShowcaseCard
 extends VBoxContainer
 
 const PREVIEW_MODEL_TRANSFORM := Transform3D(
-	Vector3(0.82, 0.0, 0.0),
-	Vector3(0.0, 0.82, 0.0),
-	Vector3(0.0, 0.0, 0.82),
+	Vector3(1.08, 0.0, 0.0),
+	Vector3(0.0, 1.08, 0.0),
+	Vector3(0.0, 0.0, 1.08),
 	Vector3(0.0, -0.95, 0.0)
 )
 const PREVIEW_LIGHT_TRANSFORM := Transform3D(
@@ -17,7 +17,7 @@ const PREVIEW_CAMERA_TRANSFORM := Transform3D(
 	Vector3(1.0, 0.0, 0.0),
 	Vector3(0.0, 0.965926, -0.258819),
 	Vector3(0.0, 0.258819, 0.965926),
-	Vector3(0.0, 1.05, 4.5)
+	Vector3(0.0, 1.05, 3.2)
 )
 
 var _tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
@@ -35,23 +35,18 @@ func setup(tier: ParticipantJoinInfo.SupporterTier, title_text: String, perk_tex
 
 
 func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> void:
-	var preview_box: PanelContainer = PanelContainer.new()
-	preview_box.custom_minimum_size = Vector2(0, 108)
-	preview_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	preview_box.add_theme_stylebox_override("panel", _make_preview_frame(accent_color))
-	add_child(preview_box)
+	var preview_root: Control = Control.new()
+	preview_root.custom_minimum_size = Vector2(0, 148)
+	preview_root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	add_child(preview_root)
 
 	var viewport_container: SubViewportContainer = SubViewportContainer.new()
 	viewport_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-	viewport_container.offset_left = 4.0
-	viewport_container.offset_top = 4.0
-	viewport_container.offset_right = -4.0
-	viewport_container.offset_bottom = -4.0
 	viewport_container.stretch = true
-	preview_box.add_child(viewport_container)
+	preview_root.add_child(viewport_container)
 
 	var viewport: SubViewport = SubViewport.new()
-	viewport.size = Vector2i(124, 100)
+	viewport.size = Vector2i(148, 148)
 	viewport.transparent_bg = true
 	viewport.own_world_3d = true
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -60,10 +55,10 @@ func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> 
 	var world_environment: WorldEnvironment = WorldEnvironment.new()
 	var environment: Environment = Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(0.01, 0.012, 0.01, 1.0)
+	environment.background_color = Color(0.0, 0.0, 0.0, 0.0)
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	environment.ambient_light_color = Color(0.45, 0.48, 0.42, 1.0)
-	environment.ambient_light_energy = 0.55
+	environment.ambient_light_energy = 0.65
 	world_environment.environment = environment
 	viewport.add_child(world_environment)
 
@@ -79,7 +74,7 @@ func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> 
 
 	var camera: Camera3D = Camera3D.new()
 	camera.transform = PREVIEW_CAMERA_TRANSFORM
-	camera.fov = 42.0
+	camera.fov = 38.0
 	camera.current = true
 	viewport.add_child(camera)
 
@@ -145,17 +140,3 @@ func _process(delta: float) -> void:
 	ZombieCharacterVisuals.update_supporter_glow_pulse(_glow_materials, _glow_time, _tier)
 	ZombieCharacterVisuals.update_bits_champion_glow(_bits_champion_light, _glow_time)
 
-
-func _make_preview_frame(accent_color: Color) -> StyleBoxFlat:
-	var style: StyleBoxFlat = StyleBoxFlat.new()
-	style.bg_color = Color(0.01, 0.012, 0.01, 0.92)
-	style.border_width_left = 1
-	style.border_width_top = 1
-	style.border_width_right = 1
-	style.border_width_bottom = 1
-	style.border_color = accent_color.lerp(Color(0.35, 0.35, 0.35, 1.0), 0.35)
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_right = 6
-	style.corner_radius_bottom_left = 6
-	return style
