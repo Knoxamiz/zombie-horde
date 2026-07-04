@@ -1,15 +1,16 @@
 class_name ZombieCharacterVisuals
 extends RefCounted
 
-const COLOR_NON_SUB: Color = Color(0.28, 1.0, 0.18, 1.0)
-const COLOR_SUBSCRIBER: Color = Color(1.0, 0.1, 0.06, 1.0)
-const COLOR_BITS_CHEER: Color = Color(1.0, 0.86, 0.04, 1.0)
-const GLOW_BITS_PULSE: Color = Color(0.82, 0.18, 1.0, 1.0)
+const COLOR_NON_SUB: Color = Color(0.42, 1.0, 0.28, 1.0)
+const COLOR_SUBSCRIBER: Color = Color(1.0, 0.18, 0.12, 1.0)
+const COLOR_BITS_CHEER: Color = Color(1.0, 0.82, 0.08, 1.0)
+const GLOW_BITS_PULSE: Color = Color(0.78, 0.22, 1.0, 1.0)
 const BITS_NAME_SCALE: float = 1.34
-const TINT_EMISSION_VIEWER: float = 0.42
-const TINT_EMISSION_SUBSCRIBER: float = 0.95
-const TINT_EMISSION_BITS: float = 1.85
-const GLOW_PULSE_BASE_ENERGY: float = 2.15
+const TINT_STRENGTH_VIEWER: float = 0.58
+const TINT_STRENGTH_SUBSCRIBER: float = 0.72
+const TINT_STRENGTH_BITS: float = 0.68
+const TINT_EMISSION_SUBSCRIBER: float = 0.22
+const GLOW_PULSE_BASE_ENERGY: float = 1.35
 
 
 static func get_body_color_for_join_info(join_info: ParticipantJoinInfo, crawler: bool = false) -> Color:
@@ -68,28 +69,52 @@ static func _tint_mesh_instance(
 		if tinted_material == null:
 			continue
 
+		var original_albedo: Color = tinted_material.albedo_color
+		var tint_strength: float = _get_tint_strength(tier)
+
 		tinted_material.resource_local_to_scene = true
-		tinted_material.albedo_texture = null
-		tinted_material.albedo_color = tint_color
-		tinted_material.roughness = 0.42
-		tinted_material.metallic = 0.08
-		tinted_material.emission_enabled = true
-		tinted_material.emission = tint_color.lerp(Color.WHITE, 0.12)
-		tinted_material.emission_energy_multiplier = _get_tint_emission_energy(tier)
+		tinted_material.albedo_color = _blend_tint_onto_albedo(original_albedo, tint_color, tint_strength)
+		_apply_tier_emission(tinted_material, tint_color, tier)
 		if tier == ParticipantJoinInfo.SupporterTier.BITS_DONOR:
 			tinted_material.rim_enabled = true
-			tinted_material.rim = 0.55
-			tinted_material.rim_tint = 0.85
+			tinted_material.rim = 0.38
+			tinted_material.rim_tint = 0.75
 		mesh_instance.set_surface_override_material(surface_index, tinted_material)
 
 
-static func _get_tint_emission_energy(tier: ParticipantJoinInfo.SupporterTier) -> float:
+static func _blend_tint_onto_albedo(base_color: Color, tint_color: Color, strength: float) -> Color:
+	var tinted: Color = Color(
+		base_color.r * tint_color.r,
+		base_color.g * tint_color.g,
+		base_color.b * tint_color.b,
+		base_color.a
+	)
+	return base_color.lerp(tinted, strength)
+
+
+static func _get_tint_strength(tier: ParticipantJoinInfo.SupporterTier) -> float:
 	match tier:
 		ParticipantJoinInfo.SupporterTier.BITS_DONOR:
-			return TINT_EMISSION_BITS
+			return TINT_STRENGTH_BITS
 		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT, ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
-			return TINT_EMISSION_SUBSCRIBER
-	return TINT_EMISSION_VIEWER
+			return TINT_STRENGTH_SUBSCRIBER
+	return TINT_STRENGTH_VIEWER
+
+
+static func _apply_tier_emission(
+	material: StandardMaterial3D,
+	tint_color: Color,
+	tier: ParticipantJoinInfo.SupporterTier
+) -> void:
+	match tier:
+		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT, ParticipantJoinInfo.SupporterTier.SUBSCRIBER:
+			material.emission_enabled = true
+			material.emission = tint_color
+			material.emission_energy_multiplier = TINT_EMISSION_SUBSCRIBER
+		ParticipantJoinInfo.SupporterTier.BITS_DONOR:
+			material.emission_enabled = false
+		_:
+			material.emission_enabled = false
 
 
 static func apply_supporter_glow(root: Node, tier: ParticipantJoinInfo.SupporterTier) -> Array[StandardMaterial3D]:
@@ -97,7 +122,6 @@ static func apply_supporter_glow(root: Node, tier: ParticipantJoinInfo.Supporter
 	if tier != ParticipantJoinInfo.SupporterTier.BITS_DONOR:
 		return glow_materials
 
-	var glow_color: Color = GLOW_BITS_PULSE
 	var base_energy: float = GLOW_PULSE_BASE_ENERGY
 
 	for mesh_instance in find_mesh_instances(root):
@@ -116,13 +140,14 @@ static func apply_supporter_glow(root: Node, tier: ParticipantJoinInfo.Supporter
 			if glow_material == null:
 				continue
 
+			var body_tint: Color = glow_material.albedo_color
 			glow_material.resource_local_to_scene = true
 			glow_material.emission_enabled = true
-			glow_material.emission = glow_color
+			glow_material.emission = body_tint.lerp(GLOW_BITS_PULSE, 0.42)
 			glow_material.emission_energy_multiplier = base_energy
 			glow_material.rim_enabled = true
-			glow_material.rim = 0.58
-			glow_material.rim_tint = 0.9
+			glow_material.rim = 0.42
+			glow_material.rim_tint = 0.82
 			mesh_instance.set_surface_override_material(surface_index, glow_material)
 			glow_materials.append(glow_material)
 

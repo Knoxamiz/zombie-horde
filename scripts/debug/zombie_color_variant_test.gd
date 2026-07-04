@@ -73,8 +73,13 @@ func _run_test() -> void:
 		quit(FAIL)
 		return
 
-	if not body_material.albedo_color.is_equal_approx(ZombieCharacterVisuals.COLOR_BITS_CHEER):
-		push_error("Bits zombie body should be gold")
+	if body_material.albedo_texture == null:
+		push_error("Bits zombie should preserve albedo texture detail")
+		quit(FAIL)
+		return
+
+	if body_material.albedo_color.g < body_material.albedo_color.b:
+		push_error("Bits zombie body tint should lean gold, not purple")
 		quit(FAIL)
 		return
 
