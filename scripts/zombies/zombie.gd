@@ -37,6 +37,7 @@ var _zombie_tint_color: Color = Color.WHITE
 var _join_info: ParticipantJoinInfo
 var _supporter_glow_materials: Array[StandardMaterial3D] = []
 var _supporter_glow_tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
+var _supporter_upgrade_state: SupporterUpgradeState
 var _glow_pulse_time: float = 0.0
 var _base_name_font_size: int = 28
 var _total_zombie_count: int = 0
@@ -166,6 +167,7 @@ func _physics_process(delta: float) -> void:
 	var active_config: ZombieConfig = _get_config()
 	_update_timers(delta)
 	_update_supporter_glow_pulse(delta)
+	_update_supporter_upgrade_pulse(delta)
 	_update_animation_playback(active_config)
 
 	if mobility_state == MobilityState.DEAD:
@@ -495,6 +497,7 @@ func _activate_visual_variant_for_state() -> void:
 	_active_animation_player = _find_animation_player(_selected_visual_variant)
 	_active_animation_name = ""
 	_apply_zombie_color_tint()
+	_apply_supporter_upgrades()
 	_play_animation_for_state(true)
 
 func _hide_variant_root(root: Node3D) -> void:
@@ -555,6 +558,22 @@ func _update_supporter_glow_pulse(delta: float) -> void:
 		_glow_pulse_time,
 		_supporter_glow_tier
 	)
+
+func _apply_supporter_upgrades() -> void:
+	var attach_root: Node3D = _selected_visual_variant if _selected_visual_variant != null else _visual_root
+	if attach_root == null:
+		_supporter_upgrade_state = null
+		return
+
+	if not _get_config().supporter_upgrades_enabled:
+		SupporterUpgradeApplier.clear_upgrades(attach_root)
+		_supporter_upgrade_state = null
+		return
+
+	_supporter_upgrade_state = SupporterUpgradeApplier.apply_upgrades(attach_root, _join_info)
+
+func _update_supporter_upgrade_pulse(delta: float) -> void:
+	SupporterUpgradeApplier.update_pulse(_supporter_upgrade_state, delta)
 
 func _find_animation_player(root: Node) -> AnimationPlayer:
 	var animation_player: AnimationPlayer = root as AnimationPlayer

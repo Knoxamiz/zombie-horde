@@ -17,6 +17,9 @@ var _landings: int = 0
 var _join_info: ParticipantJoinInfo
 var _supporter_glow_materials: Array[StandardMaterial3D] = []
 var _supporter_glow_tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
+var _supporter_upgrade_state: SupporterUpgradeState
+var _gift_spotlight_played: bool = false
+var _base_visual_scale: Vector3 = Vector3.ONE
 var _glow_pulse_time: float = 0.0
 var _base_name_font_size: int = 20
 
@@ -29,6 +32,8 @@ func _ready() -> void:
 	_join_info = ParticipantJoinInfo.for_name(display_name)
 	if _name_label != null:
 		_base_name_font_size = _name_label.font_size
+	if _visual_root != null:
+		_base_visual_scale = _visual_root.scale
 	_refresh_name_label()
 	_apply_zombie_visuals()
 	_animation_player = _find_animation_player(self)
@@ -41,6 +46,9 @@ func configure_lobby_zombie(new_display_name: String, random_seed: int, join_inf
 	_rng.seed = random_seed
 	_landings = 0
 	_was_falling = true
+	_gift_spotlight_played = false
+	if _visual_root != null:
+		_visual_root.scale = _base_visual_scale
 	_refresh_name_label()
 	_apply_zombie_visuals()
 	call_deferred("_kick")
@@ -59,12 +67,16 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	_landings += 1
 
 	if _landings == 1:
+		_trigger_drop_upgrade_effects()
+
+	if _landings == 1:
 		state.linear_velocity = Vector3(velocity.x, velocity.y * first_bounce_scale, velocity.z)
 	else:
 		state.linear_velocity = Vector3(velocity.x, velocity.y * later_bounce_boost, velocity.z)
 
 func _physics_process(delta: float) -> void:
 	_update_supporter_glow_pulse(delta)
+	_update_supporter_upgrade_pulse(delta)
 
 	_motion_timer -= delta
 	if _motion_timer > 0.0:
@@ -115,15 +127,60 @@ func _apply_zombie_visuals() -> void:
 		ZombieCharacterVisuals.get_body_color_for_join_info(_join_info)
 	)
 	_supporter_glow_materials.clear()
-	if _join_info == null or not _join_info.has_supporter_glow():
-		_supporter_glow_tier = ParticipantJoinInfo.SupporterTier.NONE
+	_supporter_glow_tier = ParticipantJoinInfo.SupporterTier.NONE
+	if _join_info != null and _join_info.has_supporter_glow():
+		_supporter_glow_tier = _join_info.get_supporter_tier()
+		_supporter_glow_materials = ZombieCharacterVisuals.apply_supporter_glow(
+			_visual_root,
+			_supporter_glow_tier
+		)
+	_apply_supporter_upgrades()
+
+func _apply_supporter_upgrades() -> void:
+	if _visual_root == null:
+		_supporter_upgrade_state = null
 		return
 
-	_supporter_glow_tier = _join_info.get_supporter_tier()
-	_supporter_glow_materials = ZombieCharacterVisuals.apply_supporter_glow(
-		_visual_root,
-		_supporter_glow_tier
-	)
+	_supporter_upgrade_state = SupporterUpgradeApplier.apply_upgrades(_visual_root, _join_info)
+
+func _update_supporter_upgrade_pulse(delta: float) -> void:
+	SupporterUpgradeApplier.update_pulse(_supporter_upgrade_state, delta)
+
+func _trigger_drop_upgrade_effects() -> void:
+	if _join_info == null:
+		return
+
+	match _join_info.get_supporter_tier():
+		ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT:
+			_play_gift_spotlight()
+		ParticipantJoinInfo.SupporterTier.BITS_DONOR:
+			_play_bits_drop_scale()
+
+func _play_gift_spotlight() -> void:
+	if _gift_spotlight_played:
+		return
+	_gift_spotlight_played = true
+
+	var spotlight: OmniLight3D = OmniLight3D.new()
+	spotlight.name = "GiftSpotlight"
+	spotlight.light_color = ZombieCharacterVisuals.COLOR_SUBSCRIBER
+	spotlight.light_energy = 2.6
+	spotlight.omni_range = 2.5
+	spotlight.position = Vector3(0.0, 0.45, 0.0)
+	add_child(spotlight)
+
+	var tween: Tween = create_tween()
+	tween.tween_property(spotlight, "light_energy", 0.0, 0.7)
+	tween.tween_callback(spotlight.queue_free)
+
+func _play_bits_drop_scale() -> void:
+	if _visual_root == null:
+		return
+
+	var boosted_scale: Vector3 = _base_visual_scale * 1.14
+	var tween: Tween = create_tween()
+	tween.tween_property(_visual_root, "scale", boosted_scale, 0.12)
+	tween.tween_property(_visual_root, "scale", _base_visual_scale, 0.28)
 
 func _update_supporter_glow_pulse(delta: float) -> void:
 	if _supporter_glow_materials.is_empty():

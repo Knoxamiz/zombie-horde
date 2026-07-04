@@ -35,3 +35,4 @@ out_of_bounds_max_z = 48.0
 out_of_bounds_min_y = -3.0
 color_variants_enabled = true
 supporter_glow_enabled = true
+supporter_upgrades_enabled = true

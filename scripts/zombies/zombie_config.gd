@@ -33,3 +33,4 @@ extends Resource
 @export_range(0, 256, 1) var name_label_full_roster_limit: int = 24
 @export var color_variants_enabled: bool = true
 @export var supporter_glow_enabled: bool = true
+@export var supporter_upgrades_enabled: bool = true
