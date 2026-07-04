@@ -18,6 +18,7 @@ const PANEL_PATHS: Dictionary = {
 
 @export var round_manager_path: NodePath
 @export var join_source_path: NodePath
+@export var debug_join_source_path: NodePath
 @export var twitch_join_source_path: NodePath
 @export var leaderboard_store_path: NodePath
 @export var zombie_manager_path: NodePath
@@ -32,6 +33,7 @@ const PANEL_PATHS: Dictionary = {
 
 var _round_manager: RoundManager
 var _join_source: JoinSource
+var _debug_join_source: DebugJoinSource
 var _twitch_join_source: TwitchJoinSource
 var _leaderboard_store: LeaderboardStore
 var _zombie_manager: ZombieManager
@@ -91,6 +93,7 @@ var _hud_visible_before_layout_edit: bool = false
 func _ready() -> void:
 	_round_manager = get_node_or_null(round_manager_path) as RoundManager
 	_join_source = get_node_or_null(join_source_path) as JoinSource
+	_debug_join_source = get_node_or_null(debug_join_source_path) as DebugJoinSource
 	_twitch_join_source = get_node_or_null(twitch_join_source_path) as TwitchJoinSource
 	_leaderboard_store = get_node_or_null(leaderboard_store_path) as LeaderboardStore
 	_zombie_manager = get_node_or_null(zombie_manager_path) as ZombieManager
@@ -310,9 +313,14 @@ func _on_reset_pressed() -> void:
 		_round_manager.reset_round()
 
 func _on_join_pressed() -> void:
-	var debug_source: DebugJoinSource = _join_source as DebugJoinSource
+	var debug_source: DebugJoinSource = _get_debug_join_source()
 	if debug_source != null:
 		debug_source.request_random_join()
+
+func _get_debug_join_source() -> DebugJoinSource:
+	if _debug_join_source != null:
+		return _debug_join_source
+	return _join_source as DebugJoinSource
 
 func _on_round_state_changed(state_text: String) -> void:
 	_state_text = state_text

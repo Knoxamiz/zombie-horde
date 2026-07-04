@@ -64,6 +64,7 @@ script = ExtResource("1_input")
 [node name="DebugJoinSource" type="Node" parent="Systems"]
 script = ExtResource("2_join")
 round_config = ExtResource("7_round_config")
+auto_seed_on_boot = false
 
 [node name="TwitchJoinSource" type="Node" parent="Systems"]
 script = ExtResource("20_twitch_join")
@@ -566,6 +567,7 @@ outline_size = 4
 visible = false
 round_manager_path = NodePath("../Systems/RoundManager")
 join_source_path = NodePath("../Systems/DebugJoinSource")
+debug_join_source_path = NodePath("../Systems/DebugJoinSource")
 twitch_join_source_path = NodePath("../Systems/TwitchJoinSource")
 leaderboard_store_path = NodePath("../Systems/LeaderboardStore")
 zombie_manager_path = NodePath("../Systems/ZombieManager")
@@ -613,6 +615,7 @@ world_reset_button_path = NodePath("../SpectatorCamera/Camera3D/WorldMenus3D/Str
 [node name="PreRoundUI" parent="." instance=ExtResource("31_pre_round_ui")]
 round_manager_path = NodePath("../Systems/RoundManager")
 join_source_path = NodePath("../Systems/DebugJoinSource")
+debug_join_source_path = NodePath("../Systems/DebugJoinSource")
 twitch_join_source_path = NodePath("../Systems/TwitchJoinSource")
 leaderboard_store_path = NodePath("../Systems/LeaderboardStore")
 feature_config = ExtResource("42_feature_config")

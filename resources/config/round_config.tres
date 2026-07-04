@@ -8,5 +8,5 @@ min_participants_to_start = 1
 max_pending_participants = 128
 countdown_seconds = 5
 command_text = "Type !brains to join."
-auto_seed_debug_roster = true
+auto_seed_debug_roster = false
 default_debug_names = PackedStringArray("Ada", "ByteBiter", "CaptainDecay", "DoomSprint", "EchoRot", "GlitchGnaw", "HexHunger", "PixelMunch")

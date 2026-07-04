@@ -441,6 +441,6 @@ text = "Reset"
 
 [node name="JoinButton" type="Button" parent="Root/ControlPanel/Margin/HBox"]
 layout_mode = 2
-text = "Add Join"
+text = "Add NPC"
 
 [node name="RoundResultsOverlay" parent="Root" instance=ExtResource("3_results_overlay")]
