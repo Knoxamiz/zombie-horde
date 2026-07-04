@@ -11,6 +11,14 @@ const FEET_MARGIN := 0.12
 const TOP_MARGIN := 0.18
 const HEAD_TOP_LOCAL_Y := 1.05
 const ICON_TEXTURE_HEIGHT := 128.0
+const REFERENCE_TIER: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT
+
+const TIER_SCALE_MULTIPLIERS: Dictionary = {
+	ParticipantJoinInfo.SupporterTier.NONE: 0.74,
+	ParticipantJoinInfo.SupporterTier.SUBSCRIBER: 1.0,
+	ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT: 1.0,
+	ParticipantJoinInfo.SupporterTier.BITS_DONOR: 1.0,
+}
 
 const PREVIEW_LIGHT_TRANSFORM := Transform3D(
 	Vector3(0.866025, 0.0, -0.5),
@@ -39,18 +47,20 @@ static func needs_icon_headroom(tier: ParticipantJoinInfo.SupporterTier) -> bool
 	)
 
 
-static func get_model_transform() -> Transform3D:
+static func get_model_transform(tier: ParticipantJoinInfo.SupporterTier) -> Transform3D:
+	var scale_multiplier: float = float(TIER_SCALE_MULTIPLIERS.get(tier, 1.0))
+	var final_scale: float = MODEL_SCALE * scale_multiplier
 	return Transform3D(
-		Vector3(MODEL_SCALE, 0.0, 0.0),
-		Vector3(0.0, MODEL_SCALE, 0.0),
-		Vector3(0.0, 0.0, MODEL_SCALE),
+		Vector3(final_scale, 0.0, 0.0),
+		Vector3(0.0, final_scale, 0.0),
+		Vector3(0.0, 0.0, final_scale),
 		Vector3(0.0, MODEL_GROUND_Y, 0.0)
 	)
 
 
-static func build_camera_transform(tier: ParticipantJoinInfo.SupporterTier) -> Transform3D:
+static func build_camera_transform(_tier: ParticipantJoinInfo.SupporterTier = REFERENCE_TIER) -> Transform3D:
 	var bottom_y: float = MODEL_GROUND_Y - FEET_MARGIN
-	var top_y: float = _get_content_top_y(tier) + TOP_MARGIN
+	var top_y: float = _get_content_top_y(REFERENCE_TIER) + TOP_MARGIN
 	var center_y: float = (bottom_y + top_y) * 0.5
 	var content_height: float = max(top_y - bottom_y, 0.5)
 	var distance: float = _get_camera_distance_for_height(content_height, CAMERA_FOV)
@@ -63,8 +73,10 @@ static func build_camera_transform(tier: ParticipantJoinInfo.SupporterTier) -> T
 
 
 static func _get_content_top_y(tier: ParticipantJoinInfo.SupporterTier) -> float:
+	var scale_multiplier: float = float(TIER_SCALE_MULTIPLIERS.get(tier, 1.0))
+	var model_scale: float = MODEL_SCALE * scale_multiplier
 	var head_top_local_y: float = 0.88 if tier == ParticipantJoinInfo.SupporterTier.NONE else HEAD_TOP_LOCAL_Y
-	var head_top_y: float = MODEL_GROUND_Y + head_top_local_y * MODEL_SCALE
+	var head_top_y: float = MODEL_GROUND_Y + head_top_local_y * model_scale
 	if not needs_icon_headroom(tier):
 		return head_top_y
 
@@ -72,16 +84,16 @@ static func _get_content_top_y(tier: ParticipantJoinInfo.SupporterTier) -> float
 	if tier == ParticipantJoinInfo.SupporterTier.GIFT_RECIPIENT:
 		icon_offset_y = SupporterUpgradeApplier.GIFT_ICON_OFFSET.y
 
-	var attach_y: float = MODEL_GROUND_Y + SupporterUpgradeApplier.HEAD_ATTACH_OFFSET.y * MODEL_SCALE
+	var attach_y: float = MODEL_GROUND_Y + SupporterUpgradeApplier.HEAD_ATTACH_OFFSET.y * model_scale
 	var icon_half_height: float = (
 		SupporterUpgradeApplier.ICON_PIXEL_SIZE
 		* SHOWCASE_ICON_SCALE
 		* ICON_TEXTURE_HEIGHT
 		* 0.5
 	)
-	var icon_top_y: float = attach_y + (icon_offset_y * MODEL_SCALE) + icon_half_height
+	var icon_top_y: float = attach_y + (icon_offset_y * model_scale) + icon_half_height
 	if tier == ParticipantJoinInfo.SupporterTier.BITS_DONOR:
-		icon_top_y += 0.28 * MODEL_SCALE
+		icon_top_y += 0.28 * model_scale
 	return max(head_top_y, icon_top_y)
 
 

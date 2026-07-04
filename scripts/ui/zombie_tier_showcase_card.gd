@@ -43,7 +43,7 @@ func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> 
 	viewport.add_child(world_environment)
 
 	var zombie_visual: Node3D = ZombieTierVisuals.get_visual_scene_for_tier(_tier).instantiate() as Node3D
-	zombie_visual.transform = ZombieTierPreviewFraming.get_model_transform()
+	zombie_visual.transform = ZombieTierPreviewFraming.get_model_transform(_tier)
 	viewport.add_child(zombie_visual)
 
 	var light: DirectionalLight3D = DirectionalLight3D.new()
