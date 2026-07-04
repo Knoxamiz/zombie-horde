@@ -54,6 +54,6 @@ func _build_showcase() -> void:
 
 func _make_divider() -> Control:
 	var divider: ColorRect = ColorRect.new()
-	divider.custom_minimum_size = Vector2(2, 148)
+	divider.custom_minimum_size = Vector2(2, 222)
 	divider.color = Color(1.0, 0.55, 0.1, 0.75)
 	return divider

@@ -2,9 +2,9 @@ class_name ZombieTierShowcaseCard
 extends VBoxContainer
 
 const PREVIEW_MODEL_TRANSFORM := Transform3D(
-	Vector3(1.08, 0.0, 0.0),
-	Vector3(0.0, 1.08, 0.0),
-	Vector3(0.0, 0.0, 1.08),
+	Vector3(1.62, 0.0, 0.0),
+	Vector3(0.0, 1.62, 0.0),
+	Vector3(0.0, 0.0, 1.62),
 	Vector3(0.0, -0.95, 0.0)
 )
 const PREVIEW_LIGHT_TRANSFORM := Transform3D(
@@ -17,8 +17,9 @@ const PREVIEW_CAMERA_TRANSFORM := Transform3D(
 	Vector3(1.0, 0.0, 0.0),
 	Vector3(0.0, 0.965926, -0.258819),
 	Vector3(0.0, 0.258819, 0.965926),
-	Vector3(0.0, 1.05, 3.2)
+	Vector3(0.0, 1.05, 2.15)
 )
+const PREVIEW_HEIGHT := 222
 
 var _tier: ParticipantJoinInfo.SupporterTier = ParticipantJoinInfo.SupporterTier.NONE
 var _glow_materials: Array[ShaderMaterial] = []
@@ -36,7 +37,7 @@ func setup(tier: ParticipantJoinInfo.SupporterTier, title_text: String, perk_tex
 
 func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> void:
 	var preview_root: Control = Control.new()
-	preview_root.custom_minimum_size = Vector2(0, 148)
+	preview_root.custom_minimum_size = Vector2(0, PREVIEW_HEIGHT)
 	preview_root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	add_child(preview_root)
 
@@ -46,7 +47,7 @@ func _build_slot(title_text: String, perk_text: String, accent_color: Color) -> 
 	preview_root.add_child(viewport_container)
 
 	var viewport: SubViewport = SubViewport.new()
-	viewport.size = Vector2i(148, 148)
+	viewport.size = Vector2i(PREVIEW_HEIGHT, PREVIEW_HEIGHT)
 	viewport.transparent_bg = true
 	viewport.own_world_3d = true
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
