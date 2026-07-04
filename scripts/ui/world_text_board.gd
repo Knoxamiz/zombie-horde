@@ -16,6 +16,11 @@ extends Node3D
 @export var glow_strength: float = 0.18
 @export_range(0.0, 1.0, 0.05) var texture_strength: float = 0.75
 @export var flat_mode: bool = false
+@export var borderless: bool = false
+@export var transparent_face: bool = false
+@export var face_glow_color: Color = Color(0.18, 0.92, 0.34, 1.0)
+@export var face_glow_strength: float = 0.28
+@export var text_centered: bool = false
 @export var border_thickness: float = 0.055
 @export var title_z: float = 0.16
 @export var body_z: float = 0.17
@@ -127,42 +132,60 @@ func _apply_flat_layout() -> void:
 		max(board_size.x - border * 2.0, 0.2),
 		max(board_size.y - border * 2.0, 0.2)
 	)
+	if borderless:
+		inner_size = board_size
 	var flat_glow: float = glow_strength * 0.2
+	var face_emission: float = face_glow_strength if transparent_face else flat_glow
+	var face_material_color: Color = face_color
+	if transparent_face:
+		face_material_color = Color(face_color.r, face_color.g, face_color.b, 0.0)
 
-	_face_material = _make_material(face_color, flat_glow)
+	_face_material = _make_face_material(face_material_color, face_emission, transparent_face)
 	_frame_material = _make_material(frame_color, flat_glow * 1.2)
 
 	_set_box(_face, Vector3(inner_size.x, inner_size.y, flat_depth), Vector3(0.0, 0.0, 0.0), _face_material)
-	_set_box(
-		_top_rim,
-		Vector3(board_size.x, border, flat_depth),
-		Vector3(0.0, board_size.y * 0.5 - border * 0.5, 0.0),
-		_frame_material
-	)
-	_set_box(
-		_bottom_rim,
-		Vector3(board_size.x, border, flat_depth),
-		Vector3(0.0, -board_size.y * 0.5 + border * 0.5, 0.0),
-		_frame_material
-	)
-	_set_box(
-		_left_rim,
-		Vector3(border, inner_size.y, flat_depth),
-		Vector3(-board_size.x * 0.5 + border * 0.5, 0.0, 0.0),
-		_frame_material
-	)
-	_set_box(
-		_right_rim,
-		Vector3(border, inner_size.y, flat_depth),
-		Vector3(board_size.x * 0.5 - border * 0.5, 0.0, 0.0),
-		_frame_material
-	)
+	if borderless:
+		_hide_border_rims()
+	else:
+		_set_box(
+			_top_rim,
+			Vector3(board_size.x, border, flat_depth),
+			Vector3(0.0, board_size.y * 0.5 - border * 0.5, 0.0),
+			_frame_material
+		)
+		_set_box(
+			_bottom_rim,
+			Vector3(board_size.x, border, flat_depth),
+			Vector3(0.0, -board_size.y * 0.5 + border * 0.5, 0.0),
+			_frame_material
+		)
+		_set_box(
+			_left_rim,
+			Vector3(border, inner_size.y, flat_depth),
+			Vector3(-board_size.x * 0.5 + border * 0.5, 0.0, 0.0),
+			_frame_material
+		)
+		_set_box(
+			_right_rim,
+			Vector3(border, inner_size.y, flat_depth),
+			Vector3(board_size.x * 0.5 - border * 0.5, 0.0, 0.0),
+			_frame_material
+		)
 	_set_detail_visible(false)
 
 	var text_z: float = flat_depth * 0.5 + 0.01
-	var left_edge: float = -inner_size.x * 0.43
-	_title_label.position = Vector3(left_edge, board_size.y * 0.4, text_z + title_z * 0.08)
-	_body_label.position = Vector3(left_edge, board_size.y * 0.22, text_z + body_z * 0.08)
+	if text_centered:
+		_title_label.position = Vector3(0.0, board_size.y * 0.4, text_z + title_z * 0.08)
+		_body_label.position = Vector3(0.0, board_size.y * 0.08, text_z + body_z * 0.08)
+	else:
+		var left_edge: float = -inner_size.x * 0.43
+		_title_label.position = Vector3(left_edge, board_size.y * 0.4, text_z + title_z * 0.08)
+		_body_label.position = Vector3(left_edge, board_size.y * 0.22, text_z + body_z * 0.08)
+
+func _hide_border_rims() -> void:
+	for rim in [_top_rim, _bottom_rim, _left_rim, _right_rim]:
+		if rim != null:
+			rim.visible = false
 
 func _set_detail_visible(enabled: bool) -> void:
 	for detail_node in _face_detail_nodes:
@@ -200,13 +223,24 @@ func _set_box(mesh_node: MeshInstance3D, size: Vector3, local_position: Vector3,
 	mesh_node.position = local_position
 	mesh_node.set_surface_override_material(0, material)
 
-func _make_material(color: Color, emission_scale: float) -> StandardMaterial3D:
+func _make_face_material(color: Color, emission_scale: float, use_transparency: bool) -> StandardMaterial3D:
+	var emission_color: Color = face_glow_color if use_transparency else color
+	return _make_material(color, emission_scale, use_transparency, emission_color)
+
+func _make_material(
+	color: Color,
+	emission_scale: float,
+	use_transparency: bool = false,
+	emission_color: Color = Color.BLACK
+) -> StandardMaterial3D:
 	var material: StandardMaterial3D = StandardMaterial3D.new()
 	material.albedo_color = color
 	material.roughness = 0.72
 	material.metallic = 0.0
 	material.emission_enabled = true
-	material.emission = color * emission_scale
+	material.emission = emission_color * emission_scale
+	if use_transparency:
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.no_depth_test = true
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
@@ -228,12 +262,16 @@ func _apply_text() -> void:
 	_title_label.modulate = title_color
 	_title_label.font_size = title_font_size
 	_title_label.outline_size = title_outline_size
-	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_title_label.horizontal_alignment = (
+		HORIZONTAL_ALIGNMENT_CENTER if text_centered else HORIZONTAL_ALIGNMENT_LEFT
+	)
 	_title_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 
 	_body_label.text = body_text
 	_body_label.modulate = body_color
 	_body_label.font_size = body_font_size
 	_body_label.outline_size = body_outline_size
-	_body_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_body_label.horizontal_alignment = (
+		HORIZONTAL_ALIGNMENT_CENTER if text_centered else HORIZONTAL_ALIGNMENT_LEFT
+	)
 	_body_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP

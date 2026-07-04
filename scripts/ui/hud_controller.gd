@@ -426,7 +426,7 @@ func _refresh_world_leaders_board() -> void:
 		return
 
 	if _is_race_live():
-		_world_leaders_board.set_board_text("TOP 10", _format_live_standings_body())
+		_world_leaders_board.set_board_text("TOP 10 STANDINGS", _format_live_standings_body())
 		return
 
 	var body: String = _leaderboard_text
