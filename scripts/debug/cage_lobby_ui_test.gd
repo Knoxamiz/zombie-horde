@@ -61,5 +61,13 @@ func _run_test() -> void:
 		quit(FAIL)
 		return
 
+	var showcase: ZombieModelShowcaseMenu = pre_round_ui.get_node_or_null(
+		"Root/ZombieModelShowcase"
+	) as ZombieModelShowcaseMenu
+	if showcase == null or not showcase.visible:
+		push_error("Zombie model showcase should be visible in lobby mode")
+		quit(FAIL)
+		return
+
 	print("PASS: single 2D lobby UI with join feed, 3D boards hidden")
 	quit(PASS)

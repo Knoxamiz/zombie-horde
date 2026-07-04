@@ -40,6 +40,7 @@ var _state_text: String = "Joining"
 @onready var _recent_winners_label: Label = get_node("Root/ScoresPanel/Margin/VBox/RecentWinnersLabel") as Label
 @onready var _fastest_times_button: Button = get_node("Root/ScoresPanel/Margin/VBox/FastestTimesButton") as Button
 @onready var _leaderboard_menu: LeaderboardMenuController = get_node("LeaderboardMenu") as LeaderboardMenuController
+@onready var _zombie_showcase: ZombieModelShowcaseMenu = get_node("Root/ZombieModelShowcase") as ZombieModelShowcaseMenu
 
 func _ready() -> void:
 	_round_manager = get_node_or_null(round_manager_path) as RoundManager
@@ -80,6 +81,8 @@ func set_screen_mode(mode: String) -> void:
 	visible = true
 	if _root != null:
 		_root.visible = should_show
+	if _zombie_showcase != null:
+		_zombie_showcase.visible = should_show
 	if should_show:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 

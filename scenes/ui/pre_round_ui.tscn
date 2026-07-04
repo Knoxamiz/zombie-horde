@@ -1,9 +1,10 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/pre_round_ui_controller.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/ui/zombie_horde_theme.tres" id="2_theme"]
 [ext_resource type="Script" path="res://scripts/ui/hold_to_confirm_button.gd" id="3_hold_button"]
 [ext_resource type="PackedScene" path="res://scenes/ui/leaderboard_menu.tscn" id="4_leaderboard_menu"]
+[ext_resource type="Script" path="res://scripts/ui/zombie_model_showcase_menu.gd" id="5_showcase_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_board_header"]
 content_margin_left = 16.0
@@ -51,6 +52,19 @@ corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 shadow_color = Color(1, 0.7, 0.18, 0.36)
 shadow_size = 26
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_showcase_glow"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.018, 0.024, 0.016, 0.92)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(0.78, 0.22, 1.0, 0.28)
+shadow_size = 18
 
 [node name="PreRoundUI" type="CanvasLayer"]
 layer = 12
@@ -190,6 +204,23 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 text = "Bits"
+
+[node name="ZombieModelShowcase" type="PanelContainer" parent="Root"]
+custom_minimum_size = Vector2(1000, 0)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -500.0
+offset_top = -252.0
+offset_right = 500.0
+offset_bottom = -68.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBox_showcase_glow")
+script = ExtResource("5_showcase_script")
 
 [node name="OptionsButton" type="Button" parent="Root"]
 custom_minimum_size = Vector2(140, 46)
