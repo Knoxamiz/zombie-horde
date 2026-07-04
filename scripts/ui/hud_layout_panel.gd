@@ -4,6 +4,7 @@ extends Control
 signal edit_hide_requested(panel_id: String)
 
 const HANDLE_SIZE: float = 20.0
+const HEADER_DRAG_HEIGHT: float = 48.0
 const MIN_PANEL_SIZE: Vector2 = Vector2(180.0, 96.0)
 const RESIZE_CORNERS: Array[String] = ["tl", "tr", "bl", "br"]
 
@@ -81,10 +82,9 @@ func _build_edit_chrome() -> void:
 
 	_drag_surface = ColorRect.new()
 	_drag_surface.name = "DragSurface"
-	_drag_surface.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_drag_surface.color = Color(0.0, 0.0, 0.0, 0.0)
 	_drag_surface.mouse_filter = Control.MOUSE_FILTER_STOP
 	_drag_surface.mouse_default_cursor_shape = Control.CURSOR_MOVE
+	_drag_surface.color = Color(1.0, 1.0, 1.0, 0.04)
 	_drag_surface.gui_input.connect(_on_drag_surface_gui_input)
 	_edit_root.add_child(_drag_surface)
 
@@ -134,11 +134,20 @@ func _on_resize_handle_input(event: InputEvent, corner: String) -> void:
 
 
 func _begin_interaction(mode: String, corner: String, global_mouse: Vector2) -> void:
+	_raise_for_edit()
 	_interaction_mode = mode
 	_resize_corner = corner
 	_drag_start_mouse_global = global_mouse
 	_drag_start_rect = get_layout_rect()
 	set_highlight(true)
+
+
+func _raise_for_edit() -> void:
+	var parent_node: Node = get_parent()
+	if parent_node != null:
+		parent_node.move_child(self, parent_node.get_child_count() - 1)
+	if _edit_root != null:
+		_edit_root.move_to_front()
 
 
 func _input(event: InputEvent) -> void:
@@ -255,6 +264,10 @@ func _update_handle_positions() -> void:
 	if _hide_button != null:
 		_hide_button.position = Vector2(maxf(panel_size.x - 60.0, inset), inset)
 		_hide_button.size = Vector2(52.0, 28.0)
+
+	if _drag_surface != null:
+		_drag_surface.position = Vector2.ZERO
+		_drag_surface.size = Vector2(panel_size.x, HEADER_DRAG_HEIGHT)
 
 	if _handles.has("tl"):
 		(_handles["tl"] as Control).position = Vector2(inset, inset)

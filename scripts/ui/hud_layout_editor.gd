@@ -89,7 +89,7 @@ func _build_toolbar() -> void:
 	_toolbar.add_child(row)
 
 	var hint := Label.new()
-	hint.text = "Drag anywhere on panel to move · corners to resize"
+	hint.text = "Drag header to move · corners to resize"
 	hint.add_theme_color_override("font_color", Color(0.82, 1.0, 0.45, 0.9))
 	hint.add_theme_font_size_override("font_size", 14)
 	row.add_child(hint)
