@@ -7,11 +7,6 @@ const PANEL_IDS: Array[String] = ["top", "roster", "leaderboard", "command", "co
 
 var _hud_controller: Node
 var _toolbar: PanelContainer
-var _active_panel: HudLayoutPanel
-var _drag_mode: String = ""
-var _resize_corner: String = ""
-var _drag_start_mouse: Vector2 = Vector2.ZERO
-var _drag_start_rect: Rect2 = Rect2()
 
 
 func setup(hud_controller: Node) -> void:
@@ -30,7 +25,6 @@ func begin() -> void:
 
 
 func end() -> void:
-	_end_drag()
 	_deactivate_panels()
 	visible = false
 
@@ -40,9 +34,6 @@ func _activate_panels() -> void:
 		var panel: HudLayoutPanel = _get_layout_panel(panel_id)
 		if panel == null or not panel.visible:
 			continue
-		panel.flatten_to_absolute()
-		if not panel.edit_interaction_started.is_connected(_on_panel_interaction_started):
-			panel.edit_interaction_started.connect(_on_panel_interaction_started)
 		if not panel.edit_hide_requested.is_connected(_on_panel_hide_requested):
 			panel.edit_hide_requested.connect(_on_panel_hide_requested)
 		panel.set_edit_active(true)
@@ -53,8 +44,6 @@ func _deactivate_panels() -> void:
 		var panel: HudLayoutPanel = _get_layout_panel(panel_id)
 		if panel == null:
 			continue
-		if panel.edit_interaction_started.is_connected(_on_panel_interaction_started):
-			panel.edit_interaction_started.disconnect(_on_panel_interaction_started)
 		if panel.edit_hide_requested.is_connected(_on_panel_hide_requested):
 			panel.edit_hide_requested.disconnect(_on_panel_hide_requested)
 		panel.set_edit_active(false)
@@ -74,9 +63,9 @@ func _build_toolbar() -> void:
 
 	_toolbar = PanelContainer.new()
 	_toolbar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_toolbar.offset_left = -300.0
+	_toolbar.offset_left = -280.0
 	_toolbar.offset_top = -54.0
-	_toolbar.offset_right = 300.0
+	_toolbar.offset_right = 280.0
 	_toolbar.offset_bottom = -14.0
 	_toolbar.mouse_filter = Control.MOUSE_FILTER_STOP
 	var toolbar_style := StyleBoxFlat.new()
@@ -100,7 +89,7 @@ func _build_toolbar() -> void:
 	_toolbar.add_child(row)
 
 	var hint := Label.new()
-	hint.text = "Drag header to move · drag corners to resize"
+	hint.text = "Drag anywhere on panel to move · corners to resize"
 	hint.add_theme_color_override("font_color", Color(0.82, 1.0, 0.45, 0.9))
 	hint.add_theme_font_size_override("font_size", 14)
 	row.add_child(hint)
@@ -133,112 +122,20 @@ func _make_button(label: String, accent: Color, callback: Callable) -> Button:
 	return button
 
 
-func _on_panel_interaction_started(panel_id: String, mode: String, corner: String) -> void:
-	_active_panel = _get_layout_panel(panel_id)
-	_drag_mode = mode
-	_resize_corner = corner
-	_drag_start_mouse = get_viewport().get_mouse_position()
-	if _active_panel != null:
-		_drag_start_rect = _active_panel.get_layout_rect()
-
-
 func _on_panel_hide_requested(panel_id: String) -> void:
 	var panel: HudLayoutPanel = _get_layout_panel(panel_id)
 	if panel == null:
 		return
 	panel.visible = false
 	panel.set_edit_active(false)
-	if _active_panel == panel:
-		_end_drag()
 
 
 func _input(event: InputEvent) -> void:
 	if not visible:
 		return
-
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		finished.emit(false)
 		get_viewport().set_input_as_handled()
-		return
-
-	if _drag_mode.is_empty():
-		return
-
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		if not event.pressed:
-			_end_drag()
-		return
-
-	if event is InputEventMouseMotion:
-		_apply_drag(event.global_position)
-		get_viewport().set_input_as_handled()
-
-
-func _apply_drag(global_mouse: Vector2) -> void:
-	if _active_panel == null:
-		return
-	var parent: Control = _active_panel.get_parent() as Control
-	if parent == null:
-		return
-
-	var start_local: Vector2 = _global_to_parent_local(parent, _drag_start_mouse)
-	var current_local: Vector2 = _global_to_parent_local(parent, global_mouse)
-	var delta: Vector2 = current_local - start_local
-	var rect: Rect2 = _drag_start_rect
-
-	if _drag_mode == "move":
-		rect.position = _drag_start_rect.position + delta
-	elif _drag_mode == "resize":
-		rect = _resize_rect(_drag_start_rect, delta, _resize_corner)
-
-	_active_panel.set_layout_rect(rect)
-
-
-func _global_to_parent_local(parent: Control, global_pos: Vector2) -> Vector2:
-	return parent.get_global_transform_with_canvas().affine_inverse() * global_pos
-
-
-func _resize_rect(start_rect: Rect2, delta: Vector2, corner: String) -> Rect2:
-	var left: float = start_rect.position.x
-	var top: float = start_rect.position.y
-	var right: float = start_rect.position.x + start_rect.size.x
-	var bottom: float = start_rect.position.y + start_rect.size.y
-
-	match corner:
-		"br":
-			right += delta.x
-			bottom += delta.y
-		"bl":
-			left += delta.x
-			bottom += delta.y
-		"tr":
-			right += delta.x
-			top += delta.y
-		"tl":
-			left += delta.x
-			top += delta.y
-
-	var min_size: Vector2 = HudLayoutPanel.MIN_PANEL_SIZE
-	if right - left < min_size.x:
-		if corner in ["bl", "tl"]:
-			left = right - min_size.x
-		else:
-			right = left + min_size.x
-	if bottom - top < min_size.y:
-		if corner in ["tl", "tr"]:
-			top = bottom - min_size.y
-		else:
-			bottom = top + min_size.y
-
-	return Rect2(Vector2(left, top), Vector2(right - left, bottom - top))
-
-
-func _end_drag() -> void:
-	if _active_panel != null:
-		_active_panel.set_highlight(false)
-	_active_panel = null
-	_drag_mode = ""
-	_resize_corner = ""
 
 
 func _on_reset_pressed() -> void:
@@ -247,7 +144,6 @@ func _on_reset_pressed() -> void:
 		_hud_controller.reset_layout_to_defaults()
 		if _hud_controller.has_method("_ensure_layout_panels_visible_for_edit"):
 			_hud_controller.call("_ensure_layout_panels_visible_for_edit")
-	_end_drag()
 	_deactivate_panels()
 	_activate_panels()
 

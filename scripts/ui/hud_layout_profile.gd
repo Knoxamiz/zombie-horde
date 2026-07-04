@@ -197,13 +197,7 @@ static func _is_panel_data_valid(data: Dictionary, viewport_size: Vector2) -> bo
 	var height: float = float(data.get("offset_bottom", 0.0)) - float(data.get("offset_top", 0.0))
 	if width < MIN_PANEL_WIDTH or height < MIN_PANEL_HEIGHT:
 		return false
-	if width > viewport_size.x * 0.9 or height > viewport_size.y * 0.9:
-		return false
-	if float(data.get("offset_left", 0.0)) < -80.0 or float(data.get("offset_top", 0.0)) < -80.0:
-		return false
-	if float(data.get("offset_right", 0.0)) > viewport_size.x + 80.0:
-		return false
-	if float(data.get("offset_bottom", 0.0)) > viewport_size.y + 80.0:
+	if width > viewport_size.x or height > viewport_size.y:
 		return false
 	return true
 

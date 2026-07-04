@@ -1,10 +1,9 @@
 class_name HudLayoutPanel
 extends Control
 
-signal edit_interaction_started(panel_id: String, mode: String, corner: String)
 signal edit_hide_requested(panel_id: String)
 
-const HANDLE_SIZE: float = 14.0
+const HANDLE_SIZE: float = 20.0
 const MIN_PANEL_SIZE: Vector2 = Vector2(180.0, 96.0)
 const RESIZE_CORNERS: Array[String] = ["tl", "tr", "bl", "br"]
 
@@ -13,10 +12,14 @@ const RESIZE_CORNERS: Array[String] = ["tl", "tr", "bl", "br"]
 var edit_active: bool = false
 
 var _edit_root: Control
+var _drag_surface: ColorRect
 var _outline: Panel
 var _hide_button: Button
 var _handles: Dictionary = {}
-var _header_drag_wired: bool = false
+var _interaction_mode: String = ""
+var _resize_corner: String = ""
+var _drag_start_mouse_global: Vector2 = Vector2.ZERO
+var _drag_start_rect: Rect2 = Rect2()
 
 
 func _ready() -> void:
@@ -35,7 +38,9 @@ func set_edit_active(active: bool) -> void:
 			_edit_root.move_to_front()
 	mouse_filter = Control.MOUSE_FILTER_PASS if active else Control.MOUSE_FILTER_IGNORE
 	z_index = 10 if active else 0
-	_wire_header_drag()
+	set_process_input(active)
+	if not active:
+		_end_interaction()
 	call_deferred("_update_handle_positions")
 
 
@@ -74,6 +79,15 @@ func _build_edit_chrome() -> void:
 	_edit_root.visible = false
 	add_child(_edit_root)
 
+	_drag_surface = ColorRect.new()
+	_drag_surface.name = "DragSurface"
+	_drag_surface.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_drag_surface.color = Color(0.0, 0.0, 0.0, 0.0)
+	_drag_surface.mouse_filter = Control.MOUSE_FILTER_STOP
+	_drag_surface.mouse_default_cursor_shape = Control.CURSOR_MOVE
+	_drag_surface.gui_input.connect(_on_drag_surface_gui_input)
+	_edit_root.add_child(_drag_surface)
+
 	_outline = Panel.new()
 	_outline.name = "Outline"
 	_outline.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -103,28 +117,11 @@ func _build_edit_chrome() -> void:
 	call_deferred("_update_handle_positions")
 
 
-func _wire_header_drag() -> void:
-	if not edit_active or _header_drag_wired:
-		return
-	var header: Control = _find_header_bar()
-	if header == null:
-		return
-	if not header.gui_input.is_connected(_on_header_gui_input):
-		header.gui_input.connect(_on_header_gui_input)
-		header.mouse_filter = Control.MOUSE_FILTER_STOP
-	_header_drag_wired = true
-
-
-func _find_header_bar() -> Control:
-	return find_child("HeaderBar", true, false) as Control
-
-
-func _on_header_gui_input(event: InputEvent) -> void:
+func _on_drag_surface_gui_input(event: InputEvent) -> void:
 	if not edit_active:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		set_highlight(true)
-		edit_interaction_started.emit(panel_id, "move", "")
+		_begin_interaction("move", "", event.global_position)
 		get_viewport().set_input_as_handled()
 
 
@@ -132,9 +129,89 @@ func _on_resize_handle_input(event: InputEvent, corner: String) -> void:
 	if not edit_active:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		set_highlight(true)
-		edit_interaction_started.emit(panel_id, "resize", corner)
+		_begin_interaction("resize", corner, event.global_position)
 		get_viewport().set_input_as_handled()
+
+
+func _begin_interaction(mode: String, corner: String, global_mouse: Vector2) -> void:
+	_interaction_mode = mode
+	_resize_corner = corner
+	_drag_start_mouse_global = global_mouse
+	_drag_start_rect = get_layout_rect()
+	set_highlight(true)
+
+
+func _input(event: InputEvent) -> void:
+	if not edit_active or _interaction_mode.is_empty():
+		return
+
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if not event.pressed:
+			_end_interaction()
+		return
+
+	if event is InputEventMouseMotion:
+		_apply_interaction(event.global_position)
+		get_viewport().set_input_as_handled()
+
+
+func _apply_interaction(global_mouse: Vector2) -> void:
+	var parent: Control = get_parent() as Control
+	if parent == null:
+		return
+
+	var parent_inverse: Transform2D = parent.get_global_transform_with_canvas().affine_inverse()
+	var start_local: Vector2 = parent_inverse * _drag_start_mouse_global
+	var current_local: Vector2 = parent_inverse * global_mouse
+	var delta: Vector2 = current_local - start_local
+	var rect: Rect2 = _drag_start_rect
+
+	if _interaction_mode == "move":
+		rect.position = _drag_start_rect.position + delta
+	elif _interaction_mode == "resize":
+		rect = _resize_rect(_drag_start_rect, delta, _resize_corner)
+
+	set_layout_rect(rect)
+
+
+func _resize_rect(start_rect: Rect2, delta: Vector2, corner: String) -> Rect2:
+	var left: float = start_rect.position.x
+	var top: float = start_rect.position.y
+	var right: float = start_rect.position.x + start_rect.size.x
+	var bottom: float = start_rect.position.y + start_rect.size.y
+
+	match corner:
+		"br":
+			right += delta.x
+			bottom += delta.y
+		"bl":
+			left += delta.x
+			bottom += delta.y
+		"tr":
+			right += delta.x
+			top += delta.y
+		"tl":
+			left += delta.x
+			top += delta.y
+
+	if right - left < MIN_PANEL_SIZE.x:
+		if corner in ["bl", "tl"]:
+			left = right - MIN_PANEL_SIZE.x
+		else:
+			right = left + MIN_PANEL_SIZE.x
+	if bottom - top < MIN_PANEL_SIZE.y:
+		if corner in ["tl", "tr"]:
+			top = bottom - MIN_PANEL_SIZE.y
+		else:
+			bottom = top + MIN_PANEL_SIZE.y
+
+	return Rect2(Vector2(left, top), Vector2(right - left, bottom - top))
+
+
+func _end_interaction() -> void:
+	set_highlight(false)
+	_interaction_mode = ""
+	_resize_corner = ""
 
 
 func _on_hide_pressed() -> void:
@@ -173,7 +250,7 @@ func _update_handle_positions() -> void:
 		return
 
 	var panel_size: Vector2 = get_layout_rect().size
-	var inset: float = 2.0
+	var inset: float = 1.0
 
 	if _hide_button != null:
 		_hide_button.position = Vector2(maxf(panel_size.x - 60.0, inset), inset)
