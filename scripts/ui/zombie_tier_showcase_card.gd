@@ -89,6 +89,7 @@ func _apply_preview_visuals(zombie_visual: Node3D) -> void:
 		join_info,
 		ZombieTierPreviewFraming.get_showcase_icon_scale()
 	)
+	ZombieTierPreviewFraming.fit_visual_to_reference(zombie_visual)
 	_play_idle_animation(zombie_visual)
 
 
