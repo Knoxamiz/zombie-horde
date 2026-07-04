@@ -6,16 +6,17 @@ const HUD_LAYOUT_PROFILE := preload("res://scripts/ui/hud_layout_profile.gd")
 const PANEL_IDS: Array[String] = ["top", "roster", "leaderboard", "command", "countdown"]
 
 const PANEL_LABELS: Dictionary = {
-	"top": "Race Status",
-	"roster": "Live Feed",
-	"leaderboard": "Top 10",
-	"command": "Chat Command",
-	"countdown": "Countdown",
+	"top": "RACE STATUS",
+	"roster": "LIVE FEED",
+	"leaderboard": "TOP 10 STANDINGS",
+	"command": "CHAT COMMAND",
+	"countdown": "COUNTDOWN",
 }
+
+const HEADER_HEIGHT: float = 40.0
 
 var _hud_controller: Node
 var _toolbar: PanelContainer
-var _visibility_checks: Dictionary = {}
 var _active_panel_id: String = ""
 var _drag_mode: String = ""
 var _drag_start_mouse: Vector2 = Vector2.ZERO
@@ -25,6 +26,7 @@ var _outline_nodes: Dictionary = {}
 var _panel_input_handlers: Dictionary = {}
 var _resize_input_handlers: Dictionary = {}
 var _drag_shields: Dictionary = {}
+var _header_bars: Dictionary = {}
 
 func setup(hud_controller: Node) -> void:
 	_hud_controller = hud_controller
@@ -37,7 +39,6 @@ func begin() -> void:
 		return
 	visible = true
 	await _hud_controller.get_tree().process_frame
-	_refresh_visibility_checks()
 	_rebuild_edit_chrome()
 
 func end() -> void:
@@ -51,74 +52,45 @@ func _build_toolbar() -> void:
 	add_child(root)
 
 	_toolbar = PanelContainer.new()
-	_toolbar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_toolbar.offset_left = 24.0
-	_toolbar.offset_top = 16.0
-	_toolbar.offset_right = -24.0
-	_toolbar.offset_bottom = 132.0
+	_toolbar.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_toolbar.offset_left = -280.0
+	_toolbar.offset_top = -54.0
+	_toolbar.offset_right = 280.0
+	_toolbar.offset_bottom = -14.0
 	_toolbar.mouse_filter = Control.MOUSE_FILTER_STOP
 	var toolbar_style := StyleBoxFlat.new()
-	toolbar_style.bg_color = Color(0.016, 0.026, 0.018, 0.96)
-	toolbar_style.corner_radius_top_left = 12
-	toolbar_style.corner_radius_top_right = 12
-	toolbar_style.corner_radius_bottom_left = 12
-	toolbar_style.corner_radius_bottom_right = 12
-	toolbar_style.shadow_color = Color(0.28, 0.95, 0.24, 0.35)
-	toolbar_style.shadow_size = 18
-	toolbar_style.content_margin_left = 18.0
-	toolbar_style.content_margin_top = 14.0
-	toolbar_style.content_margin_right = 18.0
-	toolbar_style.content_margin_bottom = 14.0
+	toolbar_style.bg_color = Color(0.016, 0.026, 0.018, 0.94)
+	toolbar_style.corner_radius_top_left = 10
+	toolbar_style.corner_radius_top_right = 10
+	toolbar_style.corner_radius_bottom_left = 10
+	toolbar_style.corner_radius_bottom_right = 10
+	toolbar_style.border_color = Color(0.28, 0.95, 0.24, 0.55)
+	toolbar_style.set_border_width_all(1)
+	toolbar_style.content_margin_left = 14.0
+	toolbar_style.content_margin_top = 8.0
+	toolbar_style.content_margin_right = 14.0
+	toolbar_style.content_margin_bottom = 8.0
 	_toolbar.add_theme_stylebox_override("panel", toolbar_style)
 	root.add_child(_toolbar)
 
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 10)
-	_toolbar.add_child(box)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_toolbar.add_child(row)
 
-	var title := Label.new()
-	title.text = "HUD Layout Editor — drag panels, resize from the corner grip"
-	title.add_theme_color_override("font_color", Color(0.94, 1.0, 0.58, 1.0))
-	title.add_theme_font_size_override("font_size", 20)
-	box.add_child(title)
+	var hint := Label.new()
+	hint.text = "Drag headers to move · orange grip = resize"
+	hint.add_theme_color_override("font_color", Color(0.82, 1.0, 0.45, 0.9))
+	hint.add_theme_font_size_override("font_size", 14)
+	row.add_child(hint)
 
-	var visibility_row := HBoxContainer.new()
-	visibility_row.add_theme_constant_override("separation", 14)
-	box.add_child(visibility_row)
-	for panel_id in PANEL_IDS:
-		var check := CheckBox.new()
-		check.text = str(PANEL_LABELS.get(panel_id, panel_id))
-		check.button_pressed = true
-		check.toggled.connect(_on_visibility_toggled.bind(panel_id))
-		_visibility_checks_assign(panel_id, check)
-		visibility_row.add_child(check)
+	row.add_child(_make_button("Reset", Color(1.0, 0.48, 0.08, 1.0), _on_reset_pressed))
+	row.add_child(_make_button("Cancel", Color(0.74, 0.34, 1.0, 1.0), _on_cancel_pressed))
+	row.add_child(_make_button("Save", Color(0.72, 0.95, 0.2, 1.0), _on_save_pressed))
 
-	var button_row := HBoxContainer.new()
-	button_row.add_theme_constant_override("separation", 10)
-	box.add_child(button_row)
-
-	var reset_button := _make_button("Reset Defaults", Color(1.0, 0.48, 0.08, 1.0))
-	reset_button.pressed.connect(_on_reset_pressed)
-	button_row.add_child(reset_button)
-
-	var cancel_button := _make_button("Cancel", Color(0.74, 0.34, 1.0, 1.0))
-	cancel_button.pressed.connect(_on_cancel_pressed)
-	button_row.add_child(cancel_button)
-
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	button_row.add_child(spacer)
-
-	var save_button := _make_button("Save & Close", Color(0.72, 0.95, 0.2, 1.0))
-	save_button.pressed.connect(_on_save_pressed)
-	button_row.add_child(save_button)
-
-func _visibility_checks_assign(panel_id: String, check: CheckBox) -> void:
-	_visibility_checks[panel_id] = check
-
-func _make_button(label: String, accent: Color) -> Button:
+func _make_button(label: String, accent: Color, callback: Callable) -> Button:
 	var button := Button.new()
-	button.custom_minimum_size = Vector2(150, 40)
+	button.custom_minimum_size = Vector2(88, 34)
 	button.text = label
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Color(0.038, 0.032, 0.022, 0.94)
@@ -128,22 +100,28 @@ func _make_button(label: String, accent: Color) -> Button:
 	normal.corner_radius_top_right = 4
 	normal.corner_radius_bottom_left = 4
 	normal.corner_radius_bottom_right = 4
-	normal.content_margin_left = 12.0
-	normal.content_margin_top = 8.0
-	normal.content_margin_right = 12.0
-	normal.content_margin_bottom = 8.0
+	normal.content_margin_left = 10.0
+	normal.content_margin_top = 6.0
+	normal.content_margin_right = 10.0
+	normal.content_margin_bottom = 6.0
 	button.add_theme_stylebox_override("normal", normal)
 	button.add_theme_color_override("font_color", Color(0.95, 0.91, 0.76, 1.0))
+	button.add_theme_font_size_override("font_size", 15)
+	button.pressed.connect(callback)
 	return button
 
-func _refresh_visibility_checks() -> void:
-	if _hud_controller == null:
-		return
-	for panel_id in PANEL_IDS:
-		var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control
-		var check: CheckBox = _visibility_checks.get(panel_id) as CheckBox
-		if panel != null and check != null:
-			check.button_pressed = panel.visible
+func _make_header_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.95, 0.5, 0.08, 0.98)
+	style.corner_radius_top_left = 6
+	style.corner_radius_top_right = 6
+	style.corner_radius_bottom_left = 0
+	style.corner_radius_bottom_right = 0
+	style.content_margin_left = 12.0
+	style.content_margin_top = 8.0
+	style.content_margin_right = 12.0
+	style.content_margin_bottom = 8.0
+	return style
 
 func _rebuild_edit_chrome() -> void:
 	_clear_edit_chrome()
@@ -159,17 +137,7 @@ func _rebuild_edit_chrome() -> void:
 func _add_panel_chrome(panel_id: String, panel: Control) -> void:
 	HUD_LAYOUT_PROFILE.flatten_panel_to_absolute(panel)
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
-
-	var drag_shield := ColorRect.new()
-	drag_shield.name = "LayoutDragShield"
-	drag_shield.color = Color(0.04, 0.12, 0.05, 0.12)
-	drag_shield.mouse_filter = Control.MOUSE_FILTER_STOP
-	drag_shield.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var panel_handler := _on_panel_gui_input.bind(panel_id)
-	_panel_input_handlers[panel_id] = panel_handler
-	drag_shield.gui_input.connect(panel_handler)
-	panel.add_child(drag_shield)
-	_drag_shields[panel_id] = drag_shield
+	panel.z_index = 1
 
 	var outline := Panel.new()
 	outline.name = "LayoutOutline_%s" % panel_id
@@ -178,27 +146,60 @@ func _add_panel_chrome(panel_id: String, panel: Control) -> void:
 	var outline_style := StyleBoxFlat.new()
 	outline_style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
 	outline_style.border_color = Color(0.28, 0.95, 0.24, 0.95)
-	outline_style.set_border_width_all(2)
+	outline_style.set_border_width_all(3)
 	outline.add_theme_stylebox_override("panel", outline_style)
 	panel.add_child(outline)
 	_outline_nodes[panel_id] = outline
 	panel.move_child(outline, 0)
 
-	var tag := Label.new()
-	tag.name = "LayoutTag"
-	tag.text = str(PANEL_LABELS.get(panel_id, panel_id))
-	tag.position = Vector2(8.0, 8.0)
-	tag.add_theme_color_override("font_color", Color(0.88, 1.0, 0.34, 1.0))
-	tag.add_theme_font_size_override("font_size", 14)
-	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(tag)
+	var header := PanelContainer.new()
+	header.name = "LayoutHeaderBar"
+	header.mouse_filter = Control.MOUSE_FILTER_STOP
+	header.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	header.offset_bottom = HEADER_HEIGHT
+	header.add_theme_stylebox_override("panel", _make_header_style())
+	panel.add_child(header)
+	_header_bars[panel_id] = header
+
+	var header_row := HBoxContainer.new()
+	header_row.add_theme_constant_override("separation", 8)
+	header.add_child(header_row)
+
+	var title := Label.new()
+	title.text = str(PANEL_LABELS.get(panel_id, panel_id))
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.add_theme_color_override("font_color", Color(0.06, 0.04, 0.02, 1.0))
+	title.add_theme_font_size_override("font_size", 17)
+	header_row.add_child(title)
+
+	var hide_button := Button.new()
+	hide_button.text = "Hide"
+	hide_button.custom_minimum_size = Vector2(52, 0)
+	hide_button.add_theme_font_size_override("font_size", 13)
+	hide_button.pressed.connect(_on_panel_hide_pressed.bind(panel_id))
+	header_row.add_child(hide_button)
+
+	var panel_handler := _on_panel_gui_input.bind(panel_id)
+	_panel_input_handlers[panel_id] = panel_handler
+	header.gui_input.connect(panel_handler)
+
+	var drag_shield := ColorRect.new()
+	drag_shield.name = "LayoutDragShield"
+	drag_shield.color = Color(0.04, 0.12, 0.05, 0.08)
+	drag_shield.mouse_filter = Control.MOUSE_FILTER_STOP
+	drag_shield.set_anchors_preset(Control.PRESET_FULL_RECT)
+	drag_shield.offset_top = HEADER_HEIGHT
+	drag_shield.gui_input.connect(panel_handler)
+	panel.add_child(drag_shield)
+	_drag_shields[panel_id] = drag_shield
 
 	var handle := ColorRect.new()
 	handle.name = "ResizeHandle"
 	handle.color = Color(1.0, 0.72, 0.16, 0.95)
-	handle.custom_minimum_size = Vector2(16.0, 16.0)
-	handle.size = Vector2(16.0, 16.0)
+	handle.custom_minimum_size = Vector2(18.0, 18.0)
+	handle.size = Vector2(18.0, 18.0)
 	handle.mouse_filter = Control.MOUSE_FILTER_STOP
+	handle.tooltip_text = "Resize"
 	var resize_handler := _on_resize_gui_input.bind(panel_id)
 	_resize_input_handlers[panel_id] = resize_handler
 	handle.gui_input.connect(resize_handler)
@@ -212,53 +213,21 @@ func _position_resize_handle(panel_id: String) -> void:
 	var handle: ColorRect = _resize_handles.get(panel_id) as ColorRect
 	if panel == null or handle == null:
 		return
-	handle.position = panel.size - handle.size
+	handle.position = panel.size - handle.size - Vector2(4.0, 4.0)
 
 func _clear_edit_chrome() -> void:
 	if _hud_controller == null:
 		return
 	for panel_id in PANEL_IDS:
-		var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control
-		if panel == null:
-			continue
-		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var drag_shield: ColorRect = _drag_shields.get(panel_id) as ColorRect
-		if drag_shield != null and is_instance_valid(drag_shield):
-			if _panel_input_handlers.has(panel_id):
-				var panel_handler: Callable = _panel_input_handlers[panel_id]
-				if drag_shield.gui_input.is_connected(panel_handler):
-					drag_shield.gui_input.disconnect(panel_handler)
-			drag_shield.queue_free()
-		var handle: ColorRect = _resize_handles.get(panel_id) as ColorRect
-		if handle != null and is_instance_valid(handle):
-			if _resize_input_handlers.has(panel_id):
-				var resize_handler: Callable = _resize_input_handlers[panel_id]
-				if handle.gui_input.is_connected(resize_handler):
-					handle.gui_input.disconnect(resize_handler)
-			handle.queue_free()
-		var outline: Panel = _outline_nodes.get(panel_id) as Panel
-		if outline != null and is_instance_valid(outline):
-			outline.queue_free()
-	_outline_nodes.clear()
-	_resize_handles.clear()
-	_panel_input_handlers.clear()
-	_resize_input_handlers.clear()
-	_drag_shields.clear()
+		_remove_panel_chrome(panel_id)
 
-func _on_visibility_toggled(enabled: bool, panel_id: String) -> void:
+func _on_panel_hide_pressed(panel_id: String) -> void:
 	if _hud_controller == null:
 		return
 	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control
 	if panel != null:
-		panel.visible = enabled
-		if panel_id == "countdown" and enabled and _hud_controller.has_method("get_layout_panel"):
-			var countdown_label: Label = panel.get_node_or_null("Margin/CountdownLabel") as Label
-			if countdown_label != null:
-				countdown_label.text = "3"
-	if enabled and panel != null:
-		call_deferred("_rebuild_single_panel_chrome", panel_id)
-	elif not enabled:
-		_remove_panel_chrome(panel_id)
+		panel.visible = false
+	_remove_panel_chrome(panel_id)
 
 func _rebuild_single_panel_chrome(panel_id: String) -> void:
 	_remove_panel_chrome(panel_id)
@@ -273,6 +242,7 @@ func _remove_panel_chrome(panel_id: String) -> void:
 	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control if _hud_controller != null else null
 	if panel != null:
 		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		panel.z_index = 0
 	var drag_shield: ColorRect = _drag_shields.get(panel_id) as ColorRect
 	if drag_shield != null and is_instance_valid(drag_shield):
 		if _panel_input_handlers.has(panel_id):
@@ -281,6 +251,14 @@ func _remove_panel_chrome(panel_id: String) -> void:
 				drag_shield.gui_input.disconnect(panel_handler)
 		drag_shield.queue_free()
 	_drag_shields.erase(panel_id)
+	var header: PanelContainer = _header_bars.get(panel_id) as PanelContainer
+	if header != null and is_instance_valid(header):
+		if _panel_input_handlers.has(panel_id):
+			var panel_handler: Callable = _panel_input_handlers[panel_id]
+			if header.gui_input.is_connected(panel_handler):
+				header.gui_input.disconnect(panel_handler)
+		header.queue_free()
+	_header_bars.erase(panel_id)
 	var handle: ColorRect = _resize_handles.get(panel_id) as ColorRect
 	if handle != null and is_instance_valid(handle):
 		if _resize_input_handlers.has(panel_id):
@@ -293,9 +271,6 @@ func _remove_panel_chrome(panel_id: String) -> void:
 	if outline != null and is_instance_valid(outline):
 		outline.queue_free()
 	_outline_nodes.erase(panel_id)
-	var tag: Node = panel.get_node_or_null("LayoutTag")
-	if tag != null and is_instance_valid(tag):
-		tag.queue_free()
 	_panel_input_handlers.erase(panel_id)
 	_resize_input_handlers.erase(panel_id)
 
@@ -309,7 +284,9 @@ func _on_panel_gui_input(event: InputEvent, panel_id: String) -> void:
 			_drag_mode = "move"
 			_drag_start_mouse = event.global_position
 			_drag_start_rect = Rect2(panel.offset_left, panel.offset_top, panel.size.x, panel.size.y)
+			_highlight_panel(panel_id, true)
 		else:
+			_highlight_panel(panel_id, false)
 			_active_panel_id = ""
 			_drag_mode = ""
 	elif event is InputEventMouseMotion and _drag_mode == "move" and _active_panel_id == panel_id:
@@ -319,6 +296,16 @@ func _on_panel_gui_input(event: InputEvent, panel_id: String) -> void:
 		panel.offset_right = panel.offset_left + _drag_start_rect.size.x
 		panel.offset_bottom = panel.offset_top + _drag_start_rect.size.y
 		_position_resize_handle(panel_id)
+
+func _highlight_panel(panel_id: String, enabled: bool) -> void:
+	var outline: Panel = _outline_nodes.get(panel_id) as Panel
+	if outline == null:
+		return
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.0, 0.0, 0.0, 0.0)
+	style.set_border_width_all(4 if enabled else 3)
+	style.border_color = Color(0.5, 1.0, 0.35, 1.0) if enabled else Color(0.28, 0.95, 0.24, 0.95)
+	outline.add_theme_stylebox_override("panel", style)
 
 func _on_resize_gui_input(event: InputEvent, panel_id: String) -> void:
 	var panel: Control = _hud_controller.call("get_layout_panel", panel_id) as Control if _hud_controller != null else null
@@ -337,7 +324,7 @@ func _on_resize_gui_input(event: InputEvent, panel_id: String) -> void:
 	elif event is InputEventMouseMotion and _drag_mode == "resize" and _active_panel_id == panel_id:
 		var delta: Vector2 = event.global_position - _drag_start_mouse
 		var new_width: float = max(_drag_start_rect.size.x + delta.x, 180.0)
-		var new_height: float = max(_drag_start_rect.size.y + delta.y, 72.0)
+		var new_height: float = max(_drag_start_rect.size.y + delta.y, 96.0)
 		panel.offset_right = panel.offset_left + new_width
 		panel.offset_bottom = panel.offset_top + new_height
 		panel.custom_minimum_size = Vector2(new_width, 0.0)
@@ -347,7 +334,8 @@ func _on_resize_gui_input(event: InputEvent, panel_id: String) -> void:
 func _on_reset_pressed() -> void:
 	if _hud_controller != null:
 		_hud_controller.reset_layout_to_defaults()
-	_refresh_visibility_checks()
+		if _hud_controller.has_method("_ensure_layout_panels_visible_for_edit"):
+			_hud_controller.call("_ensure_layout_panels_visible_for_edit")
 	_rebuild_edit_chrome()
 
 func _on_cancel_pressed() -> void:
