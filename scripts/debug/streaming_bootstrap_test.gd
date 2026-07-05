@@ -22,7 +22,7 @@ func _run_test() -> void:
 		quit(FAIL)
 		return
 
-	var game_settings: GameSettingsController = get_node_or_null("/root/GameSettings") as GameSettingsController
+	var game_settings: GameSettingsController = root.get_node_or_null("GameSettings") as GameSettingsController
 	if game_settings == null:
 		push_error("GameSettings autoload missing")
 		quit(FAIL)
