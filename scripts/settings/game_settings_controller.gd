@@ -23,7 +23,7 @@ const STREAM_RESOLUTIONS: Array[Vector2i] = [
 	Vector2i(1600, 900),
 	Vector2i(1280, 720),
 ]
-const STREAM_SETTINGS_VERSION := 2
+const STREAM_SETTINGS_VERSION := 3
 
 const CONTROL_ACTIONS: Array[String] = [
 	"camera_forward",
@@ -80,7 +80,7 @@ var _vsync_enabled: bool = true
 var _fps_cap_index: int = 0
 var _stream_resolution_index: int = 0
 var _hide_screen_wash: bool = true
-var _hide_debug_lobby_controls: bool = true
+var _hide_debug_lobby_controls: bool = false
 var _lock_race_mouse_capture: bool = true
 var _bindings: Dictionary = {}
 var _control_buttons: Dictionary = {}
@@ -324,7 +324,7 @@ func apply_obs_stream_defaults() -> void:
 	_stream_resolution_index = 0
 	_display_mode_index = 1
 	_hide_screen_wash = true
-	_hide_debug_lobby_controls = true
+	_hide_debug_lobby_controls = false
 	_lock_race_mouse_capture = true
 	_fps_cap_index = 1
 	_vsync_enabled = true
@@ -703,6 +703,7 @@ func _load_settings() -> void:
 	var stream_settings_version: int = int(config.get_value("stream", "version", 1))
 	if stream_settings_version < STREAM_SETTINGS_VERSION:
 		_lock_race_mouse_capture = true
+		_hide_debug_lobby_controls = false
 		_save_settings()
 
 func _load_race_free_cam_setting(config: ConfigFile) -> bool:

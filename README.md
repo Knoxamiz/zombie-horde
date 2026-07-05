@@ -91,7 +91,7 @@ Zombie Horde is built for Twitch chat games captured in OBS. Use **STREAMER MODE
 ### Quick start for streamers
 
 1. Click **STREAMER MODE** on the main menu.
-   - Applies OBS-friendly defaults: 1920x1080 borderless, clean capture (no screen wash), hidden lobby test buttons, 60 FPS cap.
+   - Applies OBS-friendly defaults: 1920x1080 borderless, clean capture (no screen wash), lobby test join buttons visible, 60 FPS cap.
 2. In OBS, add a **Game Capture** or **Window Capture** source for `Zombie Horde`.
 3. Set your Twitch channel (see below).
 4. Tell chat: viewers type your join command (default `!brains`) to join the cage.

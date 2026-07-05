@@ -34,8 +34,8 @@ func _run_test() -> void:
 		quit(FAIL)
 		return
 
-	if game_settings.should_show_debug_lobby_controls():
-		push_error("OBS defaults should hide lobby debug controls")
+	if not game_settings.should_show_debug_lobby_controls():
+		push_error("OBS defaults should show lobby test join buttons")
 		quit(FAIL)
 		return
 

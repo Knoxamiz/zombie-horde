@@ -78,13 +78,13 @@ mouse_filter = 2
 color = Color(0.004, 0.008, 0.005, 0.42)
 
 [node name="LobbyPanel" type="PanelContainer" parent="Root"]
-custom_minimum_size = Vector2(400, 520)
+custom_minimum_size = Vector2(400, 620)
 layout_mode = 1
 anchors_preset = 0
 offset_left = 40.0
 offset_top = 40.0
 offset_right = 440.0
-offset_bottom = 560.0
+offset_bottom = 660.0
 theme_override_styles/panel = SubResource("StyleBox_lobby_glow")
 
 [node name="Margin" type="MarginContainer" parent="Root/LobbyPanel"]
