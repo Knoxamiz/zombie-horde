@@ -21,7 +21,9 @@ var _twitch_join_source: TwitchJoinSource
 var _leaderboard_store: LeaderboardStore
 var _queued_names: PackedStringArray = PackedStringArray()
 var _join_feed_lines: Array[String] = []
-var _command_text: String = "Type !brains to join."
+const JOIN_COMMAND_TEXT := "!brains to join."
+
+var _command_text: String = JOIN_COMMAND_TEXT
 var _state_text: String = "Joining"
 
 @onready var _root: Control = get_node("Root") as Control
@@ -170,14 +172,18 @@ func _on_leaderboard_changed(_entries: Array) -> void:
 func _refresh_labels() -> void:
 	var command_text: String = _command_text
 	if command_text.is_empty():
-		command_text = "Type !brains to join."
+		command_text = JOIN_COMMAND_TEXT
 
 	if _lobby_count_label != null:
 		_lobby_count_label.text = _format_queue_summary()
 	if _lobby_names_label != null:
 		_lobby_names_label.text = _format_join_feed()
 	if _lobby_chat_label != null:
-		_lobby_chat_label.text = command_text
+		if _should_show_status_message(command_text):
+			_lobby_chat_label.visible = true
+			_lobby_chat_label.text = command_text
+		else:
+			_lobby_chat_label.visible = false
 	_refresh_ready_button()
 
 func _refresh_scoreboards() -> void:
@@ -222,8 +228,16 @@ func _format_board_row(rank: int, display_name: String, value_text: String) -> S
 
 func _format_queue_summary() -> String:
 	if _queued_names.is_empty():
-		return "Waiting for players — type !brains in chat"
-	return "%d player(s) in lobby" % _queued_names.size()
+		return "Waiting for players..."
+	return "%d player(s) joined" % _queued_names.size()
+
+
+func _should_show_status_message(command_text: String) -> bool:
+	if command_text == JOIN_COMMAND_TEXT:
+		return false
+	if command_text == "Type !brains to join.":
+		return false
+	return not command_text.is_empty()
 
 func _format_join_feed() -> String:
 	if _join_feed_lines.is_empty():
@@ -253,7 +267,7 @@ func _join_strings(values: Array[String], separator: String) -> String:
 
 func _refresh_chat_status_from_source() -> void:
 	if _twitch_join_source == null:
-		_command_text = "Type !brains to join."
+		_command_text = JOIN_COMMAND_TEXT
 		return
 
 	var status_text: String = _twitch_join_source.get_status_text()

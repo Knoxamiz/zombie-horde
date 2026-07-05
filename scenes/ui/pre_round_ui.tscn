@@ -102,7 +102,7 @@ theme_override_constants/separation = 12
 layout_mode = 2
 theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
 theme_override_font_sizes/font_size = 30
-text = "Lobby"
+text = "!brains to join."
 
 [node name="LobbyCountLabel" type="Label" parent="Root/LobbyPanel/Margin/VBox"]
 layout_mode = 2
@@ -118,9 +118,10 @@ clip_text = true
 max_lines_visible = 3
 
 [node name="LobbyChatLabel" type="Label" parent="Root/LobbyPanel/Margin/VBox"]
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
-text = "Type !brains to join."
+text = ""
 autowrap_mode = 2
 clip_text = true
 max_lines_visible = 1
