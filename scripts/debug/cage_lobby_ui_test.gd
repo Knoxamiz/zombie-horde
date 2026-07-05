@@ -46,7 +46,7 @@ func _run_test() -> void:
 
 	var debug_source: DebugJoinSource = main_game.get_node_or_null("Systems/DebugJoinSource") as DebugJoinSource
 	var feed_label: Label = pre_round_ui.get_node_or_null(
-		"Root/LobbyPanel/Margin/VBox/LobbyNamesLabel"
+		"Root/LobbyPanel/Margin/VBox/LobbyNamesScroll/LobbyNamesLabel"
 	) as Label
 	if debug_source == null or feed_label == null:
 		push_error("Lobby join feed nodes missing")

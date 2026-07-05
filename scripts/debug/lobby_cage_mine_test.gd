@@ -50,7 +50,7 @@ func _run_test() -> void:
 		return
 
 	var feed_label: Label = pre_round_ui.get_node_or_null(
-		"Root/LobbyPanel/Margin/VBox/LobbyNamesLabel"
+		"Root/LobbyPanel/Margin/VBox/LobbyNamesScroll/LobbyNamesLabel"
 	) as Label
 	if feed_label == null or not feed_label.text.contains(BITS_CAGE_MINE_MESSAGE):
 		push_error("Bits cheer feed missing cage mine message: %s" % feed_label.text)

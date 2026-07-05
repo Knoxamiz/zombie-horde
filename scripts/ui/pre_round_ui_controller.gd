@@ -31,7 +31,12 @@ var _chat_detail_text: String = ""
 
 @onready var _root: Control = get_node("Root") as Control
 @onready var _lobby_count_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyCountLabel") as Label
-@onready var _lobby_names_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyNamesLabel") as Label
+@onready var _lobby_names_scroll: ScrollContainer = get_node(
+	"Root/LobbyPanel/Margin/VBox/LobbyNamesScroll"
+) as ScrollContainer
+@onready var _lobby_names_label: Label = get_node(
+	"Root/LobbyPanel/Margin/VBox/LobbyNamesScroll/LobbyNamesLabel"
+) as Label
 @onready var _lobby_chat_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyChatLabel") as Label
 @onready var _ready_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ReadyButton") as Button
 @onready var _reset_button: HoldToConfirmButton = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/ResetButton") as HoldToConfirmButton
@@ -228,6 +233,7 @@ func _refresh_labels() -> void:
 		_lobby_count_label.text = _format_queue_summary()
 	if _lobby_names_label != null:
 		_lobby_names_label.text = _format_lobby_body()
+		_scroll_join_list_to_bottom()
 	if _lobby_chat_label != null:
 		var chat_text: String = _format_chat_status()
 		if _should_show_chat_status(chat_text):
@@ -236,6 +242,19 @@ func _refresh_labels() -> void:
 		else:
 			_lobby_chat_label.visible = false
 	_refresh_ready_button()
+
+func _scroll_join_list_to_bottom() -> void:
+	if _lobby_names_scroll == null:
+		return
+	call_deferred("_apply_join_list_scroll")
+
+func _apply_join_list_scroll() -> void:
+	if _lobby_names_scroll == null:
+		return
+	var scroll_bar: VScrollBar = _lobby_names_scroll.get_v_scroll_bar()
+	if scroll_bar == null:
+		return
+	scroll_bar.value = scroll_bar.max_value
 
 func _refresh_scoreboards() -> void:
 	if _recent_winners_label != null:
