@@ -80,7 +80,7 @@ var _fps_cap_index: int = 0
 var _stream_resolution_index: int = 0
 var _hide_screen_wash: bool = true
 var _hide_debug_lobby_controls: bool = true
-var _lock_race_mouse_capture: bool = false
+var _lock_race_mouse_capture: bool = true
 var _bindings: Dictionary = {}
 var _control_buttons: Dictionary = {}
 var _waiting_for_action: String = ""
@@ -259,7 +259,7 @@ func _build_control_room_settings_modal() -> void:
 	_hide_debug_controls_check.text = "HIDE TEST BUTTONS"
 	_settings_modal.add_row(streamer_group, "Lobby Debug UI", _hide_debug_controls_check)
 	_lock_mouse_capture_check = ToggleControl.new()
-	_lock_mouse_capture_check.text = "LOCK RACE MOUSE"
+	_lock_mouse_capture_check.text = "RACE FREE CAM"
 	_settings_modal.add_row(streamer_group, "Race Camera", _lock_mouse_capture_check)
 	_apply_obs_defaults_button = _make_modal_button("APPLY OBS DEFAULTS", ControlRoomTheme.COLOR_GREEN)
 	_settings_modal.add_row(streamer_group, "One-Click Setup", _apply_obs_defaults_button)
@@ -324,7 +324,7 @@ func apply_obs_stream_defaults() -> void:
 	_display_mode_index = 1
 	_hide_screen_wash = true
 	_hide_debug_lobby_controls = true
-	_lock_race_mouse_capture = false
+	_lock_race_mouse_capture = true
 	_fps_cap_index = 1
 	_vsync_enabled = true
 	_refresh_stream_settings_ui()

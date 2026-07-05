@@ -39,5 +39,10 @@ func _run_test() -> void:
 		quit(FAIL)
 		return
 
+	if not game_settings.should_lock_race_mouse_capture():
+		push_error("OBS defaults should enable race free cam")
+		quit(FAIL)
+		return
+
 	print("PASS: Twitch command sync and OBS defaults are available")
 	quit(PASS)

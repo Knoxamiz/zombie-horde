@@ -113,9 +113,9 @@ Zombie Horde is built for Twitch chat games captured in OBS. Use **STREAMER MODE
 | Display mode | Borderless |
 | Capture type | Game Capture (preferred) or Window Capture |
 | Facecam | Use HUD Layout Editor to keep panels in corners and leave space for cam |
-| Mouse | Race mouse capture is off by default in STREAMER MODE so you can click OBS |
+| Mouse | Race free cam is on by default in STREAMER MODE so you can orbit and follow the race |
 
-Tweak stream capture in **Settings → Streamer**: hide screen wash, hide test buttons, lock/unlock race mouse, or click **APPLY OBS DEFAULTS**.
+Tweak stream capture in **Settings → Streamer**: hide screen wash, hide test buttons, toggle race free cam, or click **APPLY OBS DEFAULTS**.
 
 ### Twitch features in-game
 
