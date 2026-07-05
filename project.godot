@@ -19,6 +19,7 @@ config/icon="res://assets/icon.svg"
 
 GameEvents="*res://scripts/core/game_events.gd"
 LaunchState="*res://scripts/core/launch_state.gd"
+StreamingBootstrap="*res://scripts/streaming/streaming_bootstrap.gd"
 GameSettings="*res://scenes/settings/game_settings_menu.tscn"
 AudioManager="*res://scenes/audio/audio_manager.tscn"
 

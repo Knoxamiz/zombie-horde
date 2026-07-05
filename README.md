@@ -83,3 +83,50 @@ Credential mode uses environment variables only:
 - `ZOMBIE_HORDE_TWITCH_BOT_USERNAME`: bot username, unless `bot_username` is set in the resource
 
 Do not put OAuth tokens in committed `.tres` files. Local/secret config resource names are ignored by `.gitignore`.
+
+## Streaming With OBS + Twitch (Primary Workflow)
+
+Zombie Horde is built for Twitch chat games captured in OBS. Use **STREAMER MODE** on the main menu for the recommended setup.
+
+### Quick start for streamers
+
+1. Click **STREAMER MODE** on the main menu.
+   - Applies OBS-friendly defaults: 1920x1080 borderless, clean capture (no screen wash), hidden lobby test buttons, 60 FPS cap.
+2. In OBS, add a **Game Capture** or **Window Capture** source for `Zombie Horde`.
+3. Set your Twitch channel (see below).
+4. Tell chat: viewers type your join command (default `!brains`) to join the cage.
+
+### Twitch channel setup
+
+1. Copy `res://resources/config/twitch_chat_config.example.tres` to `user://twitch_chat_config.local.tres`.
+   - In Godot: save the template into your user data folder, or duplicate it on disk as `twitch_chat_config.local.tres` beside your exported game’s user data.
+2. Set `channel_name` to your Twitch channel (without `#`).
+3. Optional: change `join_command` (default `!brains`). All lobby/HUD text syncs from this automatically.
+4. For read-only chat listening, leave `anonymous_mode = true` (no OAuth needed).
+5. For a bot account with full IRC login, set `anonymous_mode = false` and use `env.example` variables.
+
+### OBS capture tips
+
+| Setting | Recommendation |
+|---------|----------------|
+| Canvas | 1920x1080 (Settings → Streamer → OBS Canvas) |
+| Display mode | Borderless |
+| Capture type | Game Capture (preferred) or Window Capture |
+| Facecam | Use HUD Layout Editor to keep panels in corners and leave space for cam |
+| Mouse | Race mouse capture is off by default in STREAMER MODE so you can click OBS |
+
+Tweak stream capture in **Settings → Streamer**: hide screen wash, hide test buttons, lock/unlock race mouse, or click **APPLY OBS DEFAULTS**.
+
+### Twitch features in-game
+
+- **Chat join**: viewers type `!brains` (or your custom command) to join the lobby cage.
+- **Bits**: any cheer drops a cage mine with the message `1 bit = Cage mine!!!`
+- **Subs / gifts / bits tiers**: supporter visuals on zombies (glow, icons, sparkles).
+- **Chat status**: shown in lobby and race HUD when Twitch is connected.
+
+### Environment variables
+
+See `env.example` for bot OAuth setup:
+
+- `ZOMBIE_HORDE_TWITCH_OAUTH`
+- `ZOMBIE_HORDE_TWITCH_BOT_USERNAME`

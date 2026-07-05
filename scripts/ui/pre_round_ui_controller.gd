@@ -39,6 +39,8 @@ var _state_text: String = "Joining"
 @onready var _join_gift_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinGiftButton") as Button
 @onready var _join_bits_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinBitsButton") as Button
 @onready var _test_mine_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestMineButton") as Button
+@onready var _test_join_section: VBoxContainer = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection") as VBoxContainer
+@onready var _screen_wash: ColorRect = get_node("Root/ScreenWash") as ColorRect
 @onready var _options_button: Button = get_node("Root/OptionsButton") as Button
 @onready var _main_menu_button: Button = get_node("Root/MainMenuButton") as Button
 @onready var _recent_winners_label: Label = get_node("Root/ScoresPanel/Margin/VBox/RecentWinnersLabel") as Label
@@ -81,6 +83,19 @@ func _ready() -> void:
 	_refresh_chat_status_from_source()
 	_refresh_labels()
 	_refresh_scoreboards()
+	_update_title_from_command(_command_text)
+	apply_stream_capture_visuals()
+	_command_text = TwitchConfigResolver.get_join_command_text()
+
+func apply_stream_capture_visuals() -> void:
+	var game_settings: GameSettingsController = get_node_or_null("/root/GameSettings") as GameSettingsController
+	if game_settings == null:
+		return
+
+	if _screen_wash != null:
+		_screen_wash.visible = not game_settings.should_hide_screen_wash()
+	if _test_join_section != null:
+		_test_join_section.visible = game_settings.should_show_debug_lobby_controls()
 
 func set_screen_mode(mode: String) -> void:
 	var should_show: bool = mode != "hidden"
@@ -91,6 +106,7 @@ func set_screen_mode(mode: String) -> void:
 		_zombie_showcase.visible = should_show
 	if should_show:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	apply_stream_capture_visuals()
 
 func _on_ready_pressed() -> void:
 	ready_requested.emit()
@@ -179,7 +195,19 @@ func _on_round_reset() -> void:
 
 func _on_command_text_changed(text: String) -> void:
 	_command_text = text
+	_update_title_from_command(text)
 	_refresh_labels()
+
+
+func _update_title_from_command(command_text: String) -> void:
+	var title_label: Label = get_node_or_null("Root/LobbyPanel/Margin/VBox/TitleLabel") as Label
+	if title_label == null:
+		return
+
+	var title_text: String = command_text.strip_edges()
+	if title_text.begins_with("Type "):
+		title_text = title_text.substr(5)
+	title_label.text = title_text
 
 func _on_chat_connection_status_changed(status_text: String, detail_text: String) -> void:
 	if detail_text.is_empty():
@@ -198,7 +226,7 @@ func _on_leaderboard_changed(_entries: Array) -> void:
 func _refresh_labels() -> void:
 	var command_text: String = _command_text
 	if command_text.is_empty():
-		command_text = JOIN_COMMAND_TEXT
+		command_text = TwitchConfigResolver.get_join_command_text()
 
 	if _lobby_count_label != null:
 		_lobby_count_label.text = _format_queue_summary()
@@ -259,9 +287,7 @@ func _format_queue_summary() -> String:
 
 
 func _should_show_status_message(command_text: String) -> bool:
-	if command_text == JOIN_COMMAND_TEXT:
-		return false
-	if command_text == "Type !brains to join.":
+	if command_text == TwitchConfigResolver.get_join_command_text():
 		return false
 	return not command_text.is_empty()
 
@@ -293,7 +319,7 @@ func _join_strings(values: Array[String], separator: String) -> String:
 
 func _refresh_chat_status_from_source() -> void:
 	if _twitch_join_source == null:
-		_command_text = JOIN_COMMAND_TEXT
+		_command_text = TwitchConfigResolver.get_join_command_text()
 		return
 
 	var status_text: String = _twitch_join_source.get_status_text()

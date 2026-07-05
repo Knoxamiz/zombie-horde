@@ -21,6 +21,8 @@ var _recent_bits_donors: Dictionary = {}
 
 
 func _ready() -> void:
+	if config != null:
+		config = TwitchConfigResolver.resolve_config(config)
 	_anonymous_id = int(Time.get_ticks_msec() % 90000) + 10000
 	if config == null:
 		_publish_status("Twitch missing config", "")
@@ -119,6 +121,7 @@ func _send_login() -> void:
 	_send_raw("JOIN #%s" % channel)
 	_sent_auth = true
 	_publish_status("Twitch live", "#%s" % channel)
+	TwitchConfigResolver.publish_join_command(config)
 
 func _read_available_packets() -> void:
 	while _socket != null and _socket.get_available_packet_count() > 0:

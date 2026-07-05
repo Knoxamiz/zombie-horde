@@ -13,6 +13,16 @@ const QUALITY_LABELS: Array[String] = ["Low", "Medium", "High", "Ultra"]
 const DISPLAY_MODE_LABELS: Array[String] = ["Windowed", "Borderless", "Fullscreen"]
 const FPS_CAP_LABELS: Array[String] = ["Unlimited", "60", "120", "144", "240"]
 const FPS_CAP_VALUES: Array[int] = [0, 60, 120, 144, 240]
+const STREAM_RESOLUTION_LABELS: Array[String] = [
+	"1920x1080 (Twitch/OBS)",
+	"1600x900",
+	"1280x720",
+]
+const STREAM_RESOLUTIONS: Array[Vector2i] = [
+	Vector2i(1920, 1080),
+	Vector2i(1600, 900),
+	Vector2i(1280, 720),
+]
 
 const CONTROL_ACTIONS: Array[String] = [
 	"camera_forward",
@@ -67,6 +77,10 @@ var _graphics_quality_index: int = 2
 var _display_mode_index: int = 0
 var _vsync_enabled: bool = true
 var _fps_cap_index: int = 0
+var _stream_resolution_index: int = 0
+var _hide_screen_wash: bool = true
+var _hide_debug_lobby_controls: bool = true
+var _lock_race_mouse_capture: bool = false
 var _bindings: Dictionary = {}
 var _control_buttons: Dictionary = {}
 var _waiting_for_action: String = ""
@@ -100,6 +114,12 @@ var _settings_modal: SettingsModal
 @onready var _reset_all_button: Button = get_node("Root/Panel/Margin/VBox/Footer/ResetAllButton") as Button
 @onready var _streamer_controls_button: Button = get_node("Root/Panel/Margin/VBox/Footer/StreamerControlsButton") as Button
 
+var _stream_resolution_option: OptionButton
+var _hide_screen_wash_check: ToggleControl
+var _hide_debug_controls_check: ToggleControl
+var _lock_mouse_capture_check: ToggleControl
+var _apply_obs_defaults_button: Button
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
@@ -116,6 +136,7 @@ func _ready() -> void:
 
 func open_settings(tab_name: String = "") -> void:
 	_refresh_streamer_controls_button()
+	apply_stream_capture_visuals_to_scene()
 	visible = true
 	_root.visible = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -229,6 +250,19 @@ func _build_control_room_settings_modal() -> void:
 	_settings_modal.add_row(gameplay_group, "Keybinds", _reset_controls_button)
 
 	var streamer_group: VBoxContainer = _settings_modal.add_group("Streamer")
+	_stream_resolution_option = _make_modal_option()
+	_settings_modal.add_row(streamer_group, "OBS Canvas", _stream_resolution_option)
+	_hide_screen_wash_check = ToggleControl.new()
+	_hide_screen_wash_check.text = "HIDE SCREEN WASH"
+	_settings_modal.add_row(streamer_group, "Clean Capture", _hide_screen_wash_check)
+	_hide_debug_controls_check = ToggleControl.new()
+	_hide_debug_controls_check.text = "HIDE TEST BUTTONS"
+	_settings_modal.add_row(streamer_group, "Lobby Debug UI", _hide_debug_controls_check)
+	_lock_mouse_capture_check = ToggleControl.new()
+	_lock_mouse_capture_check.text = "LOCK RACE MOUSE"
+	_settings_modal.add_row(streamer_group, "Race Camera", _lock_mouse_capture_check)
+	_apply_obs_defaults_button = _make_modal_button("APPLY OBS DEFAULTS", ControlRoomTheme.COLOR_GREEN)
+	_settings_modal.add_row(streamer_group, "One-Click Setup", _apply_obs_defaults_button)
 	_streamer_controls_button = _make_modal_button("OPEN STREAMER SETTINGS", ControlRoomTheme.COLOR_PURPLE)
 	_settings_modal.add_row(streamer_group, "Premium Controls", _streamer_controls_button)
 
@@ -270,6 +304,11 @@ func _connect_controls() -> void:
 	_display_mode_option.item_selected.connect(_on_display_mode_selected)
 	_vsync_check.toggled.connect(_on_vsync_toggled)
 	_fps_cap_option.item_selected.connect(_on_fps_cap_selected)
+	_stream_resolution_option.item_selected.connect(_on_stream_resolution_selected)
+	_hide_screen_wash_check.toggled.connect(_on_hide_screen_wash_toggled)
+	_hide_debug_controls_check.toggled.connect(_on_hide_debug_controls_toggled)
+	_lock_mouse_capture_check.toggled.connect(_on_lock_mouse_capture_toggled)
+	_apply_obs_defaults_button.pressed.connect(_on_apply_obs_defaults_pressed)
 	_reset_controls_button.pressed.connect(_on_reset_controls_pressed)
 	_reset_all_button.pressed.connect(_on_reset_all_pressed)
 	_streamer_controls_button.pressed.connect(_on_streamer_controls_pressed)
@@ -278,6 +317,52 @@ func _populate_static_options() -> void:
 	_set_option_items(_quality_option, QUALITY_LABELS)
 	_set_option_items(_display_mode_option, DISPLAY_MODE_LABELS)
 	_set_option_items(_fps_cap_option, FPS_CAP_LABELS)
+	_set_option_items(_stream_resolution_option, STREAM_RESOLUTION_LABELS)
+
+func apply_obs_stream_defaults() -> void:
+	_stream_resolution_index = 0
+	_display_mode_index = 1
+	_hide_screen_wash = true
+	_hide_debug_lobby_controls = true
+	_lock_race_mouse_capture = false
+	_fps_cap_index = 1
+	_vsync_enabled = true
+	_refresh_stream_settings_ui()
+	_apply_all_settings()
+	apply_stream_capture_visuals_to_scene()
+	_save_settings()
+
+func should_hide_screen_wash() -> bool:
+	return _hide_screen_wash
+
+func should_show_debug_lobby_controls() -> bool:
+	return not _hide_debug_lobby_controls
+
+func should_lock_race_mouse_capture() -> bool:
+	return _lock_race_mouse_capture
+
+func _refresh_stream_settings_ui() -> void:
+	if _stream_resolution_option != null:
+		_stream_resolution_option.select(_stream_resolution_index)
+	if _hide_screen_wash_check != null:
+		_hide_screen_wash_check.button_pressed = _hide_screen_wash
+	if _hide_debug_controls_check != null:
+		_hide_debug_controls_check.button_pressed = _hide_debug_lobby_controls
+	if _lock_mouse_capture_check != null:
+		_lock_mouse_capture_check.button_pressed = _lock_race_mouse_capture
+
+func apply_stream_capture_visuals_to_scene() -> void:
+	var scene: Node = get_tree().current_scene
+	if scene == null:
+		return
+
+	var hud: HudController = scene.get_node_or_null("HUD") as HudController
+	if hud != null and hud.has_method("apply_stream_capture_visuals"):
+		hud.apply_stream_capture_visuals()
+
+	var pre_round_ui: PreRoundUIController = scene.get_node_or_null("PreRoundUI") as PreRoundUIController
+	if pre_round_ui != null and pre_round_ui.has_method("apply_stream_capture_visuals"):
+		pre_round_ui.apply_stream_capture_visuals()
 
 func _build_control_rows() -> void:
 	for child in _controls_list.get_children():
@@ -312,6 +397,7 @@ func _refresh_controls() -> void:
 	_display_mode_option.select(_display_mode_index)
 	_vsync_check.button_pressed = _vsync_enabled
 	_fps_cap_option.select(_fps_cap_index)
+	_refresh_stream_settings_ui()
 	_refresh_volume_labels()
 	_refresh_control_buttons()
 	_set_controls_status("Ready")
@@ -434,9 +520,40 @@ func _on_streamer_controls_pressed() -> void:
 	close_settings()
 	streamer_menu.open_menu()
 
+func _on_stream_resolution_selected(index: int) -> void:
+	if _is_refreshing:
+		return
+	_stream_resolution_index = int(clamp(index, 0, STREAM_RESOLUTIONS.size() - 1))
+	_apply_canvas_resolution()
+	_save_settings()
+
+func _on_hide_screen_wash_toggled(pressed: bool) -> void:
+	if _is_refreshing:
+		return
+	_hide_screen_wash = pressed
+	apply_stream_capture_visuals_to_scene()
+	_save_settings()
+
+func _on_hide_debug_controls_toggled(pressed: bool) -> void:
+	if _is_refreshing:
+		return
+	_hide_debug_lobby_controls = pressed
+	apply_stream_capture_visuals_to_scene()
+	_save_settings()
+
+func _on_lock_mouse_capture_toggled(pressed: bool) -> void:
+	if _is_refreshing:
+		return
+	_lock_race_mouse_capture = pressed
+	_save_settings()
+
+func _on_apply_obs_defaults_pressed() -> void:
+	apply_obs_stream_defaults()
+
 func _apply_all_settings() -> void:
 	_apply_audio_settings()
 	_apply_graphics_quality()
+	_apply_canvas_resolution()
 	_apply_display_mode()
 	_apply_vsync()
 	_apply_fps_cap()
@@ -495,6 +612,16 @@ func _apply_display_mode() -> void:
 		_:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false)
+	_apply_canvas_resolution()
+
+func _apply_canvas_resolution() -> void:
+	var window: Window = get_window()
+	if window == null:
+		return
+
+	var target_size: Vector2i = STREAM_RESOLUTIONS[_stream_resolution_index]
+	window.size = target_size
+	window.content_scale_size = target_size
 
 func _apply_vsync() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if _vsync_enabled else DisplayServer.VSYNC_DISABLED)
@@ -560,6 +687,14 @@ func _load_settings() -> void:
 	_display_mode_index = int(clamp(int(config.get_value("graphics", "display_mode", _display_mode_index)), 0, DISPLAY_MODE_LABELS.size() - 1))
 	_vsync_enabled = bool(config.get_value("graphics", "vsync", _vsync_enabled))
 	_fps_cap_index = int(clamp(int(config.get_value("graphics", "fps_cap", _fps_cap_index)), 0, FPS_CAP_VALUES.size() - 1))
+	_stream_resolution_index = int(clamp(
+		int(config.get_value("stream", "resolution", _stream_resolution_index)),
+		0,
+		STREAM_RESOLUTIONS.size() - 1
+	))
+	_hide_screen_wash = bool(config.get_value("stream", "hide_screen_wash", _hide_screen_wash))
+	_hide_debug_lobby_controls = bool(config.get_value("stream", "hide_debug_lobby_controls", _hide_debug_lobby_controls))
+	_lock_race_mouse_capture = bool(config.get_value("stream", "lock_race_mouse_capture", _lock_race_mouse_capture))
 
 	for action_name in CONTROL_ACTIONS:
 		_bindings[action_name] = int(config.get_value("controls", action_name, _bindings[action_name]))
@@ -574,6 +709,10 @@ func _save_settings() -> void:
 	config.set_value("graphics", "display_mode", _display_mode_index)
 	config.set_value("graphics", "vsync", _vsync_enabled)
 	config.set_value("graphics", "fps_cap", _fps_cap_index)
+	config.set_value("stream", "resolution", _stream_resolution_index)
+	config.set_value("stream", "hide_screen_wash", _hide_screen_wash)
+	config.set_value("stream", "hide_debug_lobby_controls", _hide_debug_lobby_controls)
+	config.set_value("stream", "lock_race_mouse_capture", _lock_race_mouse_capture)
 
 	for action_name in CONTROL_ACTIONS:
 		config.set_value("controls", action_name, int(_bindings.get(action_name, _get_default_primary_key(action_name))))

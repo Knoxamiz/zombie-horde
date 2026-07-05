@@ -1,13 +1,13 @@
-[gd_resource type="Resource" script_class="TwitchChatConfig" load_steps=2 format=3 uid="uid://cy25ecmbimgyb"]
+[gd_resource type="Resource" script_class="TwitchChatConfig" load_steps=2 format=3]
 
-[ext_resource type="Script" uid="uid://do7ew2sfncmx" path="res://scripts/integrations/twitch/twitch_chat_config.gd" id="1_twitch_config"]
+[ext_resource type="Script" path="res://scripts/integrations/twitch/twitch_chat_config.gd" id="1_twitch_config"]
 
 [resource]
 script = ExtResource("1_twitch_config")
 enabled = true
 auto_connect = true
 anonymous_mode = true
-channel_name = ""
+channel_name = "your_channel_name"
 join_command = "!brains"
 websocket_url = "wss://irc-ws.chat.twitch.tv:443"
 bot_username = ""

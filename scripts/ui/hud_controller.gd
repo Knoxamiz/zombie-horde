@@ -72,6 +72,7 @@ var _hud_layer_before_layout_edit: int = 6
 var _hud_visible_before_layout_edit: bool = false
 
 @onready var _root: Control = get_node("Root") as Control
+@onready var _screen_wash: ColorRect = get_node("Root/ScreenWash") as ColorRect
 @onready var _state_label: Label = get_node("Root/TopPanel/Margin/VBox/StateLabel") as Label
 @onready var _count_label: Label = get_node("Root/TopPanel/Margin/VBox/CountLabel") as Label
 @onready var _leader_label: Label = get_node("Root/TopPanel/Margin/VBox/LeaderLabel") as Label
@@ -160,6 +161,13 @@ func _ready() -> void:
 	_apply_saved_layout()
 	_set_world_visible(visible)
 	_last_visible_state = visible
+	apply_stream_capture_visuals()
+
+func apply_stream_capture_visuals() -> void:
+	var game_settings: GameSettingsController = get_node_or_null("/root/GameSettings") as GameSettingsController
+	if game_settings == null or _screen_wash == null:
+		return
+	_screen_wash.visible = not game_settings.should_hide_screen_wash()
 
 func _setup_layout_editor() -> void:
 	_layout_editor = LAYOUT_EDITOR_SCRIPT.new()

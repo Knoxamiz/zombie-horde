@@ -212,7 +212,7 @@ func _apply_phase(phase_name: String) -> void:
 			if _pre_round_ui != null:
 				_pre_round_ui.set_screen_mode("hidden")
 			if _spectator_camera != null:
-				_spectator_camera.set_mouse_capture_allowed(true)
+				_spectator_camera.set_mouse_capture_allowed(_should_allow_race_mouse_capture())
 				_spectator_camera.set_view(race_camera_position, race_camera_rotation_degrees, false)
 
 func _apply_launch_request() -> void:
@@ -226,6 +226,18 @@ func _apply_launch_request() -> void:
 		call_deferred("_seed_launch_debug_joins", debug_joins_to_seed)
 	if bool(request.get("open_settings", false)):
 		call_deferred("_open_streamer_settings")
+	call_deferred("_apply_stream_capture_visuals")
+
+func _apply_stream_capture_visuals() -> void:
+	var game_settings: GameSettingsController = get_node_or_null("/root/GameSettings") as GameSettingsController
+	if game_settings != null:
+		game_settings.apply_stream_capture_visuals_to_scene()
+
+func _should_allow_race_mouse_capture() -> bool:
+	var game_settings: GameSettingsController = get_node_or_null("/root/GameSettings") as GameSettingsController
+	if game_settings == null:
+		return true
+	return game_settings.should_lock_race_mouse_capture()
 
 func _apply_music_for_phase(phase_name: String) -> void:
 	if _music_controller == null:

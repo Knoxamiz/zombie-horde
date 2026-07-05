@@ -242,6 +242,10 @@ func _launch_lobby(debug_joins_to_seed: int, open_settings: bool) -> void:
 
 	_transitioning = true
 	_set_buttons_enabled(false)
+	if open_settings:
+		var game_settings: GameSettingsController = _get_or_create_game_settings()
+		if game_settings != null:
+			game_settings.apply_obs_stream_defaults()
 	LaunchState.request_lobby(debug_joins_to_seed, open_settings)
 
 	var packed: PackedScene = _take_preloaded_game_scene()

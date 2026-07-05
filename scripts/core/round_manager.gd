@@ -63,9 +63,6 @@ func _ready() -> void:
 	GameEvents.minigun_fired.connect(_on_minigun_fired)
 	GameEvents.mine_triggered.connect(_on_mine_triggered)
 
-	if round_config != null:
-		GameEvents.command_text_changed.emit(round_config.command_text)
-
 	_setup_preview_board()
 	_publish_state()
 	_seed_debug_roster_if_enabled()
@@ -91,7 +88,9 @@ func start_round() -> void:
 		minimum_count = round_config.min_participants_to_start
 
 	if pending_participants.size() < minimum_count:
-		GameEvents.command_text_changed.emit("Waiting for zombies. Type !brains to join.")
+		GameEvents.command_text_changed.emit(
+			"Waiting for zombies. %s" % TwitchConfigResolver.get_join_command_text()
+		)
 		return
 
 	round_number += 1
@@ -284,8 +283,8 @@ func _end_round(winner_name: String, base_won: bool) -> void:
 
 func _publish_state() -> void:
 	GameEvents.round_state_changed.emit(get_state_text())
-	if round_config != null:
-		GameEvents.command_text_changed.emit(round_config.command_text)
+	if state == RoundState.IDLE:
+		GameEvents.command_text_changed.emit(TwitchConfigResolver.get_join_command_text())
 
 func _state_to_text(value: RoundState) -> String:
 	match value:
