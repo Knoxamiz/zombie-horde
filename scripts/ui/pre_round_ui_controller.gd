@@ -26,6 +26,8 @@ const BITS_CAGE_MINE_MESSAGE := "1 bit = Cage mine!!!"
 
 var _command_text: String = JOIN_COMMAND_TEXT
 var _state_text: String = "Joining"
+var _chat_status_text: String = ""
+var _chat_detail_text: String = ""
 
 @onready var _root: Control = get_node("Root") as Control
 @onready var _lobby_count_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyCountLabel") as Label
@@ -210,10 +212,8 @@ func _update_title_from_command(command_text: String) -> void:
 	title_label.text = title_text
 
 func _on_chat_connection_status_changed(status_text: String, detail_text: String) -> void:
-	if detail_text.is_empty():
-		_command_text = "Chat: %s" % status_text
-	else:
-		_command_text = "Chat: %s (%s)" % [status_text, detail_text]
+	_chat_status_text = status_text.strip_edges()
+	_chat_detail_text = detail_text.strip_edges()
 	_refresh_labels()
 
 func _on_round_state_changed(state_text: String) -> void:
@@ -224,18 +224,15 @@ func _on_leaderboard_changed(_entries: Array) -> void:
 	_refresh_scoreboards()
 
 func _refresh_labels() -> void:
-	var command_text: String = _command_text
-	if command_text.is_empty():
-		command_text = TwitchConfigResolver.get_join_command_text()
-
 	if _lobby_count_label != null:
 		_lobby_count_label.text = _format_queue_summary()
 	if _lobby_names_label != null:
-		_lobby_names_label.text = _format_join_feed()
+		_lobby_names_label.text = _format_lobby_body()
 	if _lobby_chat_label != null:
-		if _should_show_status_message(command_text):
+		var chat_text: String = _format_chat_status()
+		if _should_show_chat_status(chat_text):
 			_lobby_chat_label.visible = true
-			_lobby_chat_label.text = command_text
+			_lobby_chat_label.text = chat_text
 		else:
 			_lobby_chat_label.visible = false
 	_refresh_ready_button()
@@ -282,19 +279,64 @@ func _format_board_row(rank: int, display_name: String, value_text: String) -> S
 
 func _format_queue_summary() -> String:
 	if _queued_names.is_empty():
-		return "Waiting for players..."
-	return "%d player(s) joined" % _queued_names.size()
+		return "JOINING"
+	return "JOINING · %d in cage" % _queued_names.size()
 
 
-func _should_show_status_message(command_text: String) -> bool:
-	if command_text == TwitchConfigResolver.get_join_command_text():
+func _should_show_chat_status(chat_text: String) -> bool:
+	if chat_text.is_empty():
 		return false
-	return not command_text.is_empty()
+	var normalized_status: String = _chat_status_text.to_lower()
+	if normalized_status == "twitch live":
+		return false
+	return true
+
+func _format_lobby_body() -> String:
+	var sections: Array[String] = []
+	var roster_text: String = _format_joining_roster()
+	if not roster_text.is_empty():
+		sections.append(roster_text)
+	var feed_text: String = _format_join_feed()
+	if not feed_text.is_empty():
+		sections.append(feed_text)
+	if sections.is_empty():
+		return "—"
+	return _join_strings(sections, "\n\n")
+
+func _format_joining_roster() -> String:
+	if _queued_names.is_empty():
+		return ""
+	var lines: Array[String] = []
+	for display_name in _queued_names:
+		var clean_name: String = str(display_name).strip_edges()
+		if clean_name.is_empty():
+			continue
+		lines.append("• %s" % clean_name)
+	return _join_strings(lines, "\n")
 
 func _format_join_feed() -> String:
 	if _join_feed_lines.is_empty():
-		return "-"
+		return ""
 	return _join_strings(_join_feed_lines, "\n")
+
+func _format_chat_status() -> String:
+	if _chat_status_text.is_empty():
+		return ""
+	var detail_text: String = _shorten_chat_detail(_chat_detail_text)
+	if detail_text.is_empty():
+		return "Chat: %s" % _chat_status_text
+	return "Chat: %s\n%s" % [_chat_status_text, detail_text]
+
+func _shorten_chat_detail(detail_text: String) -> String:
+	if detail_text.is_empty():
+		return ""
+	if detail_text.contains("twitch_chat_config"):
+		return "Set channel_name in twitch_chat_config.local.tres"
+	if detail_text.contains("ZOMBIE_HORDE_TWITCH"):
+		return "Set Twitch OAuth env vars (see env.example)."
+	if detail_text.length() > 72:
+		return "%s…" % detail_text.substr(0, 71)
+	return detail_text
 
 func _refresh_ready_button() -> void:
 	if _ready_button == null:
@@ -319,6 +361,8 @@ func _join_strings(values: Array[String], separator: String) -> String:
 
 func _refresh_chat_status_from_source() -> void:
 	if _twitch_join_source == null:
+		_chat_status_text = ""
+		_chat_detail_text = ""
 		_command_text = TwitchConfigResolver.get_join_command_text()
 		return
 

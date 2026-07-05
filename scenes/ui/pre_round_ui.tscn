@@ -78,12 +78,12 @@ mouse_filter = 2
 color = Color(0.004, 0.008, 0.005, 0.42)
 
 [node name="LobbyPanel" type="PanelContainer" parent="Root"]
-custom_minimum_size = Vector2(520, 360)
+custom_minimum_size = Vector2(400, 360)
 layout_mode = 1
 anchors_preset = 0
 offset_left = 40.0
 offset_top = 40.0
-offset_right = 560.0
+offset_right = 440.0
 offset_bottom = 400.0
 theme_override_styles/panel = SubResource("StyleBox_lobby_glow")
 
@@ -100,31 +100,41 @@ theme_override_constants/separation = 12
 
 [node name="TitleLabel" type="Label" parent="Root/LobbyPanel/Margin/VBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.94, 1, 0.58, 1)
 theme_override_font_sizes/font_size = 30
 text = "!brains to join."
+autowrap_mode = 3
 
 [node name="LobbyCountLabel" type="Label" parent="Root/LobbyPanel/Margin/VBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.82, 1, 0.45, 1)
-text = "Waiting for players..."
+theme_override_font_sizes/font_size = 18
+text = "JOINING"
 
 [node name="LobbyNamesLabel" type="Label" parent="Root/LobbyPanel/Margin/VBox"]
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 88)
 layout_mode = 2
-text = "-"
-autowrap_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.9, 0.96, 0.88, 1)
+theme_override_font_sizes/font_size = 16
+text = "—"
+autowrap_mode = 3
 clip_text = true
-max_lines_visible = 3
+max_lines_visible = 6
 
 [node name="LobbyChatLabel" type="Label" parent="Root/LobbyPanel/Margin/VBox"]
 visible = false
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
+theme_override_font_sizes/font_size = 14
 text = ""
-autowrap_mode = 2
+autowrap_mode = 3
 clip_text = true
-max_lines_visible = 1
+max_lines_visible = 2
 
 [node name="ReadyButton" type="Button" parent="Root/LobbyPanel/Margin/VBox"]
 custom_minimum_size = Vector2(0, 72)
