@@ -12,6 +12,7 @@ const MAX_JOIN_FEED_LINES: int = 12
 @export var debug_join_source_path: NodePath
 @export var twitch_join_source_path: NodePath
 @export var leaderboard_store_path: NodePath
+@export var join_lobby_manager_path: NodePath
 @export var feature_config: FeatureAccessConfig
 
 var _round_manager: RoundManager
@@ -19,6 +20,7 @@ var _join_source: JoinSource
 var _debug_join_source: DebugJoinSource
 var _twitch_join_source: TwitchJoinSource
 var _leaderboard_store: LeaderboardStore
+var _join_lobby_manager: JoinLobbyManager
 var _queued_names: PackedStringArray = PackedStringArray()
 var _join_feed_lines: Array[String] = []
 const JOIN_COMMAND_TEXT := "!brains to join."
@@ -37,6 +39,7 @@ var _state_text: String = "Joining"
 @onready var _join_sub_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinSubButton") as Button
 @onready var _join_gift_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinGiftButton") as Button
 @onready var _join_bits_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinBitsButton") as Button
+@onready var _test_mine_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestMineButton") as Button
 @onready var _options_button: Button = get_node("Root/OptionsButton") as Button
 @onready var _main_menu_button: Button = get_node("Root/MainMenuButton") as Button
 @onready var _recent_winners_label: Label = get_node("Root/ScoresPanel/Margin/VBox/RecentWinnersLabel") as Label
@@ -50,12 +53,14 @@ func _ready() -> void:
 	_debug_join_source = get_node_or_null(debug_join_source_path) as DebugJoinSource
 	_twitch_join_source = get_node_or_null(twitch_join_source_path) as TwitchJoinSource
 	_leaderboard_store = get_node_or_null(leaderboard_store_path) as LeaderboardStore
+	_join_lobby_manager = get_node_or_null(join_lobby_manager_path) as JoinLobbyManager
 
 	_lobby_join_button.pressed.connect(_on_add_npc_pressed)
 	_join_viewer_button.pressed.connect(_on_join_viewer_pressed)
 	_join_sub_button.pressed.connect(_on_join_sub_pressed)
 	_join_gift_button.pressed.connect(_on_join_gift_pressed)
 	_join_bits_button.pressed.connect(_on_join_bits_pressed)
+	_test_mine_button.pressed.connect(_on_test_mine_pressed)
 	_ready_button.pressed.connect(_on_ready_pressed)
 	_reset_button.hold_confirmed.connect(_on_reset_confirmed)
 	_options_button.pressed.connect(_on_options_pressed)
@@ -111,6 +116,10 @@ func _on_join_gift_pressed() -> void:
 
 func _on_join_bits_pressed() -> void:
 	_request_test_tier_join(ParticipantJoinInfo.SupporterTier.BITS_DONOR)
+
+func _on_test_mine_pressed() -> void:
+	if _join_lobby_manager != null:
+		_join_lobby_manager.spawn_cage_mine(true)
 
 func _request_test_tier_join(tier: ParticipantJoinInfo.SupporterTier) -> void:
 	var debug_source: DebugJoinSource = _get_debug_join_source()

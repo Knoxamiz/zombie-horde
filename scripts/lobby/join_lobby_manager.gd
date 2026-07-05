@@ -2,9 +2,12 @@ class_name JoinLobbyManager
 extends Node3D
 
 @export var lobby_zombie_scene: PackedScene
+@export var lobby_cage_mine_scene: PackedScene
 @export var round_manager_path: NodePath
 @export var spawn_area_size: Vector3 = Vector3(5.4, 0.0, 4.0)
 @export var drop_height: float = 7.6
+@export var cage_mine_floor_y: float = 0.24
+@export var cage_mine_spawn_half_extents: Vector2 = Vector2(2.8, 1.8)
 @export var cage_half_extents_xz: Vector2 = Vector2(5.7, 3.7)
 @export var cage_floor_y: float = -0.75
 @export var cage_ground_contact_max_y: float = 1.35
@@ -14,6 +17,7 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _lobby_zombies: Dictionary = {}
 var _round_manager: RoundManager
 var _lobby_open: bool = true
+var _cage_mine: LobbyCageMine
 
 @onready var _zombie_container: Node3D = get_node_or_null("Zombies") as Node3D
 
@@ -79,8 +83,11 @@ func _spawn_lobby_zombie(display_name: String, key: String) -> void:
 	_zombie_container.add_child(lobby_zombie)
 	lobby_zombie.name = "LobbyZombie_%s" % _get_node_safe_name(display_name)
 	lobby_zombie.position = _get_spawn_position()
-	lobby_zombie.configure_lobby_zombie(display_name, int(_rng.randi()), _get_join_info(display_name))
+	var join_info: ParticipantJoinInfo = _get_join_info(display_name)
+	lobby_zombie.configure_lobby_zombie(display_name, int(_rng.randi()), join_info)
 	_lobby_zombies[key] = lobby_zombie
+	if join_info.get_supporter_tier() == ParticipantJoinInfo.SupporterTier.BITS_DONOR:
+		spawn_cage_mine(true)
 
 func _remove_lobby_zombie(key: String) -> void:
 	var lobby_zombie: LobbyZombie = _lobby_zombies.get(key) as LobbyZombie
@@ -92,6 +99,7 @@ func _clear_lobby() -> void:
 	var existing_keys: Array = _lobby_zombies.keys()
 	for existing_key in existing_keys:
 		_remove_lobby_zombie(str(existing_key))
+	_clear_cage_mine()
 
 func _get_join_info(display_name: String) -> ParticipantJoinInfo:
 	if _round_manager == null:
@@ -123,6 +131,40 @@ func is_outside_cage_on_ground(world_position: Vector3) -> bool:
 		local_position.y >= cage_floor_y
 		and local_position.y <= cage_ground_contact_max_y
 	)
+
+
+func spawn_cage_mine(reposition: bool = true) -> LobbyCageMine:
+	if lobby_cage_mine_scene == null:
+		return null
+
+	if _cage_mine == null or not is_instance_valid(_cage_mine):
+		_cage_mine = lobby_cage_mine_scene.instantiate() as LobbyCageMine
+		if _cage_mine == null:
+			return null
+		add_child(_cage_mine)
+
+	if reposition:
+		_cage_mine.global_position = _get_cage_mine_position()
+	_cage_mine.rearm()
+	return _cage_mine
+
+
+func has_cage_mine() -> bool:
+	return _cage_mine != null and is_instance_valid(_cage_mine)
+
+
+func _get_cage_mine_position() -> Vector3:
+	return to_global(Vector3(
+		_rng.randf_range(-cage_mine_spawn_half_extents.x, cage_mine_spawn_half_extents.x),
+		cage_mine_floor_y,
+		_rng.randf_range(-cage_mine_spawn_half_extents.y, cage_mine_spawn_half_extents.y)
+	))
+
+
+func _clear_cage_mine() -> void:
+	if _cage_mine != null and is_instance_valid(_cage_mine):
+		_cage_mine.queue_free()
+	_cage_mine = null
 
 
 func _get_lobby_key(display_name: String) -> String:

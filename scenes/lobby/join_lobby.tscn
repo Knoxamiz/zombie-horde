@@ -1,4 +1,4 @@
-[gd_scene load_steps=43 format=3]
+[gd_scene load_steps=44 format=3]
 
 [ext_resource type="Script" path="res://scripts/lobby/join_lobby_manager.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://scenes/lobby/lobby_zombie.tscn" id="2_lobby_zombie"]
@@ -20,6 +20,7 @@
 [ext_resource type="Material" path="res://assets/materials/city_building_mid.tres" id="18_city_mid"]
 [ext_resource type="Material" path="res://assets/materials/city_window_glow.tres" id="19_window_glow"]
 [ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/StreetLights.gltf" id="20_streetlights"]
+[ext_resource type="PackedScene" path="res://scenes/lobby/lobby_cage_mine.tscn" id="21_lobby_cage_mine"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
 size = Vector3(12, 0.22, 8.2)
@@ -91,6 +92,7 @@ friction = 0.14
 [node name="JoinLobby" type="Node3D"]
 script = ExtResource("1_script")
 lobby_zombie_scene = ExtResource("2_lobby_zombie")
+lobby_cage_mine_scene = ExtResource("21_lobby_cage_mine")
 spawn_area_size = Vector3(8.4, 0, 5.4)
 drop_height = 7.6
 

@@ -1,0 +1,32 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/lobby/lobby_cage_mine.gd" id="1_script"]
+[ext_resource type="Material" path="res://assets/materials/mine_armed.tres" id="2_armed"]
+[ext_resource type="Material" path="res://assets/materials/mine_spent.tres" id="3_spent"]
+[ext_resource type="PackedScene" path="res://scenes/hazards/mine_explosion_effect.tscn" id="4_explosion"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_trigger"]
+radius = 0.72
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_visual"]
+top_radius = 0.28
+bottom_radius = 0.34
+height = 0.12
+
+[node name="LobbyCageMine" type="Area3D"]
+collision_layer = 0
+collision_mask = 8
+monitoring = true
+monitorable = false
+script = ExtResource("1_script")
+armed_material = ExtResource("2_armed")
+spent_material = ExtResource("3_spent")
+explosion_scene = ExtResource("4_explosion")
+explosion_scale = 0.42
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_trigger")
+
+[node name="Visual" type="MeshInstance3D" parent="."]
+mesh = SubResource("CylinderMesh_visual")
+surface_material_override/0 = ExtResource("2_armed")
