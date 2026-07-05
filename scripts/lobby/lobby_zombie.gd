@@ -123,7 +123,7 @@ func _check_cage_escape() -> void:
 	if manager == null:
 		return
 
-	if manager.is_inside_cage(global_position):
+	if not manager.is_outside_cage_on_ground(global_position):
 		return
 
 	_respawn_in_cage(manager)

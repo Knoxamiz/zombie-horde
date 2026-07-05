@@ -5,8 +5,9 @@ extends Node3D
 @export var round_manager_path: NodePath
 @export var spawn_area_size: Vector3 = Vector3(5.4, 0.0, 4.0)
 @export var drop_height: float = 7.6
-@export var cage_half_extents: Vector3 = Vector3(5.7, 3.15, 3.7)
+@export var cage_half_extents_xz: Vector2 = Vector2(5.7, 3.7)
 @export var cage_floor_y: float = -0.75
+@export var cage_ground_contact_max_y: float = 1.35
 @export_range(1, 160, 1) var max_displayed_zombies: int = 96
 
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -109,13 +110,18 @@ func get_respawn_position() -> Vector3:
 	return to_global(_get_spawn_position())
 
 
-func is_inside_cage(world_position: Vector3) -> bool:
+func is_outside_cage_on_ground(world_position: Vector3) -> bool:
 	var local_position: Vector3 = to_local(world_position)
+	var outside_horizontally: bool = (
+		absf(local_position.x) > cage_half_extents_xz.x
+		or absf(local_position.z) > cage_half_extents_xz.y
+	)
+	if not outside_horizontally:
+		return false
+
 	return (
-		absf(local_position.x) <= cage_half_extents.x
-		and absf(local_position.z) <= cage_half_extents.z
-		and local_position.y >= cage_floor_y
-		and local_position.y <= cage_half_extents.y
+		local_position.y >= cage_floor_y
+		and local_position.y <= cage_ground_contact_max_y
 	)
 
 
