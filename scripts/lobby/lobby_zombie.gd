@@ -11,6 +11,8 @@ const TIER_VISUAL_SLOT_NAME := "TierVisualModel"
 @export_range(0.1, 1.0, 0.01) var first_bounce_scale: float = 0.55
 @export_range(1.0, 1.6, 0.01) var later_bounce_boost: float = 1.24
 
+const ESCAPE_RESPAWN_COOLDOWN := 0.6
+
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _motion_timer: float = 0.0
 var _animation_player: AnimationPlayer
@@ -23,6 +25,7 @@ var _bits_champion_light: OmniLight3D
 var _supporter_upgrade_state: SupporterUpgradeState
 var _awaiting_cage_drop: bool = true
 var _gift_spotlight_played: bool = false
+var _escape_respawn_cooldown: float = 0.0
 var _base_visual_scale: Vector3 = Vector3.ONE
 var _glow_pulse_time: float = 0.0
 var _base_name_font_size: int = 20
@@ -83,6 +86,9 @@ func _physics_process(delta: float) -> void:
 	_update_supporter_glow_pulse(delta)
 	_update_supporter_upgrade_pulse(delta)
 
+	_escape_respawn_cooldown = maxf(0.0, _escape_respawn_cooldown - delta)
+	_check_cage_escape()
+
 	_motion_timer -= delta
 	if _awaiting_cage_drop:
 		return
@@ -107,6 +113,39 @@ func _drop_into_cage() -> void:
 	)
 	angular_velocity = _get_random_spin(spin_strength * 0.4)
 	_was_falling = true
+
+
+func _check_cage_escape() -> void:
+	if _awaiting_cage_drop or _escape_respawn_cooldown > 0.0:
+		return
+
+	var manager: JoinLobbyManager = _get_lobby_manager()
+	if manager == null:
+		return
+
+	if manager.is_inside_cage(global_position):
+		return
+
+	_respawn_in_cage(manager)
+
+
+func _respawn_in_cage(manager: JoinLobbyManager) -> void:
+	global_position = manager.get_respawn_position()
+	_landings = 0
+	_awaiting_cage_drop = true
+	_was_falling = true
+	_escape_respawn_cooldown = ESCAPE_RESPAWN_COOLDOWN
+	_drop_into_cage()
+
+
+func _get_lobby_manager() -> JoinLobbyManager:
+	var current: Node = get_parent()
+	while current != null:
+		var manager: JoinLobbyManager = current as JoinLobbyManager
+		if manager != null:
+			return manager
+		current = current.get_parent()
+	return null
 
 func _kick() -> void:
 	if not is_inside_tree():

@@ -4,7 +4,9 @@ extends Node3D
 @export var lobby_zombie_scene: PackedScene
 @export var round_manager_path: NodePath
 @export var spawn_area_size: Vector3 = Vector3(5.4, 0.0, 4.0)
-@export var 	drop_height: float = 7.6
+@export var drop_height: float = 7.6
+@export var cage_half_extents: Vector3 = Vector3(5.7, 3.15, 3.7)
+@export var cage_floor_y: float = -0.75
 @export_range(1, 160, 1) var max_displayed_zombies: int = 96
 
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -101,6 +103,21 @@ func _get_spawn_position() -> Vector3:
 		drop_height,
 		_rng.randf_range(-spawn_area_size.z * 0.5, spawn_area_size.z * 0.5)
 	)
+
+
+func get_respawn_position() -> Vector3:
+	return to_global(_get_spawn_position())
+
+
+func is_inside_cage(world_position: Vector3) -> bool:
+	var local_position: Vector3 = to_local(world_position)
+	return (
+		absf(local_position.x) <= cage_half_extents.x
+		and absf(local_position.z) <= cage_half_extents.z
+		and local_position.y >= cage_floor_y
+		and local_position.y <= cage_half_extents.y
+	)
+
 
 func _get_lobby_key(display_name: String) -> String:
 	return display_name.to_lower()
