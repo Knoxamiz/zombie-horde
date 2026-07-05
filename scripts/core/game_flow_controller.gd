@@ -212,8 +212,9 @@ func _apply_phase(phase_name: String) -> void:
 			if _pre_round_ui != null:
 				_pre_round_ui.set_screen_mode("hidden")
 			if _spectator_camera != null:
-				_spectator_camera.set_mouse_capture_allowed(_should_allow_race_mouse_capture())
-				_spectator_camera.set_view(race_camera_position, race_camera_rotation_degrees, false)
+				var allow_race_free_cam: bool = _should_allow_race_mouse_capture()
+				_spectator_camera.set_mouse_capture_allowed(allow_race_free_cam)
+				_spectator_camera.set_view(race_camera_position, race_camera_rotation_degrees, allow_race_free_cam)
 
 func _apply_launch_request() -> void:
 	var request: Dictionary = LaunchState.consume_request()

@@ -23,6 +23,7 @@ const STREAM_RESOLUTIONS: Array[Vector2i] = [
 	Vector2i(1600, 900),
 	Vector2i(1280, 720),
 ]
+const STREAM_SETTINGS_VERSION := 2
 
 const CONTROL_ACTIONS: Array[String] = [
 	"camera_forward",
@@ -694,10 +695,22 @@ func _load_settings() -> void:
 	))
 	_hide_screen_wash = bool(config.get_value("stream", "hide_screen_wash", _hide_screen_wash))
 	_hide_debug_lobby_controls = bool(config.get_value("stream", "hide_debug_lobby_controls", _hide_debug_lobby_controls))
-	_lock_race_mouse_capture = bool(config.get_value("stream", "lock_race_mouse_capture", _lock_race_mouse_capture))
+	_lock_race_mouse_capture = _load_race_free_cam_setting(config)
 
 	for action_name in CONTROL_ACTIONS:
 		_bindings[action_name] = int(config.get_value("controls", action_name, _bindings[action_name]))
+
+	var stream_settings_version: int = int(config.get_value("stream", "version", 1))
+	if stream_settings_version < STREAM_SETTINGS_VERSION:
+		_lock_race_mouse_capture = true
+		_save_settings()
+
+func _load_race_free_cam_setting(config: ConfigFile) -> bool:
+	if config.has_section_key("stream", "race_free_cam_enabled"):
+		return bool(config.get_value("stream", "race_free_cam_enabled", true))
+	if config.has_section_key("stream", "lock_race_mouse_capture"):
+		return bool(config.get_value("stream", "lock_race_mouse_capture", true))
+	return true
 
 func _save_settings() -> void:
 	var config: ConfigFile = ConfigFile.new()
@@ -710,8 +723,10 @@ func _save_settings() -> void:
 	config.set_value("graphics", "vsync", _vsync_enabled)
 	config.set_value("graphics", "fps_cap", _fps_cap_index)
 	config.set_value("stream", "resolution", _stream_resolution_index)
+	config.set_value("stream", "version", STREAM_SETTINGS_VERSION)
 	config.set_value("stream", "hide_screen_wash", _hide_screen_wash)
 	config.set_value("stream", "hide_debug_lobby_controls", _hide_debug_lobby_controls)
+	config.set_value("stream", "race_free_cam_enabled", _lock_race_mouse_capture)
 	config.set_value("stream", "lock_race_mouse_capture", _lock_race_mouse_capture)
 
 	for action_name in CONTROL_ACTIONS:
