@@ -618,7 +618,6 @@ join_source_path = NodePath("../Systems/DebugJoinSource")
 debug_join_source_path = NodePath("../Systems/DebugJoinSource")
 twitch_join_source_path = NodePath("../Systems/TwitchJoinSource")
 leaderboard_store_path = NodePath("../Systems/LeaderboardStore")
-join_lobby_manager_path = NodePath("../LobbyWorld/JoinLobby")
 feature_config = ExtResource("42_feature_config")
 
 [node name="TransitionLayer" type="CanvasLayer" parent="."]

@@ -34,6 +34,10 @@ func request_test_tier_join(tier: ParticipantJoinInfo.SupporterTier) -> void:
 	var join_info: ParticipantJoinInfo = ParticipantJoinInfo.create_test_join(tier, sequence)
 	submit_join(join_info.display_name, join_info)
 
+
+func request_test_bits_cheer(bits_amount: int = 1) -> void:
+	GameEvents.bits_cheer_received.emit("TestCheerer", max(bits_amount, 1))
+
 func seed_default_participants() -> void:
 	if round_config == null or not round_config.auto_seed_debug_roster:
 		return

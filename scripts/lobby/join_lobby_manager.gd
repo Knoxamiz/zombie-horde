@@ -1,6 +1,8 @@
 class_name JoinLobbyManager
 extends Node3D
 
+const BITS_CAGE_MINE_MESSAGE := "1 bit = Cage mine!!!"
+
 @export var lobby_zombie_scene: PackedScene
 @export var lobby_cage_mine_scene: PackedScene
 @export var round_manager_path: NodePath
@@ -29,6 +31,7 @@ func _ready() -> void:
 	GameEvents.round_state_changed.connect(_on_round_state_changed)
 	GameEvents.round_reset.connect(_on_round_reset)
 	GameEvents.round_started.connect(_on_round_started)
+	GameEvents.bits_cheer_received.connect(_on_bits_cheer_received)
 
 	if _zombie_container == null:
 		_zombie_container = self
@@ -86,8 +89,20 @@ func _spawn_lobby_zombie(display_name: String, key: String) -> void:
 	var join_info: ParticipantJoinInfo = _get_join_info(display_name)
 	lobby_zombie.configure_lobby_zombie(display_name, int(_rng.randi()), join_info)
 	_lobby_zombies[key] = lobby_zombie
-	if join_info.get_supporter_tier() == ParticipantJoinInfo.SupporterTier.BITS_DONOR:
-		spawn_cage_mine(true)
+
+func _on_bits_cheer_received(_display_name: String, bits_amount: int) -> void:
+	if not _lobby_open or bits_amount <= 0:
+		return
+
+	var mine: LobbyCageMine = spawn_cage_mine(true)
+	if mine == null:
+		return
+
+	GameEvents.world_feedback_requested.emit(
+		mine.global_position + Vector3.UP * 0.9,
+		BITS_CAGE_MINE_MESSAGE,
+		ZombieCharacterVisuals.GLOW_BITS_PULSE
+	)
 
 func _remove_lobby_zombie(key: String) -> void:
 	var lobby_zombie: LobbyZombie = _lobby_zombies.get(key) as LobbyZombie

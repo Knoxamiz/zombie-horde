@@ -153,6 +153,7 @@ func _handle_irc_line(line: String) -> void:
 	var bits_amount: int = max(int(str(tags.get("bits", "0"))), 0)
 	if bits_amount > 0:
 		_mark_bits_donor(tags, bits_amount)
+		_emit_bits_cheer(line, tags, bits_amount)
 
 	var message_text: String = _extract_chat_message(line)
 	if message_text.is_empty():
@@ -171,6 +172,11 @@ func _handle_irc_line(line: String) -> void:
 
 func _handle_user_notice(line: String) -> void:
 	var tags: Dictionary = TwitchIrcTags.parse_line_tags(line)
+	var bits_amount: int = max(int(str(tags.get("bits", "0"))), 0)
+	if bits_amount > 0:
+		_mark_bits_donor(tags, bits_amount)
+		_emit_bits_cheer(line, tags, bits_amount)
+
 	var msg_id: String = str(tags.get("msg-id", ""))
 	if msg_id != "subgift" and msg_id != "anonsubgift":
 		return
@@ -220,6 +226,15 @@ func _mark_bits_donor(tags: Dictionary, bits_amount: int) -> void:
 		"expires_at": Time.get_unix_time_from_system() + int(BITS_DONOR_MEMORY_SECONDS),
 		"bits_amount": bits_amount,
 	}
+
+
+func _emit_bits_cheer(line: String, tags: Dictionary, bits_amount: int) -> void:
+	var display_name: String = _sanitize_display_name(TwitchIrcTags.get_display_name(line, tags))
+	if display_name.is_empty():
+		display_name = TwitchIrcTags.get_login_name(tags)
+	if display_name.is_empty():
+		display_name = "Cheerer"
+	GameEvents.bits_cheer_received.emit(display_name, bits_amount)
 
 func _is_recent_bits_donor(tags: Dictionary) -> bool:
 	var login_name: String = TwitchIrcTags.get_login_name(tags)

@@ -12,7 +12,6 @@ const MAX_JOIN_FEED_LINES: int = 12
 @export var debug_join_source_path: NodePath
 @export var twitch_join_source_path: NodePath
 @export var leaderboard_store_path: NodePath
-@export var join_lobby_manager_path: NodePath
 @export var feature_config: FeatureAccessConfig
 
 var _round_manager: RoundManager
@@ -20,10 +19,10 @@ var _join_source: JoinSource
 var _debug_join_source: DebugJoinSource
 var _twitch_join_source: TwitchJoinSource
 var _leaderboard_store: LeaderboardStore
-var _join_lobby_manager: JoinLobbyManager
 var _queued_names: PackedStringArray = PackedStringArray()
 var _join_feed_lines: Array[String] = []
 const JOIN_COMMAND_TEXT := "!brains to join."
+const BITS_CAGE_MINE_MESSAGE := "1 bit = Cage mine!!!"
 
 var _command_text: String = JOIN_COMMAND_TEXT
 var _state_text: String = "Joining"
@@ -53,7 +52,6 @@ func _ready() -> void:
 	_debug_join_source = get_node_or_null(debug_join_source_path) as DebugJoinSource
 	_twitch_join_source = get_node_or_null(twitch_join_source_path) as TwitchJoinSource
 	_leaderboard_store = get_node_or_null(leaderboard_store_path) as LeaderboardStore
-	_join_lobby_manager = get_node_or_null(join_lobby_manager_path) as JoinLobbyManager
 
 	_lobby_join_button.pressed.connect(_on_add_npc_pressed)
 	_join_viewer_button.pressed.connect(_on_join_viewer_pressed)
@@ -69,6 +67,7 @@ func _ready() -> void:
 
 	GameEvents.participant_registered.connect(_on_participant_registered)
 	GameEvents.participant_queue_changed.connect(_on_participant_queue_changed)
+	GameEvents.bits_cheer_received.connect(_on_bits_cheer_received)
 	GameEvents.command_text_changed.connect(_on_command_text_changed)
 	GameEvents.chat_connection_status_changed.connect(_on_chat_connection_status_changed)
 	GameEvents.round_state_changed.connect(_on_round_state_changed)
@@ -118,8 +117,26 @@ func _on_join_bits_pressed() -> void:
 	_request_test_tier_join(ParticipantJoinInfo.SupporterTier.BITS_DONOR)
 
 func _on_test_mine_pressed() -> void:
-	if _join_lobby_manager != null:
-		_join_lobby_manager.spawn_cage_mine(true)
+	var debug_source: DebugJoinSource = _get_debug_join_source()
+	if debug_source != null:
+		debug_source.request_test_bits_cheer()
+
+func _on_bits_cheer_received(display_name: String, bits_amount: int) -> void:
+	if bits_amount <= 0:
+		return
+
+	var cheer_name: String = display_name.strip_edges()
+	if cheer_name.is_empty():
+		cheer_name = "Cheerer"
+	_join_feed_lines.append("%s cheered %d bit%s — %s" % [
+		cheer_name,
+		bits_amount,
+		"s" if bits_amount != 1 else "",
+		BITS_CAGE_MINE_MESSAGE,
+	])
+	while _join_feed_lines.size() > MAX_JOIN_FEED_LINES:
+		_join_feed_lines.remove_at(0)
+	_refresh_labels()
 
 func _request_test_tier_join(tier: ParticipantJoinInfo.SupporterTier) -> void:
 	var debug_source: DebugJoinSource = _get_debug_join_source()
