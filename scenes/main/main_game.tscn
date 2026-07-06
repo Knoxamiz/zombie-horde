@@ -1,4 +1,4 @@
-[gd_scene load_steps=52 format=3 uid="uid://cpckbkq2isxty"]
+[gd_scene load_steps=53 format=3 uid="uid://cpckbkq2isxty"]
 
 [ext_resource type="Script" uid="uid://bdrcas6cpq4y0" path="res://scripts/core/input_map_setup.gd" id="1_input"]
 [ext_resource type="Script" uid="uid://ddgxum5bath7f" path="res://scripts/core/debug_join_source.gd" id="2_join"]
@@ -44,13 +44,14 @@
 [ext_resource type="Resource" path="res://resources/config/feature_access_config.tres" id="42_feature_config"]
 [ext_resource type="Script" uid="uid://d024e6ourlubf" path="res://scripts/maps/race_map_controller.gd" id="43_map_controller"]
 [ext_resource type="Resource" path="res://resources/maps/quarantine_boulevard.tres" id="44_map_quarantine"]
-[ext_resource type="Resource" path="res://resources/maps/broken_bridge.tres" id="45_map_broken_bridge"]
-[ext_resource type="Resource" path="res://resources/maps/industrial_yard.tres" id="46_map_industrial"]
-[ext_resource type="Resource" path="res://resources/maps/suburban_evac_route.tres" id="47_map_suburban"]
-[ext_resource type="Resource" path="res://resources/maps/tunnel_checkpoint.tres" id="48_map_tunnel"]
-[ext_resource type="Resource" path="res://resources/maps/rooftop_causeway.tres" id="49_map_rooftop"]
-[ext_resource type="Script" path="res://scripts/ui/world_text_board.gd" id="50_world_board"]
-[ext_resource type="PackedScene" path="res://scenes/ui/main_menu_3d_button.tscn" id="51_3d_button"]
+[ext_resource type="Resource" path="res://resources/maps/long_road.tres" id="45_map_long_road"]
+[ext_resource type="Resource" path="res://resources/maps/broken_bridge.tres" id="46_map_broken_bridge"]
+[ext_resource type="Resource" path="res://resources/maps/industrial_yard.tres" id="47_map_industrial"]
+[ext_resource type="Resource" path="res://resources/maps/suburban_evac_route.tres" id="48_map_suburban"]
+[ext_resource type="Resource" path="res://resources/maps/tunnel_checkpoint.tres" id="49_map_tunnel"]
+[ext_resource type="Resource" path="res://resources/maps/rooftop_causeway.tres" id="50_map_rooftop"]
+[ext_resource type="Script" path="res://scripts/ui/world_text_board.gd" id="51_world_board"]
+[ext_resource type="PackedScene" path="res://scenes/ui/main_menu_3d_button.tscn" id="52_3d_button"]
 
 [node name="MainGame" type="Node3D"]
 
@@ -97,11 +98,12 @@ zombie_config = ExtResource("8_zombie_config")
 powerup_config = ExtResource("10_powerup_config")
 human_defender_config = ExtResource("35_defender_config")
 map_0_definition = ExtResource("44_map_quarantine")
-map_1_definition = ExtResource("45_map_broken_bridge")
-map_2_definition = ExtResource("46_map_industrial")
-map_3_definition = ExtResource("47_map_suburban")
-map_4_definition = ExtResource("48_map_tunnel")
-map_5_definition = ExtResource("49_map_rooftop")
+map_1_definition = ExtResource("45_map_long_road")
+map_2_definition = ExtResource("46_map_broken_bridge")
+map_3_definition = ExtResource("47_map_industrial")
+map_4_definition = ExtResource("48_map_suburban")
+map_5_definition = ExtResource("49_map_tunnel")
+map_6_definition = ExtResource("50_map_rooftop")
 
 [node name="LeaderboardStore" type="Node" parent="Systems"]
 script = ExtResource("38_leaderboard_store")
@@ -207,7 +209,7 @@ visible = false
 
 [node name="LobbyInfoBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards"]
 transform = Transform3D(0.985, 0, -0.174, 0, 1, 0, 0.174, 0, 0.985, -2.55, 1.08, -5.58)
-script = ExtResource("50_world_board")
+script = ExtResource("51_world_board")
 title_text = "LOTTO CAGE"
 body_text = "Waiting for !brains"
 board_size = Vector2(2.95, 1.58)
@@ -220,7 +222,7 @@ frame_color = Color(0.95, 0.48, 0.08, 1)
 
 [node name="CageTimesBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards"]
 transform = Transform3D(0.985, 0, 0.174, 0, 1, 0, -0.174, 0, 0.985, 2.45, 0.82, -5.62)
-script = ExtResource("50_world_board")
+script = ExtResource("51_world_board")
 title_text = "RECENT WINNERS"
 body_text = "-"
 board_size = Vector2(2.55, 2.02)
@@ -231,7 +233,7 @@ body_outline_size = 4
 face_color = Color(0.012, 0.018, 0.012, 0.96)
 frame_color = Color(0.95, 0.48, 0.08, 1)
 
-[node name="LobbyReadyButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("51_3d_button")]
+[node name="LobbyReadyButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -2.78, -2.18, -4.92)
 action_id = &"ready"
 text = "READY"
@@ -242,7 +244,7 @@ block_size = Vector3(2.2, 0.52, 0.3)
 font_size = 22
 outline_size = 4
 
-[node name="LobbyResetButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("51_3d_button")]
+[node name="LobbyResetButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -1.42, -2.18, -4.9)
 action_id = &"reset"
 text = "HOLD RESET"
@@ -253,7 +255,7 @@ block_size = Vector3(1.22, 0.42, 0.26)
 font_size = 17
 outline_size = 4
 
-[node name="LobbyJoinButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("51_3d_button")]
+[node name="LobbyJoinButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -0.03, -2.18, -4.88)
 action_id = &"add_join"
 text = "ADD NPC"
@@ -264,7 +266,7 @@ block_size = Vector3(1.38, 0.42, 0.26)
 font_size = 16
 outline_size = 4
 
-[node name="LobbySettingsButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("51_3d_button")]
+[node name="LobbySettingsButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("52_3d_button")]
 visible = false
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 1.44, -2.18, -4.86)
 action_id = &"settings"
@@ -276,7 +278,7 @@ block_size = Vector3(1.42, 0.42, 0.26)
 font_size = 16
 outline_size = 4
 
-[node name="LobbyBackButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("51_3d_button")]
+[node name="LobbyBackButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/LobbyBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 3.04, -2.18, -4.84)
 action_id = &"main_menu"
 text = "RETURN TO MENU"
@@ -293,7 +295,7 @@ visible = false
 
 [node name="RaceStatusBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.7, 1.95, -4.35)
-script = ExtResource("50_world_board")
+script = ExtResource("51_world_board")
 title_text = "RACE STATUS"
 body_text = "State: Idle"
 board_size = Vector2(1.95, 1.12)
@@ -306,7 +308,7 @@ glow_strength = 0.08
 
 [node name="RaceFeedBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.7, 1.95, -4.35)
-script = ExtResource("50_world_board")
+script = ExtResource("51_world_board")
 title_text = "LIVE FEED"
 body_text = "Lotto: waiting for !brains\n\nKills:\n-"
 board_size = Vector2(1.95, 1.32)
@@ -319,7 +321,7 @@ glow_strength = 0.08
 
 [node name="RaceLeadersBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.92, -0.55, -4.35)
-script = ExtResource("50_world_board")
+script = ExtResource("51_world_board")
 title_text = "TOP 10 STANDINGS"
 body_text = "-"
 board_size = Vector2(1.82, 2.45)
@@ -341,7 +343,7 @@ glow_strength = 0.12
 
 [node name="RaceCommandBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.45, -2.05, -4.35)
-script = ExtResource("50_world_board")
+script = ExtResource("51_world_board")
 title_text = "CHAT COMMAND"
 body_text = "Type !brains to join."
 board_size = Vector2(2.55, 0.62)
@@ -357,7 +359,7 @@ glow_strength = 0.08
 [node name="RaceCountdownBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
 visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, -4.55)
-script = ExtResource("50_world_board")
+script = ExtResource("51_world_board")
 title_text = "COUNTDOWN"
 body_text = "3"
 board_size = Vector2(1.45, 0.88)
@@ -371,7 +373,7 @@ glow_strength = 0.1
 [node name="RaceResultsBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards"]
 visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, -4.1)
-script = ExtResource("50_world_board")
+script = ExtResource("51_world_board")
 title_text = "ROUND RESULTS"
 body_text = "Winner: -"
 board_size = Vector2(4.5, 2.45)
@@ -382,7 +384,7 @@ frame_color = Color(0.95, 0.48, 0.08, 1)
 flat_mode = true
 glow_strength = 0.08
 
-[node name="RaceResultResetButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards" instance=ExtResource("51_3d_button")]
+[node name="RaceResultResetButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/RaceBoards" instance=ExtResource("52_3d_button")]
 visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.55, -4.05)
 action_id = &"reset"
@@ -399,7 +401,7 @@ visible = false
 
 [node name="StreamerSummaryBoard" type="Node3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards"]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 0, 0.5, -5.08)
-script = ExtResource("50_world_board")
+script = ExtResource("51_world_board")
 title_text = "STREAMER SETTINGS"
 body_text = "Settings loaded"
 board_size = Vector2(4.75, 2.75)
@@ -411,7 +413,7 @@ face_color = Color(0.012, 0.018, 0.012, 0.98)
 frame_color = Color(0.74, 0.34, 1, 1)
 title_color = Color(0.86, 0.52, 1, 1)
 
-[node name="StreamerCloseButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerCloseButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 1.95, -2.65, -4.66)
 action_id = &"close"
 text = "DONE"
@@ -422,7 +424,7 @@ block_size = Vector3(1.05, 0.36, 0.22)
 font_size = 15
 outline_size = 4
 
-[node name="StreamerMapButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerMapButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -1.95, -1.15, -4.7)
 action_id = &"map_next"
 text = "MAP"
@@ -433,7 +435,7 @@ block_size = Vector3(1.15, 0.36, 0.22)
 font_size = 15
 outline_size = 4
 
-[node name="StreamerBalanceDownButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerBalanceDownButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -0.65, -1.15, -4.7)
 action_id = &"balance_down"
 text = "BAL -"
@@ -444,7 +446,7 @@ block_size = Vector3(1.05, 0.36, 0.22)
 font_size = 15
 outline_size = 4
 
-[node name="StreamerBalanceUpButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerBalanceUpButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 0.65, -1.15, -4.7)
 action_id = &"balance_up"
 text = "BAL +"
@@ -455,7 +457,7 @@ block_size = Vector3(1.05, 0.36, 0.22)
 font_size = 15
 outline_size = 4
 
-[node name="StreamerLightingButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerLightingButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 1.95, -1.15, -4.7)
 action_id = &"lighting_next"
 text = "LIGHT"
@@ -466,7 +468,7 @@ block_size = Vector3(1.15, 0.36, 0.22)
 font_size = 15
 outline_size = 4
 
-[node name="StreamerBackdropButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerBackdropButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -1.95, -1.65, -4.68)
 action_id = &"backdrop_next"
 text = "BACKDROP"
@@ -477,7 +479,7 @@ block_size = Vector3(1.32, 0.36, 0.22)
 font_size = 13
 outline_size = 4
 
-[node name="StreamerAvatarButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerAvatarButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -0.65, -1.65, -4.68)
 action_id = &"avatar_next"
 text = "AVATAR"
@@ -488,7 +490,7 @@ block_size = Vector3(1.18, 0.36, 0.22)
 font_size = 14
 outline_size = 4
 
-[node name="StreamerRerollButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerRerollButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 0.65, -1.65, -4.68)
 action_id = &"reroll"
 text = "REROLL"
@@ -499,7 +501,7 @@ block_size = Vector3(1.18, 0.36, 0.22)
 font_size = 14
 outline_size = 4
 
-[node name="StreamerSaveButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerSaveButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 1.95, -1.65, -4.68)
 action_id = &"save"
 text = "SAVE"
@@ -510,7 +512,7 @@ block_size = Vector3(1.0, 0.36, 0.22)
 font_size = 15
 outline_size = 4
 
-[node name="StreamerPreset1Button3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerPreset1Button3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -1.95, -2.15, -4.66)
 action_id = &"preset_1"
 text = "P1"
@@ -521,7 +523,7 @@ block_size = Vector3(0.9, 0.34, 0.2)
 font_size = 14
 outline_size = 4
 
-[node name="StreamerPreset2Button3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerPreset2Button3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -0.65, -2.15, -4.66)
 action_id = &"preset_2"
 text = "P2"
@@ -532,7 +534,7 @@ block_size = Vector3(0.9, 0.34, 0.2)
 font_size = 14
 outline_size = 4
 
-[node name="StreamerPreset3Button3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerPreset3Button3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 0.65, -2.15, -4.66)
 action_id = &"preset_3"
 text = "P3"
@@ -543,7 +545,7 @@ block_size = Vector3(0.9, 0.34, 0.2)
 font_size = 14
 outline_size = 4
 
-[node name="StreamerPreset4Button3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerPreset4Button3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, 1.95, -2.15, -4.66)
 action_id = &"preset_4"
 text = "P4"
@@ -554,7 +556,7 @@ block_size = Vector3(0.9, 0.34, 0.2)
 font_size = 14
 outline_size = 4
 
-[node name="StreamerResetButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("51_3d_button")]
+[node name="StreamerResetButton3D" parent="SpectatorCamera/Camera3D/WorldMenus3D/StreamerSettingsBoards" instance=ExtResource("52_3d_button")]
 transform = Transform3D(1, 0, 0, 0, 0.992, 0.122, 0, -0.122, 0.992, -1.95, -2.65, -4.66)
 action_id = &"reset_defaults"
 text = "DEFAULTS"

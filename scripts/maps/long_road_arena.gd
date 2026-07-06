@@ -1,0 +1,220 @@
+class_name LongRoadArena
+extends Node3D
+
+const ROAD_WIDTH: float = 32.0
+const ROAD_THICKNESS: float = 0.12
+const RAIL_OFFSET: float = 16.7
+const RAIL_HEIGHT: float = 0.9
+const RAIL_THICKNESS: float = 0.45
+const GROUND_WIDTH: float = 64.0
+const TRACK_LENGTH: float = 192.0
+const SPAWN_Z: float = -84.0
+const GOAL_Z: float = 84.0
+
+const MAT_GROUND := preload("res://assets/materials/arena_ground.tres")
+const MAT_ROAD := preload("res://assets/materials/road_asphalt.tres")
+const MAT_LINE := preload("res://assets/materials/road_line.tres")
+const MAT_SPAWN := preload("res://assets/materials/spawn_zone.tres")
+const MAT_GOAL := preload("res://assets/materials/goal_zone.tres")
+const MAT_CONCRETE := preload("res://assets/materials/base_concrete.tres")
+
+# Flat deck segments with readable gaps. All gameplay stays at y=0 like the default map.
+var _segments: Array[Dictionary] = [
+	{"z0": -84.0, "z1": -48.0},
+	{"z0": -40.0, "z1": -8.0},
+	{"z0": 0.0, "z1": 32.0},
+	{"z0": 40.0, "z1": 84.0},
+]
+
+var _gaps: Array[Dictionary] = [
+	{"z0": -48.0, "z1": -40.0},
+	{"z0": -8.0, "z1": 0.0},
+	{"z0": 32.0, "z1": 40.0},
+]
+
+
+func _ready() -> void:
+	_build_environment()
+	_build_water()
+	_build_ground_apron()
+	_build_road_segments()
+	_build_gap_lips()
+	_build_rails()
+	_build_markers()
+
+
+func _build_environment() -> void:
+	var sun := DirectionalLight3D.new()
+	sun.name = "Sun"
+	sun.rotation_degrees = Vector3(-42.0, 28.0, 0.0)
+	sun.light_color = Color(0.64, 0.7, 0.82, 1.0)
+	sun.light_energy = 0.48
+	sun.shadow_enabled = true
+	add_child(sun)
+
+	_add_omni("StartPoolLight", Vector3(0.0, 5.2, -76.0), Color(0.52, 1.0, 0.35, 1.0), 2.25, 36.0)
+	_add_omni("FinishPoolLight", Vector3(0.0, 5.2, 76.0), Color(1.0, 0.32, 0.12, 1.0), 2.0, 36.0)
+	_add_omni("RoadAmberLightA", Vector3(-17.6, 4.4, -20.0), Color(1.0, 0.64, 0.18, 1.0), 1.45, 28.0)
+	_add_omni("RoadAmberLightB", Vector3(17.6, 4.4, 36.0), Color(1.0, 0.64, 0.18, 1.0), 1.35, 28.0)
+
+
+func _add_omni(light_name: String, position: Vector3, color: Color, energy: float, range_value: float) -> void:
+	var light := OmniLight3D.new()
+	light.name = light_name
+	light.position = position
+	light.light_color = color
+	light.light_energy = energy
+	light.omni_range = range_value
+	add_child(light)
+
+
+func _build_water() -> void:
+	var water := MeshInstance3D.new()
+	water.name = "Water"
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(GROUND_WIDTH + 16.0, 0.06, TRACK_LENGTH + 16.0)
+	water.mesh = mesh
+	water.position = Vector3(0.0, -6.0, 0.0)
+	var water_mat := StandardMaterial3D.new()
+	water_mat.albedo_color = Color(0.02, 0.06, 0.1, 0.95)
+	water_mat.metallic = 0.3
+	water_mat.roughness = 0.2
+	water_mat.emission_enabled = true
+	water_mat.emission = Color(0.02, 0.07, 0.12, 1.0)
+	water_mat.emission_energy_multiplier = 0.28
+	water.material_override = water_mat
+	add_child(water)
+
+
+func _build_ground_apron() -> void:
+	_add_static_box(
+		"Ground",
+		Vector3(GROUND_WIDTH, 0.18, TRACK_LENGTH),
+		Vector3(0.0, -0.11, 0.0),
+		MAT_GROUND
+	)
+
+
+func _build_road_segments() -> void:
+	for index in range(_segments.size()):
+		var segment: Dictionary = _segments[index]
+		var length: float = float(segment["z1"]) - float(segment["z0"])
+		var center_z: float = (float(segment["z0"]) + float(segment["z1"])) * 0.5
+		_add_static_box(
+			"RoadDeck_%d" % index,
+			Vector3(ROAD_WIDTH, ROAD_THICKNESS, length),
+			Vector3(0.0, 0.0, center_z),
+			MAT_ROAD
+		)
+		_add_lane_lines(center_z, length, 0.09)
+
+
+func _build_gap_lips() -> void:
+	for index in range(_gaps.size()):
+		var gap: Dictionary = _gaps[index]
+		var gap_start: float = float(gap["z0"])
+		var lip_length: float = 5.0
+		var lip_pitch: float = 11.0
+		_add_ramp(
+			"GapTakeoff_%d" % index,
+			Vector3(ROAD_WIDTH, ROAD_THICKNESS, lip_length),
+			Vector3(0.0, 0.45, gap_start - lip_length * 0.5),
+			lip_pitch
+		)
+		_add_ramp(
+			"GapLanding_%d" % index,
+			Vector3(ROAD_WIDTH, ROAD_THICKNESS, lip_length),
+			Vector3(0.0, 0.45, float(gap["z1"]) + lip_length * 0.5),
+			-lip_pitch
+		)
+
+
+func _build_rails() -> void:
+	for index in range(_segments.size()):
+		var segment: Dictionary = _segments[index]
+		var length: float = float(segment["z1"]) - float(segment["z0"])
+		var center_z: float = (float(segment["z0"]) + float(segment["z1"])) * 0.5
+		_add_static_box(
+			"LeftRail_%d" % index,
+			Vector3(RAIL_THICKNESS, RAIL_HEIGHT, length),
+			Vector3(-RAIL_OFFSET, 0.45, center_z),
+			MAT_CONCRETE
+		)
+		_add_static_box(
+			"RightRail_%d" % index,
+			Vector3(RAIL_THICKNESS, RAIL_HEIGHT, length),
+			Vector3(RAIL_OFFSET, 0.45, center_z),
+			MAT_CONCRETE
+		)
+
+
+func _build_markers() -> void:
+	_add_static_box("SpawnZone", Vector3(28.0, 0.06, 8.0), Vector3(0.0, 0.12, SPAWN_Z), MAT_SPAWN, false)
+	_add_static_box("GoalGuide", Vector3(28.0, 0.06, 8.0), Vector3(0.0, 0.13, GOAL_Z), MAT_GOAL, false)
+	_add_static_box("StartLine", Vector3(28.0, 0.07, 0.45), Vector3(0.0, 0.12, -76.0), MAT_SPAWN, false)
+	_add_static_box("FinishLine", Vector3(28.0, 0.07, 0.45), Vector3(0.0, 0.12, 76.0), MAT_GOAL, false)
+	_add_gate(Vector3(-15.2, 1.6, -76.0), Vector3(15.2, 1.6, -76.0), MAT_SPAWN)
+	_add_gate(Vector3(-15.2, 1.6, 76.0), Vector3(15.2, 1.6, 76.0), MAT_GOAL)
+
+
+func _add_gate(left_pos: Vector3, right_pos: Vector3, accent: Material) -> void:
+	_add_static_box("GatePost", Vector3(0.28, 3.2, 0.28), left_pos, MAT_CONCRETE, false)
+	_add_static_box("GatePost", Vector3(0.28, 3.2, 0.28), right_pos, MAT_CONCRETE, false)
+	var center := (left_pos + right_pos) * 0.5
+	center.y = max(left_pos.y, right_pos.y) + 1.55
+	_add_static_box("GateHeader", Vector3(31.0, 0.42, 0.42), center, accent, false)
+
+
+func _add_lane_lines(center_z: float, length: float, y: float) -> void:
+	var center := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(0.18, 0.04, max(length - 1.0, 1.0))
+	center.mesh = mesh
+	center.position = Vector3(0.0, y, center_z)
+	center.material_override = MAT_LINE
+	add_child(center)
+
+	for side in [-13.5, 13.5]:
+		var edge := MeshInstance3D.new()
+		var edge_mesh := BoxMesh.new()
+		edge_mesh.size = Vector3(0.18, 0.05, max(length - 1.0, 1.0))
+		edge.mesh = edge_mesh
+		edge.position = Vector3(side, y + 0.02, center_z)
+		edge.material_override = MAT_LINE
+		add_child(edge)
+
+
+func _add_ramp(ramp_name: String, size: Vector3, position: Vector3, pitch_degrees: float) -> void:
+	_add_static_box(ramp_name, size, position, MAT_ROAD, true, Vector3(deg_to_rad(pitch_degrees), 0.0, 0.0))
+
+
+func _add_static_box(
+	box_name: String,
+	size: Vector3,
+	position: Vector3,
+	material: Material,
+	with_collision: bool = true,
+	rotation_radians: Vector3 = Vector3.ZERO
+) -> void:
+	var body := StaticBody3D.new()
+	body.name = box_name
+	body.position = position
+	body.rotation = rotation_radians
+	body.collision_layer = 1 if with_collision else 0
+	body.collision_mask = 0
+
+	var mesh_instance := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	mesh_instance.mesh = mesh
+	mesh_instance.material_override = material
+	body.add_child(mesh_instance)
+
+	if with_collision:
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = size
+		shape.shape = box
+		body.add_child(shape)
+
+	add_child(body)
