@@ -12,16 +12,20 @@ ambient_light_energy = 1.0
 [node name="MapLab" type="Node3D"]
 script = ExtResource("1_lab")
 blueprint_id = "bridge_lab_test"
+debug_visible = true
+show_hazards = true
 rebuild_on_ready = true
+
+[node name="PreviewRoot" type="Node3D" parent="."]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_lab")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 8, 0)
-light_energy = 0.9
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 2, 10, 4)
+light_energy = 1.1
 shadow_enabled = true
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 18, -34)
-fov = 60.0
+transform = Transform3D(1, 0, 0, 0, 0.878817, 0.477159, 0, -0.477159, 0.878817, 0, 13.5, -36)
+fov = 62.0
