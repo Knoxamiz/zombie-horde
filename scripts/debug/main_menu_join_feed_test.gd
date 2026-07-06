@@ -10,7 +10,7 @@ func _initialize() -> void:
 
 
 func _run_test() -> void:
-	print("=== Main menu join feed test ===")
+	print("=== Main menu lobby-only joins test ===")
 	var packed: PackedScene = load(MAIN_MENU_SCENE)
 	if packed == null:
 		push_error("Could not load main menu scene")
@@ -22,28 +22,27 @@ func _run_test() -> void:
 	await create_timer(0.4).timeout
 
 	var twitch: TwitchJoinSource = main_menu.get_node_or_null("Systems/TwitchJoinSource") as TwitchJoinSource
-	var feed_body: Label = main_menu.get_node_or_null(
-		"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedScroll/FeedBody"
-	) as Label
-	if twitch == null or feed_body == null:
-		push_error("Main menu twitch feed nodes missing")
+	var join_prompt: Node = main_menu.get_node_or_null("OverlayLayer/JoinPromptPanel")
+	if twitch == null:
+		push_error("Main menu twitch source missing")
+		quit(FAIL)
+		return
+
+	if join_prompt != null:
+		push_error("Main menu should not show the join prompt panel")
 		quit(FAIL)
 		return
 
 	twitch.submit_join("TestViewer")
 	await create_timer(0.1).timeout
 
-	if feed_body.text != "TestViewer joins the horde.":
-		push_error("Unexpected feed text: %s" % feed_body.text)
+	var feed_body: Label = main_menu.get_node_or_null(
+		"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedScroll/FeedBody"
+	) as Label
+	if feed_body != null and feed_body.text.contains("TestViewer"):
+		push_error("Main menu should not display join feed lines: %s" % feed_body.text)
 		quit(FAIL)
 		return
 
-	twitch.submit_join("SecondUser")
-	await create_timer(0.1).timeout
-	if not feed_body.text.contains("TestViewer joins the horde.") or not feed_body.text.contains("SecondUser joins the horde."):
-		push_error("Feed did not append joins: %s" % feed_body.text)
-		quit(FAIL)
-		return
-
-	print("PASS: real join feed lines render correctly")
+	print("PASS: main menu hides join prompt and ignores join feed")
 	quit(PASS)

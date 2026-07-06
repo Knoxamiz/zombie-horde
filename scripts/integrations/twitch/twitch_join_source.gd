@@ -18,6 +18,7 @@ var _anonymous_id: int = 0
 var _pending_buffer: String = ""
 var _gift_recipient_logins: Dictionary = {}
 var _recent_bits_donors: Dictionary = {}
+var _join_commands_enabled: bool = true
 
 
 func _ready() -> void:
@@ -110,6 +111,10 @@ func reload_config_and_connect() -> void:
 		connect_to_chat()
 
 
+func set_join_commands_enabled(enabled: bool) -> void:
+	_join_commands_enabled = enabled
+
+
 func _send_login() -> void:
 	if _sent_auth or config == null:
 		return
@@ -171,6 +176,9 @@ func _handle_irc_line(line: String) -> void:
 
 	var message_text: String = _extract_chat_message(line)
 	if message_text.is_empty():
+		return
+
+	if not _join_commands_enabled:
 		return
 
 	var command: String = config.get_normalized_command()

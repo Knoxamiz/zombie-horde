@@ -4,7 +4,6 @@ extends Control
 const AUDIO_MANAGER_SCENE: PackedScene = preload("res://scenes/audio/audio_manager.tscn")
 const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_settings_menu.tscn")
 const MENU_ART: Texture2D = preload("res://assets/ui/main_menu/zombie_chat_horde_menu_art.png")
-const MAX_JOIN_FEED_LINES: int = 14
 
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/main/main_game.tscn"
 @export var camera_path: NodePath = NodePath("MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera")
@@ -24,9 +23,7 @@ var _logo_base_scale: Vector3 = Vector3.ONE
 var _menu_buttons: Array[MainMenuBlockButton] = []
 var _viewport_container: SubViewportContainer
 var _pressed_button: MainMenuBlockButton
-var _prompt_time: float = 0.0
 var _twitch_join_source: TwitchJoinSource
-var _join_feed_lines: Array[String] = []
 var _chat_status_text: String = "Connecting to chat..."
 var _chat_status_detail: String = ""
 
@@ -66,10 +63,6 @@ var _chat_status_detail: String = ""
 @onready var _feed_scroll: ScrollContainer = get_node_or_null(
 	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedScroll"
 ) as ScrollContainer
-@onready var _feed_body: Label = get_node_or_null(
-	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedScroll/FeedBody"
-) as Label
-@onready var _join_prompt: Label = get_node_or_null("OverlayLayer/JoinPromptPanel/JoinPromptLabel") as Label
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -81,7 +74,7 @@ func _ready() -> void:
 
 	_twitch_join_source = get_node_or_null(twitch_join_source_path) as TwitchJoinSource
 	if _twitch_join_source != null:
-		_twitch_join_source.participant_join_requested.connect(_on_chat_participant_join_requested)
+		_twitch_join_source.set_join_commands_enabled(false)
 		_refresh_chat_status_from_source()
 	else:
 		_chat_status_text = "Chat unavailable"
@@ -119,17 +112,6 @@ func _process(delta: float) -> void:
 	_time += delta
 	_update_camera_idle()
 	_update_logo_rig()
-	_update_join_prompt(delta)
-
-func _on_chat_participant_join_requested(join_info: ParticipantJoinInfo) -> void:
-	var clean_name: String = join_info.display_name.strip_edges()
-	if clean_name.is_empty():
-		return
-
-	_join_feed_lines.append("%s joins the horde.%s" % [clean_name, join_info.get_join_feed_suffix()])
-	while _join_feed_lines.size() > MAX_JOIN_FEED_LINES:
-		_join_feed_lines.remove_at(0)
-	_refresh_join_feed()
 
 func _on_chat_connection_status_changed(status_text: String, detail_text: String) -> void:
 	_chat_status_text = status_text
@@ -145,22 +127,7 @@ func _refresh_chat_status_from_source() -> void:
 	)
 
 func _refresh_join_feed() -> void:
-	if not _join_feed_lines.is_empty():
-		_show_join_feed_lines()
-		return
-
 	_show_waiting_state()
-
-func _show_join_feed_lines() -> void:
-	_set_status_labels_visible(false)
-	_set_channel_setup_visible(false)
-	if _feed_waiting_label != null:
-		_feed_waiting_label.visible = false
-	if _feed_scroll != null:
-		_feed_scroll.visible = true
-	if _feed_body != null:
-		_feed_body.text = _join_strings(_join_feed_lines, "\n")
-	_scroll_feed_to_bottom()
 
 func _show_waiting_state() -> void:
 	if _feed_scroll != null:
@@ -185,7 +152,7 @@ func _show_waiting_state() -> void:
 		_set_status_labels_visible(false)
 		if _feed_waiting_label != null:
 			_feed_waiting_label.visible = true
-			_feed_waiting_label.text = "Listening for !brains…"
+			_feed_waiting_label.text = "Chat connected — start a round to open joins."
 		return
 
 	if _feed_waiting_label != null:
@@ -196,7 +163,7 @@ func _show_waiting_state() -> void:
 	if headline.is_empty() and hint.is_empty():
 		if _feed_waiting_label != null:
 			_feed_waiting_label.visible = true
-			_feed_waiting_label.text = "Waiting for viewers to type !brains…"
+			_feed_waiting_label.text = "Start a round to let viewers join."
 		_set_status_labels_visible(false)
 		return
 
@@ -255,34 +222,6 @@ func _connect_twitch_channel(raw_channel: String) -> void:
 	if _twitch_join_source != null:
 		_twitch_join_source.reload_config_and_connect()
 	_refresh_join_feed()
-
-func _scroll_feed_to_bottom() -> void:
-	if _feed_scroll == null:
-		return
-	call_deferred("_apply_feed_scroll")
-
-func _apply_feed_scroll() -> void:
-	if _feed_scroll == null:
-		return
-	var scroll_bar: VScrollBar = _feed_scroll.get_v_scroll_bar()
-	if scroll_bar == null:
-		return
-	scroll_bar.value = scroll_bar.max_value
-
-func _join_strings(values: Array[String], separator: String) -> String:
-	var result: String = ""
-	for index in range(values.size()):
-		if index > 0:
-			result += separator
-		result += values[index]
-	return result
-
-func _update_join_prompt(delta: float) -> void:
-	if _join_prompt == null:
-		return
-	_prompt_time += delta
-	var pulse: float = 0.75 + 0.25 * sin(_prompt_time * 3.0)
-	_join_prompt.modulate = Color(1.0, 1.0, 1.0, pulse)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _transitioning or _viewport_container == null or _camera == null:

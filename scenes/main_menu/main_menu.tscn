@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://b8k3m2n1p4q5r"]
+[gd_scene load_steps=9 format=3 uid="uid://b8k3m2n1p4q5r"]
 
 [ext_resource type="Script" path="res://scripts/main_menu/main_menu_controller.gd" id="1_controller"]
 [ext_resource type="Environment" path="res://resources/environment/main_menu_environment.tres" id="2_environment"]
@@ -25,24 +25,6 @@ corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 shadow_color = Color(0, 0, 0, 0.5)
 shadow_size = 12
-
-[sub_resource type="StyleBoxFlat" id="StyleBox_prompt_panel"]
-content_margin_left = 22.0
-content_margin_top = 12.0
-content_margin_right = 22.0
-content_margin_bottom = 12.0
-bg_color = Color(0.03, 0.026, 0.016, 0.84)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.5, 0.36, 0.08, 0.6)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.55)
-shadow_size = 14
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -280,26 +262,3 @@ theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 18
 text = ""
 autowrap_mode = 3
-
-[node name="JoinPromptPanel" type="PanelContainer" parent="OverlayLayer"]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -466.0
-offset_top = 150.0
-offset_right = -28.0
-offset_bottom = 214.0
-grow_horizontal = 0
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBox_prompt_panel")
-
-[node name="JoinPromptLabel" type="Label" parent="OverlayLayer/JoinPromptPanel"]
-mouse_filter = 2
-theme_override_colors/font_color = Color(1, 0.86, 0.24, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
-theme_override_constants/shadow_offset_x = 3
-theme_override_constants/shadow_offset_y = 3
-theme_override_font_sizes/font_size = 34
-text = "TYPE !BRAINS TO JOIN"
-horizontal_alignment = 1
-vertical_alignment = 1
