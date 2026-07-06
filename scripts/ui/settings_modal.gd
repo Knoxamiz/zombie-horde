@@ -6,7 +6,9 @@ signal done_pressed()
 signal reset_pressed()
 
 var _title_label: Label
-var _groups_box: VBoxContainer
+var _groups_columns: HBoxContainer
+var _left_column: VBoxContainer
+var _right_column: VBoxContainer
 var _done_button: Button
 var _reset_button: Button
 var _layout_shell: MarginContainer
@@ -14,6 +16,7 @@ var _panel: PanelContainer
 var _content_box: VBoxContainer
 var _scroll: ScrollContainer
 var _expanded_layout: bool = false
+var _two_column_layout: bool = false
 
 func _ready() -> void:
 	_build()
@@ -98,10 +101,22 @@ func _build() -> void:
 	_scroll.horizontal_scroll_mode = 0
 	_content_box.add_child(_scroll)
 
-	_groups_box = VBoxContainer.new()
-	_groups_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_groups_box.add_theme_constant_override("separation", 12)
-	_scroll.add_child(_groups_box)
+	_groups_columns = HBoxContainer.new()
+	_groups_columns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_groups_columns.add_theme_constant_override("separation", 18)
+	_scroll.add_child(_groups_columns)
+
+	_left_column = VBoxContainer.new()
+	_left_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_left_column.size_flags_stretch_ratio = 1.0
+	_left_column.add_theme_constant_override("separation", 12)
+	_groups_columns.add_child(_left_column)
+
+	_right_column = VBoxContainer.new()
+	_right_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_right_column.size_flags_stretch_ratio = 1.0
+	_right_column.add_theme_constant_override("separation", 12)
+	_groups_columns.add_child(_right_column)
 
 	var footer := HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 12)
@@ -142,19 +157,32 @@ func set_title(title: String) -> void:
 		_title_label.text = title.to_upper()
 
 func clear_groups() -> void:
-	if _groups_box == null:
+	_clear_column(_left_column)
+	_clear_column(_right_column)
+
+func _clear_column(column: VBoxContainer) -> void:
+	if column == null:
 		return
-	for child in _groups_box.get_children():
+	for child in column.get_children():
 		child.queue_free()
 
-func add_group(title: String) -> VBoxContainer:
+func set_two_column_layout(enabled: bool) -> void:
+	_two_column_layout = enabled
+	if _right_column != null:
+		_right_column.visible = enabled
+
+func add_group(title: String, column: int = 0) -> VBoxContainer:
+	var target_column: VBoxContainer = _left_column
+	if _two_column_layout and column > 0:
+		target_column = _right_column
+
 	var group_panel := PanelContainer.new()
 	group_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	group_panel.add_theme_stylebox_override(
 		"panel",
 		ControlRoomTheme.panel_style(ControlRoomTheme.COLOR_BLUE, Color(0.01, 0.014, 0.012, 0.78), 1)
 	)
-	_groups_box.add_child(group_panel)
+	target_column.add_child(group_panel)
 
 	var margin := MarginContainer.new()
 	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -186,6 +214,10 @@ func add_row(group_box: VBoxContainer, label_text: String, control: Control = nu
 func set_expanded_layout(enabled: bool) -> void:
 	_expanded_layout = enabled
 	_apply_layout_mode()
+
+func set_streamer_layout() -> void:
+	set_expanded_layout(true)
+	set_two_column_layout(true)
 
 func _apply_layout_mode() -> void:
 	if _panel == null or _scroll == null or _layout_shell == null:

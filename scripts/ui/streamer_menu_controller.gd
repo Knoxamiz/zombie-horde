@@ -212,7 +212,7 @@ func _build_control_room_streamer_modal() -> void:
 	_settings_modal.reset_pressed.connect(_on_reset_defaults_pressed)
 	_settings_modal.clear_groups()
 
-	var overview_group: VBoxContainer = _settings_modal.add_group("Streamer")
+	var overview_group: VBoxContainer = _settings_modal.add_group("Streamer", 0)
 	_edition_value_label = Label.new()
 	ControlRoomTheme.apply_label(_edition_value_label, 20, ControlRoomTheme.COLOR_GREEN)
 	_settings_modal.add_row(overview_group, "Edition", _edition_value_label)
@@ -221,7 +221,7 @@ func _build_control_room_streamer_modal() -> void:
 	ControlRoomTheme.apply_label(_menu_tier_detail_label, 16, ControlRoomTheme.COLOR_MUTED)
 	overview_group.add_child(_menu_tier_detail_label)
 	_streamer_name_edit = LineEdit.new()
-	_streamer_name_edit.custom_minimum_size = Vector2(320, 42)
+	_streamer_name_edit.custom_minimum_size = Vector2(0, 42)
 	_settings_modal.add_row(overview_group, "Streamer Name", _streamer_name_edit)
 	_avatar_value_label = Label.new()
 	ControlRoomTheme.apply_label(_avatar_value_label, 19, ControlRoomTheme.COLOR_TEXT)
@@ -232,7 +232,7 @@ func _build_control_room_streamer_modal() -> void:
 	avatar_box.add_child(_choose_character_button)
 	_settings_modal.add_row(overview_group, "NPC Character", avatar_box)
 
-	var gameplay_group: VBoxContainer = _settings_modal.add_group("Gameplay")
+	var gameplay_group: VBoxContainer = _settings_modal.add_group("Gameplay", 1)
 	_map_option = _make_modal_option()
 	_map_row = _settings_modal.add_row(gameplay_group, "Level", _map_option)
 	_balance_value_label = Label.new()
@@ -254,18 +254,20 @@ func _build_control_room_streamer_modal() -> void:
 	_tower_weapon_check.text = "SHOW WEAPON PROPS"
 	_tower_weapon_row = _settings_modal.add_row(gameplay_group, "Weapon Props", _tower_weapon_check)
 
-	var preset_group: VBoxContainer = _settings_modal.add_group("Presets")
-	var preset_row := HBoxContainer.new()
-	preset_row.add_theme_constant_override("separation", 10)
+	var preset_group: VBoxContainer = _settings_modal.add_group("Presets", 0)
+	var preset_grid := GridContainer.new()
+	preset_grid.columns = 2
+	preset_grid.add_theme_constant_override("h_separation", 10)
+	preset_grid.add_theme_constant_override("v_separation", 10)
 	_preset_button_1 = _make_modal_button("PRESET 1", ControlRoomTheme.COLOR_PURPLE)
 	_preset_button_2 = _make_modal_button("PRESET 2", ControlRoomTheme.COLOR_PURPLE)
 	_preset_button_3 = _make_modal_button("PRESET 3", ControlRoomTheme.COLOR_PURPLE)
 	_preset_button_4 = _make_modal_button("PRESET 4", ControlRoomTheme.COLOR_PURPLE)
-	preset_row.add_child(_preset_button_1)
-	preset_row.add_child(_preset_button_2)
-	preset_row.add_child(_preset_button_3)
-	preset_row.add_child(_preset_button_4)
-	preset_group.add_child(preset_row)
+	preset_grid.add_child(_preset_button_1)
+	preset_grid.add_child(_preset_button_2)
+	preset_grid.add_child(_preset_button_3)
+	preset_grid.add_child(_preset_button_4)
+	preset_group.add_child(preset_grid)
 	var preset_actions := HBoxContainer.new()
 	preset_actions.add_theme_constant_override("separation", 10)
 	_save_preset_button = _make_modal_button("SAVE PRESET", ControlRoomTheme.COLOR_GREEN)
@@ -276,7 +278,7 @@ func _build_control_room_streamer_modal() -> void:
 
 	_premium_controls = VBoxContainer.new()
 	_premium_controls.add_theme_constant_override("separation", 4)
-	var premium_group: VBoxContainer = _settings_modal.add_group("Chaos Controls")
+	var premium_group: VBoxContainer = _settings_modal.add_group("Chaos Controls", 1)
 	premium_group.add_child(_premium_controls)
 	var mine_meter: Dictionary = _create_modal_meter(_premium_controls, "Mines", 0, 96)
 	_mine_spin = mine_meter["slider"] as SliderControl
@@ -303,7 +305,7 @@ func _build_control_room_streamer_modal() -> void:
 	_barrier_weight_spin = barrier_meter["slider"] as SliderControl
 	_barrier_weight_meter_label = barrier_meter["label"] as Label
 
-	var hud_group: VBoxContainer = _settings_modal.add_group("HUD Layout")
+	var hud_group: VBoxContainer = _settings_modal.add_group("HUD Layout", 0)
 	_edit_hud_layout_button = _make_modal_button("CUSTOMIZE HUD LAYOUT", ControlRoomTheme.COLOR_GREEN)
 	hud_group.add_child(_edit_hud_layout_button)
 	_edit_hud_layout_button.pressed.connect(_on_edit_hud_layout_pressed)
@@ -399,7 +401,11 @@ func _set_menu_open(open: bool) -> void:
 	_set_world_menu_visible(false)
 	if _settings_modal != null:
 		if open:
-			_settings_modal.set_expanded_layout(expanded_modal)
+			if expanded_modal:
+				_settings_modal.set_streamer_layout()
+			else:
+				_settings_modal.set_expanded_layout(false)
+				_settings_modal.set_two_column_layout(false)
 			_settings_modal.show_modal()
 		else:
 			_settings_modal.hide_modal()
