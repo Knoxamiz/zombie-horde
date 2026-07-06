@@ -60,6 +60,26 @@ extends Node3D
 @export_group("Runtime")
 @export var rebuild_on_ready: bool = true
 
+@export_group("Simulation Test")
+@export var run_simulation_test: bool = false:
+	set(value):
+		if not value:
+			return
+		run_simulation_test = false
+		call_deferred("_run_simulation_test")
+
+@export var clear_simulation_test: bool = false:
+	set(value):
+		if not value:
+			return
+		clear_simulation_test = false
+		call_deferred("_clear_simulation_test")
+
+@export_range(1, 12, 1) var simulation_mover_count: int = 5
+@export var simulation_speed: float = 12.0
+@export var simulation_show_paths: bool = true
+@export var simulation_test_hazards: bool = true
+
 var _builder: MapKitBuilder = MapKitBuilder.new()
 var _active_blueprint: MapBlueprint
 var _map_root: Node3D
@@ -70,6 +90,7 @@ var _summary_label: Label
 var _last_summary_text: String = ""
 var _last_validation_ok: bool = false
 var _editor_rebuild_pending: bool = false
+var _simulation: MapLabSimulation
 
 
 func _enter_tree() -> void:
@@ -108,6 +129,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_F:
 			show_safe_floor = not show_safe_floor
 			_rebuild_preview(false)
+		KEY_T:
+			_run_simulation_test()
 
 
 func _editor_rebuild_preview() -> void:
@@ -264,6 +287,7 @@ func _rebuild_preview(is_editor: bool) -> void:
 
 
 func _clear_preview_root(immediate: bool) -> void:
+	_clear_simulation_test()
 	_preview_root = _get_preview_root()
 	if _preview_root == null:
 		return
@@ -453,3 +477,53 @@ func _apply_debug_flags() -> void:
 	var debug_layer: Node3D = _map_root.get_node_or_null("DebugLayer") as Node3D
 	if debug_layer != null:
 		debug_layer.visible = show_debug_grid or show_safe_floor or show_hazards
+
+
+func _run_simulation_test() -> void:
+	var is_editor: bool = Engine.is_editor_hint()
+	print("MapLab: simulation test started")
+
+	if _map_root == null or not is_instance_valid(_map_root) or _active_blueprint == null:
+		_rebuild_preview(is_editor)
+		_active_blueprint = _resolve_blueprint(blueprint_id)
+
+	if _map_root == null or _active_blueprint == null:
+		push_warning("MapLab: cannot run simulation without a built preview.")
+		return
+
+	_clear_simulation_test()
+	_preview_root = _get_preview_root()
+	if _preview_root == null:
+		return
+
+	_simulation = MapLabSimulation.new()
+	_simulation.name = "SimulationLayer"
+	_preview_root.add_child(_simulation)
+	if is_editor:
+		var scene_root: Node = get_tree().edited_scene_root
+		if scene_root != null:
+			_simulation.owner = scene_root
+
+	_simulation.setup(
+		_active_blueprint,
+		_map_root,
+		simulation_mover_count,
+		simulation_speed,
+		simulation_show_paths,
+		simulation_test_hazards
+	)
+
+
+func _clear_simulation_test() -> void:
+	if _simulation != null and is_instance_valid(_simulation):
+		_simulation.clear_simulation()
+		_simulation.queue_free()
+	_simulation = null
+
+	_preview_root = _get_preview_root()
+	if _preview_root == null:
+		return
+	var existing: Node = _preview_root.get_node_or_null("SimulationLayer")
+	if existing != null:
+		existing.queue_free()
+	print("MapLab: simulation cleared")

@@ -138,12 +138,26 @@ Select the **MapLab** root node.
 | `show_summary_panel` | On-screen blueprint summary in editor |
 | `rebuild_on_ready` | Auto-build when running scene (F6) |
 
+### Simulation Test
+
+| Control | Action |
+|---------|--------|
+| `run_simulation_test` | Spawn dummy movers and run safe-route / hazard checks |
+| `clear_simulation_test` | Remove `SimulationLayer` and all sim movers |
+| `simulation_mover_count` | Number of safe-route test movers (default 5) |
+| `simulation_speed` | Mover speed in m/s (default 12) |
+| `simulation_show_paths` | Draw safe-path and hazard-probe markers |
+| `simulation_test_hazards` | Spawn hazard probes aimed at side void zones |
+
+Simulation objects live under `PreviewRoot/SimulationLayer`, separate from Visual/Gameplay/Debug layers.
+
 ### Shortcuts
 
 | Key | Action |
 |-----|--------|
 | R | Rebuild blueprint |
 | V | Validate blueprint |
+| T | Run simulation test (runtime) |
 | G | Toggle debug grid (rebuild) |
 | H | Toggle hazard preview (rebuild) |
 | F | Toggle safe floor preview (rebuild) |
@@ -151,9 +165,11 @@ Select the **MapLab** root node.
 ### How to test in Godot
 
 1. Open `scenes/maps/map_lab.tscn`
-2. Press F6 (Run Current Scene)
-3. Confirm bridge test builds with no red errors in Output
-4. Press D / F / H to inspect layers
+2. Select **MapLab** root, check `rebuild_preview`
+3. Check `run_simulation_test` and watch Output for mover logs
+4. Wait for `=== MAP LAB SIMULATION RESULT ===` with `result: PASSED`
+5. Check `clear_simulation_test` to remove sim objects
+6. Press F6 for runtime; use **T** to run simulation again
 
 ## Lab blueprint
 
