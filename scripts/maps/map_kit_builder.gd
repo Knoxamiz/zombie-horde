@@ -92,7 +92,7 @@ func build_visual_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 				float(cell.get("offset_y", 0.0)),
 				blueprint.row_to_z(row_index) + float(cell.get("offset_z", 0.0))
 			)
-			var rotation: float = float(cell.get("rotation", 0.0))
+			var rotation: float = _resolve_cell_rotation(cell, column_index, blueprint)
 			var scale_value: float = float(cell.get("scale", 1.0))
 			var asset_id: String = str(cell.get("asset_id", ""))
 			if asset_id.is_empty():
@@ -466,12 +466,13 @@ func _build_water_void(background: Node3D, blueprint: MapBlueprint) -> void:
 	water.name = "WaterVoid"
 	var mesh := BoxMesh.new()
 	var length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 3.0
-	var width_scale: float = 4.0
-	if bool(blueprint.dressing_rules.get("narrow_bridge", false)):
-		width_scale = 6.0
+	var width_scale: float = float(blueprint.dressing_rules.get("void_width_scale", 0.0))
+	if width_scale <= 0.0:
+		width_scale = 6.0 if bool(blueprint.dressing_rules.get("narrow_bridge", false)) else 4.0
 	mesh.size = Vector3(blueprint.tile_size * float(blueprint.visual_width_tiles + width_scale), 0.06, length)
 	water.mesh = mesh
-	water.position = Vector3(0.0, -6.0, (blueprint.spawn_z + blueprint.goal_z) * 0.5)
+	var void_depth: float = float(blueprint.dressing_rules.get("void_depth", -6.0))
+	water.position = Vector3(0.0, void_depth, (blueprint.spawn_z + blueprint.goal_z) * 0.5)
 	var water_mat := StandardMaterial3D.new()
 	water_mat.albedo_color = Color(0.01, 0.04, 0.08, 0.98)
 	water_mat.emission_enabled = true
@@ -479,6 +480,20 @@ func _build_water_void(background: Node3D, blueprint: MapBlueprint) -> void:
 	water_mat.emission_energy_multiplier = 0.22
 	water.material_override = water_mat
 	background.add_child(water)
+
+
+func _resolve_cell_rotation(cell: Dictionary, column_index: int, blueprint: MapBlueprint) -> float:
+	if cell.has("rotation"):
+		return float(cell.get("rotation", 0.0))
+	if not bool(cell.get("face_inward", false)):
+		return 0.0
+
+	var center_col: int = blueprint.get_center_column_index()
+	if column_index < center_col:
+		return 90.0
+	if column_index > center_col:
+		return -90.0
+	return 0.0
 
 
 func _default_asset_for_cell(cell_type: String) -> String:
