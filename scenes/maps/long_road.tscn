@@ -1,14 +1,9 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/maps/long_road_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://scripts/core/visual_collision_sanitizer.gd" id="2_sanitizer"]
-[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/StreetLights.gltf" id="3_street_light"]
-[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Street_Straight_Crack1.gltf" id="4_crack1"]
-[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Street_Straight_Crack2.gltf" id="5_crack2"]
-[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/PlasticBarrier.gltf" id="6_barrier"]
-[ext_resource type="Material" path="res://assets/materials/lobby_warning_red.tres" id="7_red"]
-[ext_resource type="Material" path="res://assets/materials/city_window_glow.tres" id="8_glow"]
-[ext_resource type="Material" path="res://assets/materials/lobby_hazard_yellow.tres" id="9_yellow"]
+[ext_resource type="Material" path="res://assets/materials/lobby_warning_red.tres" id="3_red"]
+[ext_resource type="Material" path="res://assets/materials/city_window_glow.tres" id="4_glow"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_banner"]
 size = Vector3(14.5, 1.35, 0.16)
@@ -26,7 +21,7 @@ script = ExtResource("2_sanitizer")
 [node name="StartBanner" type="MeshInstance3D" parent="MapDressing"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.8, -69.6)
 mesh = SubResource("BoxMesh_banner")
-surface_material_override/0 = ExtResource("7_red")
+surface_material_override/0 = ExtResource("3_red")
 
 [node name="StartLabel" type="Label3D" parent="MapDressing"]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 4.84, -69.4)
@@ -38,52 +33,7 @@ modulate = Color(0.82, 1, 0.45, 1)
 [node name="StartNeonHeader" type="MeshInstance3D" parent="MapDressing"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.05, -68.8)
 mesh = SubResource("BoxMesh_banner")
-surface_material_override/0 = ExtResource("8_glow")
-
-[node name="CrackVisualA" parent="MapDressing" instance=ExtResource("4_crack1")]
-transform = Transform3D(2.2, 0, 0, 0, 2.2, 0, 0, 0, 2.2, -5, 0.13, -24)
-
-[node name="CrackVisualB" parent="MapDressing" instance=ExtResource("5_crack2")]
-transform = Transform3D(2.2, 0, 0, 0, 2.2, 0, 0, 0, 2.2, 4, 0.13, 16)
-
-[node name="CrackVisualC" parent="MapDressing" instance=ExtResource("4_crack1")]
-transform = Transform3D(2.2, 0, 0, 0, 2.2, 0, 0, 0, 2.2, -3, 0.13, 58)
-
-[node name="GapBarrierLeftA" parent="MapDressing" instance=ExtResource("6_barrier")]
-transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, -20, 0, -44)
-
-[node name="GapBarrierRightA" parent="MapDressing" instance=ExtResource("6_barrier")]
-transform = Transform3D(-1.35, 0, 0, 0, 1.35, 0, 0, 0, -1.35, 20, 0, -44)
-
-[node name="GapBarrierLeftB" parent="MapDressing" instance=ExtResource("6_barrier")]
-transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, -20, 0, -4)
-
-[node name="GapBarrierRightB" parent="MapDressing" instance=ExtResource("6_barrier")]
-transform = Transform3D(-1.35, 0, 0, 0, 1.35, 0, 0, 0, -1.35, 20, 0, -4)
-
-[node name="GapBarrierLeftC" parent="MapDressing" instance=ExtResource("6_barrier")]
-transform = Transform3D(1.35, 0, 0, 0, 1.35, 0, 0, 0, 1.35, -20, 0, 36)
-
-[node name="GapBarrierRightC" parent="MapDressing" instance=ExtResource("6_barrier")]
-transform = Transform3D(-1.35, 0, 0, 0, 1.35, 0, 0, 0, -1.35, 20, 0, 36)
-
-[node name="LeftStreetLightA" parent="MapDressing" instance=ExtResource("3_street_light")]
-transform = Transform3D(0, 0, 1.35, 0, 1.35, 0, -1.35, 0, 0, -21.5, 0, -56)
-
-[node name="LeftStreetLightB" parent="MapDressing" instance=ExtResource("3_street_light")]
-transform = Transform3D(0, 0, 1.35, 0, 1.35, 0, -1.35, 0, 0, -21.5, 0, -4)
-
-[node name="LeftStreetLightC" parent="MapDressing" instance=ExtResource("3_street_light")]
-transform = Transform3D(0, 0, 1.35, 0, 1.35, 0, -1.35, 0, 0, -21.5, 0, 48)
-
-[node name="RightStreetLightA" parent="MapDressing" instance=ExtResource("3_street_light")]
-transform = Transform3D(0, 0, -1.35, 0, 1.35, 0, 1.35, 0, 0, 21.5, 0, -24)
-
-[node name="RightStreetLightB" parent="MapDressing" instance=ExtResource("3_street_light")]
-transform = Transform3D(0, 0, -1.35, 0, 1.35, 0, 1.35, 0, 0, 21.5, 0, 24)
-
-[node name="RightStreetLightC" parent="MapDressing" instance=ExtResource("3_street_light")]
-transform = Transform3D(0, 0, -1.35, 0, 1.35, 0, 1.35, 0, 0, 21.5, 0, 68)
+surface_material_override/0 = ExtResource("4_glow")
 
 [node name="StartWash" type="OmniLight3D" parent="MapDressing"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.4, -66)
