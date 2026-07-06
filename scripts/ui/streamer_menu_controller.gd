@@ -4,6 +4,7 @@ extends CanvasLayer
 signal menu_closed()
 
 const SETTINGS_MODAL_SCRIPT: Script = preload("res://scripts/ui/settings_modal.gd")
+const HUD_SCENE: PackedScene = preload("res://scenes/ui/hud.tscn")
 
 @export var hazard_config: HazardConfig
 @export var zombie_config: ZombieConfig
@@ -107,6 +108,7 @@ var _vehicle_weight_meter_label: Label
 var _cone_weight_meter_label: Label
 var _barrier_weight_meter_label: Label
 var _edit_hud_layout_button: Button
+var _layout_preview_hud: HudController
 @onready var _status_label: Label = get_node("Root/MenuPanel/Margin/VBox/StatusLabel") as Label
 @onready var _reroll_button: Button = get_node("Root/MenuPanel/Margin/VBox/RerollButton") as Button
 @onready var _character_overlay_wash: ColorRect = get_node("Root/CharacterOverlayWash") as ColorRect
@@ -383,13 +385,34 @@ func close_menu() -> void:
 	_set_menu_open(false)
 
 func _on_edit_hud_layout_pressed() -> void:
-	var hud_controller: HudController = get_node_or_null(hud_controller_path) as HudController
+	var hud_controller: HudController = _ensure_layout_preview_hud()
 	if hud_controller == null:
 		_set_status("HUD not found")
 		return
 	close_menu()
 	hud_controller.begin_layout_edit()
 	_set_status("Editing HUD layout")
+
+func _ensure_layout_preview_hud() -> HudController:
+	var hud_controller: HudController = get_node_or_null(hud_controller_path) as HudController
+	if hud_controller != null:
+		return hud_controller
+	if _layout_preview_hud != null and is_instance_valid(_layout_preview_hud):
+		return _layout_preview_hud
+	if HUD_SCENE == null:
+		return null
+	_layout_preview_hud = HUD_SCENE.instantiate() as HudController
+	if _layout_preview_hud == null:
+		return null
+	_layout_preview_hud.name = "LayoutPreviewHUD"
+	_layout_preview_hud.visible = false
+	var host: Node = get_parent()
+	if host == null:
+		host = self
+	host.add_child(_layout_preview_hud)
+	if not _layout_preview_hud.layout_edit_finished.is_connected(_on_hud_layout_edit_finished):
+		_layout_preview_hud.layout_edit_finished.connect(_on_hud_layout_edit_finished)
+	return _layout_preview_hud
 
 func _on_hud_layout_edit_finished(_save_changes: bool) -> void:
 	open_menu()
@@ -413,12 +436,7 @@ func _set_menu_open(open: bool) -> void:
 		menu_closed.emit()
 
 func _sanitize_standalone_controls() -> void:
-	var has_hud: bool = get_node_or_null(hud_controller_path) != null
 	var has_street_preview: bool = get_node_or_null(hazard_manager_path) != null
-	if _edit_hud_layout_button != null:
-		var hud_group: Node = _edit_hud_layout_button.get_parent()
-		if hud_group != null:
-			hud_group.visible = has_hud
 	if _reroll_button != null:
 		_reroll_button.visible = has_street_preview
 
