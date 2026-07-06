@@ -793,27 +793,22 @@ func _populate_map_options() -> void:
 		return
 
 	_map_option.clear()
-	var map_count: int = RaceMapController.MAP_CATALOG.size()
-	if _race_map_controller != null:
-		map_count = _race_map_controller.get_map_count()
-
-	for map_index in range(map_count):
-		if not _is_map_option_available(map_index):
-			continue
-		_map_option.add_item(_get_map_display_name(map_index), map_index)
+	var playable_entries: Array[Dictionary] = MapCatalog.get_playable_entries()
+	for entry in playable_entries:
+		var legacy_index: int = int(entry.get("legacy_index", 0))
+		_map_option.add_item(str(entry.get("display_name", "City Highway")), legacy_index)
 
 	if _map_option.get_item_count() <= 0:
 		_map_option.add_item("City Highway", 0)
 
 func _is_map_option_available(map_index: int) -> bool:
-	if _race_map_controller != null:
-		return _race_map_controller.is_map_available(map_index)
-	return RaceMapController.is_catalog_map_available(map_index, feature_config)
+	return MapCatalog.is_playable_legacy_index(map_index)
 
 func _get_map_display_name(map_index: int) -> String:
-	if _race_map_controller != null:
-		return _race_map_controller.get_map_name(map_index)
-	return RaceMapController.get_catalog_map_name(map_index)
+	var entry: Dictionary = MapCatalog.get_entry_by_legacy_index(map_index)
+	if not entry.is_empty() and MapCatalog.is_entry_playable(entry):
+		return str(entry.get("display_name", "City Highway"))
+	return MapCatalog.get_playable_display_name(0)
 
 func _select_map_option(map_index: int) -> void:
 	if _map_option == null or _map_option.get_item_count() <= 0:
@@ -839,10 +834,7 @@ func _get_selected_map_name() -> String:
 		return _race_map_controller.get_map_name(
 			_race_map_controller.get_allowed_map_index(_profile.selected_map_index)
 		)
-	var map_index: int = _profile.selected_map_index
-	if RaceMapController.get_catalog_definition(map_index) == null:
-		map_index = 0
-	return RaceMapController.get_catalog_map_name(map_index)
+	return MapCatalog.get_playable_display_name(0)
 
 func _has_premium_access() -> bool:
 	return feature_config != null and feature_config.has_premium_access()

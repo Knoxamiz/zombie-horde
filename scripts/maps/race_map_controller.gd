@@ -21,16 +21,6 @@ signal active_map_changed(map_index: int, display_name: String)
 @export var map_5_definition: RaceMapDefinition
 @export var map_6_definition: RaceMapDefinition
 
-const MAP_CATALOG: Array = [
-	preload("res://resources/maps/quarantine_boulevard.tres"),
-	preload("res://resources/maps/long_road.tres"),
-	preload("res://resources/maps/broken_bridge.tres"),
-	preload("res://resources/maps/industrial_yard.tres"),
-	preload("res://resources/maps/suburban_evac_route.tres"),
-	preload("res://resources/maps/tunnel_checkpoint.tres"),
-	preload("res://resources/maps/rooftop_causeway.tres"),
-]
-
 var active_map_index: int = -1
 var _race_world: Node3D
 var _active_map: Node3D
@@ -56,7 +46,7 @@ func set_active_map_index(requested_index: int) -> bool:
 	var allowed_index: int = get_allowed_map_index(requested_index)
 	var definition: RaceMapDefinition = get_map_definition(allowed_index)
 	if definition == null or definition.scene == null:
-		allowed_index = get_allowed_map_index(default_map_index)
+		allowed_index = 0
 		definition = get_map_definition(allowed_index)
 	if definition == null or definition.scene == null or _race_world == null:
 		return false
@@ -86,39 +76,27 @@ func set_active_map_index(requested_index: int) -> bool:
 	return true
 
 func get_allowed_map_index(requested_index: int) -> int:
-	if not _can_select_premium_maps():
-		return 0
-
-	var clamped_index: int = _clamp_map_index(requested_index)
-	if is_map_available(clamped_index):
-		return clamped_index
-	return _clamp_map_index(default_map_index)
+	return MapCatalog.resolve_playable_index(requested_index)
 
 func get_map_count() -> int:
-	return MAP_CATALOG.size()
+	return MapCatalog.get_playable_count()
 
 static func get_catalog_definition(index: int) -> RaceMapDefinition:
-	var clamped_index: int = int(clamp(index, 0, MAP_CATALOG.size() - 1))
-	return MAP_CATALOG[clamped_index] as RaceMapDefinition
+	return MapCatalog.load_definition_for_playable_index(index)
 
-static func is_catalog_map_available(index: int, feature_config: FeatureAccessConfig) -> bool:
-	var definition: RaceMapDefinition = get_catalog_definition(index)
-	if definition == null:
-		return false
-	if not definition.premium_only:
-		return true
-	return feature_config != null and feature_config.can_use_map_selection()
+static func is_catalog_map_available(index: int, _feature_config: FeatureAccessConfig) -> bool:
+	return MapCatalog.is_playable_legacy_index(index)
 
 static func get_catalog_map_name(index: int) -> String:
-	var definition: RaceMapDefinition = get_catalog_definition(index)
-	if definition == null:
-		return "Race Map"
-	return definition.display_name
+	var entry: Dictionary = MapCatalog.get_entry_by_legacy_index(index)
+	if entry.is_empty() or not MapCatalog.is_entry_playable(entry):
+		return MapCatalog.get_playable_display_name(0)
+	return str(entry.get("display_name", "City Highway"))
 
 func get_map_name(index: int) -> String:
 	var definition: RaceMapDefinition = get_map_definition(index)
 	if definition == null:
-		return "Race Map"
+		return MapCatalog.get_playable_display_name(0)
 	return definition.display_name
 
 func get_map_scene(index: int) -> PackedScene:
@@ -128,13 +106,15 @@ func get_map_scene(index: int) -> PackedScene:
 	return definition.scene
 
 func get_map_definition(index: int) -> RaceMapDefinition:
-	var definition: RaceMapDefinition = _get_exported_map_definition(index)
+	var playable_index: int = MapCatalog.resolve_playable_index(index)
+	var legacy_index: int = MapCatalog.resolve_legacy_index(playable_index)
+	var definition: RaceMapDefinition = _get_exported_map_definition(legacy_index)
 	if definition != null:
 		return definition
-	return get_catalog_definition(index)
+	return MapCatalog.load_definition_for_playable_index(playable_index)
 
 func _get_exported_map_definition(index: int) -> RaceMapDefinition:
-	match _clamp_map_index(index):
+	match int(clamp(index, 0, 6)):
 		0:
 			return map_0_definition
 		1:
@@ -152,26 +132,15 @@ func _get_exported_map_definition(index: int) -> RaceMapDefinition:
 	return map_0_definition
 
 func is_map_available(index: int) -> bool:
-	if not _is_map_premium_only(index):
-		return true
-	return _can_select_premium_maps()
+	return MapCatalog.is_playable_legacy_index(index)
 
 func get_active_map_name() -> String:
 	if active_map_index < 0:
 		return get_map_name(get_allowed_map_index(default_map_index))
 	return get_map_name(active_map_index)
 
-func _is_map_premium_only(index: int) -> bool:
-	var definition: RaceMapDefinition = get_map_definition(index)
-	if definition != null:
-		return definition.premium_only
-	return true
-
-func _can_select_premium_maps() -> bool:
-	return feature_config != null and feature_config.can_use_map_selection()
-
 func _clamp_map_index(index: int) -> int:
-	return int(clamp(index, 0, get_map_count() - 1))
+	return MapCatalog.resolve_playable_index(index)
 
 func _get_current_map() -> Node3D:
 	if _active_map != null and is_instance_valid(_active_map):

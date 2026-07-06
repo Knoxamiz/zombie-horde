@@ -44,6 +44,7 @@ static func load_from_disk() -> StreamerSettingsProfile:
 
 	var saved_version: int = int(config_file.get_value(SECTION, "version", 0))
 	_read_section_values(profile, config_file, SECTION, saved_version)
+	profile.sanitize_map_selection()
 	return profile
 
 func save_to_disk() -> Error:
@@ -74,7 +75,7 @@ static func create_factory_preset(slot_index: int) -> StreamerSettingsProfile:
 			preset.premium_boost_pad_count = 2
 			preset.premium_sewer_hole_count = 3
 			preset.premium_defender_count = 4
-			preset.selected_map_index = 1
+			preset.selected_map_index = 0
 			preset.tower_gun = HumanDefenderConfig.GunType.RIFLE
 		2:
 			preset.audience_balance = 84
@@ -83,7 +84,7 @@ static func create_factory_preset(slot_index: int) -> StreamerSettingsProfile:
 			preset.premium_boost_pad_count = 6
 			preset.premium_sewer_hole_count = 1
 			preset.premium_defender_count = 1
-			preset.selected_map_index = 5
+			preset.selected_map_index = 0
 			preset.tower_gun = HumanDefenderConfig.GunType.RANDOM
 		3:
 			preset.audience_balance = 64
@@ -95,7 +96,7 @@ static func create_factory_preset(slot_index: int) -> StreamerSettingsProfile:
 			preset.premium_vehicle_weight = 24
 			preset.premium_cone_weight = 34
 			preset.premium_barrier_weight = 42
-			preset.selected_map_index = 6
+			preset.selected_map_index = 0
 			preset.tower_gun = HumanDefenderConfig.GunType.SMG
 	return preset
 
@@ -246,6 +247,15 @@ func get_balance_detail() -> String:
 func get_time_of_day_name() -> String:
 	return "Day" if time_of_day == TimeOfDay.DAY else "Night"
 
+func sanitize_map_selection() -> void:
+	if MapCatalog.is_playable_legacy_index(selected_map_index):
+		return
+	push_warning(
+		"StreamerSettingsProfile: saved map index %d is disabled; using City Highway."
+		% selected_map_index
+	)
+	selected_map_index = 0
+
 func get_avatar_name() -> String:
 	match streamer_avatar:
 		0:
@@ -290,6 +300,7 @@ static func _read_section_values(
 	profile.tower_gun = int(clamp(int(config_file.get_value(section, "tower_gun", profile.tower_gun)), 0, 4))
 	profile.show_tower_weapons = true if saved_version < 2 else bool(config_file.get_value(section, "show_tower_weapons", profile.show_tower_weapons))
 	profile.selected_map_index = int(clamp(int(config_file.get_value(section, "selected_map_index", profile.selected_map_index)), 0, 6))
+	profile.sanitize_map_selection()
 	profile.premium_mine_count = int(clamp(int(config_file.get_value(section, "premium_mine_count", profile.premium_mine_count)), 0, 96))
 	profile.premium_obstacle_count = int(clamp(int(config_file.get_value(section, "premium_obstacle_count", profile.premium_obstacle_count)), 0, 96))
 	profile.premium_boost_pad_count = int(clamp(int(config_file.get_value(section, "premium_boost_pad_count", profile.premium_boost_pad_count)), 0, 32))
