@@ -11,6 +11,8 @@ var _left_column: VBoxContainer
 var _right_column: VBoxContainer
 var _done_button: Button
 var _reset_button: Button
+var _footer: HBoxContainer
+var _footer_spacer: Control
 var _layout_shell: MarginContainer
 var _panel: PanelContainer
 var _content_box: VBoxContainer
@@ -122,6 +124,7 @@ func _build() -> void:
 	var footer := HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 12)
 	_content_box.add_child(footer)
+	_footer = footer
 
 	_reset_button = Button.new()
 	_reset_button.custom_minimum_size = Vector2(180, 46)
@@ -139,6 +142,7 @@ func _build() -> void:
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	footer.add_child(spacer)
+	_footer_spacer = spacer
 
 	_done_button = Button.new()
 	_done_button.custom_minimum_size = Vector2(180, 46)
@@ -152,6 +156,13 @@ func _build() -> void:
 	)
 	_done_button.pressed.connect(done_pressed.emit)
 	footer.add_child(_done_button)
+
+func add_footer_button(button: Button) -> void:
+	if _footer == null or _footer_spacer == null or button == null:
+		return
+	var spacer_index: int = _footer_spacer.get_index()
+	_footer.add_child(button)
+	_footer.move_child(button, spacer_index)
 
 func set_title(title: String) -> void:
 	if _title_label != null:

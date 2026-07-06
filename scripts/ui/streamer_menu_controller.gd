@@ -214,6 +214,16 @@ func _build_control_room_streamer_modal() -> void:
 	_settings_modal.reset_pressed.connect(_on_reset_defaults_pressed)
 	_settings_modal.clear_groups()
 
+	var hud_group: VBoxContainer = _settings_modal.add_group("HUD Layout", 0)
+	var hud_hint := Label.new()
+	hud_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hud_hint.text = "Drag race overlay panels into place for your stream layout."
+	ControlRoomTheme.apply_label(hud_hint, 16, ControlRoomTheme.COLOR_MUTED)
+	hud_group.add_child(hud_hint)
+	_edit_hud_layout_button = _make_modal_button("CUSTOMIZE HUD LAYOUT", ControlRoomTheme.COLOR_GREEN)
+	_edit_hud_layout_button.pressed.connect(_on_edit_hud_layout_pressed)
+	_settings_modal.add_footer_button(_edit_hud_layout_button)
+
 	var overview_group: VBoxContainer = _settings_modal.add_group("Streamer", 0)
 	_edition_value_label = Label.new()
 	ControlRoomTheme.apply_label(_edition_value_label, 20, ControlRoomTheme.COLOR_GREEN)
@@ -306,11 +316,6 @@ func _build_control_room_streamer_modal() -> void:
 	var barrier_meter: Dictionary = _create_modal_meter(_premium_controls, "Barrier Weight", 0, 100)
 	_barrier_weight_spin = barrier_meter["slider"] as SliderControl
 	_barrier_weight_meter_label = barrier_meter["label"] as Label
-
-	var hud_group: VBoxContainer = _settings_modal.add_group("HUD Layout", 0)
-	_edit_hud_layout_button = _make_modal_button("CUSTOMIZE HUD LAYOUT", ControlRoomTheme.COLOR_GREEN)
-	hud_group.add_child(_edit_hud_layout_button)
-	_edit_hud_layout_button.pressed.connect(_on_edit_hud_layout_pressed)
 
 	_reroll_button = _make_modal_button("REROLL STREET PREVIEW", ControlRoomTheme.COLOR_BLUE)
 	premium_group.add_child(_reroll_button)
