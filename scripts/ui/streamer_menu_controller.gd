@@ -794,7 +794,7 @@ func _populate_map_options() -> void:
 
 	_map_option.clear()
 	if _race_map_controller == null:
-		_map_option.add_item("Quarantine Boulevard", 0)
+		_map_option.add_item("City Highway", 0)
 		return
 
 	for map_index in range(_race_map_controller.get_map_count()):
@@ -803,7 +803,7 @@ func _populate_map_options() -> void:
 		_map_option.add_item(_race_map_controller.get_map_name(map_index), map_index)
 
 	if _map_option.get_item_count() <= 0:
-		_map_option.add_item("Quarantine Boulevard", 0)
+		_map_option.add_item("City Highway", 0)
 
 func _select_map_option(map_index: int) -> void:
 	if _map_option == null or _map_option.get_item_count() <= 0:
@@ -827,7 +827,7 @@ func _get_map_index_for_option(option_index: int) -> int:
 func _get_selected_map_name() -> String:
 	if _race_map_controller != null:
 		return _race_map_controller.get_map_name(_race_map_controller.get_allowed_map_index(_profile.selected_map_index))
-	return "Quarantine Boulevard"
+	return "City Highway"
 
 func _has_premium_access() -> bool:
 	return feature_config != null and feature_config.has_premium_access()

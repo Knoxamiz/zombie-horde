@@ -18,6 +18,7 @@ signal active_map_changed(map_index: int, display_name: String)
 @export var map_2_definition: RaceMapDefinition
 @export var map_3_definition: RaceMapDefinition
 @export var map_4_definition: RaceMapDefinition
+@export var map_5_definition: RaceMapDefinition
 
 var active_map_index: int = -1
 var _race_world: Node3D
@@ -83,7 +84,7 @@ func get_allowed_map_index(requested_index: int) -> int:
 	return _clamp_map_index(default_map_index)
 
 func get_map_count() -> int:
-	return 5
+	return 6
 
 func get_map_name(index: int) -> String:
 	var definition: RaceMapDefinition = get_map_definition(index)
@@ -109,6 +110,8 @@ func get_map_definition(index: int) -> RaceMapDefinition:
 			return map_3_definition
 		4:
 			return map_4_definition
+		5:
+			return map_5_definition
 	return map_0_definition
 
 func is_map_available(index: int) -> bool:

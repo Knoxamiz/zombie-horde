@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_definition")
-display_name = "Quarantine Boulevard"
+display_name = "City Highway"
 scene = ExtResource("2_scene")
 premium_only = false
 road_core_scale = Vector3(1, 1, 1)

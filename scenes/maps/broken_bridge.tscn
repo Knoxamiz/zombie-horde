@@ -1,0 +1,101 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/maps/broken_bridge_arena.gd" id="1_arena"]
+[ext_resource type="Script" path="res://scripts/core/visual_collision_sanitizer.gd" id="2_sanitizer"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Street_Straight_Crack1.gltf" id="3_crack1"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Street_Straight_Crack2.gltf" id="4_crack2"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Pallet_Broken.gltf" id="5_pallet"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/PlasticBarrier.gltf" id="6_barrier"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/Pipes.gltf" id="7_pipes"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/CinderBlock.gltf" id="8_block"]
+[ext_resource type="PackedScene" path="res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrafficBarrier_1.gltf" id="9_tb1"]
+[ext_resource type="Material" path="res://assets/materials/lobby_warning_red.tres" id="10_red"]
+[ext_resource type="Material" path="res://assets/materials/city_window_glow.tres" id="11_glow"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_banner"]
+size = Vector3(14.5, 1.5, 0.18)
+
+[node name="RoadArena" type="Node3D"]
+
+[node name="CoreRoad" type="Node3D" parent="."]
+script = ExtResource("1_arena")
+
+[node name="MapDressing" type="Node3D" parent="."]
+
+[node name="VisualCollisionSanitizer" type="Node" parent="MapDressing"]
+script = ExtResource("2_sanitizer")
+
+[node name="BridgeBanner" type="MeshInstance3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.2, -70)
+mesh = SubResource("BoxMesh_banner")
+surface_material_override/0 = ExtResource("10_red")
+
+[node name="BridgeLabel" type="Label3D" parent="MapDressing"]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 8.24, -69.8)
+text = "BROKEN BRIDGE"
+font_size = 42
+outline_size = 8
+modulate = Color(0.82, 1, 0.45, 1)
+
+[node name="CrackDeckA" parent="MapDressing" instance=ExtResource("3_crack1")]
+transform = Transform3D(2.4, 0, 0, 0, 2.4, 0, 0, 0, 2.4, -6, 6.12, -12)
+
+[node name="CrackDeckB" parent="MapDressing" instance=ExtResource("4_crack2")]
+transform = Transform3D(2.4, 0, 0, 0, 2.4, 0, 0, 0, 2.4, 5, 6.12, 24)
+
+[node name="CrackDeckC" parent="MapDressing" instance=ExtResource("3_crack1")]
+transform = Transform3D(2.4, 0, 0, 0, 2.4, 0, 0, 0, 2.4, -4, 6.12, 58)
+
+[node name="GapRubbleA" parent="MapDressing" instance=ExtResource("5_pallet")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, -10, 6.05, -30)
+
+[node name="GapRubbleB" parent="MapDressing" instance=ExtResource("5_pallet")]
+transform = Transform3D(-1.2, 0, 0, 0, 1.2, 0, 0, 0, -1.2, 11, 6.05, 10)
+
+[node name="GapBarrierA" parent="MapDressing" instance=ExtResource("6_barrier")]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -14, 6.1, -33)
+
+[node name="GapBarrierB" parent="MapDressing" instance=ExtResource("6_barrier")]
+transform = Transform3D(-1.5, 0, 0, 0, 1.5, 0, 0, 0, -1.5, 14, 6.1, -27)
+
+[node name="GapBarrierC" parent="MapDressing" instance=ExtResource("6_barrier")]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -14, 6.1, 7)
+
+[node name="GapBarrierD" parent="MapDressing" instance=ExtResource("6_barrier")]
+transform = Transform3D(-1.5, 0, 0, 0, 1.5, 0, 0, 0, -1.5, 14, 6.1, 13)
+
+[node name="GapBarrierE" parent="MapDressing" instance=ExtResource("6_barrier")]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -14, 6.1, 47)
+
+[node name="GapBarrierF" parent="MapDressing" instance=ExtResource("6_barrier")]
+transform = Transform3D(-1.5, 0, 0, 0, 1.5, 0, 0, 0, -1.5, 14, 6.1, 53)
+
+[node name="BrokenPipeLeft" parent="MapDressing" instance=ExtResource("7_pipes")]
+transform = Transform3D(1.8, 0, 0, 0, 1.8, 0, 0, 0, 1.8, -20, 0, -40)
+
+[node name="BrokenPipeRight" parent="MapDressing" instance=ExtResource("7_pipes")]
+transform = Transform3D(-1.6, 0, 0, 0, 1.6, 0, 0, 0, -1.6, 20, 0, 36)
+
+[node name="FallenBlockA" parent="MapDressing" instance=ExtResource("8_block")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, 8, 6.05, -30)
+
+[node name="FallenBlockB" parent="MapDressing" instance=ExtResource("8_block")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, -9, 6.05, 50)
+
+[node name="TrafficBarrierA" parent="MapDressing" instance=ExtResource("9_tb1")]
+transform = Transform3D(1.6, 0, 0, 0, 1.6, 0, 0, 0, 1.6, -12, 0, -82)
+
+[node name="TrafficBarrierB" parent="MapDressing" instance=ExtResource("9_tb1")]
+transform = Transform3D(-1.6, 0, 0, 0, 1.6, 0, 0, 0, -1.6, 12, 0, -82)
+
+[node name="BridgeGlow" type="OmniLight3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.5, -66)
+light_color = Color(0.42, 1, 0.24, 1)
+light_energy = 2.0
+omni_range = 24.0
+
+[node name="GapWarningGlow" type="OmniLight3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.5, 10)
+light_color = Color(1, 0.45, 0.12, 1)
+light_energy = 1.6
+omni_range = 18.0

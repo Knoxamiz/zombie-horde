@@ -25,7 +25,7 @@ enum MenuTier {
 @export var streamer_name: String = "Streamer"
 @export_enum("Random", "Pistol", "SMG", "Rifle", "Shotgun") var tower_gun: int = 0
 @export var show_tower_weapons: bool = true
-@export_range(0, 4, 1) var selected_map_index: int = 0
+@export_range(0, 5, 1) var selected_map_index: int = 0
 @export_range(0, 96, 1) var premium_mine_count: int = 6
 @export_range(0, 96, 1) var premium_obstacle_count: int = 12
 @export_range(0, 32, 1) var premium_boost_pad_count: int = 3
@@ -83,7 +83,7 @@ static func create_factory_preset(slot_index: int) -> StreamerSettingsProfile:
 			preset.premium_boost_pad_count = 6
 			preset.premium_sewer_hole_count = 1
 			preset.premium_defender_count = 1
-			preset.selected_map_index = 3
+			preset.selected_map_index = 4
 			preset.tower_gun = HumanDefenderConfig.GunType.RANDOM
 		3:
 			preset.audience_balance = 64
@@ -95,7 +95,7 @@ static func create_factory_preset(slot_index: int) -> StreamerSettingsProfile:
 			preset.premium_vehicle_weight = 24
 			preset.premium_cone_weight = 34
 			preset.premium_barrier_weight = 42
-			preset.selected_map_index = 4
+			preset.selected_map_index = 5
 			preset.tower_gun = HumanDefenderConfig.GunType.SMG
 	return preset
 
@@ -289,7 +289,7 @@ static func _read_section_values(
 		profile.streamer_name = "Streamer"
 	profile.tower_gun = int(clamp(int(config_file.get_value(section, "tower_gun", profile.tower_gun)), 0, 4))
 	profile.show_tower_weapons = true if saved_version < 2 else bool(config_file.get_value(section, "show_tower_weapons", profile.show_tower_weapons))
-	profile.selected_map_index = int(clamp(int(config_file.get_value(section, "selected_map_index", profile.selected_map_index)), 0, 4))
+	profile.selected_map_index = int(clamp(int(config_file.get_value(section, "selected_map_index", profile.selected_map_index)), 0, 5))
 	profile.premium_mine_count = int(clamp(int(config_file.get_value(section, "premium_mine_count", profile.premium_mine_count)), 0, 96))
 	profile.premium_obstacle_count = int(clamp(int(config_file.get_value(section, "premium_obstacle_count", profile.premium_obstacle_count)), 0, 96))
 	profile.premium_boost_pad_count = int(clamp(int(config_file.get_value(section, "premium_boost_pad_count", profile.premium_boost_pad_count)), 0, 32))

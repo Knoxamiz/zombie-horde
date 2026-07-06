@@ -31,7 +31,7 @@ surface_material_override/0 = ExtResource("3_red")
 
 [node name="QuarantineLabel" type="Label3D" parent="MapDressing"]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 4.84, -34.68)
-text = "QUARANTINE BOULEVARD"
+text = "CITY HIGHWAY"
 font_size = 38
 outline_size = 8
 modulate = Color(0.82, 1, 0.45, 1)
