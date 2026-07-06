@@ -272,7 +272,7 @@ text = ""
 autowrap_mode = 3
 
 [node name="StreamerMenu" parent="." instance=ExtResource("8_streamer_menu")]
-layer = 20
+layer = 50
 expanded_modal = true
 hazard_config = ExtResource("9_hazard_config")
 zombie_config = ExtResource("10_zombie_config")

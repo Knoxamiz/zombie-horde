@@ -90,10 +90,11 @@ Zombie Horde is built for Twitch chat games captured in OBS. Use **STREAMER SETT
 
 ### Quick start for streamers
 
-1. Click **STREAMER SETTINGS** on the main menu to configure OBS defaults, your streamer name, map, and chaos tuning.
+1. Click **STREAMER SETTINGS** on the main menu to configure your streamer name, map, balance, and chaos tuning in a fullscreen panel.
 2. On the **STREAMER JOINS** panel, type your Twitch channel name and click **Connect**.
 3. Click **START** when you are ready to open the join lobby.
-4. Tell chat: viewers type your join command (default `!brains`) to join the cage.
+4. For OBS capture size and display mode, use **SETTINGS** → **Streamer** → **APPLY OBS DEFAULTS** (or apply before going live).
+5. Tell chat: viewers type your join command (default `!brains`) to join the cage.
 
 ### Twitch channel setup
 

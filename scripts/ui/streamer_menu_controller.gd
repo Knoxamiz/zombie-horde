@@ -370,8 +370,6 @@ func open_menu() -> void:
 
 	_profile = StreamerSettingsProfile.load_from_disk()
 	_refresh_controls()
-	if _settings_modal != null:
-		_settings_modal.set_expanded_layout(expanded_modal)
 	_set_menu_open(true)
 
 func can_open_menu() -> bool:
@@ -401,6 +399,7 @@ func _set_menu_open(open: bool) -> void:
 	_set_world_menu_visible(false)
 	if _settings_modal != null:
 		if open:
+			_settings_modal.set_expanded_layout(expanded_modal)
 			_settings_modal.show_modal()
 		else:
 			_settings_modal.hide_modal()
@@ -409,13 +408,14 @@ func _set_menu_open(open: bool) -> void:
 		menu_closed.emit()
 
 func _sanitize_standalone_controls() -> void:
-	if _edit_hud_layout_button == null:
-		return
-	var hud_group: Node = _edit_hud_layout_button.get_parent()
-	if hud_group == null:
-		return
 	var has_hud: bool = get_node_or_null(hud_controller_path) != null
-	hud_group.visible = has_hud
+	var has_street_preview: bool = get_node_or_null(hazard_manager_path) != null
+	if _edit_hud_layout_button != null:
+		var hud_group: Node = _edit_hud_layout_button.get_parent()
+		if hud_group != null:
+			hud_group.visible = has_hud
+	if _reroll_button != null:
+		_reroll_button.visible = has_street_preview
 
 func _refresh_controls() -> void:
 	_is_refreshing = true

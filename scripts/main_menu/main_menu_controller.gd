@@ -316,10 +316,6 @@ func _open_streamer_settings() -> void:
 	if _streamer_menu == null:
 		return
 
-	var game_settings: GameSettingsController = _get_or_create_game_settings()
-	if game_settings != null:
-		game_settings.apply_obs_stream_defaults()
-
 	_set_main_menu_overlays_visible(false)
 	_set_buttons_enabled(false)
 	_streamer_menu.open_menu()
