@@ -12,7 +12,7 @@ func build(label_text: String) -> void:
 	custom_minimum_size = Vector2(0, 34)
 	add_theme_constant_override("separation", 14)
 	_label = Label.new()
-	_label.custom_minimum_size = Vector2(190, 0)
+	_label.custom_minimum_size = Vector2(148, 0)
 	_label.size_flags_horizontal = Control.SIZE_FILL
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_label.text = label_text

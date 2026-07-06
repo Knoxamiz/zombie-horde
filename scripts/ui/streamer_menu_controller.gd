@@ -352,14 +352,14 @@ func _create_modal_meter(parent: VBoxContainer, label_text: String, minimum: int
 
 func _make_modal_button(label: String, accent: Color) -> Button:
 	var button := Button.new()
-	button.custom_minimum_size = Vector2(160, 42)
+	button.custom_minimum_size = Vector2(130, 42)
 	button.text = label
 	ControlRoomTheme.apply_button(button, Color(0.075, 0.09, 0.078, 0.98), Color(0.13, 0.16, 0.13, 1.0), accent, 16)
 	return button
 
 func _make_modal_option() -> OptionButton:
 	var option := OptionButton.new()
-	option.custom_minimum_size = Vector2(320, 42)
+	option.custom_minimum_size = Vector2(220, 42)
 	ControlRoomTheme.apply_button(option, Color(0.075, 0.09, 0.078, 0.98), Color(0.13, 0.16, 0.13, 1.0), ControlRoomTheme.COLOR_BLUE, 16)
 	return option
 

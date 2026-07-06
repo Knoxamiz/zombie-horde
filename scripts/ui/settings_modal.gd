@@ -20,6 +20,12 @@ var _scroll: ScrollContainer
 var _expanded_layout: bool = false
 var _two_column_layout: bool = false
 
+const COMPACT_PANEL_MAX_WIDTH: float = 1040.0
+const COMPACT_PANEL_MIN_WIDTH: float = 900.0
+const COMPACT_PANEL_SIDE_MARGIN: float = 80.0
+
+var _panel_frame: CenterContainer
+
 func _ready() -> void:
 	_build()
 	visible = false
@@ -48,15 +54,20 @@ func _build() -> void:
 	_layout_shell.add_theme_constant_override("margin_bottom", 48)
 	add_child(_layout_shell)
 
+	_panel_frame = CenterContainer.new()
+	_panel_frame.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_panel_frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_layout_shell.add_child(_panel_frame)
+
 	_panel = PanelContainer.new()
-	_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_panel.custom_minimum_size = Vector2(820, 680)
 	_panel.add_theme_stylebox_override(
 		"panel",
 		ControlRoomTheme.panel_style(ControlRoomTheme.COLOR_ORANGE, Color(0.018, 0.024, 0.02, 0.98), 3)
 	)
-	_layout_shell.add_child(_panel)
+	_panel_frame.add_child(_panel)
 
 	var margin := MarginContainer.new()
 	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -106,7 +117,7 @@ func _build() -> void:
 	_groups_columns = HBoxContainer.new()
 	_groups_columns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_groups_columns.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	_groups_columns.add_theme_constant_override("separation", 18)
+	_groups_columns.add_theme_constant_override("separation", 14)
 	_scroll.add_child(_groups_columns)
 
 	_left_column = VBoxContainer.new()
@@ -234,11 +245,11 @@ func _apply_layout_mode() -> void:
 		return
 
 	if _expanded_layout:
-		_layout_shell.add_theme_constant_override("margin_left", 24)
+		_layout_shell.add_theme_constant_override("margin_left", COMPACT_PANEL_SIDE_MARGIN)
 		_layout_shell.add_theme_constant_override("margin_top", 20)
-		_layout_shell.add_theme_constant_override("margin_right", 24)
+		_layout_shell.add_theme_constant_override("margin_right", COMPACT_PANEL_SIDE_MARGIN)
 		_layout_shell.add_theme_constant_override("margin_bottom", 20)
-		_panel.custom_minimum_size = Vector2(0, 0)
+		_apply_compact_panel_width()
 	else:
 		_layout_shell.add_theme_constant_override("margin_left", 120)
 		_layout_shell.add_theme_constant_override("margin_top", 48)
@@ -248,6 +259,14 @@ func _apply_layout_mode() -> void:
 		_scroll.custom_minimum_size = Vector2(0, 520)
 
 	_refresh_scroll_height()
+
+func _apply_compact_panel_width() -> void:
+	if _panel == null:
+		return
+	var viewport_width: float = max(size.x, get_viewport_rect().size.x)
+	var available_width: float = viewport_width - (COMPACT_PANEL_SIDE_MARGIN * 2.0)
+	var target_width: float = clamp(available_width, COMPACT_PANEL_MIN_WIDTH, COMPACT_PANEL_MAX_WIDTH)
+	_panel.custom_minimum_size = Vector2(target_width, 0)
 
 func _refresh_scroll_height() -> void:
 	if _scroll == null:
@@ -275,4 +294,5 @@ func hide_modal() -> void:
 
 func _on_resized() -> void:
 	if visible and _expanded_layout:
+		_apply_compact_panel_width()
 		_refresh_scroll_height()
