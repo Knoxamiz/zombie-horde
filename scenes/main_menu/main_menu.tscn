@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://b8k3m2n1p4q5r"]
+[gd_scene load_steps=16 format=3 uid="uid://b8k3m2n1p4q5r"]
 
 [ext_resource type="Script" path="res://scripts/main_menu/main_menu_controller.gd" id="1_controller"]
 [ext_resource type="Environment" path="res://resources/environment/main_menu_environment.tres" id="2_environment"]
@@ -7,6 +7,14 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/main_menu_3d_logo_rig.tscn" id="5_logo_rig"]
 [ext_resource type="Script" path="res://scripts/integrations/twitch/twitch_join_source.gd" id="6_twitch_join"]
 [ext_resource type="Resource" uid="uid://cy25ecmbimgyb" path="res://resources/config/twitch_chat_config.tres" id="7_twitch_config"]
+[ext_resource type="PackedScene" path="res://scenes/ui/streamer_menu.tscn" id="8_streamer_menu"]
+[ext_resource type="Resource" uid="uid://bupic2xlh7b2r" path="res://resources/config/hazard_config.tres" id="9_hazard_config"]
+[ext_resource type="Resource" uid="uid://bougddnnf1ab1" path="res://resources/config/zombie_config.tres" id="10_zombie_config"]
+[ext_resource type="Resource" uid="uid://bcr34x5f4lvl6" path="res://resources/config/minigun_config.tres" id="11_minigun_config"]
+[ext_resource type="Resource" uid="uid://dra4husd3g7uo" path="res://resources/config/powerup_config.tres" id="12_powerup_config"]
+[ext_resource type="Resource" uid="uid://dltqqa505wwe4" path="res://resources/config/human_defender_config.tres" id="13_defender_config"]
+[ext_resource type="Resource" path="res://resources/config/streamer_visual_config.tres" id="14_visual_config"]
+[ext_resource type="Resource" path="res://resources/config/feature_access_config.tres" id="15_feature_config"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_feed_panel"]
 content_margin_left = 6.0
@@ -105,7 +113,7 @@ block_size = Vector3(1.2, 0.3, 0.14)
 [node name="StreamerButton3D" parent="MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/ButtonCenterRack" instance=ExtResource("4_block_button")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.95, -6.85)
 action_id = &"streamer"
-text = "STREAMER MODE"
+text = "STREAMER SETTINGS"
 base_color = Color(0.58, 0.24, 0.88, 1)
 hover_color = Color(0.72, 0.38, 1, 1)
 font_size = 60
@@ -262,3 +270,14 @@ theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 18
 text = ""
 autowrap_mode = 3
+
+[node name="StreamerMenu" parent="." instance=ExtResource("8_streamer_menu")]
+layer = 20
+expanded_modal = true
+hazard_config = ExtResource("9_hazard_config")
+zombie_config = ExtResource("10_zombie_config")
+minigun_config = ExtResource("11_minigun_config")
+powerup_config = ExtResource("12_powerup_config")
+human_defender_config = ExtResource("13_defender_config")
+visual_config = ExtResource("14_visual_config")
+feature_config = ExtResource("15_feature_config")

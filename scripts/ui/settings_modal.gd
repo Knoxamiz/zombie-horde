@@ -9,6 +9,10 @@ var _title_label: Label
 var _groups_box: VBoxContainer
 var _done_button: Button
 var _reset_button: Button
+var _layout_shell: MarginContainer
+var _panel: PanelContainer
+var _scroll: ScrollContainer
+var _expanded_layout: bool = false
 
 func _ready() -> void:
 	_build()
@@ -23,24 +27,28 @@ func _build() -> void:
 	dim.color = Color(0.0, 0.0, 0.0, 0.56)
 	add_child(dim)
 
-	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(center)
+	_layout_shell = MarginContainer.new()
+	_layout_shell.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_layout_shell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_layout_shell.add_theme_constant_override("margin_left", 36)
+	_layout_shell.add_theme_constant_override("margin_top", 28)
+	_layout_shell.add_theme_constant_override("margin_right", 36)
+	_layout_shell.add_theme_constant_override("margin_bottom", 28)
+	add_child(_layout_shell)
 
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(820, 680)
-	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	panel.add_theme_stylebox_override("panel", ControlRoomTheme.panel_style(ControlRoomTheme.COLOR_ORANGE, Color(0.018, 0.024, 0.02, 0.98), 3))
-	center.add_child(panel)
+	_panel = PanelContainer.new()
+	_panel.custom_minimum_size = Vector2(820, 680)
+	_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_panel.add_theme_stylebox_override("panel", ControlRoomTheme.panel_style(ControlRoomTheme.COLOR_ORANGE, Color(0.018, 0.024, 0.02, 0.98), 3))
+	_layout_shell.add_child(_panel)
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 26)
 	margin.add_theme_constant_override("margin_top", 22)
 	margin.add_theme_constant_override("margin_right", 26)
 	margin.add_theme_constant_override("margin_bottom", 22)
-	panel.add_child(margin)
+	_panel.add_child(margin)
 
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
@@ -67,6 +75,7 @@ func _build() -> void:
 	scroll.custom_minimum_size = Vector2(0, 520)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(scroll)
+	_scroll = scroll
 
 	_groups_box = VBoxContainer.new()
 	_groups_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -135,7 +144,33 @@ func add_row(group_box: VBoxContainer, label_text: String, control: Control = nu
 	group_box.add_child(row)
 	return row
 
+func set_expanded_layout(enabled: bool) -> void:
+	_expanded_layout = enabled
+	_apply_layout_mode()
+
+func _apply_layout_mode() -> void:
+	if _panel == null or _scroll == null or _layout_shell == null:
+		return
+
+	if _expanded_layout:
+		_layout_shell.add_theme_constant_override("margin_left", 28)
+		_layout_shell.add_theme_constant_override("margin_top", 24)
+		_layout_shell.add_theme_constant_override("margin_right", 28)
+		_layout_shell.add_theme_constant_override("margin_bottom", 24)
+		_panel.custom_minimum_size = Vector2(0, 0)
+		_scroll.custom_minimum_size = Vector2(0, 0)
+		return
+
+	_layout_shell.add_theme_constant_override("margin_left", 120)
+	_layout_shell.add_theme_constant_override("margin_top", 48)
+	_layout_shell.add_theme_constant_override("margin_right", 120)
+	_layout_shell.add_theme_constant_override("margin_bottom", 48)
+	_panel.custom_minimum_size = Vector2(820, 680)
+	_scroll.custom_minimum_size = Vector2(0, 520)
+
 func show_modal() -> void:
+	if _expanded_layout:
+		_apply_layout_mode()
 	visible = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 

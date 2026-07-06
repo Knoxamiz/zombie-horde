@@ -1,6 +1,8 @@
 class_name StreamerMenuController
 extends CanvasLayer
 
+signal menu_closed()
+
 const SETTINGS_MODAL_SCRIPT: Script = preload("res://scripts/ui/settings_modal.gd")
 
 @export var hazard_config: HazardConfig
@@ -32,6 +34,7 @@ const SETTINGS_MODAL_SCRIPT: Script = preload("res://scripts/ui/settings_modal.g
 @export var world_preset_4_button_path: NodePath
 @export var world_reset_button_path: NodePath
 @export var hud_controller_path: NodePath
+@export var expanded_modal: bool = false
 
 var _round_manager: RoundManager
 var _hazard_manager: HazardManager
@@ -183,6 +186,7 @@ func _ready() -> void:
 	_connect_world_button(_world_reset_button)
 
 	_sanitize_character_previews()
+	_sanitize_standalone_controls()
 	_refresh_controls()
 	_set_menu_open(false)
 	_set_character_select_open(false)
@@ -366,6 +370,8 @@ func open_menu() -> void:
 
 	_profile = StreamerSettingsProfile.load_from_disk()
 	_refresh_controls()
+	if _settings_modal != null:
+		_settings_modal.set_expanded_layout(expanded_modal)
 	_set_menu_open(true)
 
 func can_open_menu() -> bool:
@@ -400,6 +406,16 @@ func _set_menu_open(open: bool) -> void:
 			_settings_modal.hide_modal()
 	if not open:
 		_set_character_select_open(false)
+		menu_closed.emit()
+
+func _sanitize_standalone_controls() -> void:
+	if _edit_hud_layout_button == null:
+		return
+	var hud_group: Node = _edit_hud_layout_button.get_parent()
+	if hud_group == null:
+		return
+	var has_hud: bool = get_node_or_null(hud_controller_path) != null
+	hud_group.visible = has_hud
 
 func _refresh_controls() -> void:
 	_is_refreshing = true

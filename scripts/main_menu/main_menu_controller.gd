@@ -63,6 +63,8 @@ var _chat_status_detail: String = ""
 @onready var _feed_scroll: ScrollContainer = get_node_or_null(
 	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedScroll"
 ) as ScrollContainer
+@onready var _overlay_layer: CanvasLayer = get_node_or_null("OverlayLayer") as CanvasLayer
+@onready var _streamer_menu: StreamerMenuController = get_node_or_null("StreamerMenu") as StreamerMenuController
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -86,6 +88,9 @@ func _ready() -> void:
 		_feed_connect_button.pressed.connect(_on_connect_channel_pressed)
 	if _feed_channel_edit != null:
 		_feed_channel_edit.text_submitted.connect(_on_channel_name_submitted)
+
+	if _streamer_menu != null:
+		_streamer_menu.menu_closed.connect(_on_streamer_menu_closed)
 
 	var music_controller: MusicController = _get_or_create_music_controller()
 	if music_controller != null:
@@ -294,9 +299,9 @@ func _pick_button_at(local_pos: Vector2) -> MainMenuBlockButton:
 func _on_menu_button_pressed(action_id: StringName) -> void:
 	match action_id:
 		&"start":
-			_launch_lobby(0, false)
+			_launch_lobby(0)
 		&"streamer":
-			_launch_lobby(0, true)
+			_open_streamer_settings()
 		&"settings":
 			_on_settings_pressed()
 		&"quit":
@@ -307,17 +312,33 @@ func _on_settings_pressed() -> void:
 	if game_settings != null:
 		game_settings.open_settings()
 
-func _launch_lobby(debug_joins_to_seed: int, open_settings: bool) -> void:
+func _open_streamer_settings() -> void:
+	if _streamer_menu == null:
+		return
+
+	var game_settings: GameSettingsController = _get_or_create_game_settings()
+	if game_settings != null:
+		game_settings.apply_obs_stream_defaults()
+
+	_set_main_menu_overlays_visible(false)
+	_set_buttons_enabled(false)
+	_streamer_menu.open_menu()
+
+func _on_streamer_menu_closed() -> void:
+	_set_main_menu_overlays_visible(true)
+	_set_buttons_enabled(true)
+
+func _set_main_menu_overlays_visible(visible: bool) -> void:
+	if _overlay_layer != null:
+		_overlay_layer.visible = visible
+
+func _launch_lobby(debug_joins_to_seed: int) -> void:
 	if _transitioning:
 		return
 
 	_transitioning = true
 	_set_buttons_enabled(false)
-	if open_settings:
-		var game_settings: GameSettingsController = _get_or_create_game_settings()
-		if game_settings != null:
-			game_settings.apply_obs_stream_defaults()
-	LaunchState.request_lobby(debug_joins_to_seed, open_settings)
+	LaunchState.request_lobby(debug_joins_to_seed, false)
 
 	var packed: PackedScene = _take_preloaded_game_scene()
 	var error: Error

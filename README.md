@@ -86,14 +86,13 @@ Do not put OAuth tokens in committed `.tres` files. Local/secret config resource
 
 ## Streaming With OBS + Twitch (Primary Workflow)
 
-Zombie Horde is built for Twitch chat games captured in OBS. Use **STREAMER MODE** on the main menu for the recommended setup.
+Zombie Horde is built for Twitch chat games captured in OBS. Use **STREAMER SETTINGS** on the main menu for the recommended setup.
 
 ### Quick start for streamers
 
-1. Click **STREAMER MODE** on the main menu.
-   - Applies OBS-friendly defaults: 1920x1080 borderless, clean capture (no screen wash), lobby test join buttons visible, 60 FPS cap.
-2. In OBS, add a **Game Capture** or **Window Capture** source for `Zombie Horde`.
-3. On the main menu **STREAMER JOINS** panel, type your Twitch channel name and click **Connect**.
+1. Click **STREAMER SETTINGS** on the main menu to configure OBS defaults, your streamer name, map, and chaos tuning.
+2. On the **STREAMER JOINS** panel, type your Twitch channel name and click **Connect**.
+3. Click **START** when you are ready to open the join lobby.
 4. Tell chat: viewers type your join command (default `!brains`) to join the cage.
 
 ### Twitch channel setup
