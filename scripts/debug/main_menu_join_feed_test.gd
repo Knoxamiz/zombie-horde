@@ -23,7 +23,7 @@ func _run_test() -> void:
 
 	var twitch: TwitchJoinSource = main_menu.get_node_or_null("Systems/TwitchJoinSource") as TwitchJoinSource
 	var feed_body: Label = main_menu.get_node_or_null(
-		"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedBody"
+		"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedScroll/FeedBody"
 	) as Label
 	if twitch == null or feed_body == null:
 		push_error("Main menu twitch feed nodes missing")

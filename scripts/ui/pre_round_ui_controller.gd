@@ -305,10 +305,7 @@ func _format_queue_summary() -> String:
 func _should_show_chat_status(chat_text: String) -> bool:
 	if chat_text.is_empty():
 		return false
-	var normalized_status: String = _chat_status_text.to_lower()
-	if normalized_status == "twitch live":
-		return false
-	return true
+	return TwitchStatusFormatter.should_show_status(_chat_status_text)
 
 func _format_lobby_body() -> String:
 	var sections: Array[String] = []
@@ -341,21 +338,13 @@ func _format_join_feed() -> String:
 func _format_chat_status() -> String:
 	if _chat_status_text.is_empty():
 		return ""
-	var detail_text: String = _shorten_chat_detail(_chat_detail_text)
+	var detail_text: String = TwitchStatusFormatter.shorten_detail(_chat_detail_text)
 	if detail_text.is_empty():
-		return "Chat: %s" % _chat_status_text
-	return "Chat: %s\n%s" % [_chat_status_text, detail_text]
-
-func _shorten_chat_detail(detail_text: String) -> String:
-	if detail_text.is_empty():
-		return ""
-	if detail_text.contains("twitch_chat_config"):
-		return "Set channel_name in twitch_chat_config.local.tres"
-	if detail_text.contains("ZOMBIE_HORDE_TWITCH"):
-		return "Set Twitch OAuth env vars (see env.example)."
-	if detail_text.length() > 72:
-		return "%s…" % detail_text.substr(0, 71)
-	return detail_text
+		return "Chat: %s" % TwitchStatusFormatter.format_headline(_chat_status_text)
+	return "Chat: %s\n%s" % [
+		TwitchStatusFormatter.format_headline(_chat_status_text),
+		detail_text,
+	]
 
 func _refresh_ready_button() -> void:
 	if _ready_button == null:

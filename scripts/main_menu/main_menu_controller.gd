@@ -45,7 +45,21 @@ var _chat_status_detail: String = ""
 @onready var _version_label: Label3D = get_node_or_null(
 	"MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/VersionLabel3D"
 ) as Label3D
-@onready var _feed_body: Label = get_node_or_null("OverlayLayer/JoinFeedPanel/Margin/VBox/FeedBody") as Label
+@onready var _feed_status_label: Label = get_node_or_null(
+	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedStatusLabel"
+) as Label
+@onready var _feed_hint_label: Label = get_node_or_null(
+	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedHintLabel"
+) as Label
+@onready var _feed_waiting_label: Label = get_node_or_null(
+	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedWaitingLabel"
+) as Label
+@onready var _feed_scroll: ScrollContainer = get_node_or_null(
+	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedScroll"
+) as ScrollContainer
+@onready var _feed_body: Label = get_node_or_null(
+	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedScroll/FeedBody"
+) as Label
 @onready var _join_prompt: Label = get_node_or_null("OverlayLayer/JoinPromptPanel/JoinPromptLabel") as Label
 
 func _ready() -> void:
@@ -117,25 +131,71 @@ func _refresh_chat_status_from_source() -> void:
 	)
 
 func _refresh_join_feed() -> void:
-	if _feed_body == null:
+	if not _join_feed_lines.is_empty():
+		_show_join_feed_lines()
 		return
 
-	if _join_feed_lines.is_empty():
-		var waiting_text: String = _format_waiting_text()
-		_feed_body.text = waiting_text
+	_show_waiting_state()
+
+func _show_join_feed_lines() -> void:
+	_set_status_labels_visible(false)
+	if _feed_waiting_label != null:
+		_feed_waiting_label.visible = false
+	if _feed_scroll != null:
+		_feed_scroll.visible = true
+	if _feed_body != null:
+		_feed_body.text = _join_strings(_join_feed_lines, "\n")
+	_scroll_feed_to_bottom()
+
+func _show_waiting_state() -> void:
+	if _feed_scroll != null:
+		_feed_scroll.visible = false
+
+	var normalized_status: String = _chat_status_text.strip_edges().to_lower()
+	if normalized_status == "twitch live":
+		_set_status_labels_visible(false)
+		if _feed_waiting_label != null:
+			_feed_waiting_label.visible = true
+			_feed_waiting_label.text = "Listening for !brains…"
 		return
 
-	_feed_body.text = _join_strings(_join_feed_lines, "\n")
+	if _feed_waiting_label != null:
+		_feed_waiting_label.visible = false
 
-func _format_waiting_text() -> String:
-	var lines: Array[String] = []
-	if not _chat_status_text.is_empty():
-		lines.append(_chat_status_text)
-	if not _chat_status_detail.is_empty():
-		lines.append(_chat_status_detail)
-	if lines.is_empty():
-		lines.append("Waiting for viewers to type !brains...")
-	return _join_strings(lines, "\n")
+	var headline: String = TwitchStatusFormatter.format_headline(_chat_status_text)
+	var hint: String = TwitchStatusFormatter.shorten_detail(_chat_status_detail)
+	if headline.is_empty() and hint.is_empty():
+		if _feed_waiting_label != null:
+			_feed_waiting_label.visible = true
+			_feed_waiting_label.text = "Waiting for viewers to type !brains…"
+		_set_status_labels_visible(false)
+		return
+
+	if _feed_status_label != null:
+		_feed_status_label.visible = not headline.is_empty()
+		_feed_status_label.text = headline
+	if _feed_hint_label != null:
+		_feed_hint_label.visible = not hint.is_empty()
+		_feed_hint_label.text = hint
+
+func _set_status_labels_visible(visible: bool) -> void:
+	if _feed_status_label != null:
+		_feed_status_label.visible = visible
+	if _feed_hint_label != null:
+		_feed_hint_label.visible = visible
+
+func _scroll_feed_to_bottom() -> void:
+	if _feed_scroll == null:
+		return
+	call_deferred("_apply_feed_scroll")
+
+func _apply_feed_scroll() -> void:
+	if _feed_scroll == null:
+		return
+	var scroll_bar: VScrollBar = _feed_scroll.get_v_scroll_bar()
+	if scroll_bar == null:
+		return
+	scroll_bar.value = scroll_bar.max_value
 
 func _join_strings(values: Array[String], separator: String) -> String:
 	var result: String = ""
