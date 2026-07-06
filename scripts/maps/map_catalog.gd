@@ -73,6 +73,15 @@ const ENTRIES: Array[Dictionary] = [
 		"status": STATUS_DISABLED,
 		"legacy_index": 6,
 	},
+	{
+		"id": "broken_bridge_candidate",
+		"display_name": "Broken Bridge Candidate",
+		"resource_path": "res://resources/maps/broken_bridge_candidate.tres",
+		"scene_path": "res://scenes/maps/broken_bridge_candidate.tscn",
+		"enabled": false,
+		"status": STATUS_PROTOTYPE,
+		"legacy_index": 7,
+	},
 ]
 
 

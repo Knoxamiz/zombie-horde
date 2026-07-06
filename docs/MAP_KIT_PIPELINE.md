@@ -210,3 +210,13 @@ These remain for future re-enable but are **not** in the playable roster:
 - `resources/maps/long_road.tres`, `broken_bridge.tres`, etc.
 
 Re-enable by setting `enabled: true` and `status: "playable"` in `MapCatalog` after validation.
+
+## Broken Bridge Candidate
+
+**Scene:** `scenes/maps/broken_bridge_candidate.tscn`  
+**Resource:** `resources/maps/broken_bridge_candidate.tres`  
+**Builder:** `scripts/maps/blueprint_map_arena.gd`
+
+Blueprint-kit candidate built from `bridge_lab_test`. Registered in `MapCatalog` as `prototype` / `enabled: false` — not in Streamer Settings.
+
+Open directly in Godot or run the scene (F6) to test without Map Lab UI.
