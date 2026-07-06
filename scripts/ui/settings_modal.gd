@@ -103,6 +103,7 @@ func _build() -> void:
 
 	_groups_columns = HBoxContainer.new()
 	_groups_columns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_groups_columns.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_groups_columns.add_theme_constant_override("separation", 18)
 	_scroll.add_child(_groups_columns)
 
@@ -172,9 +173,7 @@ func set_two_column_layout(enabled: bool) -> void:
 		_right_column.visible = enabled
 
 func add_group(title: String, column: int = 0) -> VBoxContainer:
-	var target_column: VBoxContainer = _left_column
-	if _two_column_layout and column > 0:
-		target_column = _right_column
+	var target_column: VBoxContainer = _right_column if column > 0 else _left_column
 
 	var group_panel := PanelContainer.new()
 	group_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL

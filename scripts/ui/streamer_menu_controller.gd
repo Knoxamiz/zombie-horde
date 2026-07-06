@@ -316,6 +316,8 @@ func _build_control_room_streamer_modal() -> void:
 	ControlRoomTheme.apply_label(_status_label, 17, ControlRoomTheme.COLOR_GREEN)
 	premium_group.add_child(_status_label)
 
+	_settings_modal.set_two_column_layout(true)
+
 func _make_slider_value_pair(value_label: Label) -> Dictionary:
 	var box := HBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
@@ -401,11 +403,8 @@ func _set_menu_open(open: bool) -> void:
 	_set_world_menu_visible(false)
 	if _settings_modal != null:
 		if open:
-			if expanded_modal:
-				_settings_modal.set_streamer_layout()
-			else:
-				_settings_modal.set_expanded_layout(false)
-				_settings_modal.set_two_column_layout(false)
+			_settings_modal.set_two_column_layout(true)
+			_settings_modal.set_expanded_layout(expanded_modal)
 			_settings_modal.show_modal()
 		else:
 			_settings_modal.hide_modal()
