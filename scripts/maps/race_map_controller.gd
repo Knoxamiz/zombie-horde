@@ -22,6 +22,7 @@ signal active_map_changed(map_index: int, display_name: String)
 @export var map_6_definition: RaceMapDefinition
 
 var active_map_index: int = -1
+var _prototype_test_map_id: String = ""
 var _race_world: Node3D
 var _active_map: Node3D
 var _zombie_manager: ZombieManager
@@ -37,12 +38,15 @@ func _ready() -> void:
 	apply_profile(profile)
 
 func apply_profile(profile: StreamerSettingsProfile) -> bool:
+	_prototype_test_map_id = ""
 	var requested_index: int = default_map_index
 	if profile != null:
 		requested_index = profile.selected_map_index
 	return set_active_map_index(requested_index)
 
+
 func set_active_map_index(requested_index: int) -> bool:
+	_prototype_test_map_id = ""
 	var allowed_index: int = get_allowed_map_index(requested_index)
 	var definition: RaceMapDefinition = get_map_definition(allowed_index)
 	if definition == null or definition.scene == null:
@@ -135,9 +139,136 @@ func is_map_available(index: int) -> bool:
 	return MapCatalog.is_playable_legacy_index(index)
 
 func get_active_map_name() -> String:
+	if not _prototype_test_map_id.is_empty():
+		var prototype_definition: RaceMapDefinition = MapCatalog.load_definition_by_id(_prototype_test_map_id)
+		if prototype_definition != null:
+			return prototype_definition.display_name
 	if active_map_index < 0:
 		return get_map_name(get_allowed_map_index(default_map_index))
 	return get_map_name(active_map_index)
+
+
+func is_prototype_test_load_active() -> bool:
+	return not _prototype_test_map_id.is_empty()
+
+
+func get_prototype_test_map_id() -> String:
+	return _prototype_test_map_id
+
+
+func load_prototype_map_for_test(map_id: String) -> bool:
+	if map_id.strip_edges().is_empty():
+		return _fallback_prototype_load_to_city_highway("empty map id")
+
+	var entry: Dictionary = MapCatalog.get_entry_by_id(map_id)
+	if entry.is_empty():
+		return _fallback_prototype_load_to_city_highway("unknown map id '%s'" % map_id)
+	if not MapCatalog.is_prototype_testable(entry):
+		return _fallback_prototype_load_to_city_highway(
+			"map '%s' is not an enabled=false prototype entry" % map_id
+		)
+
+	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(map_id)
+	if definition == null or definition.scene == null:
+		return _fallback_prototype_load_to_city_highway("missing definition or scene for '%s'" % map_id)
+	if _race_world == null:
+		return _fallback_prototype_load_to_city_highway("race world is not available")
+
+	return _load_map_definition_for_test(map_id, definition)
+
+
+func clear_prototype_test_load(restore_saved_map: bool = true) -> bool:
+	if _prototype_test_map_id.is_empty():
+		return false
+	_prototype_test_map_id = ""
+	if not restore_saved_map:
+		return true
+	return apply_profile(StreamerSettingsProfile.load_from_disk())
+
+
+func frame_spectator_camera_for_definition(
+	spectator_camera: SpectatorCameraController,
+	definition: RaceMapDefinition,
+	enable_mouse_look: bool = false
+) -> void:
+	if spectator_camera == null or definition == null:
+		return
+	var view: Dictionary = compute_race_camera_view_for_definition(definition)
+	spectator_camera.set_view(
+		view.get("position", Vector3.ZERO),
+		view.get("rotation_degrees", Vector3.ZERO),
+		enable_mouse_look
+	)
+
+
+static func compute_race_camera_view_for_definition(definition: RaceMapDefinition) -> Dictionary:
+	if definition == null:
+		return {"position": Vector3.ZERO, "rotation_degrees": Vector3.ZERO}
+
+	var spawn_z: float = definition.spawn_origin.z
+	var goal_z: float = definition.goal_position.z
+	var center_z: float = (spawn_z + goal_z) * 0.5
+	var bridge_length: float = abs(goal_z - spawn_z)
+	var side_offset: float = max(definition.lane_half_width + 6.0, 12.0)
+	var height: float = clampf(bridge_length * 0.2, 12.0, 20.0)
+	var back_offset: float = clampf(bridge_length * 0.38, 26.0, 46.0)
+	var camera_position := Vector3(-side_offset, height, spawn_z - back_offset)
+	var focus := Vector3(0.0, 0.9, center_z)
+
+	var look_transform := Transform3D(Basis(), camera_position).looking_at(focus, Vector3.UP)
+	var rotation_degrees: Vector3 = look_transform.basis.get_euler(EULER_ORDER_YXZ) * (180.0 / PI)
+	return {
+		"position": camera_position,
+		"rotation_degrees": rotation_degrees,
+		"focus": focus,
+	}
+
+
+func _load_map_definition_for_test(map_id: String, definition: RaceMapDefinition) -> bool:
+	var old_map: Node = _race_world.get_node_or_null("RoadArena")
+	if old_map != null:
+		old_map.name = "RoadArena_Unloading"
+		old_map.queue_free()
+
+	var new_map: Node3D = definition.scene.instantiate() as Node3D
+	if new_map == null:
+		return _fallback_prototype_load_to_city_highway("failed to instantiate scene for '%s'" % map_id)
+
+	new_map.name = "RoadArena"
+	_race_world.add_child(new_map)
+	_race_world.move_child(new_map, 0)
+	_active_map = new_map
+	_prototype_test_map_id = map_id
+	active_map_index = -1
+
+	_apply_map_geometry(definition, new_map)
+	_apply_gameplay_dimensions(definition)
+	_log_prototype_dimension_report(definition)
+	active_map_changed.emit(-1, definition.display_name)
+	print("RaceMapController: prototype test load succeeded for '%s'" % map_id)
+	return true
+
+
+func _fallback_prototype_load_to_city_highway(reason: String) -> bool:
+	push_warning("RaceMapController: prototype test load failed (%s); falling back to City Highway" % reason)
+	_prototype_test_map_id = ""
+	var profile: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
+	var saved_index: int = default_map_index if profile == null else profile.selected_map_index
+	return set_active_map_index(saved_index)
+
+
+func _log_prototype_dimension_report(definition: RaceMapDefinition) -> void:
+	if definition == null:
+		return
+	print("=== Prototype Map Dimension Report ===")
+	print("spawn_origin: %s" % definition.spawn_origin)
+	print("goal_position: %s" % definition.goal_position)
+	print("lane_half_width: %.2f" % definition.lane_half_width)
+	print("out_of_bounds_half_width: %.2f" % definition.out_of_bounds_half_width)
+	print("out_of_bounds_z: %.1f to %.1f" % [definition.out_of_bounds_min_z, definition.out_of_bounds_max_z])
+	print("hazard_placement_half_width: %.2f" % definition.hazard_placement_half_width)
+	print("hazard_placement_z: %.1f to %.1f" % [definition.hazard_placement_min_z, definition.hazard_placement_max_z])
+
 
 func _clamp_map_index(index: int) -> int:
 	return MapCatalog.resolve_playable_index(index)

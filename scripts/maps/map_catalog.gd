@@ -166,6 +166,30 @@ static func load_definition_for_legacy_index(legacy_index: int) -> RaceMapDefini
 	return _load_definition_from_entry(entry)
 
 
+static func load_definition_by_id(map_id: String) -> RaceMapDefinition:
+	var entry: Dictionary = get_entry_by_id(map_id)
+	if entry.is_empty():
+		push_warning("MapCatalog: unknown map id=%s" % map_id)
+		return null
+	return _load_definition_from_entry(entry)
+
+
+static func get_prototype_test_entries() -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	for entry in ENTRIES:
+		if is_prototype_testable(entry):
+			entries.append(entry.duplicate(true))
+	return entries
+
+
+static func is_prototype_testable(entry: Dictionary) -> bool:
+	if entry.is_empty():
+		return false
+	if bool(entry.get("enabled", false)):
+		return false
+	return str(entry.get("status", "")) == STATUS_PROTOTYPE
+
+
 static func get_playable_display_name(playable_index: int) -> String:
 	var entry: Dictionary = get_playable_entry(playable_index)
 	if entry.is_empty():

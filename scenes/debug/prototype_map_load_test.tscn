@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/prototype_map_load_test_runner.gd" id="1_runner"]
+
+[node name="PrototypeMapLoadTest" type="Node"]
+script = ExtResource("1_runner")
+prototype_map_id = "broken_bridge_candidate"
+auto_load_on_ready = true
+show_race_world = true
+frame_camera = true
