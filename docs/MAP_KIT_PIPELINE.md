@@ -237,3 +237,30 @@ In-editor visual inspection:
 4. Press Esc to restore the saved playable map
 
 This path does not modify Streamer Settings or saved map selection.
+
+### Real gameplay test (dev only)
+
+Headless CI (runs 5, 20, and 100 zombie scenarios):
+
+```bash
+godot --headless --path . -s res://scripts/debug/broken_bridge_real_gameplay_test.gd
+```
+
+Options:
+
+```bash
+# Single count
+godot --headless --path . -s res://scripts/debug/broken_bridge_real_gameplay_test.gd -- --zombies=20
+
+# Skip 100-zombie stress scenario
+godot --headless --path . -s res://scripts/debug/broken_bridge_real_gameplay_test.gd -- --skip-stress
+```
+
+In-editor visual inspection:
+
+1. Open `scenes/debug/broken_bridge_real_gameplay_test.tscn`
+2. Press F6
+3. Main game loads `broken_bridge_candidate`, starts a real race with 5 zombies
+4. Press Esc to restore the saved playable map
+
+The headless test also verifies OOB bounds, bridge void kill zones, camera framing, HUD wiring, and City Highway restore.

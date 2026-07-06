@@ -169,9 +169,10 @@ func build_gameplay_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 	)
 
 	var oob_half_width: float = max(blueprint.safe_path_width_meters * 0.75, blueprint.gameplay_lane_half_width + 4.0)
+	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 2.0
 	add_oob_zone(
-		Vector3(oob_half_width * 2.0, 6.0, abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 2.0),
-		Vector3(0.0, -2.0, (blueprint.spawn_z + blueprint.goal_z) * 0.5),
+		Vector3(oob_half_width * 2.0, 4.0, bridge_length),
+		Vector3(0.0, -5.5, (blueprint.spawn_z + blueprint.goal_z) * 0.5),
 		oob_zones
 	)
 

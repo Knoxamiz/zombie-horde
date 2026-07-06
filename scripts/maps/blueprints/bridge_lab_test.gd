@@ -29,10 +29,10 @@ static func create() -> MapBlueprint:
 	blueprint.seed = 8802
 	blueprint.rows = _build_rows()
 	blueprint.gameplay_plates = [
-		{"position": Vector3(0.0, 0.0, -32.0), "size": Vector3(8.0, 0.12, 14.0)},
-		{"position": Vector3(0.0, 0.0, -10.0), "size": Vector3(8.0, 0.12, 14.0)},
-		{"position": Vector3(0.0, 0.0, 12.0), "size": Vector3(8.0, 0.12, 14.0)},
-		{"position": Vector3(0.0, 0.0, 34.0), "size": Vector3(8.0, 0.12, 14.0)},
+		{
+			"position": Vector3(0.0, 0.0, (blueprint.spawn_z + blueprint.goal_z) * 0.5),
+			"size": Vector3(8.0, 0.12, abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size),
+		},
 	]
 	blueprint.hazard_zones = [
 		{"position": Vector3(-8.0, -1.0, -21.0), "size": Vector3(5.0, 4.0, 7.0)},
