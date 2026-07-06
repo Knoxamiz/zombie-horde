@@ -105,6 +105,12 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		_ensure_summary_panel()
 		return
+
+	var camera := _get_runtime_camera()
+	if camera != null:
+		camera.current = true
+	if show_summary_panel:
+		_ensure_summary_panel()
 	if rebuild_on_ready:
 		_rebuild_preview(false)
 
@@ -284,6 +290,9 @@ func _rebuild_preview(is_editor: bool) -> void:
 		"MapLab: built blueprint '%s' (%s)"
 		% [blueprint_id, _active_blueprint.display_name]
 	)
+
+	if not is_editor:
+		call_deferred("_frame_current_blueprint")
 
 
 func _clear_preview_root(immediate: bool) -> void:
@@ -469,6 +478,49 @@ func _resolve_blueprint(requested_id: String) -> MapBlueprint:
 			return BridgeLabTestBlueprint.create()
 		_:
 			return null
+
+
+func _get_runtime_camera() -> Camera3D:
+	return get_node_or_null("Camera3D") as Camera3D
+
+
+func _frame_current_blueprint() -> void:
+	var camera := _get_runtime_camera()
+	if camera == null:
+		return
+
+	var blueprint: MapBlueprint = _active_blueprint
+	if blueprint == null:
+		blueprint = _resolve_blueprint(blueprint_id)
+	if blueprint == null:
+		return
+
+	var center_z: float = (blueprint.spawn_z + blueprint.goal_z) * 0.5
+	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z)
+	var focus := Vector3(0.0, 0.9, center_z)
+
+	var deck_half_width: float = blueprint.safe_path_width_meters * 0.5 + 5.5
+	var side_offset: float = deck_half_width * 1.55
+	var back_offset: float = clampf(bridge_length * 0.38, 26.0, 46.0)
+	var height: float = clampf(bridge_length * 0.2, 12.0, 20.0)
+
+	camera.position = Vector3(
+		-side_offset,
+		height,
+		blueprint.spawn_z - back_offset
+	)
+	camera.look_at(focus, Vector3.UP)
+	camera.fov = 50.0
+	camera.near = 0.05
+	camera.far = 400.0
+
+	if not Engine.is_editor_hint():
+		camera.current = true
+
+	print(
+		"MapLab: framed camera at %s looking at %s (bridge length %.1fm)"
+		% [camera.position, focus, bridge_length]
+	)
 
 
 func _apply_debug_flags() -> void:
