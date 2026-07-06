@@ -793,17 +793,27 @@ func _populate_map_options() -> void:
 		return
 
 	_map_option.clear()
-	if _race_map_controller == null:
-		_map_option.add_item("City Highway", 0)
-		return
+	var map_count: int = RaceMapController.MAP_CATALOG.size()
+	if _race_map_controller != null:
+		map_count = _race_map_controller.get_map_count()
 
-	for map_index in range(_race_map_controller.get_map_count()):
-		if not _race_map_controller.is_map_available(map_index):
+	for map_index in range(map_count):
+		if not _is_map_option_available(map_index):
 			continue
-		_map_option.add_item(_race_map_controller.get_map_name(map_index), map_index)
+		_map_option.add_item(_get_map_display_name(map_index), map_index)
 
 	if _map_option.get_item_count() <= 0:
 		_map_option.add_item("City Highway", 0)
+
+func _is_map_option_available(map_index: int) -> bool:
+	if _race_map_controller != null:
+		return _race_map_controller.is_map_available(map_index)
+	return RaceMapController.is_catalog_map_available(map_index, feature_config)
+
+func _get_map_display_name(map_index: int) -> String:
+	if _race_map_controller != null:
+		return _race_map_controller.get_map_name(map_index)
+	return RaceMapController.get_catalog_map_name(map_index)
 
 func _select_map_option(map_index: int) -> void:
 	if _map_option == null or _map_option.get_item_count() <= 0:
@@ -826,8 +836,13 @@ func _get_map_index_for_option(option_index: int) -> int:
 
 func _get_selected_map_name() -> String:
 	if _race_map_controller != null:
-		return _race_map_controller.get_map_name(_race_map_controller.get_allowed_map_index(_profile.selected_map_index))
-	return "City Highway"
+		return _race_map_controller.get_map_name(
+			_race_map_controller.get_allowed_map_index(_profile.selected_map_index)
+		)
+	var map_index: int = _profile.selected_map_index
+	if RaceMapController.get_catalog_definition(map_index) == null:
+		map_index = 0
+	return RaceMapController.get_catalog_map_name(map_index)
 
 func _has_premium_access() -> bool:
 	return feature_config != null and feature_config.has_premium_access()

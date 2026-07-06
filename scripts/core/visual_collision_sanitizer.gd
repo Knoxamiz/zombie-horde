@@ -27,6 +27,8 @@ func sanitize() -> void:
 func _sanitize_node(node: Node) -> void:
 	if node == self:
 		return
+	if node.name == "Collision":
+		return
 
 	var collision_object: CollisionObject3D = node as CollisionObject3D
 	if collision_object != null and (disable_area_colliders or not (collision_object is Area3D)):

@@ -17,6 +17,7 @@ script = ExtResource("1_arena")
 
 [node name="VisualCollisionSanitizer" type="Node" parent="MapDressing"]
 script = ExtResource("2_sanitizer")
+root_path = NodePath("../CoreRoad/VisualKit")
 
 [node name="StartBanner" type="MeshInstance3D" parent="MapDressing"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.8, -69.6)

@@ -239,7 +239,11 @@ func _compose_gap_visuals(gaps: Array[Dictionary], edge_x: float, heavy: bool) -
 		var z0: float = float(gap["z0"])
 		var z1: float = float(gap["z1"])
 		var gap_center: float = (z0 + z1) * 0.5
-		var lane_offsets: Array[float] = [-8.0, 0.0, 8.0] if _style == MapStyle.LONG_ROAD else [-4.0, 0.0, 4.0]
+		var lane_offsets: PackedFloat32Array = (
+			PackedFloat32Array([-8.0, 0.0, 8.0])
+			if _style == MapStyle.LONG_ROAD
+			else PackedFloat32Array([-4.0, 0.0, 4.0])
+		)
 
 		for edge_z in [z0 - TILE_HALF, z1 + TILE_HALF]:
 			for x in lane_offsets:

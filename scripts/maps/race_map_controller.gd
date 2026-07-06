@@ -21,6 +21,16 @@ signal active_map_changed(map_index: int, display_name: String)
 @export var map_5_definition: RaceMapDefinition
 @export var map_6_definition: RaceMapDefinition
 
+const MAP_CATALOG: Array = [
+	preload("res://resources/maps/quarantine_boulevard.tres"),
+	preload("res://resources/maps/long_road.tres"),
+	preload("res://resources/maps/broken_bridge.tres"),
+	preload("res://resources/maps/industrial_yard.tres"),
+	preload("res://resources/maps/suburban_evac_route.tres"),
+	preload("res://resources/maps/tunnel_checkpoint.tres"),
+	preload("res://resources/maps/rooftop_causeway.tres"),
+]
+
 var active_map_index: int = -1
 var _race_world: Node3D
 var _active_map: Node3D
@@ -85,7 +95,25 @@ func get_allowed_map_index(requested_index: int) -> int:
 	return _clamp_map_index(default_map_index)
 
 func get_map_count() -> int:
-	return 7
+	return MAP_CATALOG.size()
+
+static func get_catalog_definition(index: int) -> RaceMapDefinition:
+	var clamped_index: int = int(clamp(index, 0, MAP_CATALOG.size() - 1))
+	return MAP_CATALOG[clamped_index] as RaceMapDefinition
+
+static func is_catalog_map_available(index: int, feature_config: FeatureAccessConfig) -> bool:
+	var definition: RaceMapDefinition = get_catalog_definition(index)
+	if definition == null:
+		return false
+	if not definition.premium_only:
+		return true
+	return feature_config != null and feature_config.can_use_map_selection()
+
+static func get_catalog_map_name(index: int) -> String:
+	var definition: RaceMapDefinition = get_catalog_definition(index)
+	if definition == null:
+		return "Race Map"
+	return definition.display_name
 
 func get_map_name(index: int) -> String:
 	var definition: RaceMapDefinition = get_map_definition(index)
@@ -100,6 +128,12 @@ func get_map_scene(index: int) -> PackedScene:
 	return definition.scene
 
 func get_map_definition(index: int) -> RaceMapDefinition:
+	var definition: RaceMapDefinition = _get_exported_map_definition(index)
+	if definition != null:
+		return definition
+	return get_catalog_definition(index)
+
+func _get_exported_map_definition(index: int) -> RaceMapDefinition:
 	match _clamp_map_index(index):
 		0:
 			return map_0_definition
