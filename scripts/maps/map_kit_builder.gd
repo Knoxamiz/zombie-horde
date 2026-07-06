@@ -84,11 +84,12 @@ func build_visual_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 		for column_index in range(blueprint.visual_width_tiles):
 			var cell: Dictionary = blueprint.get_cell(row_index, column_index)
 			var cell_type: String = str(cell.get("type", CELL_VOID))
-			if cell_type == CELL_VOID:
+			if cell_type == CELL_VOID or bool(cell.get("skip_visual", false)):
 				continue
 
+			var base_x: float = float(cell.get("placement_x", blueprint.column_to_x(column_index)))
 			var position: Vector3 = Vector3(
-				blueprint.column_to_x(column_index) + float(cell.get("offset_x", 0.0)),
+				base_x + float(cell.get("offset_x", 0.0)),
 				float(cell.get("offset_y", 0.0)),
 				blueprint.row_to_z(row_index) + float(cell.get("offset_z", 0.0))
 			)
@@ -465,7 +466,8 @@ func _build_water_void(background: Node3D, blueprint: MapBlueprint) -> void:
 	var water := MeshInstance3D.new()
 	water.name = "WaterVoid"
 	var mesh := BoxMesh.new()
-	var length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 3.0
+	var length_scale: float = float(blueprint.dressing_rules.get("void_length_scale", 1.0))
+	var length: float = (abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 3.0) * length_scale
 	var width_scale: float = float(blueprint.dressing_rules.get("void_width_scale", 0.0))
 	if width_scale <= 0.0:
 		width_scale = 6.0 if bool(blueprint.dressing_rules.get("narrow_bridge", false)) else 4.0
@@ -474,12 +476,27 @@ func _build_water_void(background: Node3D, blueprint: MapBlueprint) -> void:
 	var void_depth: float = float(blueprint.dressing_rules.get("void_depth", -6.0))
 	water.position = Vector3(0.0, void_depth, (blueprint.spawn_z + blueprint.goal_z) * 0.5)
 	var water_mat := StandardMaterial3D.new()
-	water_mat.albedo_color = Color(0.01, 0.04, 0.08, 0.98)
+	water_mat.albedo_color = Color(0.005, 0.02, 0.05, 0.99)
 	water_mat.emission_enabled = true
-	water_mat.emission = Color(0.01, 0.05, 0.1)
-	water_mat.emission_energy_multiplier = 0.22
+	water_mat.emission = Color(0.01, 0.04, 0.08)
+	water_mat.emission_energy_multiplier = 0.18
 	water.material_override = water_mat
 	background.add_child(water)
+
+	if bool(blueprint.dressing_rules.get("deep_void", false)):
+		var deep := MeshInstance3D.new()
+		deep.name = "DeepVoid"
+		var deep_mesh := BoxMesh.new()
+		deep_mesh.size = Vector3(mesh.size.x * 1.08, 0.12, mesh.size.z * 1.05)
+		deep.mesh = deep_mesh
+		deep.position = Vector3(0.0, void_depth - 2.5, water.position.z)
+		var deep_mat := StandardMaterial3D.new()
+		deep_mat.albedo_color = Color(0.002, 0.008, 0.02, 1.0)
+		deep_mat.emission_enabled = true
+		deep_mat.emission = Color(0.004, 0.01, 0.02)
+		deep_mat.emission_energy_multiplier = 0.1
+		deep.material_override = deep_mat
+		background.add_child(deep)
 
 
 func _resolve_cell_rotation(cell: Dictionary, column_index: int, blueprint: MapBlueprint) -> float:
