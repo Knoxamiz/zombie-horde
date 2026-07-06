@@ -2,29 +2,39 @@
 extends Node3D
 
 @export_group("Blueprint")
-@export var blueprint_id: String = "bridge_lab_test"
+@export var blueprint_id: String = "bridge_lab_test":
+	set(value):
+		blueprint_id = value
+		if Engine.is_editor_hint():
+			call_deferred("_request_editor_rebuild")
 
 @export_group("Editor Preview")
-@export var rebuild_preview: bool = false:
-	set(value):
-		if not value:
-			return
-		rebuild_preview = false
-		if Engine.is_editor_hint():
-			call_deferred("_rebuild_preview", true)
+@export_tool_button("Rebuild Preview", "editor_rebuild_preview")
+var _editor_rebuild_preview_button
 
-@export var clear_preview: bool = false:
-	set(value):
-		if not value:
-			return
-		clear_preview = false
-		if Engine.is_editor_hint():
-			call_deferred("_clear_preview_root", true)
+@export_tool_button("Clear Preview", "editor_clear_preview")
+var _editor_clear_preview_button
+
+@export var auto_preview_in_editor: bool = true
 
 @export_group("Preview Display")
-@export var debug_visible: bool = true
-@export var show_safe_floor: bool = false
-@export var show_hazards: bool = true
+@export var debug_visible: bool = true:
+	set(value):
+		debug_visible = value
+		if Engine.is_editor_hint():
+			call_deferred("_request_editor_rebuild")
+
+@export var show_safe_floor: bool = false:
+	set(value):
+		show_safe_floor = value
+		if Engine.is_editor_hint():
+			call_deferred("_request_editor_rebuild")
+
+@export var show_hazards: bool = true:
+	set(value):
+		show_hazards = value
+		if Engine.is_editor_hint():
+			call_deferred("_request_editor_rebuild")
 
 @export_group("Runtime")
 @export var rebuild_on_ready: bool = true
@@ -34,6 +44,13 @@ var _active_blueprint: MapBlueprint
 var _map_root: Node3D
 var _preview_root: Node3D
 var _origin_marker: Node3D
+var _editor_rebuild_pending: bool = false
+
+
+func _enter_tree() -> void:
+	if not Engine.is_editor_hint():
+		return
+	call_deferred("_maybe_auto_preview_in_editor")
 
 
 func _ready() -> void:
@@ -64,8 +81,47 @@ func _unhandled_input(event: InputEvent) -> void:
 			_rebuild_preview(false)
 
 
+func editor_rebuild_preview() -> void:
+	if not Engine.is_editor_hint():
+		return
+	_rebuild_preview(true)
+
+
+func editor_clear_preview() -> void:
+	if not Engine.is_editor_hint():
+		return
+	_clear_preview_root(true)
+
+
 func rebuild_current_blueprint() -> void:
 	_rebuild_preview(Engine.is_editor_hint())
+
+
+func _request_editor_rebuild() -> void:
+	if not Engine.is_editor_hint():
+		return
+	if _editor_rebuild_pending:
+		return
+	_editor_rebuild_pending = true
+	call_deferred("_run_pending_editor_rebuild")
+
+
+func _run_pending_editor_rebuild() -> void:
+	_editor_rebuild_pending = false
+	if not Engine.is_editor_hint():
+		return
+	_rebuild_preview(true)
+
+
+func _maybe_auto_preview_in_editor() -> void:
+	if not Engine.is_editor_hint() or not auto_preview_in_editor:
+		return
+	_preview_root = _get_preview_root()
+	if _preview_root == null:
+		return
+	if _preview_root.get_child_count() > 0:
+		return
+	_rebuild_preview(true)
 
 
 func _rebuild_preview(is_editor: bool) -> void:
