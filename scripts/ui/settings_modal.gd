@@ -44,7 +44,6 @@ func _build() -> void:
 	add_child(_layout_shell)
 
 	_panel = PanelContainer.new()
-	_panel.layout_mode = Control.LAYOUT_MODE_CONTAINER
 	_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_panel.custom_minimum_size = Vector2(820, 680)
@@ -55,7 +54,6 @@ func _build() -> void:
 	_layout_shell.add_child(_panel)
 
 	var margin := MarginContainer.new()
-	margin.layout_mode = Control.LAYOUT_MODE_CONTAINER
 	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margin.add_theme_constant_override("margin_left", 26)
@@ -65,14 +63,12 @@ func _build() -> void:
 	_panel.add_child(margin)
 
 	_content_box = VBoxContainer.new()
-	_content_box.layout_mode = Control.LAYOUT_MODE_CONTAINER
 	_content_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_content_box.add_theme_constant_override("separation", 10)
 	margin.add_child(_content_box)
 
 	var header := HBoxContainer.new()
-	header.layout_mode = Control.LAYOUT_MODE_CONTAINER
 	header.add_theme_constant_override("separation", 12)
 	_content_box.add_child(header)
 
@@ -96,21 +92,18 @@ func _build() -> void:
 	header.add_child(close_button)
 
 	_scroll = ScrollContainer.new()
-	_scroll.layout_mode = Control.LAYOUT_MODE_CONTAINER
 	_scroll.custom_minimum_size = Vector2(0, 520)
 	_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.horizontal_scroll_mode = 0
 	_content_box.add_child(_scroll)
 
 	_groups_box = VBoxContainer.new()
-	_groups_box.layout_mode = Control.LAYOUT_MODE_CONTAINER
 	_groups_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_groups_box.add_theme_constant_override("separation", 12)
 	_scroll.add_child(_groups_box)
 
 	var footer := HBoxContainer.new()
-	footer.layout_mode = Control.LAYOUT_MODE_CONTAINER
 	footer.add_theme_constant_override("separation", 12)
 	_content_box.add_child(footer)
 
@@ -156,7 +149,6 @@ func clear_groups() -> void:
 
 func add_group(title: String) -> VBoxContainer:
 	var group_panel := PanelContainer.new()
-	group_panel.layout_mode = Control.LAYOUT_MODE_CONTAINER
 	group_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	group_panel.add_theme_stylebox_override(
 		"panel",
@@ -165,7 +157,6 @@ func add_group(title: String) -> VBoxContainer:
 	_groups_box.add_child(group_panel)
 
 	var margin := MarginContainer.new()
-	margin.layout_mode = Control.LAYOUT_MODE_CONTAINER
 	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	margin.add_theme_constant_override("margin_left", 16)
 	margin.add_theme_constant_override("margin_top", 10)
@@ -174,7 +165,6 @@ func add_group(title: String) -> VBoxContainer:
 	group_panel.add_child(margin)
 
 	var group_box := VBoxContainer.new()
-	group_box.layout_mode = Control.LAYOUT_MODE_CONTAINER
 	group_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	group_box.add_theme_constant_override("separation", 6)
 	margin.add_child(group_box)
