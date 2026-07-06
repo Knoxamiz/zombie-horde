@@ -50,6 +50,7 @@ const SCENE_CONTAINER_GREEN := preload(
 const MAT_SPAWN := preload("res://assets/materials/spawn_zone.tres")
 const MAT_GOAL := preload("res://assets/materials/goal_zone.tres")
 const MAT_CONCRETE := preload("res://assets/materials/base_concrete.tres")
+const SCRIPT_BRIDGE_VOID_KILL := preload("res://scripts/maps/bridge_void_kill_zone.gd")
 
 var _root: Node3D
 var _collision_root: Node3D
@@ -115,6 +116,87 @@ func build_continuous_play_surface(
 	)
 
 
+func build_broken_bridge_play_surface(
+	segments: Array[Dictionary],
+	gaps: Array[Dictionary],
+	path_half_width: float,
+	y: float = 0.0,
+	thickness: float = 0.12
+) -> void:
+	var gap_crossing_half_width: float = path_half_width * 0.72
+	for segment_index in range(segments.size()):
+		var segment: Dictionary = segments[segment_index]
+		var length: float = float(segment["z1"]) - float(segment["z0"])
+		var center_z: float = (float(segment["z0"]) + float(segment["z1"])) * 0.5
+		_add_invisible_collision_box(
+			"BridgeDeck_%d" % segment_index,
+			Vector3(path_half_width * 2.0, thickness, length),
+			Vector3(0.0, y, center_z)
+		)
+
+	for gap_index in range(gaps.size()):
+		var gap: Dictionary = gaps[gap_index]
+		var length: float = float(gap["z1"]) - float(gap["z0"])
+		var center_z: float = (float(gap["z0"]) + float(gap["z1"])) * 0.5
+		_add_invisible_collision_box(
+			"BridgeGapCrossing_%d" % gap_index,
+			Vector3(gap_crossing_half_width * 2.0, thickness, length),
+			Vector3(0.0, y, center_z)
+		)
+
+
+func build_bridge_fall_zones(
+	segments: Array[Dictionary],
+	gaps: Array[Dictionary],
+	path_half_width: float,
+	void_half_width: float
+) -> void:
+	var kill_height: float = 8.0
+	var kill_y: float = -2.5
+	var lateral_half: float = max(void_half_width * 0.5, path_half_width + 8.0)
+	var gap_crossing_half_width: float = path_half_width * 0.72
+
+	for segment in segments:
+		var z0: float = float(segment["z0"])
+		var z1: float = float(segment["z1"])
+		var length: float = z1 - z0
+		var center_z: float = (z0 + z1) * 0.5
+		_add_bridge_side_void_kill(
+			path_half_width, lateral_half, length + 2.0, center_z, kill_y, kill_height
+		)
+
+	for gap in gaps:
+		var z0: float = float(gap["z0"])
+		var z1: float = float(gap["z1"])
+		var length: float = z1 - z0
+		var center_z: float = (z0 + z1) * 0.5
+		_add_bridge_side_void_kill(
+			gap_crossing_half_width, lateral_half, length + 1.0, center_z, kill_y, kill_height
+		)
+
+
+func _add_bridge_side_void_kill(
+	inner_half_width: float,
+	outer_half_width: float,
+	length: float,
+	center_z: float,
+	kill_y: float,
+	kill_height: float
+) -> void:
+	var side_width: float = outer_half_width - inner_half_width
+	if side_width <= 0.5:
+		return
+	var side_center_x: float = inner_half_width + side_width * 0.5
+	_add_bridge_void_kill_box(
+		Vector3(side_width, kill_height, length),
+		Vector3(-side_center_x, kill_y, center_z)
+	)
+	_add_bridge_void_kill_box(
+		Vector3(side_width, kill_height, length),
+		Vector3(side_center_x, kill_y, center_z)
+	)
+
+
 func compose_map(segments: Array[Dictionary], gaps: Array[Dictionary]) -> void:
 	match _style:
 		MapStyle.BROKEN_BRIDGE:
@@ -167,14 +249,15 @@ func _compose_long_road(segments: Array[Dictionary], gaps: Array[Dictionary]) ->
 
 
 func _compose_broken_bridge(segments: Array[Dictionary], gaps: Array[Dictionary]) -> void:
-	var deck_columns: PackedFloat32Array = PackedFloat32Array([-4.0, 0.0, 4.0])
-	var edge_x: float = 6.2
-	var light_x: float = 11.0
+	var deck_columns: PackedFloat32Array = PackedFloat32Array([0.0])
+	var side_column: float = 4.0
+	var edge_x: float = 5.4
+	var light_x: float = 13.5
 	var damage_clusters: Array[Dictionary] = [
-		{"z": -62.0, "radius": 10.0, "side_loss": 0.55, "crack": 0.7},
-		{"z": -24.0, "radius": 12.0, "side_loss": 0.75, "crack": 0.85},
-		{"z": 16.0, "radius": 11.0, "side_loss": 0.65, "crack": 0.8},
-		{"z": 58.0, "radius": 9.0, "side_loss": 0.5, "crack": 0.65},
+		{"z": -62.0, "radius": 10.0, "side_loss": 0.82, "crack": 0.78},
+		{"z": -24.0, "radius": 12.0, "side_loss": 0.9, "crack": 0.92},
+		{"z": 16.0, "radius": 11.0, "side_loss": 0.86, "crack": 0.88},
+		{"z": 58.0, "radius": 9.0, "side_loss": 0.8, "crack": 0.74},
 	]
 
 	for segment in segments:
@@ -182,17 +265,90 @@ func _compose_broken_bridge(segments: Array[Dictionary], gaps: Array[Dictionary]
 			float(segment["z0"]),
 			float(segment["z1"]),
 			deck_columns,
-			0.12,
-			0.42,
+			0.16,
+			0.0,
 			true,
 			damage_clusters
 		)
+		_place_bridge_side_shreds(
+			float(segment["z0"]),
+			float(segment["z1"]),
+			side_column,
+			damage_clusters
+		)
 
-	_compose_gap_visuals(gaps, edge_x, true)
+	_compose_bridge_gap_visuals(gaps)
+	_place_bridge_lane_guides(segments, gaps)
 	_place_bridge_edge_rails(segments, edge_x)
-	_place_street_lights_authored(-70.0, 70.0, light_x, 22.0, 7.0)
+	_place_street_lights_authored(-70.0, 70.0, light_x, 24.0, 6.0)
 	_place_bridge_void_props(damage_clusters)
 	_place_deck_supports(segments, edge_x)
+
+
+func _place_bridge_side_shreds(
+	z_start: float,
+	z_end: float,
+	side_x: float,
+	damage_clusters: Array[Dictionary]
+) -> void:
+	var z: float = z_start + TILE_HALF
+	while z < z_end - TILE_HALF:
+		for side in [-1.0, 1.0]:
+			var x: float = side * side_x
+			if _should_skip_tile(x, z, PackedFloat32Array([0.0, side_x]), 0.68, damage_clusters):
+				continue
+			if _hashf(int(z * 2.0), int(x * 5.0) + 101) > 0.42:
+				var variant: StreetVariant = (
+					StreetVariant.CRACK1
+					if _hashf(int(z), int(x)) > 0.55
+					else StreetVariant.CRACK2
+				)
+				_place_street_tile(x, 0.0, z, variant)
+		z += TILE_SIZE
+
+
+func _compose_bridge_gap_visuals(gaps: Array[Dictionary]) -> void:
+	for gap_index in range(gaps.size()):
+		var gap: Dictionary = gaps[gap_index]
+		var z0: float = float(gap["z0"])
+		var z1: float = float(gap["z1"])
+		var gap_center: float = (z0 + z1) * 0.5
+
+		for edge_z in [z0 - TILE_HALF, z1 + TILE_HALF]:
+			var lip_variant: StreetVariant = (
+				StreetVariant.CRACK1 if _hashf(int(edge_z), 41 + gap_index) > 0.5 else StreetVariant.CRACK2
+			)
+			_place_street_tile(0.0, 0.0, edge_z, lip_variant)
+			if _hashf(int(edge_z + gap_index), 83) > 0.35:
+				_place_street_tile(-4.0, 0.0, edge_z, StreetVariant.CRACK2)
+			if _hashf(int(edge_z - gap_index), 89) > 0.35:
+				_place_street_tile(4.0, 0.0, edge_z, StreetVariant.CRACK1)
+
+		for guide_z in [z0 + 1.0, gap_center, z1 - 1.0]:
+			_place_cone(guide_z, -2.0)
+			_place_cone(guide_z, 2.0)
+
+		if gap_index % 2 == 0:
+			_place_prop(SCENE_PALLET_BROKEN, Vector3(-16.0, 0.0, gap_center + 1.2), 1.15, 36.0)
+		else:
+			_place_prop(SCENE_CINDER_BLOCK, Vector3(16.5, 0.0, gap_center - 1.4), 1.1, -14.0)
+
+
+func _place_bridge_lane_guides(segments: Array[Dictionary], gaps: Array[Dictionary]) -> void:
+	for segment in segments:
+		var z: float = float(segment["z0"]) + 4.0
+		var z_end: float = float(segment["z1"]) - 3.0
+		while z < z_end:
+			if _hashf(int(z), 97) > 0.22:
+				_place_cone(z, -2.4)
+				_place_cone(z + 1.4, 2.4)
+			z += 10.0 + _hashf(int(z), 7) * 3.0
+
+	for gap in gaps:
+		var z0: float = float(gap["z0"])
+		var z1: float = float(gap["z1"])
+		_place_traffic_barrier(z0 + 0.6, -3.2, false)
+		_place_traffic_barrier(z1 - 0.6, 3.2, true)
 
 
 func _tile_authored_range(
@@ -286,14 +442,16 @@ func _place_edge_guides(
 
 func _place_bridge_edge_rails(segments: Array[Dictionary], edge_x: float) -> void:
 	for segment in segments:
-		var z: float = float(segment["z0"]) + 1.5
-		var z_end: float = float(segment["z1"]) - 1.0
+		var z: float = float(segment["z0"]) + 2.0
+		var z_end: float = float(segment["z1"]) - 1.5
 		while z < z_end:
-			_place_traffic_barrier(z, -edge_x, false)
-			_place_traffic_barrier(z + 1.8, edge_x, true)
-			if _hashf(int(z), 71) > 0.55:
-				_place_plastic_barrier(z + 3.5, -edge_x - 0.8)
-			z += 6.0 + _hashf(int(z), 5) * 1.5
+			if _hashf(int(z), 71) > 0.38:
+				_place_traffic_barrier(z, -edge_x, false)
+			if _hashf(int(z + 3.0), 73) > 0.42:
+				_place_traffic_barrier(z + 2.4, edge_x, true)
+			if _hashf(int(z), 75) > 0.7:
+				_place_plastic_barrier(z + 4.0, -edge_x - 0.6)
+			z += 7.5 + _hashf(int(z), 5) * 2.0
 
 
 func _place_street_lights_authored(
@@ -316,17 +474,20 @@ func _place_street_lights_authored(
 func _place_bridge_void_props(damage_clusters: Array[Dictionary]) -> void:
 	_place_scattered_props(
 		[
-			{"scene": SCENE_CONTAINER_RED, "pos": Vector3(-22.0, 0.0, -36.0), "scale": 1.05, "yaw": 18.0},
-			{"scene": SCENE_CONTAINER_GREEN, "pos": Vector3(23.0, 0.0, 28.0), "scale": 1.0, "yaw": -16.0},
-			{"scene": SCENE_PALLET_BROKEN, "pos": Vector3(-19.0, 0.0, 44.0), "scale": 1.25, "yaw": 40.0},
+			{"scene": SCENE_CONTAINER_RED, "pos": Vector3(-24.0, 0.0, -36.0), "scale": 1.0, "yaw": 18.0},
+			{"scene": SCENE_CONTAINER_GREEN, "pos": Vector3(25.0, 0.0, 28.0), "scale": 0.95, "yaw": -16.0},
+			{"scene": SCENE_PALLET_BROKEN, "pos": Vector3(-21.0, 0.0, 44.0), "scale": 1.15, "yaw": 40.0},
+			{"scene": SCENE_PIPES, "pos": Vector3(22.0, 0.0, -52.0), "scale": 1.25, "yaw": -78.0},
 		]
 	)
 	for cluster in damage_clusters:
 		var cluster_z: float = float(cluster["z"])
-		if _hashf(int(cluster_z), 29) > 0.4:
-			_place_prop(SCENE_CINDER_BLOCK, Vector3(-14.5, 0.0, cluster_z + 2.0), 1.1, 12.0)
-		if _hashf(int(cluster_z), 31) > 0.45:
-			_place_prop(SCENE_CINDER_BLOCK, Vector3(14.5, 0.0, cluster_z - 2.5), 1.1, -8.0)
+		if _hashf(int(cluster_z), 29) > 0.35:
+			_place_prop(SCENE_CINDER_BLOCK, Vector3(-17.0, 0.0, cluster_z + 3.0), 1.05, 12.0)
+		if _hashf(int(cluster_z), 31) > 0.4:
+			_place_prop(SCENE_CINDER_BLOCK, Vector3(17.5, 0.0, cluster_z - 2.0), 1.05, -8.0)
+		if _hashf(int(cluster_z), 33) > 0.55:
+			_place_prop(SCENE_PALLET_BROKEN, Vector3(-18.5, 0.0, cluster_z - 1.5), 1.1, 22.0)
 
 
 func _place_deck_supports(segments: Array[Dictionary], edge_x: float) -> void:
@@ -464,6 +625,19 @@ func _add_invisible_collision_box(box_name: String, size: Vector3, position: Vec
 	shape.shape = box
 	body.add_child(shape)
 	_collision_root.add_child(body)
+
+
+func _add_bridge_void_kill_box(size: Vector3, position: Vector3) -> void:
+	var area := Area3D.new()
+	area.name = "BridgeVoidKill"
+	area.position = position
+	area.set_script(SCRIPT_BRIDGE_VOID_KILL)
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = size
+	shape.shape = box
+	area.add_child(shape)
+	_collision_root.add_child(area)
 
 
 func _add_marker_box(box_name: String, size: Vector3, position: Vector3, material: Material) -> void:

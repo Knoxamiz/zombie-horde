@@ -1,8 +1,8 @@
 class_name BrokenBridgeArena
 extends Node3D
 
-const PLAY_WIDTH: float = 32.0
-const VISUAL_WIDTH: float = 12.0
+const SAFE_PATH_HALF_WIDTH: float = 9.0
+const VISUAL_WIDTH: float = 8.0
 const VOID_WIDTH: float = 64.0
 const TRACK_LENGTH: float = 192.0
 const SPAWN_Z: float = -84.0
@@ -31,6 +31,7 @@ func _ready() -> void:
 	_kit.attach(self, RaceMapKit.MapStyle.BROKEN_BRIDGE, 8802)
 	_kit.build_environment()
 	_kit.build_water(VOID_WIDTH, TRACK_LENGTH)
-	_kit.build_continuous_play_surface(PLAY_WIDTH, -84.0, 84.0)
+	_kit.build_broken_bridge_play_surface(_segments, _gaps, SAFE_PATH_HALF_WIDTH)
+	_kit.build_bridge_fall_zones(_segments, _gaps, SAFE_PATH_HALF_WIDTH, VOID_WIDTH)
 	_kit.compose_map(_segments, _gaps)
 	_kit.build_markers(VISUAL_WIDTH, SPAWN_Z, GOAL_Z, -76.0, 76.0)
