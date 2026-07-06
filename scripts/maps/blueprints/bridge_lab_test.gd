@@ -1,11 +1,15 @@
 class_name BridgeLabTestBlueprint
 extends RefCounted
 
-const _DECK_SHOULDER_X: float = 3.85
-const _EDGE_RAIL_X: float = 5.15
-const _GUIDE_CONE_X: float = 2.25
-const _VOID_PROP_X: float = 10.5
+const _INNER_WING_X: float = 2.65
+const _PAD_WING_X: float = 3.15
+const _GAP_LIP_X: float = 4.35
+const _EDGE_RAIL_X: float = 5.75
+const _GUIDE_CONE_X: float = 2.95
+const _VOID_PROP_X: float = 11.5
 const _CRACK_ROWS: Array[int] = [3, 6, 9]
+const _PAD_ROWS: Array[int] = [0, 1, 10, 11]
+const _RAIL_ROWS: Array[int] = [1, 4, 8, 11]
 
 
 static func create() -> MapBlueprint:
@@ -43,29 +47,29 @@ static func create() -> MapBlueprint:
 		"center_guides": true,
 		"narrow_bridge": true,
 		"deep_void": true,
-		"void_width_scale": 14.0,
-		"void_length_scale": 1.15,
-		"void_depth": -8.0,
+		"void_darkness": 1.35,
+		"void_width_scale": 18.0,
+		"void_length_scale": 1.28,
+		"void_depth": -9.5,
 	}
 	blueprint.validation_requirements = {"requires_safe_route": true}
 	return blueprint
 
 
 static func _build_rows() -> Array[Dictionary]:
-	# Center column = continuous deck. Side columns are mostly open void with authored wings/rails.
 	var pattern: Array[Array] = [
 		[MapBlueprint.CELL_BROKEN_EDGE, MapBlueprint.CELL_SPAWN, MapBlueprint.CELL_BROKEN_EDGE],
-		[MapBlueprint.CELL_VOID, MapBlueprint.CELL_SAFE_ROAD, MapBlueprint.CELL_VOID],
 		[MapBlueprint.CELL_LEFT_RAIL, MapBlueprint.CELL_SAFE_ROAD, MapBlueprint.CELL_RIGHT_RAIL],
-		[MapBlueprint.CELL_GAP_VISUAL, MapBlueprint.CELL_CRACK_ROAD, MapBlueprint.CELL_GAP_VISUAL],
-		[MapBlueprint.CELL_VOID, MapBlueprint.CELL_SAFE_ROAD, MapBlueprint.CELL_VOID],
-		[MapBlueprint.CELL_CONE, MapBlueprint.CELL_SAFE_ROAD, MapBlueprint.CELL_CONE],
-		[MapBlueprint.CELL_GAP_VISUAL, MapBlueprint.CELL_CRACK_ROAD, MapBlueprint.CELL_GAP_VISUAL],
-		[MapBlueprint.CELL_DEBRIS, MapBlueprint.CELL_SAFE_ROAD, MapBlueprint.CELL_VOID],
 		[MapBlueprint.CELL_BROKEN_EDGE, MapBlueprint.CELL_SAFE_ROAD, MapBlueprint.CELL_BROKEN_EDGE],
 		[MapBlueprint.CELL_GAP_VISUAL, MapBlueprint.CELL_CRACK_ROAD, MapBlueprint.CELL_GAP_VISUAL],
 		[MapBlueprint.CELL_LEFT_RAIL, MapBlueprint.CELL_SAFE_ROAD, MapBlueprint.CELL_RIGHT_RAIL],
-		[MapBlueprint.CELL_BARRIER, MapBlueprint.CELL_GOAL, MapBlueprint.CELL_BARRIER],
+		[MapBlueprint.CELL_CONE, MapBlueprint.CELL_SAFE_ROAD, MapBlueprint.CELL_CONE],
+		[MapBlueprint.CELL_GAP_VISUAL, MapBlueprint.CELL_CRACK_ROAD, MapBlueprint.CELL_GAP_VISUAL],
+		[MapBlueprint.CELL_DEBRIS, MapBlueprint.CELL_SAFE_ROAD, MapBlueprint.CELL_DEBRIS],
+		[MapBlueprint.CELL_LEFT_RAIL, MapBlueprint.CELL_SAFE_ROAD, MapBlueprint.CELL_RIGHT_RAIL],
+		[MapBlueprint.CELL_GAP_VISUAL, MapBlueprint.CELL_CRACK_ROAD, MapBlueprint.CELL_GAP_VISUAL],
+		[MapBlueprint.CELL_BROKEN_EDGE, MapBlueprint.CELL_SAFE_ROAD, MapBlueprint.CELL_BROKEN_EDGE],
+		[MapBlueprint.CELL_LEFT_RAIL, MapBlueprint.CELL_GOAL, MapBlueprint.CELL_RIGHT_RAIL],
 	]
 
 	var rows: Array[Dictionary] = []
@@ -90,73 +94,97 @@ static func _apply_cell_art(cell: Dictionary, row_index: int, column_index: int)
 	var cell_type: String = str(cell.get("type", ""))
 	var is_left: bool = column_index == 0
 	var is_center: bool = column_index == 1
-	var is_right: bool = column_index == 2
-	var side_sign: float = -1.0 if is_left else 1.0 if is_right else 0.0
+	var side_sign: float = -1.0 if is_left else 1.0 if column_index == 2 else 0.0
 
 	match cell_type:
 		MapBlueprint.CELL_SPAWN, MapBlueprint.CELL_GOAL:
+			if not is_center:
+				return
 			cell["asset_id"] = "street_straight" if cell_type == MapBlueprint.CELL_SPAWN else "street_crack1"
-			if is_center:
-				cell["scale"] = 1.03
-				cell["offset_y"] = 0.0
+			cell["scale_x"] = 1.22
+			cell["scale_z"] = 1.08
+			cell["scale_y"] = 1.0
+			cell["offset_y"] = 0.02
 		MapBlueprint.CELL_SAFE_ROAD:
 			cell["asset_id"] = "street_straight"
-			cell["scale"] = 1.03
-			cell["offset_y"] = 0.0
+			cell["scale_x"] = 1.18 if row_index in _PAD_ROWS else 1.14
+			cell["scale_z"] = 1.06
+			cell["scale_y"] = 1.0
+			cell["offset_y"] = 0.01 if row_index in _PAD_ROWS else 0.0
 		MapBlueprint.CELL_CRACK_ROAD:
 			if not is_center:
 				cell["skip_visual"] = true
 				return
 			cell["safe_path"] = true
 			cell["asset_id"] = "street_crack1" if row_index == _CRACK_ROWS[0] else "street_crack2"
-			cell["scale"] = 1.02
-			cell["offset_y"] = -0.03
+			cell["scale_x"] = 1.14
+			cell["scale_z"] = 1.05
+			cell["offset_y"] = -0.02
 		MapBlueprint.CELL_BROKEN_EDGE:
-			cell["placement_x"] = side_sign * _DECK_SHOULDER_X
-			cell["asset_id"] = "street_crack2" if row_index < 7 else "street_crack1"
-			cell["scale"] = 0.48
-			cell["offset_y"] = -0.28
-			cell["offset_z"] = 0.35 * side_sign
-			cell["rotation"] = 26.0 * side_sign
-		MapBlueprint.CELL_LEFT_RAIL:
-			cell["placement_x"] = -_EDGE_RAIL_X
-			cell["asset_id"] = "plastic_barrier"
-			cell["scale"] = 0.78
-			cell["offset_y"] = 0.04
-			cell["rotation"] = 90.0
-		MapBlueprint.CELL_RIGHT_RAIL:
-			cell["placement_x"] = _EDGE_RAIL_X
-			cell["asset_id"] = "plastic_barrier"
-			cell["scale"] = 0.78
-			cell["offset_y"] = 0.04
-			cell["rotation"] = -90.0
+			_style_broken_edge(cell, row_index, side_sign)
+		MapBlueprint.CELL_GAP_VISUAL:
+			if not is_center:
+				_style_gap_lip(cell, row_index, side_sign)
+		MapBlueprint.CELL_LEFT_RAIL, MapBlueprint.CELL_RIGHT_RAIL:
+			cell["placement_x"] = side_sign * _EDGE_RAIL_X
+			cell["asset_id"] = "traffic_barrier_1" if row_index in _RAIL_ROWS else "plastic_barrier"
+			cell["scale"] = 0.88
+			cell["offset_y"] = 0.05
+			cell["rotation"] = 90.0 * side_sign
 		MapBlueprint.CELL_BARRIER:
-			cell["placement_x"] = side_sign * (_EDGE_RAIL_X - 0.35)
+			cell["placement_x"] = side_sign * (_EDGE_RAIL_X - 0.4)
 			cell["asset_id"] = "plastic_barrier"
 			cell["face_inward"] = true
-			cell["scale"] = 0.72
-			cell["offset_y"] = 0.02
-			cell["offset_z"] = 0.2 * side_sign
+			cell["scale"] = 0.76
+			cell["offset_y"] = 0.03
 		MapBlueprint.CELL_CONE:
 			cell["placement_x"] = side_sign * _GUIDE_CONE_X
 			cell["asset_id"] = "traffic_cone_1" if is_left else "traffic_cone_2"
 			cell["face_inward"] = true
-			cell["scale"] = 0.82
-			cell["offset_y"] = 0.0
-			cell["offset_z"] = 0.25 * side_sign
+			cell["scale"] = 0.86
+			cell["offset_z"] = 0.2 * side_sign
 		MapBlueprint.CELL_DEBRIS:
-			cell["placement_x"] = -_VOID_PROP_X
-			cell["asset_id"] = "cinder_block" if row_index % 2 == 0 else "barrel"
-			cell["scale"] = 0.72
-			cell["offset_y"] = -0.35
-			cell["offset_z"] = 0.8
-			cell["rotation"] = 42.0
-		MapBlueprint.CELL_LIGHT:
-			cell["placement_x"] = _VOID_PROP_X
-			cell["asset_id"] = "street_light"
-			cell["scale"] = 0.75
-			cell["offset_y"] = -0.2
-			cell["rotation"] = -8.0
+			cell["placement_x"] = side_sign * _VOID_PROP_X
+			cell["asset_id"] = "pallet_broken" if is_left else "cinder_block"
+			cell["scale"] = 0.68
+			cell["offset_y"] = -0.42
+			cell["offset_z"] = 0.6 * side_sign
+			cell["rotation"] = 35.0 * side_sign
+
+
+static func _style_broken_edge(cell: Dictionary, row_index: int, side_sign: float) -> void:
+	if row_index in [0, 1, 10, 11]:
+		cell["placement_x"] = side_sign * _PAD_WING_X
+		cell["asset_id"] = "street_straight"
+		cell["scale_x"] = 0.86
+		cell["scale_z"] = 0.82
+		cell["offset_y"] = 0.0
+		return
+
+	if row_index in [2, 8, 10]:
+		cell["placement_x"] = side_sign * _INNER_WING_X
+		cell["asset_id"] = "street_straight"
+		cell["scale_x"] = 0.76
+		cell["scale_z"] = 0.74
+		cell["offset_y"] = -0.02
+		return
+
+	cell["placement_x"] = side_sign * (_INNER_WING_X + 0.35)
+	cell["asset_id"] = "street_crack2"
+	cell["scale"] = 0.58
+	cell["offset_y"] = -0.22
+	cell["offset_z"] = 0.25 * side_sign
+	cell["rotation"] = 18.0 * side_sign
+
+
+static func _style_gap_lip(cell: Dictionary, row_index: int, side_sign: float) -> void:
+	cell["type"] = MapBlueprint.CELL_BROKEN_EDGE
+	cell["placement_x"] = side_sign * _GAP_LIP_X
+	cell["asset_id"] = "street_crack2" if row_index == _CRACK_ROWS[1] else "street_crack1"
+	cell["scale"] = 0.46
+	cell["offset_y"] = -0.52
+	cell["offset_z"] = 0.4 * side_sign
+	cell["rotation"] = 34.0 * side_sign
 
 
 static func _is_safe_cell_type(cell_type: String) -> bool:

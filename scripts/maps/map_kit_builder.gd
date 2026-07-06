@@ -95,6 +95,9 @@ func build_visual_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 			)
 			var rotation: float = _resolve_cell_rotation(cell, column_index, blueprint)
 			var scale_value: float = float(cell.get("scale", 1.0))
+			var scale_x: float = float(cell.get("scale_x", scale_value))
+			var scale_z: float = float(cell.get("scale_z", scale_value))
+			var scale_y: float = float(cell.get("scale_y", scale_value))
 			var asset_id: String = str(cell.get("asset_id", ""))
 			if asset_id.is_empty():
 				asset_id = _default_asset_for_cell(cell_type)
@@ -120,7 +123,9 @@ func build_visual_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 				_:
 					parent_bucket = road_tiles
 
-			var instance: Node3D = add_visual_asset(asset_id, position, rotation, scale_value, parent_bucket)
+			var instance: Node3D = add_visual_asset(
+				asset_id, position, rotation, Vector3(scale_x, scale_y, scale_z), parent_bucket
+			)
 			if instance != null and bool(cell.get("no_collision", true)):
 				sanitize_visual_instance(instance)
 
@@ -201,7 +206,7 @@ func add_visual_asset(
 	asset_id: String,
 	position: Vector3,
 	rotation_degrees: float,
-	scale_value: float,
+	scale_value: Variant,
 	parent: Node3D
 ) -> Node3D:
 	if parent == null:
@@ -211,7 +216,10 @@ func add_visual_asset(
 		return null
 	instance.position = position
 	instance.rotation_degrees = Vector3(0.0, rotation_degrees, 0.0)
-	instance.scale = Vector3.ONE * scale_value
+	if scale_value is Vector3:
+		instance.scale = scale_value
+	else:
+		instance.scale = Vector3.ONE * float(scale_value)
 	parent.add_child(instance)
 	return instance
 
@@ -476,10 +484,11 @@ func _build_water_void(background: Node3D, blueprint: MapBlueprint) -> void:
 	var void_depth: float = float(blueprint.dressing_rules.get("void_depth", -6.0))
 	water.position = Vector3(0.0, void_depth, (blueprint.spawn_z + blueprint.goal_z) * 0.5)
 	var water_mat := StandardMaterial3D.new()
-	water_mat.albedo_color = Color(0.005, 0.02, 0.05, 0.99)
+	var void_darkness: float = float(blueprint.dressing_rules.get("void_darkness", 1.0))
+	water_mat.albedo_color = Color(0.002 * void_darkness, 0.008 * void_darkness, 0.018, 0.995)
 	water_mat.emission_enabled = true
-	water_mat.emission = Color(0.01, 0.04, 0.08)
-	water_mat.emission_energy_multiplier = 0.18
+	water_mat.emission = Color(0.004, 0.02, 0.04) * void_darkness
+	water_mat.emission_energy_multiplier = 0.12
 	water.material_override = water_mat
 	background.add_child(water)
 
