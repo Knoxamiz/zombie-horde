@@ -6,7 +6,7 @@ static func shorten_detail(detail_text: String) -> String:
 	if clean_detail.is_empty():
 		return ""
 	if clean_detail.contains("twitch_chat_config"):
-		return "Add channel_name to twitch_chat_config.local.tres"
+		return "Enter your channel name below (no # needed)."
 	if clean_detail.contains("ZOMBIE_HORDE_TWITCH"):
 		return "Set Twitch OAuth env vars (see env.example)."
 	if clean_detail.length() > 84:

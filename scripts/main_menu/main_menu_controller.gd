@@ -51,6 +51,15 @@ var _chat_status_detail: String = ""
 @onready var _feed_hint_label: Label = get_node_or_null(
 	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedHintLabel"
 ) as Label
+@onready var _feed_channel_setup: VBoxContainer = get_node_or_null(
+	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedChannelSetup"
+) as VBoxContainer
+@onready var _feed_channel_edit: LineEdit = get_node_or_null(
+	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedChannelSetup/FeedChannelRow/FeedChannelEdit"
+) as LineEdit
+@onready var _feed_connect_button: Button = get_node_or_null(
+	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedChannelSetup/FeedChannelRow/FeedConnectButton"
+) as Button
 @onready var _feed_waiting_label: Label = get_node_or_null(
 	"OverlayLayer/JoinFeedPanel/Margin/VBox/FeedWaitingLabel"
 ) as Label
@@ -79,6 +88,11 @@ func _ready() -> void:
 		_chat_status_detail = "Twitch join source not configured."
 
 	GameEvents.chat_connection_status_changed.connect(_on_chat_connection_status_changed)
+
+	if _feed_connect_button != null:
+		_feed_connect_button.pressed.connect(_on_connect_channel_pressed)
+	if _feed_channel_edit != null:
+		_feed_channel_edit.text_submitted.connect(_on_channel_name_submitted)
 
 	var music_controller: MusicController = _get_or_create_music_controller()
 	if music_controller != null:
@@ -139,6 +153,7 @@ func _refresh_join_feed() -> void:
 
 func _show_join_feed_lines() -> void:
 	_set_status_labels_visible(false)
+	_set_channel_setup_visible(false)
 	if _feed_waiting_label != null:
 		_feed_waiting_label.visible = false
 	if _feed_scroll != null:
@@ -150,6 +165,20 @@ func _show_join_feed_lines() -> void:
 func _show_waiting_state() -> void:
 	if _feed_scroll != null:
 		_feed_scroll.visible = false
+
+	if _needs_channel_setup():
+		_set_channel_setup_visible(true)
+		if _feed_waiting_label != null:
+			_feed_waiting_label.visible = false
+		if _feed_status_label != null:
+			_feed_status_label.visible = true
+			_feed_status_label.text = "Connect your Twitch chat"
+		if _feed_hint_label != null:
+			_feed_hint_label.visible = true
+			_feed_hint_label.text = "Enter your channel name below (no # needed)."
+		return
+
+	_set_channel_setup_visible(false)
 
 	var normalized_status: String = _chat_status_text.strip_edges().to_lower()
 	if normalized_status == "twitch live":
@@ -183,6 +212,49 @@ func _set_status_labels_visible(visible: bool) -> void:
 		_feed_status_label.visible = visible
 	if _feed_hint_label != null:
 		_feed_hint_label.visible = visible
+
+func _needs_channel_setup() -> bool:
+	if _twitch_join_source == null:
+		return false
+	return not TwitchConfigResolver.has_configured_channel(_twitch_join_source.config)
+
+func _set_channel_setup_visible(visible: bool) -> void:
+	if _feed_channel_setup != null:
+		_feed_channel_setup.visible = visible
+
+func _on_channel_name_submitted(channel_text: String) -> void:
+	_connect_twitch_channel(channel_text)
+
+func _on_connect_channel_pressed() -> void:
+	if _feed_channel_edit == null:
+		return
+	_connect_twitch_channel(_feed_channel_edit.text)
+
+func _connect_twitch_channel(raw_channel: String) -> void:
+	var normalized_channel: String = TwitchConfigResolver.normalize_channel_name(raw_channel)
+	if not TwitchConfigResolver.is_valid_channel_name(normalized_channel):
+		if _feed_status_label != null:
+			_feed_status_label.visible = true
+			_feed_status_label.text = "Invalid channel name"
+		if _feed_hint_label != null:
+			_feed_hint_label.visible = true
+			_feed_hint_label.text = "Use 3–25 letters, numbers, or underscores."
+		return
+
+	var save_error: Error = TwitchConfigResolver.save_local_channel(normalized_channel)
+	if save_error != OK:
+		if _feed_status_label != null:
+			_feed_status_label.visible = true
+			_feed_status_label.text = "Could not save channel"
+		return
+
+	if _feed_channel_edit != null:
+		_feed_channel_edit.text = normalized_channel
+
+	TwitchConfigResolver.publish_join_command()
+	if _twitch_join_source != null:
+		_twitch_join_source.reload_config_and_connect()
+	_refresh_join_feed()
 
 func _scroll_feed_to_bottom() -> void:
 	if _feed_scroll == null:

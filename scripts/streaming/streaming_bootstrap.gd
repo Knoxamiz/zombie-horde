@@ -25,5 +25,5 @@ func _warn_if_twitch_channel_missing() -> void:
 	)
 	GameEvents.chat_connection_status_changed.emit(
 		"Twitch needs channel",
-		"Set channel_name in twitch_chat_config.local.tres"
+		"Enter your Twitch channel name in the menu."
 	)

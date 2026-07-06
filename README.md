@@ -93,17 +93,18 @@ Zombie Horde is built for Twitch chat games captured in OBS. Use **STREAMER MODE
 1. Click **STREAMER MODE** on the main menu.
    - Applies OBS-friendly defaults: 1920x1080 borderless, clean capture (no screen wash), lobby test join buttons visible, 60 FPS cap.
 2. In OBS, add a **Game Capture** or **Window Capture** source for `Zombie Horde`.
-3. Set your Twitch channel (see below).
+3. On the main menu **STREAMER JOINS** panel, type your Twitch channel name and click **Connect**.
 4. Tell chat: viewers type your join command (default `!brains`) to join the cage.
 
 ### Twitch channel setup
 
-1. Copy `res://resources/config/twitch_chat_config.example.tres` to `user://twitch_chat_config.local.tres`.
-   - In Godot: save the template into your user data folder, or duplicate it on disk as `twitch_chat_config.local.tres` beside your exported game’s user data.
-2. Set `channel_name` to your Twitch channel (without `#`).
-3. Optional: change `join_command` (default `!brains`). All lobby/HUD text syncs from this automatically.
-4. For read-only chat listening, leave `anonymous_mode = true` (no OAuth needed).
-5. For a bot account with full IRC login, set `anonymous_mode = false` and use `env.example` variables.
+**Easy way (recommended):** On the main menu, find the **STREAMER JOINS** panel on the left. Type your channel name (e.g. `knoxamiz`, no `#`) and click **Connect**. The game saves it automatically and connects to chat.
+
+**Manual way (optional):** Copy `res://resources/config/twitch_chat_config.example.tres` to `user://twitch_chat_config.local.tres` and set `channel_name` there.
+
+- Optional: change `join_command` (default `!brains`). All lobby/HUD text syncs from this automatically.
+- For read-only chat listening, leave `anonymous_mode = true` (no OAuth needed).
+- For a bot account with full IRC login, set `anonymous_mode = false` and use `env.example` variables.
 
 ### OBS capture tips
 

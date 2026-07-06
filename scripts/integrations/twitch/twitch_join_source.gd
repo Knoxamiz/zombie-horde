@@ -70,7 +70,7 @@ func connect_to_chat() -> void:
 
 	var channel: String = config.get_normalized_channel()
 	if channel.is_empty():
-		_publish_status("Twitch needs channel", "Set channel_name in twitch_chat_config.tres.")
+		_publish_status("Twitch needs channel", "Enter your Twitch channel name in the menu.")
 		return
 
 	_manual_disconnect = false
@@ -98,6 +98,17 @@ func get_status_text() -> String:
 
 func get_status_detail() -> String:
 	return _status_detail
+
+
+func reload_config_and_connect() -> void:
+	disconnect_from_chat()
+	config = TwitchConfigResolver.resolve_config(config)
+	_manual_disconnect = false
+	_reconnect_attempts = 0
+	_reconnect_timer = 0.0
+	if config != null and config.enabled and config.auto_connect:
+		connect_to_chat()
+
 
 func _send_login() -> void:
 	if _sent_auth or config == null:
