@@ -9,14 +9,26 @@ extends Node3D
 			call_deferred("_request_editor_rebuild")
 
 @export_group("Editor Preview")
-@export_tool_button("Rebuild Preview", "editor_rebuild_preview")
-var _editor_rebuild_preview_button
+@export var rebuild_preview: bool = false:
+	set(value):
+		if not value:
+			return
+		rebuild_preview = false
+		call_deferred("_editor_rebuild_preview")
 
-@export_tool_button("Clear Preview", "editor_clear_preview")
-var _editor_clear_preview_button
+@export var clear_preview: bool = false:
+	set(value):
+		if not value:
+			return
+		clear_preview = false
+		call_deferred("_editor_clear_preview")
 
-@export_tool_button("Validate Blueprint", "editor_validate_blueprint")
-var _editor_validate_blueprint_button
+@export var validate_blueprint: bool = false:
+	set(value):
+		if not value:
+			return
+		validate_blueprint = false
+		call_deferred("_editor_validate_blueprint")
 
 @export var auto_preview_in_editor: bool = true
 
@@ -98,20 +110,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			_rebuild_preview(false)
 
 
-func editor_rebuild_preview() -> void:
+func _editor_rebuild_preview() -> void:
 	if not Engine.is_editor_hint():
 		return
 	_rebuild_preview(true)
 
 
-func editor_clear_preview() -> void:
+func _editor_clear_preview() -> void:
 	if not Engine.is_editor_hint():
 		return
 	_clear_preview_root(true)
 	_update_summary_panel("Preview cleared.", false)
 
 
-func editor_validate_blueprint() -> void:
+func _editor_validate_blueprint() -> void:
 	if not Engine.is_editor_hint():
 		return
 	_validate_blueprint(true)

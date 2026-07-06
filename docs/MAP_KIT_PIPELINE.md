@@ -129,9 +129,9 @@ Select the **MapLab** root node.
 | Control | Action |
 |---------|--------|
 | `blueprint_id` | Blueprint to load (default `bridge_lab_test`) |
-| **Rebuild Preview** | Build preview under `PreviewRoot` |
-| **Clear Preview** | Remove generated preview nodes |
-| **Validate Blueprint** | Run validator and print detailed report |
+| `rebuild_preview` | Check to build preview under `PreviewRoot` |
+| `clear_preview` | Check to remove generated preview nodes |
+| `validate_blueprint` | Check to run validator and print detailed report |
 | `show_debug_grid` | Grid overlay in `DebugLayer` (safe/hazard/void/gap, row labels) |
 | `show_safe_floor` | Show gameplay safe-floor collision debug meshes |
 | `show_hazards` | Show gameplay hazard zone debug meshes |
