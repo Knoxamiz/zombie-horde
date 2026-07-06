@@ -15,12 +15,15 @@ var _editor_rebuild_preview_button
 @export_tool_button("Clear Preview", "editor_clear_preview")
 var _editor_clear_preview_button
 
+@export_tool_button("Validate Blueprint", "editor_validate_blueprint")
+var _editor_validate_blueprint_button
+
 @export var auto_preview_in_editor: bool = true
 
 @export_group("Preview Display")
-@export var debug_visible: bool = true:
+@export var show_debug_grid: bool = true:
 	set(value):
-		debug_visible = value
+		show_debug_grid = value
 		if Engine.is_editor_hint():
 			call_deferred("_request_editor_rebuild")
 
@@ -36,6 +39,12 @@ var _editor_clear_preview_button
 		if Engine.is_editor_hint():
 			call_deferred("_request_editor_rebuild")
 
+@export var show_summary_panel: bool = true:
+	set(value):
+		show_summary_panel = value
+		if Engine.is_editor_hint():
+			call_deferred("_refresh_summary_panel")
+
 @export_group("Runtime")
 @export var rebuild_on_ready: bool = true
 
@@ -44,18 +53,24 @@ var _active_blueprint: MapBlueprint
 var _map_root: Node3D
 var _preview_root: Node3D
 var _origin_marker: Node3D
+var _summary_panel: Control
+var _summary_label: Label
+var _last_summary_text: String = ""
+var _last_validation_ok: bool = false
 var _editor_rebuild_pending: bool = false
 
 
 func _enter_tree() -> void:
 	if not Engine.is_editor_hint():
 		return
+	call_deferred("_ensure_summary_panel")
 	call_deferred("_maybe_auto_preview_in_editor")
 
 
 func _ready() -> void:
 	_preview_root = get_node_or_null("PreviewRoot") as Node3D
 	if Engine.is_editor_hint():
+		_ensure_summary_panel()
 		return
 	if rebuild_on_ready:
 		_rebuild_preview(false)
@@ -70,9 +85,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	match key_event.keycode:
 		KEY_R:
 			_rebuild_preview(false)
-		KEY_D:
-			debug_visible = not debug_visible
-			_apply_debug_flags()
+		KEY_V:
+			_validate_blueprint(false)
+		KEY_G:
+			show_debug_grid = not show_debug_grid
+			_rebuild_preview(false)
 		KEY_H:
 			show_hazards = not show_hazards
 			_rebuild_preview(false)
@@ -91,6 +108,13 @@ func editor_clear_preview() -> void:
 	if not Engine.is_editor_hint():
 		return
 	_clear_preview_root(true)
+	_update_summary_panel("Preview cleared.", false)
+
+
+func editor_validate_blueprint() -> void:
+	if not Engine.is_editor_hint():
+		return
+	_validate_blueprint(true)
 
 
 func rebuild_current_blueprint() -> void:
@@ -124,6 +148,36 @@ func _maybe_auto_preview_in_editor() -> void:
 	_rebuild_preview(true)
 
 
+func _validate_blueprint(is_editor: bool) -> bool:
+	var blueprint: MapBlueprint = _resolve_blueprint(blueprint_id)
+	if blueprint == null:
+		push_warning("MapLab: unknown blueprint_id=%s" % blueprint_id)
+		_update_summary_panel("Unknown blueprint_id=%s" % blueprint_id, false)
+		return false
+
+	var stats: Dictionary = MapBlueprintSummary.print_summary(blueprint)
+	var validation: Dictionary = MapValidator.validate_blueprint(blueprint)
+	MapValidator.print_validation_report(validation)
+
+	_last_validation_ok = bool(validation.get("ok", false))
+	var summary_text: String = MapBlueprintSummary.format_text(stats)
+	summary_text += "\n\nValidation: %s" % ("PASSED" if _last_validation_ok else "FAILED")
+	_update_summary_panel(summary_text, _last_validation_ok)
+
+	if is_editor:
+		if _last_validation_ok:
+			print("MapLab: validation passed")
+		else:
+			print("MapLab: validation failed")
+
+	if _map_root != null:
+		var scene_validation: Dictionary = MapValidator.validate_generated_scene(_map_root, blueprint)
+		MapValidator.print_validation_report(scene_validation)
+		_last_validation_ok = _last_validation_ok and bool(scene_validation.get("ok", false))
+
+	return _last_validation_ok
+
+
 func _rebuild_preview(is_editor: bool) -> void:
 	if is_editor:
 		print("MapLab: editor preview rebuild started")
@@ -140,6 +194,7 @@ func _rebuild_preview(is_editor: bool) -> void:
 	_active_blueprint = _resolve_blueprint(blueprint_id)
 	if _active_blueprint == null:
 		push_warning("MapLab: unknown blueprint_id=%s" % blueprint_id)
+		_update_summary_panel("Unknown blueprint_id=%s" % blueprint_id, false)
 		return
 
 	print("MapLab: loaded blueprint %s" % blueprint_id)
@@ -152,9 +207,14 @@ func _rebuild_preview(is_editor: bool) -> void:
 	MapValidator.print_validation_report(validation)
 	if not bool(validation.get("ok", false)):
 		push_warning("MapLab: blueprint '%s' failed validation." % blueprint_id)
+		var stats: Dictionary = MapBlueprintSummary.compute_stats(_active_blueprint)
+		var summary_text: String = MapBlueprintSummary.format_text(stats)
+		summary_text += "\n\nValidation: FAILED"
+		_update_summary_panel(summary_text, false)
 		return
 
-	_builder.set_debug_visible(debug_visible)
+	_builder.set_debug_visible(true)
+	_builder.set_show_debug_grid(show_debug_grid)
 	_builder.set_show_safe_floor(show_safe_floor)
 	_builder.set_show_hazards(show_hazards)
 	_map_root = _builder.build_from_blueprint(_active_blueprint, _preview_root)
@@ -164,10 +224,27 @@ func _rebuild_preview(is_editor: bool) -> void:
 	if is_editor:
 		_assign_editor_owners(_preview_root)
 
-	_log_preview_counts(is_editor)
+	var visual_count: int = 0
+	var gameplay_count: int = 0
+	if _map_root != null:
+		visual_count = _count_descendants(_map_root.get_node_or_null("VisualLayer"))
+		gameplay_count = _count_descendants(_map_root.get_node_or_null("GameplayLayer"))
+
+	var stats: Dictionary = MapBlueprintSummary.print_summary(
+		_active_blueprint,
+		visual_count,
+		gameplay_count
+	)
+	_log_preview_counts(is_editor, visual_count, gameplay_count)
 
 	var scene_validation: Dictionary = MapValidator.validate_generated_scene(_map_root, _active_blueprint)
 	MapValidator.print_validation_report(scene_validation)
+
+	_last_validation_ok = bool(scene_validation.get("ok", false))
+	var summary_text: String = MapBlueprintSummary.format_text(stats, visual_count, gameplay_count)
+	summary_text += "\n\nValidation: %s" % ("PASSED" if _last_validation_ok else "FAILED")
+	_update_summary_panel(summary_text, _last_validation_ok)
+
 	print(
 		"MapLab: built blueprint '%s' (%s)"
 		% [blueprint_id, _active_blueprint.display_name]
@@ -229,7 +306,7 @@ func _ensure_origin_marker(is_editor: bool) -> void:
 
 	var label := Label3D.new()
 	label.name = "OriginLabel"
-	label.text = "MAP LAB PREVIEW"
+	label.text = "MAP LAB"
 	label.font_size = 36
 	label.outline_size = 8
 	label.modulate = Color(1.0, 0.85, 0.2, 1.0)
@@ -241,6 +318,74 @@ func _ensure_origin_marker(is_editor: bool) -> void:
 		_assign_editor_owners(marker_root)
 
 	_origin_marker = marker_root
+
+
+func _ensure_summary_panel() -> void:
+	if not Engine.is_editor_hint() and not show_summary_panel:
+		return
+
+	var existing: Node = get_node_or_null("SummaryPanel")
+	if existing is Control:
+		_summary_panel = existing as Control
+		_summary_label = _summary_panel.get_node_or_null("Margin/Label") as Label
+		_refresh_summary_panel()
+		return
+
+	var canvas := CanvasLayer.new()
+	canvas.name = "SummaryPanel"
+	canvas.layer = 10
+	add_child(canvas)
+	if Engine.is_editor_hint():
+		var scene_root: Node = get_tree().edited_scene_root
+		if scene_root != null:
+			canvas.owner = scene_root
+
+	var panel := PanelContainer.new()
+	panel.name = "Panel"
+	panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	panel.offset_left = 12.0
+	panel.offset_top = 12.0
+	panel.offset_right = 420.0
+	panel.offset_bottom = 260.0
+	canvas.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.name = "Margin"
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_bottom", 8)
+	panel.add_child(margin)
+
+	var label := Label.new()
+	label.name = "Label"
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.custom_minimum_size = Vector2(380, 0)
+	label.text = "Map Lab summary will appear here."
+	margin.add_child(label)
+
+	_summary_panel = panel
+	_summary_label = label
+	_refresh_summary_panel()
+
+
+func _refresh_summary_panel() -> void:
+	if _summary_panel == null:
+		return
+	_summary_panel.visible = show_summary_panel
+	if not _last_summary_text.is_empty() and _summary_label != null:
+		_summary_label.text = _last_summary_text
+
+
+func _update_summary_panel(text: String, validation_ok: bool) -> void:
+	_last_summary_text = text
+	if not show_summary_panel:
+		return
+	_ensure_summary_panel()
+	if _summary_label == null:
+		return
+	_summary_label.text = text
+	_summary_label.modulate = Color(0.8, 1.0, 0.85, 1.0) if validation_ok else Color(1.0, 0.75, 0.75, 1.0)
 
 
 func _assign_editor_owners(root: Node) -> void:
@@ -255,21 +400,16 @@ func _assign_editor_owners(root: Node) -> void:
 func _set_owner_recursive(node: Node, scene_root: Node) -> void:
 	if node == null:
 		return
-	if node != self:
+	if node != self and node.owner == null:
 		node.owner = scene_root
 	for child in node.get_children():
 		_set_owner_recursive(child, scene_root)
 
 
-func _log_preview_counts(is_editor: bool) -> void:
+func _log_preview_counts(is_editor: bool, visual_count: int, gameplay_count: int) -> void:
 	_preview_root = _get_preview_root()
 	if _preview_root == null:
 		return
-
-	var visual_layer: Node = _map_root.get_node_or_null("VisualLayer") if _map_root != null else null
-	var gameplay_layer: Node = _map_root.get_node_or_null("GameplayLayer") if _map_root != null else null
-	var visual_count: int = _count_descendants(visual_layer)
-	var gameplay_count: int = _count_descendants(gameplay_layer)
 
 	print("MapLab: PreviewRoot children count = %d" % _preview_root.get_child_count())
 	print("MapLab: VisualLayer node count = %d" % visual_count)
@@ -296,8 +436,8 @@ func _resolve_blueprint(requested_id: String) -> MapBlueprint:
 
 
 func _apply_debug_flags() -> void:
-	_builder.set_debug_visible(debug_visible)
-	if _map_root != null:
-		var debug_layer: Node3D = _map_root.get_node_or_null("DebugLayer") as Node3D
-		if debug_layer != null:
-			debug_layer.visible = debug_visible
+	if _map_root == null:
+		return
+	var debug_layer: Node3D = _map_root.get_node_or_null("DebugLayer") as Node3D
+	if debug_layer != null:
+		debug_layer.visible = show_debug_grid or show_safe_floor or show_hazards

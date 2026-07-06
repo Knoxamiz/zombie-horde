@@ -13,8 +13,9 @@ ambient_light_energy = 1.0
 script = ExtResource("1_lab")
 blueprint_id = "bridge_lab_test"
 auto_preview_in_editor = true
-debug_visible = true
+show_debug_grid = true
 show_hazards = true
+show_summary_panel = true
 rebuild_on_ready = true
 
 [node name="PreviewRoot" type="Node3D" parent="."]

@@ -124,16 +124,27 @@ Internal sandbox. Does not affect saved map or playable roster.
 
 ### Inspector
 
-- `blueprint_id` — default `bridge_lab_test`
-- `debug_visible`, `show_safe_floor`, `show_hazards`
-- `rebuild_on_ready`
+Select the **MapLab** root node.
+
+| Control | Action |
+|---------|--------|
+| `blueprint_id` | Blueprint to load (default `bridge_lab_test`) |
+| **Rebuild Preview** | Build preview under `PreviewRoot` |
+| **Clear Preview** | Remove generated preview nodes |
+| **Validate Blueprint** | Run validator and print detailed report |
+| `show_debug_grid` | Grid overlay in `DebugLayer` (safe/hazard/void/gap, row labels) |
+| `show_safe_floor` | Show gameplay safe-floor collision debug meshes |
+| `show_hazards` | Show gameplay hazard zone debug meshes |
+| `show_summary_panel` | On-screen blueprint summary in editor |
+| `rebuild_on_ready` | Auto-build when running scene (F6) |
 
 ### Shortcuts
 
 | Key | Action |
 |-----|--------|
 | R | Rebuild blueprint |
-| D | Toggle debug layer |
+| V | Validate blueprint |
+| G | Toggle debug grid (rebuild) |
 | H | Toggle hazard preview (rebuild) |
 | F | Toggle safe floor preview (rebuild) |
 

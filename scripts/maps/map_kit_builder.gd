@@ -30,6 +30,7 @@ var _visual_layer: Node3D
 var _gameplay_layer: Node3D
 var _debug_layer: Node3D
 var _debug_visible: bool = false
+var _show_debug_grid: bool = true
 var _show_safe_floor: bool = false
 var _show_hazards: bool = false
 
@@ -172,22 +173,13 @@ func build_gameplay_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 func build_debug_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 	if root == null or blueprint == null:
 		return
-	var path_preview := _make_child("PathPreview", root)
+	var grid_overlay := _make_child("GridOverlay", root)
+	var grid_labels := _make_child("GridLabels", root)
 	var bounds_preview := _make_child("BoundsPreview", root)
 	var hazard_preview := _make_child("HazardPreview", root)
 
-	for row_index in range(blueprint.get_row_count()):
-		for column_index in range(blueprint.visual_width_tiles):
-			if not blueprint.is_safe_path_cell(row_index, column_index):
-				continue
-			_add_marker_box(
-				path_preview,
-				"SafePathCell",
-				Vector3(blueprint.tile_size * 0.85, 0.04, blueprint.tile_size * 0.85),
-				Vector3(blueprint.column_to_x(column_index), 0.2, blueprint.row_to_z(row_index)),
-				MAT_DEBUG_FLOOR,
-				0.35
-			)
+	if _show_debug_grid:
+		_build_grid_overlay(grid_overlay, grid_labels, blueprint)
 
 	for hazard in blueprint.hazard_zones:
 		var size: Vector3 = hazard.get("size", Vector3(8, 0.1, 8))
@@ -290,6 +282,10 @@ func set_debug_visible(enabled: bool) -> void:
 		_debug_layer.visible = enabled
 
 
+func set_show_debug_grid(enabled: bool) -> void:
+	_show_debug_grid = enabled
+
+
 func set_show_safe_floor(enabled: bool) -> void:
 	_show_safe_floor = enabled
 
@@ -308,19 +304,179 @@ func _build_default_safe_floor(safe_floor: Node3D, blueprint: MapBlueprint) -> v
 	)
 
 
+func _build_grid_overlay(grid_overlay: Node3D, grid_labels: Node3D, blueprint: MapBlueprint) -> void:
+	var tile_size: float = blueprint.tile_size
+	var marker_size := Vector3(tile_size * 0.82, 0.05, tile_size * 0.82)
+	var center_col: int = blueprint.get_center_column_index()
+	var spawn_row: int = _find_marker_row(blueprint, CELL_SPAWN)
+	var goal_row: int = _find_marker_row(blueprint, CELL_GOAL)
+	if spawn_row < 0:
+		spawn_row = 0
+	if goal_row < 0:
+		goal_row = blueprint.get_row_count() - 1
+
+	var mat_safe := _make_debug_material(Color(0.2, 0.95, 0.35, 0.42))
+	var mat_hazard := _make_debug_material(Color(0.95, 0.2, 0.2, 0.5))
+	var mat_void := _make_debug_material(Color(0.05, 0.08, 0.18, 0.55))
+	var mat_gap := _make_debug_material(Color(0.12, 0.2, 0.45, 0.62))
+	var mat_spawn_row := _make_debug_material(Color(0.2, 0.85, 1.0, 0.28))
+	var mat_goal_row := _make_debug_material(Color(1.0, 0.82, 0.15, 0.28))
+	var mat_center_route := _make_debug_material(Color(0.95, 0.95, 0.2, 0.22))
+
+	_add_marker_box(
+		grid_overlay,
+		"CenterSafeRoute",
+		Vector3(blueprint.safe_path_width_meters, 0.02, abs(blueprint.goal_z - blueprint.spawn_z) + tile_size),
+		Vector3(0.0, 0.08, (blueprint.spawn_z + blueprint.goal_z) * 0.5),
+		mat_center_route,
+		1.0
+	)
+
+	_add_row_band_marker(grid_overlay, blueprint, spawn_row, tile_size, mat_spawn_row, "SpawnRow")
+	_add_row_band_marker(grid_overlay, blueprint, goal_row, tile_size, mat_goal_row, "GoalRow")
+
+	for row_index in range(blueprint.get_row_count()):
+		for column_index in range(blueprint.visual_width_tiles):
+			var cell: Dictionary = blueprint.get_cell(row_index, column_index)
+			var cell_type: String = str(cell.get("type", CELL_VOID))
+			var position := Vector3(
+				blueprint.column_to_x(column_index),
+				0.16,
+				blueprint.row_to_z(row_index)
+			)
+			var material: StandardMaterial3D = null
+			var marker_name: String = "CellMarker"
+
+			if blueprint.is_safe_path_cell(row_index, column_index):
+				material = mat_safe
+				marker_name = "SafeCell"
+			elif cell_type == CELL_HAZARD or bool(cell.get("hazard", false)):
+				material = mat_hazard
+				marker_name = "HazardCell"
+			elif cell_type == CELL_GAP_VISUAL:
+				material = mat_gap
+				marker_name = "GapCell"
+			elif cell_type == CELL_VOID:
+				material = mat_void
+				marker_name = "VoidCell"
+			else:
+				continue
+
+			_add_marker_box(grid_overlay, marker_name, marker_size, position, material, 1.0)
+
+	_build_grid_labels(grid_labels, blueprint, center_col, spawn_row, goal_row)
+
+
+func _build_grid_labels(
+	labels_root: Node3D,
+	blueprint: MapBlueprint,
+	center_col: int,
+	spawn_row: int,
+	goal_row: int
+) -> void:
+	var left_x: float = blueprint.column_to_x(0) - blueprint.tile_size * 1.35
+	var top_z: float = blueprint.row_to_z(0) - blueprint.tile_size * 0.85
+	var column_names: Array[String] = ["L", "C", "R"]
+	if blueprint.visual_width_tiles == 3:
+		column_names = ["LEFT", "CENTER", "RIGHT"]
+
+	for row_index in range(blueprint.get_row_count()):
+		var row_label := Label3D.new()
+		row_label.name = "RowLabel_%d" % row_index
+		row_label.text = "R%d" % row_index
+		row_label.font_size = 22
+		row_label.outline_size = 6
+		row_label.modulate = Color(0.85, 0.92, 1.0, 1.0)
+		row_label.position = Vector3(left_x, 1.4, blueprint.row_to_z(row_index))
+		row_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		labels_root.add_child(row_label)
+
+	for column_index in range(blueprint.visual_width_tiles):
+		var column_label := Label3D.new()
+		column_label.name = "ColumnLabel_%d" % column_index
+		var suffix: String = ""
+		if column_index == center_col:
+			suffix = " (SAFE)"
+		column_label.text = "%s%s" % [column_names[min(column_index, column_names.size() - 1)], suffix]
+		column_label.font_size = 20
+		column_label.outline_size = 6
+		column_label.modulate = Color(1.0, 0.92, 0.45, 1.0) if column_index == center_col else Color(0.8, 0.85, 0.95, 1.0)
+		column_label.position = Vector3(blueprint.column_to_x(column_index), 1.8, top_z)
+		column_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		labels_root.add_child(column_label)
+
+	var spawn_label := Label3D.new()
+	spawn_label.name = "SpawnRowLabel"
+	spawn_label.text = "SPAWN ROW %d" % spawn_row
+	spawn_label.font_size = 24
+	spawn_label.outline_size = 8
+	spawn_label.modulate = Color(0.35, 0.9, 1.0, 1.0)
+	spawn_label.position = Vector3(left_x - 2.0, 2.2, blueprint.row_to_z(spawn_row))
+	spawn_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	labels_root.add_child(spawn_label)
+
+	var goal_label := Label3D.new()
+	goal_label.name = "GoalRowLabel"
+	goal_label.text = "GOAL ROW %d" % goal_row
+	goal_label.font_size = 24
+	goal_label.outline_size = 8
+	goal_label.modulate = Color(1.0, 0.82, 0.2, 1.0)
+	goal_label.position = Vector3(left_x - 2.0, 2.2, blueprint.row_to_z(goal_row))
+	goal_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	labels_root.add_child(goal_label)
+
+
+func _add_row_band_marker(
+	parent: Node3D,
+	blueprint: MapBlueprint,
+	row_index: int,
+	tile_size: float,
+	material: StandardMaterial3D,
+	marker_name: String
+) -> void:
+	_add_marker_box(
+		parent,
+		marker_name,
+		Vector3(tile_size * float(blueprint.visual_width_tiles + 1), 0.03, tile_size * 0.92),
+		Vector3(0.0, 0.12, blueprint.row_to_z(row_index)),
+		material,
+		1.0
+	)
+
+
+func _find_marker_row(blueprint: MapBlueprint, marker_type: String) -> int:
+	for row_index in range(blueprint.get_row_count()):
+		for column_index in range(blueprint.visual_width_tiles):
+			if blueprint.get_cell_type(row_index, column_index) == marker_type:
+				return row_index
+	return -1
+
+
+func _make_debug_material(color: Color) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return material
+
+
 func _build_water_void(background: Node3D, blueprint: MapBlueprint) -> void:
 	var water := MeshInstance3D.new()
 	water.name = "WaterVoid"
 	var mesh := BoxMesh.new()
 	var length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 3.0
-	mesh.size = Vector3(blueprint.tile_size * float(blueprint.visual_width_tiles + 4), 0.06, length)
+	var width_scale: float = 4.0
+	if bool(blueprint.dressing_rules.get("narrow_bridge", false)):
+		width_scale = 6.0
+	mesh.size = Vector3(blueprint.tile_size * float(blueprint.visual_width_tiles + width_scale), 0.06, length)
 	water.mesh = mesh
 	water.position = Vector3(0.0, -6.0, (blueprint.spawn_z + blueprint.goal_z) * 0.5)
 	var water_mat := StandardMaterial3D.new()
-	water_mat.albedo_color = Color(0.02, 0.06, 0.1, 0.95)
+	water_mat.albedo_color = Color(0.01, 0.04, 0.08, 0.98)
 	water_mat.emission_enabled = true
-	water_mat.emission = Color(0.02, 0.07, 0.12)
-	water_mat.emission_energy_multiplier = 0.28
+	water_mat.emission = Color(0.01, 0.05, 0.1)
+	water_mat.emission_energy_multiplier = 0.22
 	water.material_override = water_mat
 	background.add_child(water)
 
