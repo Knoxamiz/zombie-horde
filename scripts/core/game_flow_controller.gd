@@ -404,8 +404,13 @@ func _apply_lobby_environment() -> void:
 		_world_environment.environment = lobby_environment
 
 func _apply_race_environment() -> void:
-	if _world_environment != null and race_environment != null:
-		_world_environment.environment = race_environment
+	var env: Environment = race_environment
+	if _race_map_controller != null:
+		var override: Environment = _race_map_controller.get_active_race_environment_override()
+		if override != null:
+			env = override
+	if _world_environment != null and env != null:
+		_world_environment.environment = env
 
 func _prepare_transition_overlay() -> void:
 	if _transition_overlay == null:

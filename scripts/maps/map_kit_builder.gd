@@ -131,6 +131,9 @@ func build_visual_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 			if instance != null and bool(cell.get("no_collision", true)):
 				sanitize_visual_instance(instance)
 
+	if bool(blueprint.dressing_rules.get("elevated_bridge_environment", false)):
+		_build_elevated_bridge_environment(root, blueprint)
+
 
 func build_gameplay_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 	if root == null or blueprint == null:
@@ -582,6 +585,7 @@ func _make_debug_material(color: Color) -> StandardMaterial3D:
 
 
 func _build_water_void(background: Node3D, blueprint: MapBlueprint) -> void:
+	var elevated: bool = bool(blueprint.dressing_rules.get("elevated_bridge_environment", false))
 	var water := MeshInstance3D.new()
 	water.name = "WaterVoid"
 	var mesh := BoxMesh.new()
@@ -590,16 +594,25 @@ func _build_water_void(background: Node3D, blueprint: MapBlueprint) -> void:
 	var width_scale: float = float(blueprint.dressing_rules.get("void_width_scale", 0.0))
 	if width_scale <= 0.0:
 		width_scale = 6.0 if bool(blueprint.dressing_rules.get("narrow_bridge", false)) else 4.0
-	mesh.size = Vector3(blueprint.tile_size * float(blueprint.visual_width_tiles + width_scale), 0.06, length)
+	if elevated:
+		width_scale = BrokenBridgeTestLayout.WATER_WIDTH_SCALE
+	var water_thickness: float = (
+		BrokenBridgeTestLayout.WATER_SURFACE_THICKNESS if elevated else 0.06
+	)
+	mesh.size = Vector3(blueprint.tile_size * float(blueprint.visual_width_tiles + width_scale), water_thickness, length)
 	water.mesh = mesh
 	var void_depth: float = float(blueprint.dressing_rules.get("void_depth", -6.0))
 	water.position = Vector3(0.0, void_depth, (blueprint.spawn_z + blueprint.goal_z) * 0.5)
-	var water_mat := StandardMaterial3D.new()
-	var void_darkness: float = float(blueprint.dressing_rules.get("void_darkness", 1.0))
-	water_mat.albedo_color = Color(0.002 * void_darkness, 0.008 * void_darkness, 0.018, 0.995)
-	water_mat.emission_enabled = true
-	water_mat.emission = Color(0.004, 0.02, 0.04) * void_darkness
-	water_mat.emission_energy_multiplier = 0.12
+	var water_mat: StandardMaterial3D
+	if elevated:
+		water_mat = _make_bridge_water_material()
+	else:
+		water_mat = StandardMaterial3D.new()
+		var void_darkness: float = float(blueprint.dressing_rules.get("void_darkness", 1.0))
+		water_mat.albedo_color = Color(0.002 * void_darkness, 0.008 * void_darkness, 0.018, 0.995)
+		water_mat.emission_enabled = true
+		water_mat.emission = Color(0.004, 0.02, 0.04) * void_darkness
+		water_mat.emission_energy_multiplier = 0.12
 	water.material_override = water_mat
 	background.add_child(water)
 
@@ -611,12 +624,201 @@ func _build_water_void(background: Node3D, blueprint: MapBlueprint) -> void:
 		deep.mesh = deep_mesh
 		deep.position = Vector3(0.0, void_depth - 2.5, water.position.z)
 		var deep_mat := StandardMaterial3D.new()
-		deep_mat.albedo_color = Color(0.002, 0.008, 0.02, 1.0)
-		deep_mat.emission_enabled = true
-		deep_mat.emission = Color(0.004, 0.01, 0.02)
-		deep_mat.emission_energy_multiplier = 0.1
+		if elevated:
+			deep_mat.albedo_color = Color(0.004, 0.012, 0.022, 1.0)
+			deep_mat.emission_enabled = true
+			deep_mat.emission = Color(0.01, 0.03, 0.05)
+			deep_mat.emission_energy_multiplier = 0.16
+		else:
+			deep_mat.albedo_color = Color(0.002, 0.008, 0.02, 1.0)
+			deep_mat.emission_enabled = true
+			deep_mat.emission = Color(0.004, 0.01, 0.02)
+			deep_mat.emission_energy_multiplier = 0.1
 		deep.material_override = deep_mat
 		background.add_child(deep)
+
+	if elevated:
+		var glow := MeshInstance3D.new()
+		glow.name = "WaterGlow"
+		var glow_mesh := BoxMesh.new()
+		glow_mesh.size = Vector3(mesh.size.x * 0.92, 0.02, mesh.size.z * 0.96)
+		glow.mesh = glow_mesh
+		glow.position = Vector3(0.0, void_depth + 0.03, water.position.z)
+		var glow_mat := StandardMaterial3D.new()
+		glow_mat.albedo_color = Color(0.02, 0.12, 0.18, 0.35)
+		glow_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		glow_mat.emission_enabled = true
+		glow_mat.emission = Color(0.04, 0.16, 0.22)
+		glow_mat.emission_energy_multiplier = 0.35
+		glow_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		glow.material_override = glow_mat
+		background.add_child(glow)
+
+
+		background.add_child(glow)
+
+
+func _build_elevated_bridge_environment(root: Node3D, blueprint: MapBlueprint) -> void:
+	var dressing := _make_child("BridgeEnvironment", root)
+	var deck_y: float = _get_deck_elevation(blueprint)
+	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 2.0
+	var center_z: float = (blueprint.spawn_z + blueprint.goal_z) * 0.5
+	_build_bridge_pillars(dressing, blueprint, deck_y, bridge_length, center_z)
+	_build_bridge_parapets(dressing, blueprint, deck_y, bridge_length, center_z)
+	_build_bridge_scene_lighting(dressing, blueprint, deck_y, center_z)
+
+
+func _build_bridge_pillars(
+	parent: Node3D,
+	blueprint: MapBlueprint,
+	deck_y: float,
+	bridge_length: float,
+	center_z: float
+) -> void:
+	var pillars := _make_child("SupportPillars", parent)
+	var river_y: float = float(blueprint.dressing_rules.get("void_depth", BrokenBridgeTestLayout.RIVER_VOID_Y))
+	var pillar_height: float = maxf(deck_y - river_y - 0.35, 1.5)
+	var pillar_size: float = BrokenBridgeTestLayout.PILLAR_SIZE
+	var pillar_mesh := BoxMesh.new()
+	pillar_mesh.size = Vector3(pillar_size, pillar_height, pillar_size)
+	var pillar_mat := _make_bridge_concrete_material()
+	var edge_x: float = BrokenBridgeTestLayout.PILLAR_EDGE_X
+	var z_start: float = blueprint.spawn_z + blueprint.tile_size * 0.5
+	var z_end: float = blueprint.goal_z - blueprint.tile_size * 0.5
+	var pillar_index: int = 0
+	var z: float = z_start
+	while z <= z_end + 0.1:
+		for side_sign in [-1.0, 1.0]:
+			var pillar := MeshInstance3D.new()
+			pillar.name = "Pillar_%d_%s" % [pillar_index, "L" if side_sign < 0.0 else "R"]
+			pillar.mesh = pillar_mesh
+			pillar.material_override = pillar_mat
+			pillar.position = Vector3(
+				side_sign * edge_x,
+				river_y + pillar_height * 0.5,
+				z
+			)
+			pillars.add_child(pillar)
+		pillar_index += 1
+		z += BrokenBridgeTestLayout.PILLAR_SPACING_Z
+
+
+func _build_bridge_parapets(
+	parent: Node3D,
+	blueprint: MapBlueprint,
+	deck_y: float,
+	bridge_length: float,
+	center_z: float
+) -> void:
+	var parapets := _make_child("Parapets", parent)
+	var road_half: float = blueprint.safe_path_width_meters * 0.5
+	var parapet_height: float = BrokenBridgeTestLayout.PARAPET_HEIGHT
+	var parapet_thickness: float = BrokenBridgeTestLayout.PARAPET_THICKNESS
+	var parapet_mesh := BoxMesh.new()
+	parapet_mesh.size = Vector3(parapet_thickness, parapet_height, bridge_length)
+	var parapet_mat := _make_bridge_concrete_material()
+	parapet_mat.albedo_color = Color(0.2, 0.21, 0.23, 1.0)
+	for side_sign in [-1.0, 1.0]:
+		var parapet := MeshInstance3D.new()
+		parapet.name = "Parapet_%s" % ("Left" if side_sign < 0.0 else "Right")
+		parapet.mesh = parapet_mesh
+		parapet.material_override = parapet_mat
+		parapet.position = Vector3(
+			side_sign * (road_half + parapet_thickness * 0.5),
+			deck_y + parapet_height * 0.5 + 0.02,
+			center_z
+		)
+		parapets.add_child(parapet)
+
+
+func _build_bridge_scene_lighting(parent: Node3D, blueprint: MapBlueprint, deck_y: float, center_z: float) -> void:
+	var lights := _make_child("BridgeLights", parent)
+	var moon := DirectionalLight3D.new()
+	moon.name = "BridgeMoon"
+	moon.rotation_degrees = Vector3(-48.0, 32.0, 0.0)
+	moon.light_color = Color(0.62, 0.72, 0.9, 1.0)
+	moon.light_energy = 0.42
+	moon.shadow_enabled = true
+	lights.add_child(moon)
+
+	_add_bridge_omni(
+		lights,
+		"SpawnPoolLight",
+		Vector3(0.0, deck_y + 3.2, blueprint.spawn_z + 6.0),
+		Color(0.42, 0.95, 0.38, 1.0),
+		2.1,
+		34.0
+	)
+	_add_bridge_omni(
+		lights,
+		"GoalPoolLight",
+		Vector3(0.0, deck_y + 3.2, blueprint.goal_z - 6.0),
+		Color(1.0, 0.42, 0.16, 1.0),
+		1.9,
+		34.0
+	)
+	_add_bridge_omni(
+		lights,
+		"DeckFillLeft",
+		Vector3(-11.0, deck_y + 2.4, center_z),
+		Color(0.95, 0.62, 0.22, 1.0),
+		1.35,
+		42.0
+	)
+	_add_bridge_omni(
+		lights,
+		"DeckFillRight",
+		Vector3(11.0, deck_y + 2.4, center_z),
+		Color(0.95, 0.62, 0.22, 1.0),
+		1.35,
+		42.0
+	)
+	_add_bridge_omni(
+		lights,
+		"RiverGlow",
+		Vector3(0.0, 1.2, center_z),
+		Color(0.12, 0.34, 0.48, 1.0),
+		1.6,
+		58.0
+	)
+
+
+func _add_bridge_omni(
+	parent: Node3D,
+	light_name: String,
+	position: Vector3,
+	color: Color,
+	energy: float,
+	range: float
+) -> void:
+	var light := OmniLight3D.new()
+	light.name = light_name
+	light.position = position
+	light.light_color = color
+	light.light_energy = energy
+	light.omni_range = range
+	light.omni_attenuation = 1.1
+	parent.add_child(light)
+
+
+func _make_bridge_water_material() -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.018, 0.06, 0.1, 0.94)
+	material.metallic = 0.42
+	material.roughness = 0.18
+	material.emission_enabled = true
+	material.emission = Color(0.03, 0.1, 0.14)
+	material.emission_energy_multiplier = 0.32
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return material
+
+
+func _make_bridge_concrete_material() -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.24, 0.25, 0.27, 1.0)
+	material.roughness = 0.92
+	material.metallic = 0.05
+	return material
 
 
 func _resolve_cell_rotation(cell: Dictionary, column_index: int, blueprint: MapBlueprint) -> float:
