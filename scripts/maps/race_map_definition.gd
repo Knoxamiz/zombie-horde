@@ -15,6 +15,7 @@ extends Resource
 @export var out_of_bounds_min_z: float = -48.0
 @export var out_of_bounds_max_z: float = 48.0
 @export var out_of_bounds_min_y: float = -3.0
+@export var deck_y: float = 0.0
 @export var hazard_placement_half_width: float = 6.2
 @export var hazard_placement_min_z: float = -30.0
 @export var hazard_placement_max_z: float = 26.0

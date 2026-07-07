@@ -413,15 +413,17 @@ func _build_default_safe_floor(safe_floor: Node3D, blueprint: MapBlueprint) -> v
 	var length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size
 	var center_z: float = (blueprint.spawn_z + blueprint.goal_z) * 0.5
 	var deck_y: float = _get_deck_elevation(blueprint)
+	var floor_thickness: float = 0.12
 	add_safe_floor_plate(
-		Vector3(0.0, deck_y - 0.06, center_z),
-		Vector3(blueprint.safe_path_width_meters, 0.12, length),
+		Vector3(0.0, deck_y - floor_thickness * 0.5, center_z),
+		Vector3(blueprint.safe_path_width_meters, floor_thickness, length),
 		safe_floor
 	)
 
 
 func _build_grid_overlay(grid_overlay: Node3D, grid_labels: Node3D, blueprint: MapBlueprint) -> void:
 	var tile_size: float = blueprint.tile_size
+	var deck_y: float = _get_deck_elevation(blueprint)
 	var marker_size := Vector3(tile_size * 0.82, 0.05, tile_size * 0.82)
 	var center_col: int = blueprint.get_center_column_index()
 	var spawn_row: int = _find_marker_row(blueprint, CELL_SPAWN)
@@ -448,8 +450,8 @@ func _build_grid_overlay(grid_overlay: Node3D, grid_labels: Node3D, blueprint: M
 		1.0
 	)
 
-	_add_row_band_marker(grid_overlay, blueprint, spawn_row, tile_size, mat_spawn_row, "SpawnRow")
-	_add_row_band_marker(grid_overlay, blueprint, goal_row, tile_size, mat_goal_row, "GoalRow")
+	_add_row_band_marker(grid_overlay, blueprint, spawn_row, tile_size, mat_spawn_row, "SpawnRow", deck_y)
+	_add_row_band_marker(grid_overlay, blueprint, goal_row, tile_size, mat_goal_row, "GoalRow", deck_y)
 
 	for row_index in range(blueprint.get_row_count()):
 		for column_index in range(blueprint.visual_width_tiles):
@@ -457,7 +459,7 @@ func _build_grid_overlay(grid_overlay: Node3D, grid_labels: Node3D, blueprint: M
 			var cell_type: String = str(cell.get("type", CELL_VOID))
 			var position := Vector3(
 				blueprint.column_to_x(column_index),
-				0.16,
+				deck_y + 0.16,
 				blueprint.row_to_z(row_index)
 			)
 			var material: StandardMaterial3D = null
@@ -480,7 +482,7 @@ func _build_grid_overlay(grid_overlay: Node3D, grid_labels: Node3D, blueprint: M
 
 			_add_marker_box(grid_overlay, marker_name, marker_size, position, material, 1.0)
 
-	_build_grid_labels(grid_labels, blueprint, center_col, spawn_row, goal_row)
+	_build_grid_labels(grid_labels, blueprint, center_col, spawn_row, goal_row, deck_y)
 
 
 func _build_grid_labels(
@@ -488,7 +490,8 @@ func _build_grid_labels(
 	blueprint: MapBlueprint,
 	center_col: int,
 	spawn_row: int,
-	goal_row: int
+	goal_row: int,
+	deck_y: float
 ) -> void:
 	var left_x: float = blueprint.column_to_x(0) - blueprint.tile_size * 1.35
 	var top_z: float = blueprint.row_to_z(0) - blueprint.tile_size * 0.85
@@ -503,7 +506,7 @@ func _build_grid_labels(
 		row_label.font_size = 22
 		row_label.outline_size = 6
 		row_label.modulate = Color(0.85, 0.92, 1.0, 1.0)
-		row_label.position = Vector3(left_x, 1.4, blueprint.row_to_z(row_index))
+		row_label.position = Vector3(left_x, deck_y + 1.4, blueprint.row_to_z(row_index))
 		row_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		labels_root.add_child(row_label)
 
@@ -517,7 +520,7 @@ func _build_grid_labels(
 		column_label.font_size = 20
 		column_label.outline_size = 6
 		column_label.modulate = Color(1.0, 0.92, 0.45, 1.0) if column_index == center_col else Color(0.8, 0.85, 0.95, 1.0)
-		column_label.position = Vector3(blueprint.column_to_x(column_index), 1.8, top_z)
+		column_label.position = Vector3(blueprint.column_to_x(column_index), deck_y + 1.8, top_z)
 		column_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		labels_root.add_child(column_label)
 
@@ -527,7 +530,7 @@ func _build_grid_labels(
 	spawn_label.font_size = 24
 	spawn_label.outline_size = 8
 	spawn_label.modulate = Color(0.35, 0.9, 1.0, 1.0)
-	spawn_label.position = Vector3(left_x - 2.0, 2.2, blueprint.row_to_z(spawn_row))
+	spawn_label.position = Vector3(left_x - 2.0, deck_y + 2.2, blueprint.row_to_z(spawn_row))
 	spawn_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	labels_root.add_child(spawn_label)
 
@@ -537,7 +540,7 @@ func _build_grid_labels(
 	goal_label.font_size = 24
 	goal_label.outline_size = 8
 	goal_label.modulate = Color(1.0, 0.82, 0.2, 1.0)
-	goal_label.position = Vector3(left_x - 2.0, 2.2, blueprint.row_to_z(goal_row))
+	goal_label.position = Vector3(left_x - 2.0, deck_y + 2.2, blueprint.row_to_z(goal_row))
 	goal_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	labels_root.add_child(goal_label)
 
@@ -548,13 +551,14 @@ func _add_row_band_marker(
 	row_index: int,
 	tile_size: float,
 	material: StandardMaterial3D,
-	marker_name: String
+	marker_name: String,
+	deck_y: float
 ) -> void:
 	_add_marker_box(
 		parent,
 		marker_name,
 		Vector3(tile_size * float(blueprint.visual_width_tiles + 1), 0.03, tile_size * 0.92),
-		Vector3(0.0, 0.12, blueprint.row_to_z(row_index)),
+		Vector3(0.0, deck_y + 0.12, blueprint.row_to_z(row_index)),
 		material,
 		1.0
 	)

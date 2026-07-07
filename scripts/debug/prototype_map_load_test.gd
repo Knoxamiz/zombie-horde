@@ -2,6 +2,7 @@ extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const CANDIDATE_MAP_ID := "broken_bridge_candidate"
+const _BRIDGE_LAYOUT := preload("res://scripts/maps/blueprints/broken_bridge_test_layout.gd")
 const PASS := 0
 const FAIL := 1
 
@@ -87,6 +88,16 @@ func _run_test() -> void:
 			map_controller.zombie_config.out_of_bounds_min_y,
 			definition.out_of_bounds_min_y,
 			"out_of_bounds_min_y"
+		)
+		_assert_float_close(definition.deck_y, _BRIDGE_LAYOUT.BRIDGE_DECK_Y, "deck_y")
+		_assert_close(definition.spawn_origin, _BRIDGE_LAYOUT.get_spawn_origin(), "layout_spawn_origin")
+		_assert_close(definition.goal_position, _BRIDGE_LAYOUT.get_goal_position(), "layout_goal_position")
+		_assert_close(definition.base_position, _BRIDGE_LAYOUT.get_base_position(), "layout_base_position")
+		_assert_close(definition.minigun_position, _BRIDGE_LAYOUT.get_minigun_position(), "layout_minigun_position")
+		_assert_float_close(
+			map_controller.hazard_config.placement_surface_y,
+			_BRIDGE_LAYOUT.BRIDGE_DECK_Y,
+			"hazard_placement_surface_y"
 		)
 		_assert_float_close(
 			map_controller.hazard_config.placement_half_width,

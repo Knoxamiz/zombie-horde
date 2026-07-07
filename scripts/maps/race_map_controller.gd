@@ -337,7 +337,7 @@ static func compute_race_camera_view_for_definition(definition: RaceMapDefinitio
 	var spawn_z: float = definition.spawn_origin.z
 	var goal_z: float = definition.goal_position.z
 	var center_z: float = (spawn_z + goal_z) * 0.5
-	var deck_y: float = definition.spawn_origin.y
+	var deck_y: float = _resolve_deck_y(definition)
 	var bridge_length: float = abs(goal_z - spawn_z)
 	var side_offset: float = max(definition.lane_half_width + 6.0, 12.0)
 	var height: float = clampf(bridge_length * 0.22, 14.0, 24.0)
@@ -352,6 +352,14 @@ static func compute_race_camera_view_for_definition(definition: RaceMapDefinitio
 		"rotation_degrees": rotation_degrees,
 		"focus": focus,
 	}
+
+
+static func _resolve_deck_y(definition: RaceMapDefinition) -> float:
+	if definition == null:
+		return 0.8
+	if definition.deck_y > 0.0:
+		return definition.deck_y
+	return definition.spawn_origin.y
 
 
 func _load_map_definition_for_test(map_id: String, definition: RaceMapDefinition) -> bool:
@@ -587,6 +595,7 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		hazard_config.placement_half_width = definition.hazard_placement_half_width
 		hazard_config.placement_min_z = definition.hazard_placement_min_z
 		hazard_config.placement_max_z = definition.hazard_placement_max_z
+		hazard_config.placement_surface_y = _resolve_deck_y(definition) if definition.deck_y > 0.0 else 0.0
 		hazard_config.obstacle_half_width = definition.obstacle_half_width
 		hazard_config.obstacle_min_z = definition.obstacle_min_z
 		hazard_config.obstacle_max_z = definition.obstacle_max_z
