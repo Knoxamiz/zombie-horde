@@ -236,7 +236,7 @@ func add_safe_floor_plate(position: Vector3, size: Vector3, parent: Node3D) -> S
 	body.collision_mask = 0
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
-	box.size = size
+	box.size = Vector3(size.x, maxf(size.y, 0.08), size.z)
 	shape.shape = box
 	body.add_child(shape)
 	if _show_safe_floor:

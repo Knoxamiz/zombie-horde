@@ -21,8 +21,8 @@ static func create() -> MapBlueprint:
 	blueprint.tile_size = 8.0
 	blueprint.visual_width_tiles = 3
 	blueprint.visual_length_tiles = 12
-	blueprint.safe_path_width_meters = 10.0
-	blueprint.gameplay_lane_half_width = 5.0
+	blueprint.safe_path_width_meters = 14.0
+	blueprint.gameplay_lane_half_width = 7.0
 	blueprint.spawn_z = -44.0
 	blueprint.goal_z = 44.0
 	blueprint.theme = "broken_bridge"
@@ -46,12 +46,12 @@ static func create() -> MapBlueprint:
 		},
 	]
 	blueprint.hazard_zones = [
-		{"position": Vector3(-11.5, -2.5, -21.0), "size": Vector3(5.0, 5.0, 8.0)},
-		{"position": Vector3(11.5, -2.5, -21.0), "size": Vector3(5.0, 5.0, 8.0)},
-		{"position": Vector3(-11.5, -2.5, 1.0), "size": Vector3(5.0, 5.0, 8.0)},
-		{"position": Vector3(11.5, -2.5, 1.0), "size": Vector3(5.0, 5.0, 8.0)},
-		{"position": Vector3(-11.5, -2.5, 23.0), "size": Vector3(5.0, 5.0, 8.0)},
-		{"position": Vector3(11.5, -2.5, 23.0), "size": Vector3(5.0, 5.0, 8.0)},
+		{"position": Vector3(-12.5, -3.0, -21.0), "size": Vector3(6.0, 6.0, 8.0)},
+		{"position": Vector3(12.5, -3.0, -21.0), "size": Vector3(6.0, 6.0, 8.0)},
+		{"position": Vector3(-12.5, -3.0, 1.0), "size": Vector3(6.0, 6.0, 8.0)},
+		{"position": Vector3(12.5, -3.0, 1.0), "size": Vector3(6.0, 6.0, 8.0)},
+		{"position": Vector3(-12.5, -3.0, 23.0), "size": Vector3(6.0, 6.0, 8.0)},
+		{"position": Vector3(12.5, -3.0, 23.0), "size": Vector3(6.0, 6.0, 8.0)},
 	]
 	blueprint.dressing_rules = {
 		"void_water": true,
