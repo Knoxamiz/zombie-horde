@@ -185,11 +185,45 @@ static func resolve_playable_index(requested_index: int) -> int:
 	return 0
 
 
+static func resolve_selectable_map_id(requested_map_id: String, legacy_index: int = -1) -> String:
+	var trimmed_id: String = requested_map_id.strip_edges()
+	if not trimmed_id.is_empty():
+		var entry_by_id: Dictionary = get_entry_by_id(trimmed_id)
+		if is_entry_selectable(entry_by_id):
+			return trimmed_id
+
+	if legacy_index >= 0:
+		var entry_by_index: Dictionary = get_entry_by_legacy_index(legacy_index)
+		if is_entry_selectable(entry_by_index):
+			return str(entry_by_index.get("id", DEFAULT_MAP_ID))
+
+	return DEFAULT_MAP_ID
+
+
+static func resolve_legacy_index_from_map_id(map_id: String) -> int:
+	var entry: Dictionary = get_entry_by_id(map_id)
+	if entry.is_empty():
+		return 0
+	return int(entry.get("legacy_index", 0))
+
+
 static func resolve_legacy_index(playable_index: int) -> int:
 	var entry: Dictionary = get_selectable_entry(playable_index)
 	if entry.is_empty():
 		return 0
 	return int(entry.get("legacy_index", 0))
+
+
+static func get_selectable_display_name(map_id: String) -> String:
+	var entry: Dictionary = get_entry_by_id(map_id)
+	if entry.is_empty() or not is_entry_selectable(entry):
+		return get_playable_display_name(0)
+	return str(entry.get("display_name", "City Highway"))
+
+
+static func load_definition_for_map_id(map_id: String) -> RaceMapDefinition:
+	var entry: Dictionary = get_entry_by_id(map_id)
+	return _load_definition_from_entry(entry)
 
 
 static func load_definition_for_playable_index(playable_index: int) -> RaceMapDefinition:

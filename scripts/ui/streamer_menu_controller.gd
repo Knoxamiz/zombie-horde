@@ -451,7 +451,7 @@ func _refresh_controls() -> void:
 	_streamer_name_edit.text = _profile.get_clean_streamer_name()
 	_time_of_day_option.select(_clamped_option_index(_time_of_day_option, _profile.time_of_day))
 	_backdrop_option.select(_clamped_option_index(_backdrop_option, _profile.backdrop_style))
-	_select_map_option(_profile.selected_map_index)
+	_select_map_option_by_id(_profile.get_selected_map_id())
 	_tower_gun_option.select(_clamped_option_index(_tower_gun_option, _profile.tower_gun))
 	_tower_weapon_check.button_pressed = _profile.show_tower_weapons
 	_mine_spin.value = _profile.premium_mine_count
@@ -504,7 +504,7 @@ func _on_map_selected(option_index: int) -> void:
 		_set_status("Map locked during round")
 		return
 
-	_profile.selected_map_index = _get_map_index_for_option(option_index)
+	_profile.set_selected_map_id(_get_map_id_for_option(option_index))
 	_apply_profile_to_game(true)
 	_refresh_controls()
 	_save_profile("Saved map: %s" % _get_selected_map_name())
@@ -737,7 +737,7 @@ func _sync_profile_from_controls() -> void:
 	_profile.audience_balance = int(round(_balance_slider.value))
 	_profile.time_of_day = int(clamp(_time_of_day_option.selected, 0, 1))
 	_profile.backdrop_style = int(clamp(_backdrop_option.selected, 0, 2))
-	_profile.selected_map_index = _get_map_index_for_option(_map_option.selected)
+	_profile.set_selected_map_id(_get_map_id_for_option(_map_option.selected))
 	_profile.tower_gun = int(clamp(_tower_gun_option.selected, 0, 4))
 	_profile.show_tower_weapons = _tower_weapon_check.button_pressed
 	var clean_name: String = _streamer_name_edit.text.strip_edges()
@@ -795,46 +795,45 @@ func _populate_map_options() -> void:
 	_map_option.clear()
 	var selectable_entries: Array[Dictionary] = MapCatalog.get_selectable_entries()
 	for entry in selectable_entries:
-		var legacy_index: int = int(entry.get("legacy_index", 0))
-		_map_option.add_item(str(entry.get("display_name", "City Highway")), legacy_index)
+		var map_id: String = str(entry.get("id", ""))
+		var display_name: String = str(entry.get("display_name", "City Highway"))
+		_map_option.add_item(display_name)
+		var option_index: int = _map_option.get_item_count() - 1
+		_map_option.set_item_metadata(option_index, map_id)
 
 	if _map_option.get_item_count() <= 0:
-		_map_option.add_item("City Highway", 0)
+		_map_option.add_item("City Highway")
+		_map_option.set_item_metadata(0, MapCatalog.DEFAULT_MAP_ID)
 
-func _is_map_option_available(map_index: int) -> bool:
-	return MapCatalog.is_playable_legacy_index(map_index)
 
-func _get_map_display_name(map_index: int) -> String:
-	var entry: Dictionary = MapCatalog.get_entry_by_legacy_index(map_index)
-	if not entry.is_empty() and MapCatalog.is_entry_selectable(entry):
-		return str(entry.get("display_name", "City Highway"))
-	return MapCatalog.get_playable_display_name(0)
-
-func _select_map_option(map_index: int) -> void:
+func _select_map_option_by_id(map_id: String) -> void:
 	if _map_option == null or _map_option.get_item_count() <= 0:
 		return
 
-	var allowed_map_index: int = map_index
+	var allowed_map_id: String = map_id
 	if _race_map_controller != null:
-		allowed_map_index = _race_map_controller.get_allowed_map_index(map_index)
+		allowed_map_id = _race_map_controller.get_allowed_map_id(map_id)
 	for option_index in range(_map_option.get_item_count()):
-		if _map_option.get_item_id(option_index) == allowed_map_index:
+		if str(_map_option.get_item_metadata(option_index)) == allowed_map_id:
 			_map_option.select(option_index)
 			return
 	_map_option.select(0)
 
-func _get_map_index_for_option(option_index: int) -> int:
+
+func _get_map_id_for_option(option_index: int) -> String:
 	if _map_option == null or _map_option.get_item_count() <= 0:
-		return 0
+		return MapCatalog.DEFAULT_MAP_ID
 	var clamped_option_index: int = int(clamp(option_index, 0, _map_option.get_item_count() - 1))
-	return _map_option.get_item_id(clamped_option_index)
+	var map_id: String = str(_map_option.get_item_metadata(clamped_option_index))
+	if map_id.is_empty():
+		return MapCatalog.DEFAULT_MAP_ID
+	return map_id
+
 
 func _get_selected_map_name() -> String:
 	if _race_map_controller != null:
-		return _race_map_controller.get_map_name(
-			_race_map_controller.get_allowed_map_index(_profile.selected_map_index)
-		)
-	return MapCatalog.get_playable_display_name(0)
+		return _race_map_controller.get_map_name_by_id(_profile.get_selected_map_id())
+	return MapCatalog.get_selectable_display_name(_profile.get_selected_map_id())
 
 func _has_premium_access() -> bool:
 	return feature_config != null and feature_config.has_premium_access()

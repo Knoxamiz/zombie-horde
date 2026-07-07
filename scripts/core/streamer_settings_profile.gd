@@ -5,7 +5,7 @@ const SAVE_PATH := "user://streamer_settings.cfg"
 const SECTION := "streamer_settings"
 const PRESET_SECTION_PREFIX := "streamer_preset_"
 const PRESET_COUNT := 4
-const SAVE_VERSION := 3
+const SAVE_VERSION := 4
 
 enum TimeOfDay {
 	NIGHT,
@@ -26,6 +26,7 @@ enum MenuTier {
 @export_enum("Random", "Pistol", "SMG", "Rifle", "Shotgun") var tower_gun: int = 0
 @export var show_tower_weapons: bool = true
 @export_range(0, 7, 1) var selected_map_index: int = 0
+@export var selected_map_id: String = ""
 @export_range(0, 96, 1) var premium_mine_count: int = 6
 @export_range(0, 96, 1) var premium_obstacle_count: int = 12
 @export_range(0, 32, 1) var premium_boost_pad_count: int = 3
@@ -144,6 +145,7 @@ func copy_values_from(source: StreamerSettingsProfile) -> void:
 	tower_gun = source.tower_gun
 	show_tower_weapons = source.show_tower_weapons
 	selected_map_index = source.selected_map_index
+	selected_map_id = source.selected_map_id
 	premium_mine_count = source.premium_mine_count
 	premium_obstacle_count = source.premium_obstacle_count
 	premium_boost_pad_count = source.premium_boost_pad_count
@@ -247,14 +249,33 @@ func get_balance_detail() -> String:
 func get_time_of_day_name() -> String:
 	return "Day" if time_of_day == TimeOfDay.DAY else "Night"
 
+func get_selected_map_id() -> String:
+	return MapCatalog.resolve_selectable_map_id(selected_map_id, selected_map_index)
+
+
+func set_selected_map_id(map_id: String) -> void:
+	_sync_map_selection_fields(MapCatalog.resolve_selectable_map_id(map_id))
+
+
 func sanitize_map_selection() -> void:
-	if MapCatalog.is_playable_legacy_index(selected_map_index):
+	var resolved_map_id: String = get_selected_map_id()
+	if resolved_map_id != MapCatalog.DEFAULT_MAP_ID:
+		_sync_map_selection_fields(resolved_map_id)
+		return
+	if selected_map_id.is_empty() and MapCatalog.is_playable_legacy_index(selected_map_index):
+		_sync_map_selection_fields(MapCatalog.resolve_selectable_map_id("", selected_map_index))
 		return
 	push_warning(
-		"StreamerSettingsProfile: saved map index %d is disabled; using City Highway."
-		% selected_map_index
+		"StreamerSettingsProfile: saved map selection (id=%s index=%d) is disabled; using City Highway."
+		% [selected_map_id, selected_map_index]
 	)
-	selected_map_index = 0
+	_sync_map_selection_fields(MapCatalog.DEFAULT_MAP_ID)
+
+
+func _sync_map_selection_fields(map_id: String) -> void:
+	selected_map_id = map_id
+	var entry: Dictionary = MapCatalog.get_entry_by_id(map_id)
+	selected_map_index = int(entry.get("legacy_index", 0))
 
 func get_avatar_name() -> String:
 	match streamer_avatar:
@@ -306,6 +327,10 @@ static func _read_section_values(
 			MapCatalog.get_max_selectable_legacy_index()
 		)
 	)
+	if saved_version >= 4:
+		profile.selected_map_id = str(
+			config_file.get_value(section, "selected_map_id", profile.selected_map_id)
+		).strip_edges()
 	profile.sanitize_map_selection()
 	profile.premium_mine_count = int(clamp(int(config_file.get_value(section, "premium_mine_count", profile.premium_mine_count)), 0, 96))
 	profile.premium_obstacle_count = int(clamp(int(config_file.get_value(section, "premium_obstacle_count", profile.premium_obstacle_count)), 0, 96))
@@ -327,6 +352,7 @@ func _write_section_values(config_file: ConfigFile, section: String) -> void:
 	config_file.set_value(section, "tower_gun", tower_gun)
 	config_file.set_value(section, "show_tower_weapons", show_tower_weapons)
 	config_file.set_value(section, "selected_map_index", selected_map_index)
+	config_file.set_value(section, "selected_map_id", get_selected_map_id())
 	config_file.set_value(section, "premium_mine_count", premium_mine_count)
 	config_file.set_value(section, "premium_obstacle_count", premium_obstacle_count)
 	config_file.set_value(section, "premium_boost_pad_count", premium_boost_pad_count)
