@@ -238,9 +238,23 @@ func add_safe_floor_plate(position: Vector3, size: Vector3, parent: Node3D) -> S
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var shape := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = Vector3(size.x, maxf(size.y, 0.08), size.z)
-	shape.shape = box
+	var half_x: float = size.x * 0.5
+	var half_z: float = size.z * 0.5
+	var top_y: float = maxf(size.y, 0.08) * 0.5
+	var concave := ConcavePolygonShape3D.new()
+	concave.set_faces(
+		PackedVector3Array(
+			[
+				Vector3(-half_x, top_y, -half_z),
+				Vector3(half_x, top_y, -half_z),
+				Vector3(half_x, top_y, half_z),
+				Vector3(-half_x, top_y, -half_z),
+				Vector3(half_x, top_y, half_z),
+				Vector3(-half_x, top_y, half_z),
+			]
+		)
+	)
+	shape.shape = concave
 	body.add_child(shape)
 	if _show_safe_floor:
 		var debug_mesh := MeshInstance3D.new()
