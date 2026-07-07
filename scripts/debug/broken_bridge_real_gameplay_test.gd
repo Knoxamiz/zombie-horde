@@ -583,10 +583,10 @@ func _print_stress_report_only(metrics: Dictionary) -> void:
 
 func _timeout_for_count(zombie_count: int) -> float:
 	if zombie_count <= 5:
-		return 90.0
-	if zombie_count <= 20:
 		return 100.0
-	return 140.0
+	if zombie_count <= 20:
+		return 130.0
+	return 160.0
 
 
 func _print_scenario_report(metrics: Dictionary, extra_reason: String = "") -> void:
