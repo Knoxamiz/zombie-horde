@@ -45,6 +45,14 @@ var _glow_pulse_time: float = 0.0
 var _base_name_font_size: int = 28
 var _total_zombie_count: int = 0
 var _is_current_leader: bool = false
+var _lane_offset: float = 0.0
+var _stall_timer: float = 0.0
+var _last_progress_sample: float = 0.0
+
+const _ANTI_CLUMP_RADIUS: float = 0.78
+const _ANTI_CLUMP_STRENGTH: float = 2.6
+const _STALL_SECONDS: float = 2.0
+const _STALL_PROGRESS_EPSILON: float = 0.004
 
 @onready var _visual_root: Node3D = get_node("VisualRoot") as Node3D
 @onready var _collision_shape: CollisionShape3D = get_node("CollisionShape3D") as CollisionShape3D
@@ -90,6 +98,9 @@ func configure_zombie(
 	_join_info = join_info if join_info != null else ParticipantJoinInfo.for_name(new_display_name)
 	_has_finished_race = false
 	_finish_place = 0
+	_lane_offset = _compute_lane_offset(random_seed)
+	_stall_timer = 0.0
+	_last_progress_sample = 0.0
 	health = _get_config().max_health
 	_is_current_leader = false
 	_assign_zombie_tint_color()
@@ -226,6 +237,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_update_drift(delta)
+	_update_stall_timer(delta)
 	var desired_velocity: Vector3 = _get_desired_velocity(active_config)
 	velocity = Vector3(
 		move_toward(velocity.x, desired_velocity.x, active_config.acceleration * delta),
@@ -233,6 +245,7 @@ func _physics_process(delta: float) -> void:
 		move_toward(velocity.z, desired_velocity.z, active_config.acceleration * delta)
 	)
 	_apply_crowd_bump(active_config)
+	_apply_anti_clump_nudge(active_config)
 	_move_and_slide_with_audit()
 	_check_out_of_bounds(active_config)
 
@@ -251,14 +264,15 @@ func _process_dead_body(delta: float, active_config: ZombieConfig) -> void:
 	_move_and_slide_with_audit()
 
 func _get_desired_velocity(active_config: ZombieConfig) -> Vector3:
-	var to_goal: Vector3 = goal_position - global_position
+	var race_forward: Vector3 = _get_race_forward()
+	var side: Vector3 = _get_race_side(race_forward)
+	var lane_target: Vector3 = goal_position + side * _lane_offset
+	var to_goal: Vector3 = lane_target - global_position
 	to_goal.y = 0.0
 	if to_goal.length_squared() <= 0.001:
 		return Vector3.ZERO
 
 	var forward: Vector3 = to_goal.normalized()
-	var race_forward: Vector3 = _get_race_forward()
-	var side: Vector3 = _get_race_side(race_forward)
 	var separation: Vector3 = _get_crowd_separation(active_config, side)
 	var edge_recovery: Vector3 = _get_edge_recovery(active_config, side)
 	var direction: Vector3 = (
@@ -268,6 +282,75 @@ func _get_desired_velocity(active_config: ZombieConfig) -> Vector3:
 		+ edge_recovery * active_config.edge_recovery_strength
 	).normalized()
 	return direction * _get_current_speed(active_config)
+
+
+func _compute_lane_offset(random_seed: int) -> float:
+	var active_config: ZombieConfig = _get_config()
+	var usable_half_width: float = maxf(active_config.lane_half_width - 0.6, 0.4)
+	var offset_rng := RandomNumberGenerator.new()
+	offset_rng.seed = random_seed ^ 0x5F3759DF
+	return offset_rng.randf_range(-usable_half_width, usable_half_width)
+
+
+func _update_stall_timer(delta: float) -> void:
+	if not _round_active or _has_finished_race or not is_alive():
+		_stall_timer = 0.0
+		return
+
+	var progress: float = get_progress()
+	if abs(progress - _last_progress_sample) < _STALL_PROGRESS_EPSILON:
+		_stall_timer += delta
+	else:
+		_stall_timer = 0.0
+	_last_progress_sample = progress
+
+
+func _apply_anti_clump_nudge(active_config: ZombieConfig) -> void:
+	if not _round_active or _has_finished_race or not is_alive():
+		return
+
+	var race_forward: Vector3 = _get_race_forward()
+	var side: Vector3 = _get_race_side(race_forward)
+	var closest_zombie: Zombie = null
+	var closest_distance: float = _ANTI_CLUMP_RADIUS
+
+	for node in get_tree().get_nodes_in_group("race_zombies"):
+		var other_zombie: Zombie = node as Zombie
+		if (
+			other_zombie == null
+			or other_zombie == self
+			or not other_zombie.is_alive()
+			or other_zombie.has_finished_race()
+		):
+			continue
+
+		var offset: Vector3 = global_position - other_zombie.global_position
+		offset.y = 0.0
+		var distance: float = offset.length()
+		if distance >= closest_distance:
+			continue
+		closest_zombie = other_zombie
+		closest_distance = distance
+
+	if closest_zombie == null:
+		return
+
+	var lateral_sign: float = sign((global_position - closest_zombie.global_position).dot(side))
+	if is_zero_approx(lateral_sign):
+		lateral_sign = -1.0 if get_instance_id() < closest_zombie.get_instance_id() else 1.0
+
+	var urgency: float = 1.0 - clampf(closest_distance / _ANTI_CLUMP_RADIUS, 0.0, 1.0)
+	var stall_boost: float = 1.75 if _stall_timer >= _STALL_SECONDS else 1.0
+	var lateral_push: Vector3 = side * lateral_sign * _ANTI_CLUMP_STRENGTH * urgency * stall_boost
+	velocity.x += lateral_push.x
+	velocity.z += lateral_push.z
+
+	var forward_push: float = active_config.crowd_bump_forward_bias * urgency * 0.35
+	velocity.x += race_forward.x * forward_push
+	velocity.z += race_forward.z * forward_push
+
+	if velocity.y > 0.05 and closest_distance < 0.55:
+		velocity.y = minf(velocity.y, 0.05)
 
 func _get_race_forward() -> Vector3:
 	var z_direction: float = sign(goal_position.z - _start_position.z)
@@ -372,7 +455,7 @@ func _apply_crowd_bump(active_config: ZombieConfig) -> void:
 
 	velocity.x += bump_direction.x * bump_amount
 	velocity.z += bump_direction.z * bump_amount
-	if active_config.crowd_bump_upward_strength > 0.0:
+	if active_config.crowd_bump_upward_strength > 0.0 and distance > 0.35:
 		velocity.y = max(velocity.y, active_config.crowd_bump_upward_strength * contact_strength)
 	_crowd_bump_timer = active_config.crowd_bump_cooldown * _rng.randf_range(0.75, 1.25)
 
