@@ -23,6 +23,7 @@ const MAT_GOAL := preload("res://assets/materials/goal_zone.tres")
 const MAT_DEBUG_FLOOR := preload("res://assets/materials/road_asphalt.tres")
 const MAT_DEBUG_HAZARD := preload("res://assets/materials/obstacle_warning.tres")
 const SCRIPT_VOID_KILL := preload("res://scripts/maps/bridge_void_kill_zone.gd")
+const SCRIPT_GOAL_CATCH := preload("res://scripts/base/streamer_base_goal.gd")
 
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _map_root: Node3D
@@ -170,6 +171,19 @@ func build_gameplay_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 		Vector3(0.0, 0.13, blueprint.goal_z),
 		MAT_GOAL
 	)
+	add_goal_catch_zone(
+		Vector3(
+			blueprint.safe_path_width_meters + 2.0,
+			3.0,
+			blueprint.tile_size * 1.75
+		),
+		Vector3(
+			0.0,
+			1.5,
+			blueprint.goal_z - blueprint.tile_size * 0.75
+		),
+		goal_zone
+	)
 
 	var oob_half_width: float = max(
 		blueprint.safe_path_width_meters * 0.75,
@@ -269,6 +283,24 @@ func add_safe_floor_plate(position: Vector3, size: Vector3, parent: Node3D) -> S
 		body.add_child(debug_mesh)
 	parent.add_child(body)
 	return body
+
+
+func add_goal_catch_zone(size: Vector3, position: Vector3, parent: Node3D) -> Area3D:
+	var area := Area3D.new()
+	area.name = "GoalCatch"
+	area.position = position
+	area.collision_layer = 32
+	area.collision_mask = 2
+	area.monitoring = false
+	area.monitorable = false
+	area.set_script(SCRIPT_GOAL_CATCH)
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = size
+	shape.shape = box
+	area.add_child(shape)
+	parent.add_child(area)
+	return area
 
 
 func add_hazard_zone(position: Vector3, size: Vector3, parent: Node3D) -> Area3D:

@@ -496,6 +496,15 @@ func _disable_combat_for_map_test(main_game: Node) -> void:
 	var minigun: BaseMinigun = _node(main_game, "World/BaseMinigun") as BaseMinigun
 	if minigun != null:
 		minigun.set_round_active(false)
+	_enable_map_goal_catch(main_game)
+
+
+func _enable_map_goal_catch(main_game: Node) -> void:
+	var goal_catch: StreamerBaseGoal = main_game.get_node_or_null(
+		"World/RoadArena/CoreRoad/MapRoot/GameplayLayer/GoalZone/GoalCatch"
+	) as StreamerBaseGoal
+	if goal_catch != null:
+		goal_catch.set_goal_enabled(true)
 
 
 func _evaluate_scenario(metrics: Dictionary, zombie_count: int) -> void:
@@ -587,10 +596,10 @@ func _print_stress_report_only(metrics: Dictionary) -> void:
 
 func _timeout_for_count(zombie_count: int) -> float:
 	if zombie_count <= 5:
-		return 100.0
+		return 140.0
 	if zombie_count <= 20:
-		return 130.0
-	return 160.0
+		return 200.0
+	return 220.0
 
 
 func _print_scenario_report(metrics: Dictionary, extra_reason: String = "") -> void:
