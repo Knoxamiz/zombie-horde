@@ -785,13 +785,14 @@ class _ZombieRunMonitor:
 			else:
 				_stuck_timers[name_key] = 0.0
 				_stuck_timers[name_key + "_progress"] = progress
+				if _marked_stuck.has(name_key):
+					_marked_stuck.erase(name_key)
 
 			if (
 				float(_stuck_timers.get(name_key, 0.0)) >= _stuck_seconds
 				and not _marked_stuck.has(name_key)
 			):
 				_marked_stuck[name_key] = true
-				stuck += 1
 
 			if abs(zombie.global_position.x) > _lane_half_width + _off_bridge_margin:
 				if not _off_bridge_marked.has(name_key):
@@ -802,6 +803,7 @@ class _ZombieRunMonitor:
 		for zombie in zombie_manager.get_living_zombies():
 			_track_zombie(zombie)
 
+		stuck = 0
 		for name_key in _progress_by_name.keys():
 			if str(name_key).ends_with("_cause"):
 				continue
@@ -811,15 +813,14 @@ class _ZombieRunMonitor:
 			max_progress = max(max_progress, zombie.get_progress())
 			if zombie.has_finished_race():
 				reached_goal += 1
-				if _marked_stuck.has(name_key):
-					stuck = maxi(0, stuck - 1)
-					_marked_stuck.erase(name_key)
 			elif not zombie.is_alive():
 				var cause: String = str(_progress_by_name.get(name_key + "_cause", "unknown"))
 				if cause == "out_of_bounds" or cause == "sewer":
 					killed_oob += 1
 				else:
 					killed_other += 1
+			elif _marked_stuck.has(name_key):
+				stuck += 1
 
 	func _track_zombie(zombie: Zombie) -> void:
 		if zombie == null:
