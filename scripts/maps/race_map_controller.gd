@@ -12,6 +12,7 @@ signal active_map_changed(map_index: int, display_name: String)
 @export var zombie_config: ZombieConfig
 @export var powerup_config: PowerupConfig
 @export var human_defender_config: HumanDefenderConfig
+@export var spectator_camera_path: NodePath
 @export var default_map_index: int = 0
 @export var map_0_definition: RaceMapDefinition
 @export var map_1_definition: RaceMapDefinition
@@ -31,12 +32,14 @@ var _active_map: Node3D
 var _zombie_manager: ZombieManager
 var _base_goal: Node3D
 var _minigun: Node3D
+var _spectator_camera: SpectatorCameraController
 
 func _ready() -> void:
 	_race_world = get_node_or_null(race_world_path) as Node3D
 	_zombie_manager = get_node_or_null(zombie_manager_path) as ZombieManager
 	_base_goal = get_node_or_null(base_goal_path) as Node3D
 	_minigun = get_node_or_null(minigun_path) as Node3D
+	_spectator_camera = get_node_or_null(spectator_camera_path) as SpectatorCameraController
 	if not GameEvents.round_started.is_connected(_on_round_started):
 		GameEvents.round_started.connect(_on_round_started)
 	var profile: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
@@ -145,6 +148,15 @@ func set_active_map_by_id(
 	_last_fallback_used = false
 	_apply_map_geometry(definition, new_map)
 	_apply_gameplay_dimensions(definition)
+	if not _finalize_loaded_map_scene(new_map, definition, entry):
+		new_map.queue_free()
+		_active_map = null
+		_last_fallback_used = true
+		push_warning(
+			"RaceMapController: map '%s' failed scene integration; falling back to City Highway"
+			% trimmed_id
+		)
+		return set_active_map_by_id(MapCatalog.DEFAULT_MAP_ID, true, 0)
 	active_map_changed.emit(active_map_index, get_map_name_by_id(active_map_id))
 	return true
 
@@ -201,6 +213,29 @@ func get_map_definition(index: int) -> RaceMapDefinition:
 func get_map_definition_by_id(map_id: String) -> RaceMapDefinition:
 	var settings_index: int = MapCatalog.resolve_settings_index(map_id, -1)
 	return MapCatalog.load_definition_for_settings_index(settings_index)
+
+
+func get_active_map_definition() -> RaceMapDefinition:
+	if active_map_id.is_empty():
+		return get_map_definition_by_id(MapCatalog.DEFAULT_MAP_ID)
+	return get_map_definition_by_id(active_map_id)
+
+
+func should_use_definition_race_camera() -> bool:
+	return (
+		not active_map_id.is_empty()
+		and active_map_id != MapCatalog.DEFAULT_MAP_ID
+		and not is_prototype_test_load_active()
+	)
+
+
+func ensure_spectator_camera_active() -> void:
+	_disable_scene_cameras(_get_current_map())
+	if _spectator_camera == null:
+		return
+	var camera: Camera3D = _spectator_camera.get_node_or_null("Camera3D") as Camera3D
+	if camera != null:
+		camera.current = true
 
 
 func get_map_definition_for_legacy_index(legacy_index: int) -> RaceMapDefinition:
@@ -286,6 +321,7 @@ func frame_spectator_camera_for_definition(
 ) -> void:
 	if spectator_camera == null or definition == null:
 		return
+	spectator_camera.update_bounds_for_map_definition(definition)
 	var view: Dictionary = compute_race_camera_view_for_definition(definition)
 	spectator_camera.set_view(
 		view.get("position", Vector3.ZERO),
@@ -335,6 +371,9 @@ func _load_map_definition_for_test(map_id: String, definition: RaceMapDefinition
 	active_map_id = ""
 	active_map_index = -1
 
+	_disable_scene_cameras(new_map)
+	ensure_spectator_camera_active()
+
 	_apply_map_geometry(definition, new_map)
 	_apply_gameplay_dimensions(definition)
 	_log_prototype_dimension_report(definition)
@@ -379,6 +418,12 @@ func _on_round_started(_round_number: int) -> void:
 		selected_settings_index = profile.get_selected_settings_map_index()
 	var entry: Dictionary = MapCatalog.get_settings_entry(active_settings_map_index)
 	_log_race_start_map_selection(selected_settings_index, entry, _last_fallback_used)
+	_log_map_scene_integration_diagnostics("race_start", entry)
+	ensure_spectator_camera_active()
+	var definition: RaceMapDefinition = get_active_map_definition()
+	if should_use_definition_race_camera() and _spectator_camera != null and definition != null:
+		var allow_mouse_look: bool = false
+		frame_spectator_camera_for_definition(_spectator_camera, definition, allow_mouse_look)
 
 
 func _entry_paths_exist(entry: Dictionary) -> bool:
@@ -412,6 +457,97 @@ func _log_race_start_map_selection(
 	print("Fallback used: %s" % ("true" if fallback_used else "false"))
 	if not fallback_reason.is_empty():
 		print("Fallback reason: %s" % fallback_reason)
+
+
+func _finalize_loaded_map_scene(
+	map: Node3D,
+	definition: RaceMapDefinition,
+	entry: Dictionary
+) -> bool:
+	if map == null or definition == null:
+		return false
+	_ensure_map_scene_built(map)
+	_disable_scene_cameras(map)
+	ensure_spectator_camera_active()
+	if not _validate_map_scene_contract(map):
+		_log_map_scene_integration_diagnostics("map_load_failed", entry)
+		return false
+	_log_map_scene_integration_diagnostics("map_load", entry)
+	if should_use_definition_race_camera() and _spectator_camera != null:
+		frame_spectator_camera_for_definition(_spectator_camera, definition, false)
+	return true
+
+
+func _ensure_map_scene_built(map: Node3D) -> void:
+	if map == null:
+		return
+	var core_road: Node = map.get_node_or_null("CoreRoad")
+	if core_road is BlueprintMapArena:
+		var arena: BlueprintMapArena = core_road as BlueprintMapArena
+		if arena.get_map_root() == null:
+			arena.build_map()
+
+
+func _disable_scene_cameras(map: Node3D) -> void:
+	if map == null:
+		return
+	for child in map.get_children():
+		if child is Camera3D:
+			(child as Camera3D).current = false
+		if child is Node3D:
+			_disable_scene_cameras(child as Node3D)
+
+
+func _validate_map_scene_contract(map: Node3D) -> bool:
+	if map == null or map.name != "RoadArena":
+		return false
+	var core_road: Node = map.get_node_or_null("CoreRoad")
+	if core_road == null:
+		return false
+	if core_road is BlueprintMapArena:
+		var map_root: Node = core_road.get_node_or_null("MapRoot")
+		if map_root == null:
+			return false
+		var visual_layer: Node = map_root.get_node_or_null("VisualLayer")
+		var gameplay_layer: Node = map_root.get_node_or_null("GameplayLayer")
+		if visual_layer == null or gameplay_layer == null:
+			return false
+		if visual_layer.get_child_count() <= 0:
+			return false
+	return true
+
+
+func _log_map_scene_integration_diagnostics(context: String, entry: Dictionary) -> void:
+	var map: Node3D = _get_current_map()
+	var scene_path: String = str(entry.get("scene_path", ""))
+	var map_id: String = str(entry.get("id", active_map_id))
+	print("=== Map Scene Integration [%s] ===" % context)
+	print("Selected map id: %s" % map_id)
+	print("Loaded scene path: %s" % scene_path)
+	print("RoadArena found: %s" % (map != null and map.name == "RoadArena"))
+	var core_road: Node = map.get_node_or_null("CoreRoad") if map != null else null
+	print("CoreRoad found: %s" % (core_road != null))
+	var map_root: Node = core_road.get_node_or_null("MapRoot") if core_road != null else null
+	print("MapRoot found: %s" % (map_root != null))
+	var visual_layer: Node = map_root.get_node_or_null("VisualLayer") if map_root != null else null
+	var gameplay_layer: Node = map_root.get_node_or_null("GameplayLayer") if map_root != null else null
+	print("VisualLayer child count: %d" % (visual_layer.get_child_count() if visual_layer != null else 0))
+	print("GameplayLayer child count: %d" % (gameplay_layer.get_child_count() if gameplay_layer != null else 0))
+	var active_camera: Camera3D = get_viewport().get_camera_3d()
+	if active_camera != null:
+		print("Active camera name/path: %s / %s" % [active_camera.name, active_camera.get_path()])
+		print("Camera position: %s" % active_camera.global_position)
+		print("Camera rotation: %s" % active_camera.global_rotation_degrees)
+	else:
+		print("Active camera name/path: none")
+	var definition: RaceMapDefinition = get_active_map_definition()
+	if definition != null:
+		print(
+			"Map bounds spawn=%s goal=%s lane_half_width=%.2f"
+			% [definition.spawn_origin, definition.goal_position, definition.lane_half_width]
+		)
+		print("Spawn position: %s" % definition.spawn_origin)
+		print("Goal position: %s" % definition.goal_position)
 
 func _get_current_map() -> Node3D:
 	if _active_map != null and is_instance_valid(_active_map):

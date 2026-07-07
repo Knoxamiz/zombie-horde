@@ -131,6 +131,19 @@ func _test_runtime_load_verify() -> PackedStringArray:
 	var road_arena: Node = _main_game.get_node_or_null("World/RoadArena")
 	if road_arena == null:
 		failures.append("RoadArena missing after loading broken_bridge_candidate")
+	else:
+		var map_root: Node = road_arena.get_node_or_null("CoreRoad/MapRoot")
+		if map_root == null:
+			failures.append("CoreRoad/MapRoot missing after loading broken_bridge_candidate")
+		var visual_layer: Node = road_arena.get_node_or_null("CoreRoad/MapRoot/VisualLayer")
+		if visual_layer == null or visual_layer.get_child_count() <= 0:
+			failures.append("Broken bridge visual layer missing or empty")
+
+	var viewport_camera: Camera3D = _main_game.get_viewport().get_camera_3d()
+	if viewport_camera != null:
+		var camera_path: String = str(viewport_camera.get_path())
+		if "SpectatorCamera" not in camera_path:
+			failures.append("Spectator camera is not active after broken bridge load: %s" % camera_path)
 
 	profile.set_selected_settings_map_index(0)
 	map_controller.apply_profile(profile)

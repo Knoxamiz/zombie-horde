@@ -146,6 +146,28 @@ func _on_active_map_changed(_map_index: int, _display_name: String) -> void:
 		return
 	_apply_phase(_current_phase)
 
+
+func _apply_race_camera_view() -> void:
+	if _spectator_camera == null:
+		return
+	var allow_race_free_cam: bool = _should_allow_race_mouse_capture()
+	_spectator_camera.set_mouse_capture_allowed(allow_race_free_cam)
+	if _race_map_controller != null:
+		_race_map_controller.ensure_spectator_camera_active()
+	if (
+		_race_map_controller != null
+		and _race_map_controller.should_use_definition_race_camera()
+	):
+		var definition: RaceMapDefinition = _race_map_controller.get_active_map_definition()
+		if definition != null:
+			_race_map_controller.frame_spectator_camera_for_definition(
+				_spectator_camera,
+				definition,
+				allow_race_free_cam
+			)
+			return
+	_spectator_camera.set_view(race_camera_position, race_camera_rotation_degrees, allow_race_free_cam)
+
 func _transition_to_phase(phase_name: String) -> void:
 	if phase_name == _current_phase:
 		return
@@ -211,10 +233,7 @@ func _apply_phase(phase_name: String) -> void:
 			_set_node_visible(_streamer_menu, false)
 			if _pre_round_ui != null:
 				_pre_round_ui.set_screen_mode("hidden")
-			if _spectator_camera != null:
-				var allow_race_free_cam: bool = _should_allow_race_mouse_capture()
-				_spectator_camera.set_mouse_capture_allowed(allow_race_free_cam)
-				_spectator_camera.set_view(race_camera_position, race_camera_rotation_degrees, allow_race_free_cam)
+			_apply_race_camera_view()
 
 func _apply_launch_request() -> void:
 	var request: Dictionary = LaunchState.consume_request()
