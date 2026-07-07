@@ -185,10 +185,14 @@ func build_gameplay_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 		goal_zone
 	)
 
-	var oob_half_width: float = max(
-		blueprint.safe_path_width_meters * 0.75,
-		blueprint.gameplay_lane_half_width + 6.0
-	)
+	var oob_half_width: float
+	if bool(blueprint.dressing_rules.get("narrow_bridge", false)):
+		oob_half_width = blueprint.safe_path_width_meters * 0.5 + 5.0
+	else:
+		oob_half_width = max(
+			blueprint.safe_path_width_meters * 0.75,
+			blueprint.gameplay_lane_half_width + 6.0
+		)
 	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 2.0
 	add_oob_zone(
 		Vector3(oob_half_width * 2.0, 4.0, bridge_length + blueprint.tile_size),

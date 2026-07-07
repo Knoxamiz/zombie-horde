@@ -21,8 +21,8 @@ static func create() -> MapBlueprint:
 	blueprint.tile_size = 8.0
 	blueprint.visual_width_tiles = 3
 	blueprint.visual_length_tiles = 12
-	blueprint.safe_path_width_meters = 28.0
-	blueprint.gameplay_lane_half_width = 11.0
+	blueprint.safe_path_width_meters = 9.0
+	blueprint.gameplay_lane_half_width = 4.5
 	blueprint.spawn_z = -44.0
 	blueprint.goal_z = 44.0
 	blueprint.theme = "broken_bridge"
@@ -39,7 +39,7 @@ static func create() -> MapBlueprint:
 				(blueprint.spawn_z + blueprint.goal_z) * 0.5
 			),
 			"size": Vector3(
-				blueprint.safe_path_width_meters + 1.0,
+				blueprint.safe_path_width_meters,
 				floor_thickness,
 				bridge_length
 			),
@@ -51,7 +51,7 @@ static func create() -> MapBlueprint:
 		"narrow_bridge": true,
 		"deep_void": true,
 		"auto_side_void_hazards": true,
-		"void_outer_half_width": 24.0,
+		"void_outer_half_width": 14.0,
 		"void_kill_y": -3.0,
 		"void_kill_height": 6.0,
 		"void_darkness": 1.35,
