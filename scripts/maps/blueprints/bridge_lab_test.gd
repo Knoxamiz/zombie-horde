@@ -21,16 +21,16 @@ static func create() -> MapBlueprint:
 	blueprint.tile_size = 8.0
 	blueprint.visual_width_tiles = 3
 	blueprint.visual_length_tiles = 12
-	blueprint.safe_path_width_meters = 14.0
-	blueprint.gameplay_lane_half_width = 7.0
+	blueprint.safe_path_width_meters = 16.0
+	blueprint.gameplay_lane_half_width = 8.0
 	blueprint.spawn_z = -44.0
 	blueprint.goal_z = 44.0
 	blueprint.theme = "broken_bridge"
 	blueprint.seed = 8802
 	blueprint.rows = _build_rows()
-	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 2.0
 	var floor_top_y: float = 0.8
 	var floor_thickness: float = 0.16
+	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 2.0
 	blueprint.gameplay_plates = [
 		{
 			"position": Vector3(
@@ -39,10 +39,18 @@ static func create() -> MapBlueprint:
 				(blueprint.spawn_z + blueprint.goal_z) * 0.5
 			),
 			"size": Vector3(
-				blueprint.safe_path_width_meters + 0.5,
+				blueprint.safe_path_width_meters + 1.0,
 				floor_thickness,
 				bridge_length
 			),
+		},
+		{
+			"position": Vector3(0.0, floor_top_y - floor_thickness * 0.5, blueprint.spawn_z),
+			"size": Vector3(blueprint.safe_path_width_meters + 1.0, floor_thickness, blueprint.tile_size * 1.5),
+		},
+		{
+			"position": Vector3(0.0, floor_top_y - floor_thickness * 0.5, blueprint.goal_z),
+			"size": Vector3(blueprint.safe_path_width_meters + 1.0, floor_thickness, blueprint.tile_size * 1.5),
 		},
 	]
 	blueprint.hazard_zones = [

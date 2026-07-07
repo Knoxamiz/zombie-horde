@@ -811,6 +811,9 @@ class _ZombieRunMonitor:
 			max_progress = max(max_progress, zombie.get_progress())
 			if zombie.has_finished_race():
 				reached_goal += 1
+				if _marked_stuck.has(name_key):
+					stuck = maxi(0, stuck - 1)
+					_marked_stuck.erase(name_key)
 			elif not zombie.is_alive():
 				var cause: String = str(_progress_by_name.get(name_key + "_cause", "unknown"))
 				if cause == "out_of_bounds" or cause == "sewer":
