@@ -22,6 +22,9 @@ signal active_map_changed(map_index: int, display_name: String)
 @export var map_6_definition: RaceMapDefinition
 
 var active_map_index: int = -1
+var active_map_id: String = ""
+var active_settings_map_index: int = 0
+var _last_fallback_used: bool = false
 var _prototype_test_map_id: String = ""
 var _race_world: Node3D
 var _active_map: Node3D
@@ -34,33 +37,86 @@ func _ready() -> void:
 	_zombie_manager = get_node_or_null(zombie_manager_path) as ZombieManager
 	_base_goal = get_node_or_null(base_goal_path) as Node3D
 	_minigun = get_node_or_null(minigun_path) as Node3D
+	if not GameEvents.round_started.is_connected(_on_round_started):
+		GameEvents.round_started.connect(_on_round_started)
 	var profile: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
 	apply_profile(profile)
 
 func apply_profile(profile: StreamerSettingsProfile) -> bool:
 	_prototype_test_map_id = ""
-	var requested_index: int = default_map_index
+	var settings_index: int = 0
 	if profile != null:
-		requested_index = profile.selected_map_index
-	return set_active_map_index(requested_index)
+		settings_index = profile.get_selected_settings_map_index()
+	return set_active_map_by_settings_index(settings_index)
 
 
 func set_active_map_index(requested_index: int) -> bool:
-	_prototype_test_map_id = ""
-	var allowed_index: int = get_allowed_map_index(requested_index)
-	var definition: RaceMapDefinition = get_map_definition(allowed_index)
-	if definition == null or definition.scene == null or _race_world == null:
-		if allowed_index != default_map_index:
-			push_warning(
-				"RaceMapController: map index %d failed to load; falling back to City Highway"
-				% allowed_index
-			)
-			return set_active_map_index(default_map_index)
-		return false
+	return set_active_map_by_settings_index(
+		MapCatalog.resolve_settings_index("", requested_index)
+	)
 
-	if active_map_index == allowed_index and _get_current_map() != null:
+
+func set_active_map_by_settings_index(settings_index: int) -> bool:
+	var entry: Dictionary = MapCatalog.get_settings_entry(settings_index)
+	var map_id: String = str(entry.get("id", MapCatalog.DEFAULT_MAP_ID))
+	return set_active_map_by_id(map_id, false, settings_index)
+
+
+func set_active_map_by_id(
+	requested_map_id: String,
+	is_fallback_attempt: bool = false,
+	source_settings_index: int = -1
+) -> bool:
+	_prototype_test_map_id = ""
+	var trimmed_id: String = requested_map_id.strip_edges()
+	var settings_index: int = source_settings_index
+	if settings_index < 0:
+		settings_index = MapCatalog.resolve_settings_index(trimmed_id, -1)
+	var entry: Dictionary = MapCatalog.get_settings_entry(settings_index)
+	if str(entry.get("id", "")) != trimmed_id and not trimmed_id.is_empty():
+		entry = MapCatalog.get_entry_by_id(trimmed_id)
+	var fallback_used: bool = false
+	var fallback_reason: String = ""
+
+	if trimmed_id.is_empty() or entry.is_empty() or not MapCatalog.is_entry_selectable(entry):
+		fallback_used = true
+		fallback_reason = "map id missing or not selectable (requested='%s')" % trimmed_id
+	elif not _entry_paths_exist(entry):
+		fallback_used = true
+		fallback_reason = "resource or scene path missing for id='%s'" % trimmed_id
+
+	_last_fallback_used = fallback_used
+
+	if fallback_used:
+		_log_race_start_map_selection(settings_index, entry, true, fallback_reason)
+		if is_fallback_attempt or trimmed_id == MapCatalog.DEFAULT_MAP_ID:
+			return false
+		push_warning(
+			"RaceMapController: %s; falling back to City Highway" % fallback_reason
+		)
+		return set_active_map_by_id(MapCatalog.DEFAULT_MAP_ID, true, 0)
+
+	var legacy_index: int = int(entry.get("legacy_index", 0))
+	var definition: RaceMapDefinition = get_map_definition_for_legacy_index(legacy_index)
+	if definition == null or definition.scene == null or _race_world == null:
+		_last_fallback_used = true
+		_log_race_start_map_selection(settings_index, entry, true, "definition or scene failed to load")
+		if is_fallback_attempt or trimmed_id == MapCatalog.DEFAULT_MAP_ID:
+			return false
+		push_warning(
+			"RaceMapController: map '%s' failed to load; falling back to City Highway" % trimmed_id
+		)
+		return set_active_map_by_id(MapCatalog.DEFAULT_MAP_ID, true, 0)
+
+	if (
+		active_map_id == trimmed_id
+		and not is_prototype_test_load_active()
+		and _get_current_map() != null
+	):
 		_apply_map_geometry(definition, _get_current_map())
 		_apply_gameplay_dimensions(definition)
+		active_settings_map_index = settings_index
+		_last_fallback_used = false
 		return false
 
 	var old_map: Node = _race_world.get_node_or_null("RoadArena")
@@ -70,29 +126,37 @@ func set_active_map_index(requested_index: int) -> bool:
 
 	var new_map: Node3D = definition.scene.instantiate() as Node3D
 	if new_map == null:
-		if allowed_index != default_map_index:
-			push_warning(
-				"RaceMapController: failed to instantiate map index %d; falling back to City Highway"
-				% allowed_index
-			)
-			return set_active_map_index(default_map_index)
-		return false
+		_last_fallback_used = true
+		_log_race_start_map_selection(settings_index, entry, true, "scene instantiation failed")
+		if is_fallback_attempt or trimmed_id == MapCatalog.DEFAULT_MAP_ID:
+			return false
+		push_warning(
+			"RaceMapController: failed to instantiate map '%s'; falling back to City Highway" % trimmed_id
+		)
+		return set_active_map_by_id(MapCatalog.DEFAULT_MAP_ID, true, 0)
 
 	new_map.name = "RoadArena"
 	_race_world.add_child(new_map)
 	_race_world.move_child(new_map, 0)
 	_active_map = new_map
-	active_map_index = allowed_index
+	active_map_id = trimmed_id
+	active_map_index = legacy_index
+	active_settings_map_index = settings_index
+	_last_fallback_used = false
 	_apply_map_geometry(definition, new_map)
 	_apply_gameplay_dimensions(definition)
-	active_map_changed.emit(active_map_index, get_map_name(active_map_index))
+	active_map_changed.emit(active_map_index, get_map_name_by_id(active_map_id))
 	return true
 
 func get_allowed_map_index(requested_index: int) -> int:
-	return MapCatalog.resolve_playable_index(requested_index)
+	return MapCatalog.resolve_settings_index("", requested_index)
+
+
+func get_allowed_map_id(requested_map_id: String) -> String:
+	return MapCatalog.resolve_settings_map_id(requested_map_id)
 
 func get_map_count() -> int:
-	return MapCatalog.get_selectable_count()
+	return MapCatalog.get_settings_map_count()
 
 static func get_catalog_definition(index: int) -> RaceMapDefinition:
 	return MapCatalog.load_definition_for_playable_index(index)
@@ -107,24 +171,43 @@ static func get_catalog_map_name(index: int) -> String:
 	return str(entry.get("display_name", "City Highway"))
 
 func get_map_name(index: int) -> String:
-	var definition: RaceMapDefinition = get_map_definition(index)
-	if definition == null:
-		return MapCatalog.get_playable_display_name(0)
-	return definition.display_name
+	return get_map_name_by_id(MapCatalog.resolve_settings_map_id("", index))
+
+
+func get_map_name_by_id(map_id: String) -> String:
+	var entry: Dictionary = MapCatalog.get_entry_by_id(map_id)
+	if entry.is_empty() or not MapCatalog.is_entry_selectable(entry):
+		return str(MapCatalog.get_settings_entry(0).get("display_name", "City Highway"))
+	return str(entry.get("display_name", "City Highway"))
+
 
 func get_map_scene(index: int) -> PackedScene:
-	var definition: RaceMapDefinition = get_map_definition(index)
+	return get_map_scene_by_id(MapCatalog.resolve_settings_map_id("", index))
+
+
+func get_map_scene_by_id(map_id: String) -> PackedScene:
+	var definition: RaceMapDefinition = get_map_definition_by_id(map_id)
 	if definition == null:
 		return null
 	return definition.scene
 
+
 func get_map_definition(index: int) -> RaceMapDefinition:
-	var playable_index: int = MapCatalog.resolve_playable_index(index)
-	var legacy_index: int = MapCatalog.resolve_legacy_index(playable_index)
+	return MapCatalog.load_definition_for_settings_index(
+		MapCatalog.resolve_settings_index("", index)
+	)
+
+
+func get_map_definition_by_id(map_id: String) -> RaceMapDefinition:
+	var settings_index: int = MapCatalog.resolve_settings_index(map_id, -1)
+	return MapCatalog.load_definition_for_settings_index(settings_index)
+
+
+func get_map_definition_for_legacy_index(legacy_index: int) -> RaceMapDefinition:
 	var definition: RaceMapDefinition = _get_exported_map_definition(legacy_index)
 	if definition != null:
 		return definition
-	return MapCatalog.load_definition_for_playable_index(playable_index)
+	return MapCatalog.load_definition_for_legacy_index(legacy_index)
 
 func _get_exported_map_definition(index: int) -> RaceMapDefinition:
 	match index:
@@ -153,9 +236,9 @@ func get_active_map_name() -> String:
 		var prototype_definition: RaceMapDefinition = MapCatalog.load_definition_by_id(_prototype_test_map_id)
 		if prototype_definition != null:
 			return prototype_definition.display_name
-	if active_map_index < 0:
-		return get_map_name(get_allowed_map_index(default_map_index))
-	return get_map_name(active_map_index)
+	if active_map_id.is_empty():
+		return get_map_name_by_id(MapCatalog.DEFAULT_MAP_ID)
+	return get_map_name_by_id(active_map_id)
 
 
 func is_prototype_test_load_active() -> bool:
@@ -249,6 +332,7 @@ func _load_map_definition_for_test(map_id: String, definition: RaceMapDefinition
 	_race_world.move_child(new_map, 0)
 	_active_map = new_map
 	_prototype_test_map_id = map_id
+	active_map_id = ""
 	active_map_index = -1
 
 	_apply_map_geometry(definition, new_map)
@@ -263,8 +347,10 @@ func _fallback_prototype_load_to_city_highway(reason: String) -> bool:
 	push_warning("RaceMapController: prototype test load failed (%s); falling back to City Highway" % reason)
 	_prototype_test_map_id = ""
 	var profile: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
-	var saved_index: int = default_map_index if profile == null else profile.selected_map_index
-	return set_active_map_index(saved_index)
+	var settings_index: int = 0
+	if profile != null:
+		settings_index = profile.get_selected_settings_map_index()
+	return set_active_map_by_settings_index(settings_index)
 
 
 func _log_prototype_dimension_report(definition: RaceMapDefinition) -> void:
@@ -281,7 +367,51 @@ func _log_prototype_dimension_report(definition: RaceMapDefinition) -> void:
 
 
 func _clamp_map_index(index: int) -> int:
-	return MapCatalog.resolve_playable_index(index)
+	return MapCatalog.resolve_settings_index("", index)
+
+
+func _on_round_started(_round_number: int) -> void:
+	if is_prototype_test_load_active():
+		return
+	var profile: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
+	var selected_settings_index: int = active_settings_map_index
+	if profile != null:
+		selected_settings_index = profile.get_selected_settings_map_index()
+	var entry: Dictionary = MapCatalog.get_settings_entry(active_settings_map_index)
+	_log_race_start_map_selection(selected_settings_index, entry, _last_fallback_used)
+
+
+func _entry_paths_exist(entry: Dictionary) -> bool:
+	if entry.is_empty():
+		return false
+	var resource_path: String = str(entry.get("resource_path", ""))
+	var scene_path: String = str(entry.get("scene_path", ""))
+	return (
+		not resource_path.is_empty()
+		and ResourceLoader.exists(resource_path)
+		and not scene_path.is_empty()
+		and ResourceLoader.exists(scene_path)
+	)
+
+
+func _log_race_start_map_selection(
+	selected_settings_index: int,
+	entry: Dictionary,
+	fallback_used: bool,
+	fallback_reason: String = ""
+) -> void:
+	var map_id: String = str(entry.get("id", MapCatalog.DEFAULT_MAP_ID))
+	var display_name: String = str(entry.get("display_name", "City Highway"))
+	var resource_path: String = str(entry.get("resource_path", ""))
+	var scene_path: String = str(entry.get("scene_path", ""))
+	print("Selected map index: %d" % selected_settings_index)
+	print("Resolved map id: %s" % map_id)
+	print("Resolved display name: %s" % display_name)
+	print("Resource path: %s" % resource_path)
+	print("Scene path: %s" % scene_path)
+	print("Fallback used: %s" % ("true" if fallback_used else "false"))
+	if not fallback_reason.is_empty():
+		print("Fallback reason: %s" % fallback_reason)
 
 func _get_current_map() -> Node3D:
 	if _active_map != null and is_instance_valid(_active_map):

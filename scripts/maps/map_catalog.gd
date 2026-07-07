@@ -106,6 +106,64 @@ static func get_selectable_entries() -> Array[Dictionary]:
 	return selectable
 
 
+static func get_selectable_entries_for_settings() -> Array[Dictionary]:
+	var settings_entries: Array[Dictionary] = []
+	var selectable: Array[Dictionary] = get_selectable_entries()
+	for settings_index in range(selectable.size()):
+		var entry: Dictionary = selectable[settings_index].duplicate(true)
+		entry["settings_index"] = settings_index
+		settings_entries.append(entry)
+	return settings_entries
+
+
+static func get_settings_map_count() -> int:
+	return get_selectable_entries_for_settings().size()
+
+
+static func get_settings_entry(settings_index: int) -> Dictionary:
+	var settings_entries: Array[Dictionary] = get_selectable_entries_for_settings()
+	if settings_entries.is_empty():
+		return get_entry_by_id(DEFAULT_MAP_ID)
+	var clamped: int = int(clamp(settings_index, 0, settings_entries.size() - 1))
+	return settings_entries[clamped]
+
+
+static func get_settings_map_id(settings_index: int) -> String:
+	var entry: Dictionary = get_settings_entry(settings_index)
+	return str(entry.get("id", DEFAULT_MAP_ID))
+
+
+static func resolve_settings_index(map_id: String = "", legacy_or_settings_index: int = -1) -> int:
+	var trimmed_id: String = map_id.strip_edges()
+	if not trimmed_id.is_empty():
+		var settings_entries: Array[Dictionary] = get_selectable_entries_for_settings()
+		for settings_index in range(settings_entries.size()):
+			if str(settings_entries[settings_index].get("id", "")) == trimmed_id:
+				return settings_index
+
+	if legacy_or_settings_index < 0:
+		return 0
+
+	if legacy_or_settings_index < get_settings_map_count():
+		var settings_entry: Dictionary = get_settings_entry(legacy_or_settings_index)
+		if is_entry_selectable(settings_entry):
+			return legacy_or_settings_index
+
+	var legacy_entry: Dictionary = get_entry_by_legacy_index(legacy_or_settings_index)
+	if is_entry_selectable(legacy_entry):
+		return resolve_settings_index(str(legacy_entry.get("id", "")), -1)
+
+	return 0
+
+
+static func resolve_settings_map_id(map_id: String = "", legacy_or_settings_index: int = -1) -> String:
+	return get_settings_map_id(resolve_settings_index(map_id, legacy_or_settings_index))
+
+
+static func load_definition_for_settings_index(settings_index: int) -> RaceMapDefinition:
+	return _load_definition_from_entry(get_settings_entry(settings_index))
+
+
 static func get_playable_count() -> int:
 	return get_playable_entries().size()
 
@@ -185,6 +243,17 @@ static func resolve_playable_index(requested_index: int) -> int:
 	return 0
 
 
+static func resolve_selectable_map_id(requested_map_id: String, legacy_index: int = -1) -> String:
+	return resolve_settings_map_id(requested_map_id, legacy_index)
+
+
+static func resolve_legacy_index_from_map_id(map_id: String) -> int:
+	var entry: Dictionary = get_entry_by_id(map_id)
+	if entry.is_empty():
+		return 0
+	return int(entry.get("legacy_index", 0))
+
+
 static func resolve_legacy_index(playable_index: int) -> int:
 	var entry: Dictionary = get_selectable_entry(playable_index)
 	if entry.is_empty():
@@ -192,9 +261,20 @@ static func resolve_legacy_index(playable_index: int) -> int:
 	return int(entry.get("legacy_index", 0))
 
 
-static func load_definition_for_playable_index(playable_index: int) -> RaceMapDefinition:
-	var entry: Dictionary = get_selectable_entry(playable_index)
+static func get_selectable_display_name(map_id: String) -> String:
+	var entry: Dictionary = get_entry_by_id(map_id)
+	if entry.is_empty() or not is_entry_selectable(entry):
+		return get_settings_entry(0).get("display_name", "City Highway")
+	return str(entry.get("display_name", "City Highway"))
+
+
+static func load_definition_for_map_id(map_id: String) -> RaceMapDefinition:
+	var entry: Dictionary = get_entry_by_id(map_id)
 	return _load_definition_from_entry(entry)
+
+
+static func load_definition_for_playable_index(playable_index: int) -> RaceMapDefinition:
+	return load_definition_for_settings_index(playable_index)
 
 
 static func load_definition_for_legacy_index(legacy_index: int) -> RaceMapDefinition:
