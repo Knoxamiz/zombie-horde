@@ -25,7 +25,7 @@ enum MenuTier {
 @export var streamer_name: String = "Streamer"
 @export_enum("Random", "Pistol", "SMG", "Rifle", "Shotgun") var tower_gun: int = 0
 @export var show_tower_weapons: bool = true
-@export_range(0, 6, 1) var selected_map_index: int = 0
+@export_range(0, 7, 1) var selected_map_index: int = 0
 @export_range(0, 96, 1) var premium_mine_count: int = 6
 @export_range(0, 96, 1) var premium_obstacle_count: int = 12
 @export_range(0, 32, 1) var premium_boost_pad_count: int = 3
@@ -299,7 +299,13 @@ static func _read_section_values(
 		profile.streamer_name = "Streamer"
 	profile.tower_gun = int(clamp(int(config_file.get_value(section, "tower_gun", profile.tower_gun)), 0, 4))
 	profile.show_tower_weapons = true if saved_version < 2 else bool(config_file.get_value(section, "show_tower_weapons", profile.show_tower_weapons))
-	profile.selected_map_index = int(clamp(int(config_file.get_value(section, "selected_map_index", profile.selected_map_index)), 0, 6))
+	profile.selected_map_index = int(
+		clamp(
+			int(config_file.get_value(section, "selected_map_index", profile.selected_map_index)),
+			0,
+			MapCatalog.get_max_selectable_legacy_index()
+		)
+	)
 	profile.sanitize_map_selection()
 	profile.premium_mine_count = int(clamp(int(config_file.get_value(section, "premium_mine_count", profile.premium_mine_count)), 0, 96))
 	profile.premium_obstacle_count = int(clamp(int(config_file.get_value(section, "premium_obstacle_count", profile.premium_obstacle_count)), 0, 96))

@@ -793,8 +793,8 @@ func _populate_map_options() -> void:
 		return
 
 	_map_option.clear()
-	var playable_entries: Array[Dictionary] = MapCatalog.get_playable_entries()
-	for entry in playable_entries:
+	var selectable_entries: Array[Dictionary] = MapCatalog.get_selectable_entries()
+	for entry in selectable_entries:
 		var legacy_index: int = int(entry.get("legacy_index", 0))
 		_map_option.add_item(str(entry.get("display_name", "City Highway")), legacy_index)
 
@@ -806,7 +806,7 @@ func _is_map_option_available(map_index: int) -> bool:
 
 func _get_map_display_name(map_index: int) -> String:
 	var entry: Dictionary = MapCatalog.get_entry_by_legacy_index(map_index)
-	if not entry.is_empty() and MapCatalog.is_entry_playable(entry):
+	if not entry.is_empty() and MapCatalog.is_entry_selectable(entry):
 		return str(entry.get("display_name", "City Highway"))
 	return MapCatalog.get_playable_display_name(0)
 

@@ -49,10 +49,13 @@ func set_active_map_index(requested_index: int) -> bool:
 	_prototype_test_map_id = ""
 	var allowed_index: int = get_allowed_map_index(requested_index)
 	var definition: RaceMapDefinition = get_map_definition(allowed_index)
-	if definition == null or definition.scene == null:
-		allowed_index = 0
-		definition = get_map_definition(allowed_index)
 	if definition == null or definition.scene == null or _race_world == null:
+		if allowed_index != default_map_index:
+			push_warning(
+				"RaceMapController: map index %d failed to load; falling back to City Highway"
+				% allowed_index
+			)
+			return set_active_map_index(default_map_index)
 		return false
 
 	if active_map_index == allowed_index and _get_current_map() != null:
@@ -67,6 +70,12 @@ func set_active_map_index(requested_index: int) -> bool:
 
 	var new_map: Node3D = definition.scene.instantiate() as Node3D
 	if new_map == null:
+		if allowed_index != default_map_index:
+			push_warning(
+				"RaceMapController: failed to instantiate map index %d; falling back to City Highway"
+				% allowed_index
+			)
+			return set_active_map_index(default_map_index)
 		return false
 
 	new_map.name = "RoadArena"
@@ -83,7 +92,7 @@ func get_allowed_map_index(requested_index: int) -> int:
 	return MapCatalog.resolve_playable_index(requested_index)
 
 func get_map_count() -> int:
-	return MapCatalog.get_playable_count()
+	return MapCatalog.get_selectable_count()
 
 static func get_catalog_definition(index: int) -> RaceMapDefinition:
 	return MapCatalog.load_definition_for_playable_index(index)
@@ -93,7 +102,7 @@ static func is_catalog_map_available(index: int, _feature_config: FeatureAccessC
 
 static func get_catalog_map_name(index: int) -> String:
 	var entry: Dictionary = MapCatalog.get_entry_by_legacy_index(index)
-	if entry.is_empty() or not MapCatalog.is_entry_playable(entry):
+	if entry.is_empty() or not MapCatalog.is_entry_selectable(entry):
 		return MapCatalog.get_playable_display_name(0)
 	return str(entry.get("display_name", "City Highway"))
 
@@ -118,7 +127,7 @@ func get_map_definition(index: int) -> RaceMapDefinition:
 	return MapCatalog.load_definition_for_playable_index(playable_index)
 
 func _get_exported_map_definition(index: int) -> RaceMapDefinition:
-	match int(clamp(index, 0, 6)):
+	match index:
 		0:
 			return map_0_definition
 		1:
@@ -133,7 +142,8 @@ func _get_exported_map_definition(index: int) -> RaceMapDefinition:
 			return map_5_definition
 		6:
 			return map_6_definition
-	return map_0_definition
+		_:
+			return null
 
 func is_map_available(index: int) -> bool:
 	return MapCatalog.is_playable_legacy_index(index)

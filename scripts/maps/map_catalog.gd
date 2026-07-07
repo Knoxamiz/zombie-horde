@@ -75,10 +75,11 @@ const ENTRIES: Array[Dictionary] = [
 	},
 	{
 		"id": "broken_bridge_candidate",
-		"display_name": "Broken Bridge Candidate",
+		"display_name": "Broken Bridge TEST",
 		"resource_path": "res://resources/maps/broken_bridge_candidate.tres",
 		"scene_path": "res://scenes/maps/broken_bridge_candidate.tscn",
 		"enabled": false,
+		"enabled_for_testing": true,
 		"status": STATUS_PROTOTYPE,
 		"legacy_index": 7,
 	},
@@ -97,8 +98,20 @@ static func get_playable_entries() -> Array[Dictionary]:
 	return playable
 
 
+static func get_selectable_entries() -> Array[Dictionary]:
+	var selectable: Array[Dictionary] = []
+	for entry in ENTRIES:
+		if is_entry_selectable(entry):
+			selectable.append(entry.duplicate(true))
+	return selectable
+
+
 static func get_playable_count() -> int:
 	return get_playable_entries().size()
+
+
+static func get_selectable_count() -> int:
+	return get_selectable_entries().size()
 
 
 static func is_entry_playable(entry: Dictionary) -> bool:
@@ -107,6 +120,16 @@ static func is_entry_playable(entry: Dictionary) -> bool:
 	if not bool(entry.get("enabled", false)):
 		return false
 	return str(entry.get("status", "")) == STATUS_PLAYABLE
+
+
+static func is_entry_selectable(entry: Dictionary) -> bool:
+	if entry.is_empty():
+		return false
+	if is_entry_playable(entry):
+		return true
+	if not bool(entry.get("enabled_for_testing", false)):
+		return false
+	return str(entry.get("status", "")) == STATUS_PROTOTYPE
 
 
 static func get_entry_by_id(map_id: String) -> Dictionary:
@@ -131,37 +154,52 @@ static func get_playable_entry(playable_index: int) -> Dictionary:
 	return playable[clamped]
 
 
+static func get_selectable_entry(selectable_index: int) -> Dictionary:
+	var selectable: Array[Dictionary] = get_selectable_entries()
+	if selectable.is_empty():
+		return {}
+	var clamped: int = int(clamp(selectable_index, 0, selectable.size() - 1))
+	return selectable[clamped]
+
+
+static func get_max_selectable_legacy_index() -> int:
+	var max_index: int = 0
+	for entry in get_selectable_entries():
+		max_index = maxi(max_index, int(entry.get("legacy_index", 0)))
+	return max_index
+
+
 static func resolve_playable_index(requested_index: int) -> int:
-	var playable: Array[Dictionary] = get_playable_entries()
-	if playable.is_empty():
+	var selectable: Array[Dictionary] = get_selectable_entries()
+	if selectable.is_empty():
 		return 0
 
-	for playable_index in range(playable.size()):
-		if int(playable[playable_index].get("legacy_index", -1)) == requested_index:
-			return playable_index
+	for selectable_index in range(selectable.size()):
+		if int(selectable[selectable_index].get("legacy_index", -1)) == requested_index:
+			return selectable_index
 
 	push_warning(
-		"MapCatalog: saved map index %d is not playable; falling back to %s"
+		"MapCatalog: saved map index %d is not selectable; falling back to %s"
 		% [requested_index, DEFAULT_MAP_ID]
 	)
 	return 0
 
 
 static func resolve_legacy_index(playable_index: int) -> int:
-	var entry: Dictionary = get_playable_entry(playable_index)
+	var entry: Dictionary = get_selectable_entry(playable_index)
 	if entry.is_empty():
 		return 0
 	return int(entry.get("legacy_index", 0))
 
 
 static func load_definition_for_playable_index(playable_index: int) -> RaceMapDefinition:
-	var entry: Dictionary = get_playable_entry(playable_index)
+	var entry: Dictionary = get_selectable_entry(playable_index)
 	return _load_definition_from_entry(entry)
 
 
 static func load_definition_for_legacy_index(legacy_index: int) -> RaceMapDefinition:
 	var entry: Dictionary = get_entry_by_legacy_index(legacy_index)
-	if entry.is_empty() or not is_entry_playable(entry):
+	if entry.is_empty() or not is_entry_selectable(entry):
 		entry = get_entry_by_id(DEFAULT_MAP_ID)
 	return _load_definition_from_entry(entry)
 
@@ -199,7 +237,7 @@ static func get_playable_display_name(playable_index: int) -> String:
 
 static func is_playable_legacy_index(legacy_index: int) -> bool:
 	var entry: Dictionary = get_entry_by_legacy_index(legacy_index)
-	return is_entry_playable(entry)
+	return is_entry_selectable(entry)
 
 
 static func _load_definition_from_entry(entry: Dictionary) -> RaceMapDefinition:

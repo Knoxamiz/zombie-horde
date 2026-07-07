@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_definition")
-display_name = "Broken Bridge Candidate"
+display_name = "Broken Bridge TEST"
 scene = ExtResource("2_scene")
 premium_only = true
 road_core_scale = Vector3(1, 1, 1)
