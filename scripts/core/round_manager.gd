@@ -35,9 +35,11 @@ var _leaderboard_store: LeaderboardStore
 var _minigun: BaseMinigun
 var _base_goal: StreamerBaseGoal
 var _round_token: int = 0
+var _post_round_reset_token: int = 0
 var _round_started_msec: int = 0
 var _race_winner_name: String = ""
 var _next_finish_place: int = 1
+var _race_timed_out: bool = false
 
 func _ready() -> void:
 	_join_source = get_node_or_null(join_source_path) as JoinSource
@@ -80,6 +82,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func start_round() -> void:
 	if state == RoundState.COUNTDOWN or state == RoundState.RUNNING:
 		return
+	if state == RoundState.ENDED:
+		_emit_post_round_recovery_hint()
+		return
 	if _zombie_manager == null:
 		return
 
@@ -93,10 +98,13 @@ func start_round() -> void:
 		)
 		return
 
+	_cancel_post_round_auto_reset()
+	_race_timed_out = false
 	round_number += 1
 	_round_token += 1
 	_stats.reset_for_round(round_number)
 	state = RoundState.COUNTDOWN
+	set_process(false)
 
 	_zombie_manager.clear_all_zombies()
 	_zombie_manager.set_round_active(false)
@@ -128,6 +136,8 @@ func start_round() -> void:
 
 func reset_round() -> void:
 	_round_token += 1
+	_cancel_post_round_auto_reset()
+	set_process(false)
 	state = RoundState.IDLE
 	pending_participants.clear()
 	_pending_join_info.clear()
@@ -135,6 +145,7 @@ func reset_round() -> void:
 	_round_started_msec = 0
 	_race_winner_name = ""
 	_next_finish_place = 1
+	_race_timed_out = false
 
 	if _zombie_manager != null:
 		_zombie_manager.set_round_active(false)
@@ -171,6 +182,9 @@ func _on_participant_join_requested(join_info: ParticipantJoinInfo) -> void:
 		_publish_queue()
 		return
 
+	if state == RoundState.ENDED:
+		_emit_post_round_recovery_hint()
+		return
 	if state != RoundState.IDLE:
 		GameEvents.command_text_changed.emit("Round in progress. Join opens after reset.")
 		return
@@ -254,7 +268,11 @@ func _try_complete_round() -> void:
 	_end_round(_race_winner_name, false)
 
 func _end_round(winner_name: String, base_won: bool) -> void:
+	if state == RoundState.ENDED:
+		return
+
 	state = RoundState.ENDED
+	set_process(false)
 
 	if _zombie_manager != null:
 		_zombie_manager.set_round_active(false)
@@ -280,6 +298,94 @@ func _end_round(winner_name: String, base_won: bool) -> void:
 	GameEvents.round_countdown_changed.emit(0)
 	GameEvents.round_ended.emit(winner_name, base_won)
 	_publish_state()
+	_emit_post_round_recovery_hint()
+	_schedule_post_round_auto_reset()
+
+func _process(_delta: float) -> void:
+	if state != RoundState.RUNNING:
+		return
+	var max_duration: float = _get_max_race_duration_seconds()
+	if max_duration <= 0.0:
+		return
+	if _get_round_elapsed_seconds() < max_duration:
+		return
+	_resolve_race_timeout()
+
+func _resolve_race_timeout() -> void:
+	if state != RoundState.RUNNING or _zombie_manager == null:
+		return
+
+	_race_timed_out = true
+	var living_zombies: Array[Zombie] = _zombie_manager.get_living_zombies()
+	if living_zombies.is_empty():
+		_end_round("Streamer Base", true)
+		return
+
+	if _race_winner_name.is_empty():
+		var leader: Zombie = _zombie_manager.get_leader_zombie()
+		if leader == null:
+			_end_round("Streamer Base", true)
+			return
+		_race_winner_name = leader.display_name
+		if not leader.has_finished_race():
+			leader.mark_race_finished(_next_finish_place)
+			_next_finish_place += 1
+			GameEvents.zombie_status_changed.emit(leader.display_name, "Winner (time limit)")
+
+	_finalize_unfinished_zombies_for_timeout()
+	if _race_winner_name.is_empty():
+		_end_round("Streamer Base", true)
+	else:
+		_end_round(_race_winner_name, false)
+
+func _finalize_unfinished_zombies_for_timeout() -> void:
+	if _zombie_manager == null:
+		return
+
+	var unfinished: Array[Zombie] = []
+	for zombie in _zombie_manager.get_living_zombies():
+		if zombie.is_alive() and not zombie.has_finished_race():
+			unfinished.append(zombie)
+
+	unfinished.sort_custom(_sort_zombies_by_progress_desc)
+	for zombie in unfinished:
+		zombie.mark_race_finished(_next_finish_place)
+		_next_finish_place += 1
+		GameEvents.zombie_status_changed.emit(zombie.display_name, "DNF (time limit)")
+
+func _sort_zombies_by_progress_desc(a: Zombie, b: Zombie) -> bool:
+	return a.get_progress() > b.get_progress()
+
+func _schedule_post_round_auto_reset() -> void:
+	var auto_reset_seconds: float = _get_post_round_auto_reset_seconds()
+	if auto_reset_seconds <= 0.0:
+		return
+	_post_round_reset_token += 1
+	_run_post_round_auto_reset(_post_round_reset_token, auto_reset_seconds)
+
+func _run_post_round_auto_reset(token: int, auto_reset_seconds: float) -> void:
+	await get_tree().create_timer(auto_reset_seconds).timeout
+	if token != _post_round_reset_token or state != RoundState.ENDED:
+		return
+	reset_round()
+
+func _cancel_post_round_auto_reset() -> void:
+	_post_round_reset_token += 1
+
+func _emit_post_round_recovery_hint() -> void:
+	var auto_reset_seconds: float = _get_post_round_auto_reset_seconds()
+	if auto_reset_seconds > 0.0:
+		GameEvents.command_text_changed.emit(
+			"Race over — press R or Return Lobby to join again (auto-reset in %ds)."
+			% int(round(auto_reset_seconds))
+		)
+	else:
+		GameEvents.command_text_changed.emit(
+			"Race over — press R or Return Lobby to join again."
+		)
+
+func is_race_timed_out() -> bool:
+	return _race_timed_out
 
 func _publish_state() -> void:
 	GameEvents.round_state_changed.emit(get_state_text())
@@ -336,6 +442,8 @@ func _launch_round() -> void:
 	_round_started_msec = Time.get_ticks_msec()
 	_race_winner_name = ""
 	_next_finish_place = 1
+	_race_timed_out = false
+	set_process(_get_max_race_duration_seconds() > 0.0)
 	if _zombie_manager != null:
 		_zombie_manager.set_round_active(true)
 		for zombie in _zombie_manager.get_living_zombies():
@@ -411,6 +519,16 @@ func _get_countdown_seconds() -> int:
 	if round_config != null:
 		return round_config.countdown_seconds
 	return 5
+
+func _get_max_race_duration_seconds() -> float:
+	if round_config != null:
+		return max(round_config.max_race_duration_seconds, 0.0)
+	return 180.0
+
+func _get_post_round_auto_reset_seconds() -> float:
+	if round_config != null:
+		return max(round_config.post_round_auto_reset_seconds, 0.0)
+	return 45.0
 
 func _get_round_elapsed_seconds() -> float:
 	if _round_started_msec <= 0:
