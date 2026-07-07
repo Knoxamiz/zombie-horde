@@ -219,7 +219,7 @@ func _run_oob_probe() -> void:
 		death_cause = cause
 	)
 	await create_timer(0.1).timeout
-	probe.global_position = Vector3(14.0, 0.8, 0.0)
+	probe.global_position = Vector3(20.0, 4.8, 0.0)
 	for _step in range(20):
 		await create_timer(0.1).timeout
 		if not probe.is_alive():
@@ -291,7 +291,7 @@ func _run_void_hazard_probe() -> void:
 		death_cause = cause
 	)
 	await create_timer(0.1).timeout
-	probe.global_position = Vector3(9.0, 0.5, 0.0)
+	probe.global_position = Vector3(9.0, 0.0, 0.0)
 	for _step in range(20):
 		await create_timer(0.1).timeout
 		if not probe.is_alive():
@@ -772,6 +772,7 @@ class _ZombieRunMonitor:
 	var max_progress: float = 0.0
 
 	var _deck_half_width: float = 4.5
+	var _deck_y: float = 4.0
 	var _stuck_seconds: float = 5.0
 	var _off_bridge_margin: float = 0.75
 	var _progress_by_name: Dictionary = {}
@@ -787,6 +788,7 @@ class _ZombieRunMonitor:
 		off_bridge_margin: float
 	) -> void:
 		_deck_half_width = 4.5 if definition == null else definition.lane_half_width
+		_deck_y = 4.0 if definition == null else maxf(0.8, definition.spawn_origin.y - 0.8)
 		_stuck_seconds = stuck_seconds
 		_off_bridge_margin = off_bridge_margin
 		_progress_by_name.clear()
@@ -853,13 +855,13 @@ class _ZombieRunMonitor:
 		var position: Vector3 = zombie.global_position
 		return (
 			abs(position.x) <= _deck_half_width + 1.0
-			and position.y >= 0.35
-			and position.y <= 2.5
+			and position.y >= _deck_y - 0.5
+			and position.y <= _deck_y + 2.5
 		)
 
 	func _is_invisible_floor_violation(zombie: Zombie) -> bool:
 		var position: Vector3 = zombie.global_position
-		if position.y < 0.35 or position.y > 2.5:
+		if position.y < _deck_y - 0.5 or position.y > _deck_y + 3.0:
 			return false
 		return abs(position.x) > _deck_half_width + _off_bridge_margin
 

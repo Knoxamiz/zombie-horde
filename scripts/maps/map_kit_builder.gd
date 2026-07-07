@@ -89,9 +89,10 @@ func build_visual_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 				continue
 
 			var base_x: float = float(cell.get("placement_x", blueprint.column_to_x(column_index)))
+			var deck_elevation: float = _get_deck_elevation(blueprint)
 			var position: Vector3 = Vector3(
 				base_x + float(cell.get("offset_x", 0.0)),
-				float(cell.get("offset_y", 0.0)),
+				float(cell.get("offset_y", 0.0)) + deck_elevation,
 				blueprint.row_to_z(row_index) + float(cell.get("offset_z", 0.0))
 			)
 			var rotation: float = _resolve_cell_rotation(cell, column_index, blueprint)
@@ -157,18 +158,22 @@ func build_gameplay_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 			var position: Vector3 = hazard.get("position", Vector3.ZERO)
 			add_hazard_zone(position, size, hazard_zones)
 
+	if bool(blueprint.dressing_rules.get("river_kill", false)):
+		_build_river_kill_volume(hazard_zones, blueprint)
+
+	var deck_y: float = _get_deck_elevation(blueprint)
 	_add_marker_box(
 		spawn_zone,
 		"SpawnMarker",
 		Vector3(blueprint.safe_path_width_meters, 0.06, blueprint.tile_size),
-		Vector3(0.0, 0.12, blueprint.spawn_z),
+		Vector3(0.0, deck_y + 0.12, blueprint.spawn_z),
 		MAT_SPAWN
 	)
 	_add_marker_box(
 		goal_zone,
 		"GoalMarker",
 		Vector3(blueprint.safe_path_width_meters, 0.06, blueprint.tile_size),
-		Vector3(0.0, 0.13, blueprint.goal_z),
+		Vector3(0.0, deck_y + 0.13, blueprint.goal_z),
 		MAT_GOAL
 	)
 	add_goal_catch_zone(
@@ -179,7 +184,7 @@ func build_gameplay_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 		),
 		Vector3(
 			0.0,
-			1.5,
+			deck_y + 1.0,
 			blueprint.goal_z - blueprint.tile_size * 0.75
 		),
 		goal_zone
@@ -196,7 +201,7 @@ func build_gameplay_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 2.0
 	add_oob_zone(
 		Vector3(oob_half_width * 2.0, 4.0, bridge_length + blueprint.tile_size),
-		Vector3(0.0, -9.0, (blueprint.spawn_z + blueprint.goal_z) * 0.5),
+		Vector3(0.0, deck_y - 12.0, (blueprint.spawn_z + blueprint.goal_z) * 0.5),
 		oob_zones
 	)
 
@@ -221,7 +226,7 @@ func build_debug_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 		bounds_preview,
 		"BoundsPreview",
 		Vector3(blueprint.safe_path_width_meters, 0.03, abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size),
-		Vector3(0.0, 0.05, (blueprint.spawn_z + blueprint.goal_z) * 0.5),
+		Vector3(0.0, _get_deck_elevation(blueprint) + 0.05, (blueprint.spawn_z + blueprint.goal_z) * 0.5),
 		MAT_DEBUG_FLOOR,
 		0.2
 	)
@@ -379,11 +384,37 @@ func _build_continuous_side_void_hazards(hazard_zones: Node3D, blueprint: MapBlu
 	add_hazard_zone(Vector3(side_center_x, kill_y, (blueprint.spawn_z + blueprint.goal_z) * 0.5), kill_size, hazard_zones)
 
 
+func _build_river_kill_volume(hazard_zones: Node3D, blueprint: MapBlueprint) -> void:
+	var deck_y: float = _get_deck_elevation(blueprint)
+	var kill_height: float = float(blueprint.dressing_rules.get("river_kill_height", 5.0))
+	var kill_top: float = deck_y - 1.5
+	var kill_y: float = kill_top - kill_height * 0.5
+	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 2.0
+	var width: float = blueprint.safe_path_width_meters + 4.0
+	add_hazard_zone(
+		Vector3(0.0, kill_y, (blueprint.spawn_z + blueprint.goal_z) * 0.5),
+		Vector3(width, kill_height, bridge_length),
+		hazard_zones
+	)
+
+
+func _get_deck_elevation(blueprint: MapBlueprint) -> float:
+	if blueprint.dressing_rules.has("deck_elevation"):
+		return float(blueprint.dressing_rules.get("deck_elevation", 0.0))
+	if not blueprint.gameplay_plates.is_empty():
+		var plate: Dictionary = blueprint.gameplay_plates[0]
+		var size: Vector3 = plate.get("size", Vector3.ZERO)
+		var pos: Vector3 = plate.get("position", Vector3.ZERO)
+		return pos.y + size.y * 0.5
+	return 0.8
+
+
 func _build_default_safe_floor(safe_floor: Node3D, blueprint: MapBlueprint) -> void:
 	var length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size
 	var center_z: float = (blueprint.spawn_z + blueprint.goal_z) * 0.5
+	var deck_y: float = _get_deck_elevation(blueprint)
 	add_safe_floor_plate(
-		Vector3(0.0, 0.0, center_z),
+		Vector3(0.0, deck_y - 0.06, center_z),
 		Vector3(blueprint.safe_path_width_meters, 0.12, length),
 		safe_floor
 	)
@@ -412,7 +443,7 @@ func _build_grid_overlay(grid_overlay: Node3D, grid_labels: Node3D, blueprint: M
 		grid_overlay,
 		"CenterSafeRoute",
 		Vector3(blueprint.safe_path_width_meters, 0.02, abs(blueprint.goal_z - blueprint.spawn_z) + tile_size),
-		Vector3(0.0, 0.08, (blueprint.spawn_z + blueprint.goal_z) * 0.5),
+		Vector3(0.0, _get_deck_elevation(blueprint) + 0.08, (blueprint.spawn_z + blueprint.goal_z) * 0.5),
 		mat_center_route,
 		1.0
 	)
