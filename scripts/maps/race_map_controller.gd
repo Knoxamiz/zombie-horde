@@ -27,6 +27,7 @@ var active_map_id: String = ""
 var active_settings_map_index: int = 0
 var _last_fallback_used: bool = false
 var _prototype_test_map_id: String = ""
+var _active_race_environment_override: Environment
 var _race_world: Node3D
 var _active_map: Node3D
 var _zombie_manager: ZombieManager
@@ -278,6 +279,10 @@ func get_active_map_name() -> String:
 
 func is_prototype_test_load_active() -> bool:
 	return not _prototype_test_map_id.is_empty()
+
+
+func get_active_race_environment_override() -> Environment:
+	return _active_race_environment_override
 
 
 func get_prototype_test_map_id() -> String:
@@ -616,3 +621,12 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		_base_goal.global_position = definition.base_position
 	if _minigun != null:
 		_minigun.global_position = definition.minigun_position
+
+	_apply_map_environment(definition)
+
+
+func _apply_map_environment(definition: RaceMapDefinition) -> void:
+	if definition == null:
+		_active_race_environment_override = null
+		return
+	_active_race_environment_override = definition.race_environment_override

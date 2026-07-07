@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="RaceMapDefinition" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="RaceMapDefinition" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/maps/race_map_definition.gd" id="1_definition"]
 [ext_resource type="PackedScene" path="res://scenes/maps/broken_bridge_candidate.tscn" id="2_scene"]
+[ext_resource type="Environment" path="res://resources/environment/broken_bridge_race_environment.tres" id="3_environment"]
 
 [resource]
 script = ExtResource("1_definition")
@@ -10,6 +11,7 @@ scene = ExtResource("2_scene")
 premium_only = true
 road_core_scale = Vector3(1, 1, 1)
 deck_y = 4.0
+race_environment_override = ExtResource("3_environment")
 spawn_origin = Vector3(0, 4.8, -44)
 spawn_area_size = Vector2(4.5, 4)
 goal_position = Vector3(0, 4.8, 44)

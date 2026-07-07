@@ -61,6 +61,7 @@ static func create() -> MapBlueprint:
 		"void_width_scale": 18.0,
 		"void_length_scale": 1.28,
 		"void_depth": BrokenBridgeTestLayout.RIVER_VOID_Y,
+		"elevated_bridge_environment": true,
 	}
 	blueprint.validation_requirements = {"requires_safe_route": true}
 	return blueprint
