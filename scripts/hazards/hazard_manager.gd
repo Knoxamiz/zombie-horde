@@ -147,14 +147,14 @@ func _get_sewer_hole_position(used_positions: Array[Vector3]) -> Vector3:
 func _get_random_mine_position() -> Vector3:
 	return Vector3(
 		_rng.randf_range(-hazard_config.placement_half_width, hazard_config.placement_half_width),
-		0.18,
+		_surface_y(0.18),
 		_rng.randf_range(hazard_config.placement_min_z, hazard_config.placement_max_z)
 	)
 
 func _get_random_sewer_hole_position() -> Vector3:
 	return Vector3(
 		_rng.randf_range(-hazard_config.placement_half_width, hazard_config.placement_half_width),
-		0.08,
+		_surface_y(0.08),
 		_rng.randf_range(hazard_config.placement_min_z, hazard_config.placement_max_z)
 	)
 
@@ -231,7 +231,7 @@ func _get_obstacle_slot_position(segment_index: int, lane_index: int) -> Vector3
 
 	return Vector3(
 		clamp(x_position + _rng.randf_range(-hazard_config.obstacle_lane_jitter, hazard_config.obstacle_lane_jitter), -hazard_config.obstacle_half_width, hazard_config.obstacle_half_width),
-		0.45,
+		_surface_y(0.45),
 		clamp(segment_center + _rng.randf_range(-z_jitter, z_jitter), hazard_config.obstacle_min_z, hazard_config.obstacle_max_z)
 	)
 
@@ -298,3 +298,9 @@ func _append_weighted_scene(weighted_scenes: Array[PackedScene], scene: PackedSc
 
 	for _weight_index in range(weight):
 		weighted_scenes.append(scene)
+
+
+func _surface_y(offset: float) -> float:
+	if hazard_config != null and hazard_config.placement_surface_y > 0.0:
+		return hazard_config.placement_surface_y + offset
+	return offset

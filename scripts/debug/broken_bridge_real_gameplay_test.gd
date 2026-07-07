@@ -2,6 +2,7 @@ extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const MAP_ID := "broken_bridge_candidate"
+const _BRIDGE_LAYOUT := preload("res://scripts/maps/blueprints/broken_bridge_test_layout.gd")
 const PASS := 0
 const FAIL := 1
 
@@ -219,7 +220,7 @@ func _run_oob_probe() -> void:
 		death_cause = cause
 	)
 	await create_timer(0.1).timeout
-	probe.global_position = Vector3(20.0, 4.8, 0.0)
+	probe.global_position = Vector3(20.0, _BRIDGE_LAYOUT.ZOMBIE_SPAWN_Y, 0.0)
 	for _step in range(20):
 		await create_timer(0.1).timeout
 		if not probe.is_alive():
@@ -772,7 +773,7 @@ class _ZombieRunMonitor:
 	var max_progress: float = 0.0
 
 	var _deck_half_width: float = 4.5
-	var _deck_y: float = 4.0
+	var _deck_y: float = _BRIDGE_LAYOUT.BRIDGE_DECK_Y
 	var _stuck_seconds: float = 5.0
 	var _off_bridge_margin: float = 0.75
 	var _progress_by_name: Dictionary = {}
@@ -788,7 +789,9 @@ class _ZombieRunMonitor:
 		off_bridge_margin: float
 	) -> void:
 		_deck_half_width = 4.5 if definition == null else definition.lane_half_width
-		_deck_y = 4.0 if definition == null else maxf(0.8, definition.spawn_origin.y - 0.8)
+		_deck_y = _BRIDGE_LAYOUT.BRIDGE_DECK_Y if definition == null else (
+			definition.deck_y if definition.deck_y > 0.0 else _BRIDGE_LAYOUT.BRIDGE_DECK_Y
+		)
 		_stuck_seconds = stuck_seconds
 		_off_bridge_margin = off_bridge_margin
 		_progress_by_name.clear()

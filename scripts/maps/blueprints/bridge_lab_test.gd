@@ -28,14 +28,14 @@ static func create() -> MapBlueprint:
 	blueprint.theme = "broken_bridge"
 	blueprint.seed = 8802
 	blueprint.rows = _build_rows()
-	var floor_top_y: float = 4.0
-	var floor_thickness: float = 0.16
+	var floor_top_y: float = BrokenBridgeTestLayout.BRIDGE_DECK_Y
+	var floor_thickness: float = BrokenBridgeTestLayout.FLOOR_THICKNESS
 	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 3.0
 	blueprint.gameplay_plates = [
 		{
 			"position": Vector3(
 				0.0,
-				floor_top_y - floor_thickness * 0.5,
+				BrokenBridgeTestLayout.get_safe_floor_body_y(),
 				(blueprint.spawn_z + blueprint.goal_z) * 0.5
 			),
 			"size": Vector3(
@@ -60,7 +60,7 @@ static func create() -> MapBlueprint:
 		"void_darkness": 1.35,
 		"void_width_scale": 18.0,
 		"void_length_scale": 1.28,
-		"void_depth": 0.0,
+		"void_depth": BrokenBridgeTestLayout.RIVER_VOID_Y,
 	}
 	blueprint.validation_requirements = {"requires_safe_route": true}
 	return blueprint
