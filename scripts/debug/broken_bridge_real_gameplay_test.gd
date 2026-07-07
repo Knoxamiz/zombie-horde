@@ -160,7 +160,7 @@ func _run_single_scenario(zombie_count: int) -> void:
 	metrics.max_progress = monitor.max_progress
 
 	_evaluate_scenario(metrics, zombie_count)
-	_print_scenario_report(metrics)
+	_print_scenario_report(metrics, "", monitor.get_stuck_diagnostics())
 	main_game.queue_free()
 
 
@@ -602,7 +602,11 @@ func _timeout_for_count(zombie_count: int) -> float:
 	return 220.0
 
 
-func _print_scenario_report(metrics: Dictionary, extra_reason: String = "") -> void:
+func _print_scenario_report(
+	metrics: Dictionary,
+	extra_reason: String = "",
+	stuck_diagnostics: Array = []
+) -> void:
 	if not extra_reason.is_empty() and metrics.passed:
 		metrics.passed = false
 		_fail("[%d zombies] %s" % [metrics.requested, extra_reason])
@@ -623,6 +627,10 @@ func _print_scenario_report(metrics: Dictionary, extra_reason: String = "") -> v
 	print("- max progress: %.2f" % metrics.max_progress)
 	print("- runtime errors: %s" % (_format_runtime_errors()))
 	print("- result: %s" % result_text)
+	if not stuck_diagnostics.is_empty():
+		print("- stuck diagnostics:")
+		for entry in stuck_diagnostics:
+			print("  - %s" % str(entry))
 
 
 func _boot_main_game() -> Node:
@@ -736,6 +744,27 @@ func _finish(exit_code: int) -> void:
 
 
 class _ZombieRunMonitor:
+	const _BRIDGE_TILE_SIZE: float = 8.0
+	const _BRIDGE_SPAWN_Z: float = -44.0
+	const _BRIDGE_SAFE_HALF_WIDTH: float = 14.0
+	const _BRIDGE_VOID_INNER_HALF: float = 14.0
+	const _BRIDGE_VOID_OUTER_HALF: float = 24.0
+	const _CROWD_CONTACT_RADIUS: float = 0.82
+	const _ROW_CELL_TYPES: Array[String] = [
+		"SPAWN/BROKEN_EDGE",
+		"SAFE_ROAD/RAIL",
+		"BROKEN_EDGE/SAFE",
+		"GAP_VISUAL/CRACK",
+		"SAFE_ROAD/RAIL",
+		"CONE/SAFE",
+		"GAP_VISUAL/CRACK",
+		"DEBRIS/SAFE",
+		"SAFE_ROAD/RAIL",
+		"GAP_VISUAL/CRACK",
+		"BROKEN_EDGE/SAFE",
+		"GOAL/RAIL",
+	]
+
 	var reached_goal: int = 0
 	var killed_oob: int = 0
 	var killed_other: int = 0
@@ -750,6 +779,7 @@ class _ZombieRunMonitor:
 	var _stuck_timers: Dictionary = {}
 	var _marked_stuck: Dictionary = {}
 	var _off_bridge_marked: Dictionary = {}
+	var _stuck_diagnostics: Array[Dictionary] = []
 
 	func begin(
 		zombie_manager: ZombieManager,
@@ -770,6 +800,7 @@ class _ZombieRunMonitor:
 		stuck = 0
 		off_bridge_violations = 0
 		max_progress = 0.0
+		_stuck_diagnostics.clear()
 
 		for zombie in zombie_manager.get_living_zombies():
 			_track_zombie(zombie)
@@ -834,6 +865,60 @@ class _ZombieRunMonitor:
 					killed_other += 1
 			elif _marked_stuck.has(name_key):
 				stuck += 1
+				_stuck_diagnostics.append(_build_stuck_diagnostic(zombie, zombie_manager))
+
+	func get_stuck_diagnostics() -> Array[Dictionary]:
+		return _stuck_diagnostics.duplicate()
+
+	func _build_stuck_diagnostic(zombie: Zombie, zombie_manager: ZombieManager) -> Dictionary:
+		var position: Vector3 = zombie.global_position
+		var progress: float = zombie.get_progress()
+		var lateral_distance: float = abs(position.x)
+		var row_index: int = _nearest_bridge_row_index(position.z)
+		var row_label: String = _ROW_CELL_TYPES[row_index] if row_index >= 0 and row_index < _ROW_CELL_TYPES.size() else "unknown"
+		var crowd_hit: Dictionary = _nearest_crowd_contact(zombie, zombie_manager)
+		return {
+			"name": zombie.display_name,
+			"position": "(%.2f, %.2f, %.2f)" % [position.x, position.y, position.z],
+			"progress": "%.3f" % progress,
+			"lateral_from_center": "%.2f" % lateral_distance,
+			"lane_half_width": "%.2f" % _lane_half_width,
+			"nearest_row": "R%d (%s)" % [row_index, row_label],
+			"near_void_edge": lateral_distance >= _BRIDGE_VOID_INNER_HALF - 1.0,
+			"inside_void_band": lateral_distance >= _BRIDGE_VOID_INNER_HALF and lateral_distance <= _BRIDGE_VOID_OUTER_HALF,
+			"below_safe_floor_edge": lateral_distance > _BRIDGE_SAFE_HALF_WIDTH,
+			"near_goal_line": position.z >= 36.0,
+			"crowd_contact": crowd_hit,
+		}
+
+	func _nearest_bridge_row_index(z: float) -> int:
+		var first_row_z: float = _BRIDGE_SPAWN_Z + _BRIDGE_TILE_SIZE * 0.5
+		return clampi(int(round((z - first_row_z) / _BRIDGE_TILE_SIZE)), 0, _ROW_CELL_TYPES.size() - 1)
+
+	func _nearest_crowd_contact(zombie: Zombie, zombie_manager: ZombieManager) -> Dictionary:
+		var closest_name: String = ""
+		var closest_distance: float = _CROWD_CONTACT_RADIUS
+		for other in zombie_manager.get_living_zombies():
+			if other == zombie or not other.is_alive():
+				continue
+			var distance: float = zombie.global_position.distance_to(other.global_position)
+			if distance < closest_distance:
+				closest_distance = distance
+				closest_name = other.display_name
+		if closest_name.is_empty():
+			return {"blocked_by_zombie": false}
+		return {
+			"blocked_by_zombie": true,
+			"nearest_zombie": closest_name,
+			"distance": "%.2f" % closest_distance,
+			"other_finished": _is_zombie_finished(zombie_manager, closest_name),
+		}
+
+	func _is_zombie_finished(zombie_manager: ZombieManager, display_name: String) -> bool:
+		for living in zombie_manager.get_living_zombies():
+			if living.display_name == display_name:
+				return living.has_finished_race()
+		return false
 
 	func _track_zombie(zombie: Zombie) -> void:
 		if zombie == null:
