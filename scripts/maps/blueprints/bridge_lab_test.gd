@@ -30,7 +30,7 @@ static func create() -> MapBlueprint:
 	blueprint.rows = _build_rows()
 	var floor_top_y: float = 0.8
 	var floor_thickness: float = 0.16
-	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 2.0
+	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 3.0
 	blueprint.gameplay_plates = [
 		{
 			"position": Vector3(
@@ -44,28 +44,16 @@ static func create() -> MapBlueprint:
 				bridge_length
 			),
 		},
-		{
-			"position": Vector3(0.0, floor_top_y - floor_thickness * 0.5, blueprint.spawn_z),
-			"size": Vector3(blueprint.safe_path_width_meters + 1.0, floor_thickness, blueprint.tile_size * 1.5),
-		},
-		{
-			"position": Vector3(0.0, floor_top_y - floor_thickness * 0.5, blueprint.goal_z),
-			"size": Vector3(blueprint.safe_path_width_meters + 1.0, floor_thickness, blueprint.tile_size * 1.5),
-		},
-	]
-	blueprint.hazard_zones = [
-		{"position": Vector3(-12.5, -3.0, -21.0), "size": Vector3(6.0, 6.0, 8.0)},
-		{"position": Vector3(12.5, -3.0, -21.0), "size": Vector3(6.0, 6.0, 8.0)},
-		{"position": Vector3(-12.5, -3.0, 1.0), "size": Vector3(6.0, 6.0, 8.0)},
-		{"position": Vector3(12.5, -3.0, 1.0), "size": Vector3(6.0, 6.0, 8.0)},
-		{"position": Vector3(-12.5, -3.0, 23.0), "size": Vector3(6.0, 6.0, 8.0)},
-		{"position": Vector3(12.5, -3.0, 23.0), "size": Vector3(6.0, 6.0, 8.0)},
 	]
 	blueprint.dressing_rules = {
 		"void_water": true,
 		"center_guides": true,
 		"narrow_bridge": true,
 		"deep_void": true,
+		"auto_side_void_hazards": true,
+		"void_outer_half_width": 14.0,
+		"void_kill_y": -3.0,
+		"void_kill_height": 6.0,
 		"void_darkness": 1.35,
 		"void_width_scale": 18.0,
 		"void_length_scale": 1.28,

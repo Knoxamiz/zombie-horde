@@ -148,10 +148,13 @@ func build_gameplay_layer(root: Node3D, blueprint: MapBlueprint) -> void:
 	if blueprint.gameplay_plates.is_empty():
 		_build_default_safe_floor(safe_floor, blueprint)
 
-	for hazard in blueprint.hazard_zones:
-		var size: Vector3 = hazard.get("size", Vector3(8, 4, 8))
-		var position: Vector3 = hazard.get("position", Vector3.ZERO)
-		add_hazard_zone(position, size, hazard_zones)
+	if bool(blueprint.dressing_rules.get("auto_side_void_hazards", false)):
+		_build_continuous_side_void_hazards(hazard_zones, blueprint)
+	else:
+		for hazard in blueprint.hazard_zones:
+			var size: Vector3 = hazard.get("size", Vector3(8, 4, 8))
+			var position: Vector3 = hazard.get("position", Vector3.ZERO)
+			add_hazard_zone(position, size, hazard_zones)
 
 	_add_marker_box(
 		spawn_zone,
@@ -305,6 +308,25 @@ func set_show_safe_floor(enabled: bool) -> void:
 
 func set_show_hazards(enabled: bool) -> void:
 	_show_hazards = enabled
+
+
+func _build_continuous_side_void_hazards(hazard_zones: Node3D, blueprint: MapBlueprint) -> void:
+	var inner_half_width: float = blueprint.safe_path_width_meters * 0.5
+	var outer_half_width: float = max(
+		inner_half_width + 6.0,
+		float(blueprint.dressing_rules.get("void_outer_half_width", inner_half_width + 6.0))
+	)
+	var side_width: float = outer_half_width - inner_half_width
+	if side_width <= 0.5:
+		return
+
+	var kill_height: float = float(blueprint.dressing_rules.get("void_kill_height", 6.0))
+	var kill_y: float = float(blueprint.dressing_rules.get("void_kill_y", -3.0))
+	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 2.0
+	var side_center_x: float = inner_half_width + side_width * 0.5
+	var kill_size := Vector3(side_width, kill_height, bridge_length)
+	add_hazard_zone(Vector3(-side_center_x, kill_y, (blueprint.spawn_z + blueprint.goal_z) * 0.5), kill_size, hazard_zones)
+	add_hazard_zone(Vector3(side_center_x, kill_y, (blueprint.spawn_z + blueprint.goal_z) * 0.5), kill_size, hazard_zones)
 
 
 func _build_default_safe_floor(safe_floor: Node3D, blueprint: MapBlueprint) -> void:
