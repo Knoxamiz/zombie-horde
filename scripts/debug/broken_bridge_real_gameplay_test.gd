@@ -120,14 +120,14 @@ func _run_single_scenario(zombie_count: int) -> void:
 		main_game.queue_free()
 		return
 
-	await create_timer(0.25).timeout
-	monitor.begin(zombie_manager, definition, STUCK_SECONDS, OFF_BRIDGE_MARGIN)
-
 	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 12.0):
 		metrics.passed = false
 		_print_scenario_report(metrics, "round never entered RUNNING")
 		main_game.queue_free()
 		return
+
+	await create_timer(0.25).timeout
+	monitor.begin(zombie_manager, definition, STUCK_SECONDS, OFF_BRIDGE_MARGIN)
 
 	await _ensure_race_systems_active(main_game)
 	_disable_combat_for_map_test(main_game)
