@@ -139,6 +139,18 @@ func set_view(new_global_position: Vector3, new_rotation_degrees: Vector3, enabl
 	_yaw_degrees = new_rotation_degrees.y
 	_apply_rotation()
 	_set_look_enabled(enable_mouse_look)
+	if _camera != null:
+		_camera.current = true
+
+
+func update_bounds_for_map_definition(definition: RaceMapDefinition) -> void:
+	if definition == null:
+		return
+	var side_extent: float = max(definition.lane_half_width + 8.0, 14.0)
+	var min_z: float = min(definition.spawn_origin.z, definition.goal_position.z) - 12.0
+	var max_z: float = max(definition.spawn_origin.z, definition.goal_position.z) + 12.0
+	camera_bounds_min = Vector3(-side_extent, 2.2, min_z)
+	camera_bounds_max = Vector3(side_extent, 38.0, max_z)
 
 func set_mouse_capture_allowed(allowed: bool) -> void:
 	recapture_on_click = allowed

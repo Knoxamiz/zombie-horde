@@ -1,15 +1,8 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/maps/blueprint_map_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://scripts/core/visual_collision_sanitizer.gd" id="2_sanitizer"]
 [ext_resource type="Material" path="res://assets/materials/lobby_warning_red.tres" id="3_red"]
-
-[sub_resource type="Environment" id="Environment_candidate"]
-background_mode = 1
-background_color = Color(0.03, 0.05, 0.07, 1)
-ambient_light_source = 2
-ambient_light_color = Color(0.42, 0.48, 0.55, 1)
-ambient_light_energy = 1.0
 
 [sub_resource type="BoxMesh" id="BoxMesh_banner"]
 size = Vector3(10.5, 1.2, 0.16)
@@ -33,20 +26,7 @@ surface_material_override/0 = ExtResource("3_red")
 
 [node name="CandidateLabel" type="Label3D" parent="MapDressing"]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 5.24, -37.8)
-text = "BROKEN BRIDGE CANDIDATE"
+text = "BROKEN BRIDGE TEST"
 font_size = 30
 outline_size = 8
 modulate = Color(0.82, 1, 0.45, 1)
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_candidate")
-
-[node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 2, 10, 4)
-light_energy = 1.1
-shadow_enabled = true
-
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(0.975637, 0.052336, -0.213168, 0, 0.971043, 0.238896, 0.219532, -0.233079, 0.947381, -16.5, 16.7, -81)
-fov = 50.0
-current = true
