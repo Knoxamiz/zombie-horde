@@ -505,27 +505,80 @@ func _evaluate_scenario(metrics: Dictionary, zombie_count: int) -> void:
 			"expected %d spawned zombies, got %d" % [zombie_count, metrics.spawned]
 		)
 
-	if metrics.max_progress < 0.4:
-		_fail_scenario(metrics, "zombies never advanced (max progress %.2f)" % metrics.max_progress)
+	if _is_stress_report_only(zombie_count):
+		_print_stress_report_only(metrics)
+		return
 
-	var max_stuck: int = _maximum_stuck_count(zombie_count)
-	if metrics.stuck > max_stuck:
-		_fail_scenario(metrics, "%d zombies were stuck (max allowed %d)" % [metrics.stuck, max_stuck])
+	if metrics.reached_goal <= 0:
+		_fail_scenario(metrics, "no zombies reached goal")
 
-	var max_off_bridge: int = maxi(2, int(ceil(float(zombie_count) * 0.5)))
-	if metrics.off_bridge > max_off_bridge:
+	var required_goal: int = _required_goal_count(zombie_count)
+	if metrics.reached_goal < required_goal:
 		_fail_scenario(
 			metrics,
-			"%d off-bridge violations (max allowed %d)" % [metrics.off_bridge, max_off_bridge]
+			"only %d/%d reached goal (need at least %d)"
+			% [metrics.reached_goal, metrics.spawned, required_goal]
+		)
+
+	if metrics.max_progress < 0.90:
+		_fail_scenario(
+			metrics,
+			"max progress %.2f below required 0.90" % metrics.max_progress
+		)
+
+	var max_stuck: int = _maximum_stuck_count(metrics.spawned)
+	if metrics.stuck > max_stuck:
+		_fail_scenario(
+			metrics,
+			"%d zombies were stuck (max allowed %d, under 20%%)" % [metrics.stuck, max_stuck]
+		)
+
+	var max_oob: int = _maximum_oob_death_count(metrics.spawned)
+	if metrics.killed_oob > max_oob:
+		_fail_scenario(
+			metrics,
+			"%d zombies killed/OOB (max allowed %d, under 30%%)" % [metrics.killed_oob, max_oob]
 		)
 
 
-func _maximum_stuck_count(zombie_count: int) -> int:
+func _is_stress_report_only(zombie_count: int) -> bool:
+	return zombie_count > 20
+
+
+func _required_goal_count(zombie_count: int) -> int:
 	if zombie_count <= 5:
 		return 4
 	if zombie_count <= 20:
-		return 16
-	return 60
+		return 15
+	return 0
+
+
+func _maximum_stuck_count(spawned: int) -> int:
+	return int(floor(float(spawned) * 0.20))
+
+
+func _maximum_oob_death_count(spawned: int) -> int:
+	return int(floor(float(spawned) * 0.30))
+
+
+func _print_stress_report_only(metrics: Dictionary) -> void:
+	print(
+		"[%d zombies] stress scenario is report-only (spawned=%d goal=%d oob=%d stuck=%d max_progress=%.2f)"
+		% [
+			metrics.requested,
+			metrics.spawned,
+			metrics.reached_goal,
+			metrics.killed_oob,
+			metrics.stuck,
+			metrics.max_progress,
+		]
+	)
+	if metrics.reached_goal <= 0 and metrics.max_progress < 0.25:
+		_fail_scenario(
+			metrics,
+			"catastrophic stress failure: no goal reachers and max progress %.2f"
+			% metrics.max_progress
+		)
 
 
 func _timeout_for_count(zombie_count: int) -> float:

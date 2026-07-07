@@ -21,26 +21,37 @@ static func create() -> MapBlueprint:
 	blueprint.tile_size = 8.0
 	blueprint.visual_width_tiles = 3
 	blueprint.visual_length_tiles = 12
-	blueprint.safe_path_width_meters = 8.0
-	blueprint.gameplay_lane_half_width = 4.0
+	blueprint.safe_path_width_meters = 10.0
+	blueprint.gameplay_lane_half_width = 5.0
 	blueprint.spawn_z = -44.0
 	blueprint.goal_z = 44.0
 	blueprint.theme = "broken_bridge"
 	blueprint.seed = 8802
 	blueprint.rows = _build_rows()
+	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 2.0
+	var floor_top_y: float = 0.8
+	var floor_thickness: float = 0.16
 	blueprint.gameplay_plates = [
 		{
-			"position": Vector3(0.0, 0.0, (blueprint.spawn_z + blueprint.goal_z) * 0.5),
-			"size": Vector3(8.0, 0.12, abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size),
+			"position": Vector3(
+				0.0,
+				floor_top_y - floor_thickness * 0.5,
+				(blueprint.spawn_z + blueprint.goal_z) * 0.5
+			),
+			"size": Vector3(
+				blueprint.safe_path_width_meters + 0.5,
+				floor_thickness,
+				bridge_length
+			),
 		},
 	]
 	blueprint.hazard_zones = [
-		{"position": Vector3(-8.0, -1.0, -21.0), "size": Vector3(5.0, 4.0, 7.0)},
-		{"position": Vector3(8.0, -1.0, -21.0), "size": Vector3(5.0, 4.0, 7.0)},
-		{"position": Vector3(-8.0, -1.0, 1.0), "size": Vector3(5.0, 4.0, 7.0)},
-		{"position": Vector3(8.0, -1.0, 1.0), "size": Vector3(5.0, 4.0, 7.0)},
-		{"position": Vector3(-8.0, -1.0, 23.0), "size": Vector3(5.0, 4.0, 7.0)},
-		{"position": Vector3(8.0, -1.0, 23.0), "size": Vector3(5.0, 4.0, 7.0)},
+		{"position": Vector3(-11.5, -2.5, -21.0), "size": Vector3(5.0, 5.0, 8.0)},
+		{"position": Vector3(11.5, -2.5, -21.0), "size": Vector3(5.0, 5.0, 8.0)},
+		{"position": Vector3(-11.5, -2.5, 1.0), "size": Vector3(5.0, 5.0, 8.0)},
+		{"position": Vector3(11.5, -2.5, 1.0), "size": Vector3(5.0, 5.0, 8.0)},
+		{"position": Vector3(-11.5, -2.5, 23.0), "size": Vector3(5.0, 5.0, 8.0)},
+		{"position": Vector3(11.5, -2.5, 23.0), "size": Vector3(5.0, 5.0, 8.0)},
 	]
 	blueprint.dressing_rules = {
 		"void_water": true,
