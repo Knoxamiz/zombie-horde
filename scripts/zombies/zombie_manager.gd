@@ -25,6 +25,10 @@ func _process(delta: float) -> void:
 		_leader_timer = leader_update_interval
 		_publish_leader()
 
+func set_spawn_rng_seed(seed_value: int) -> void:
+	_rng.seed = seed_value
+
+
 func spawn_participants(display_names: Array[String]) -> void:
 	for display_name in display_names:
 		spawn_zombie(display_name)

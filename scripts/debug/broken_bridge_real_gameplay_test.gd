@@ -368,6 +368,10 @@ func _configure_test_round(
 		map_controller.hazard_config.sewer_hole_count = 0
 		map_controller.hazard_config.obstacle_count = 0
 
+	var zombie_manager: ZombieManager = _node(main_game, "Systems/ZombieManager") as ZombieManager
+	if zombie_manager != null:
+		zombie_manager.set_spawn_rng_seed(8802)
+
 
 func _ensure_race_systems_active(main_game: Node) -> void:
 	var flow: GameFlowController = _node(main_game, "Systems/GameFlowController") as GameFlowController
