@@ -84,6 +84,11 @@ func _run_test() -> void:
 			"out_of_bounds_max_z"
 		)
 		_assert_float_close(
+			map_controller.zombie_config.out_of_bounds_min_y,
+			definition.out_of_bounds_min_y,
+			"out_of_bounds_min_y"
+		)
+		_assert_float_close(
 			map_controller.hazard_config.placement_half_width,
 			definition.hazard_placement_half_width,
 			"hazard_placement_half_width"

@@ -337,12 +337,13 @@ static func compute_race_camera_view_for_definition(definition: RaceMapDefinitio
 	var spawn_z: float = definition.spawn_origin.z
 	var goal_z: float = definition.goal_position.z
 	var center_z: float = (spawn_z + goal_z) * 0.5
+	var deck_y: float = definition.spawn_origin.y
 	var bridge_length: float = abs(goal_z - spawn_z)
 	var side_offset: float = max(definition.lane_half_width + 6.0, 12.0)
-	var height: float = clampf(bridge_length * 0.2, 12.0, 20.0)
+	var height: float = clampf(bridge_length * 0.22, 14.0, 24.0)
 	var back_offset: float = clampf(bridge_length * 0.38, 26.0, 46.0)
-	var camera_position := Vector3(-side_offset, height, spawn_z - back_offset)
-	var focus := Vector3(0.0, 0.9, center_z)
+	var camera_position := Vector3(-side_offset, deck_y + height, spawn_z - back_offset)
+	var focus := Vector3(0.0, deck_y + 0.5, center_z)
 
 	var look_transform := Transform3D(Basis(), camera_position).looking_at(focus, Vector3.UP)
 	var rotation_degrees: Vector3 = look_transform.basis.get_euler(EULER_ORDER_YXZ) * (180.0 / PI)
@@ -580,6 +581,7 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		zombie_config.out_of_bounds_half_width = definition.out_of_bounds_half_width
 		zombie_config.out_of_bounds_min_z = definition.out_of_bounds_min_z
 		zombie_config.out_of_bounds_max_z = definition.out_of_bounds_max_z
+		zombie_config.out_of_bounds_min_y = definition.out_of_bounds_min_y
 
 	if hazard_config != null:
 		hazard_config.placement_half_width = definition.hazard_placement_half_width

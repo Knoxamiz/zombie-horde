@@ -28,7 +28,7 @@ static func create() -> MapBlueprint:
 	blueprint.theme = "broken_bridge"
 	blueprint.seed = 8802
 	blueprint.rows = _build_rows()
-	var floor_top_y: float = 0.8
+	var floor_top_y: float = 4.0
 	var floor_thickness: float = 0.16
 	var bridge_length: float = abs(blueprint.goal_z - blueprint.spawn_z) + blueprint.tile_size * 3.0
 	blueprint.gameplay_plates = [
@@ -51,13 +51,16 @@ static func create() -> MapBlueprint:
 		"narrow_bridge": true,
 		"deep_void": true,
 		"auto_side_void_hazards": true,
+		"deck_elevation": floor_top_y,
+		"river_kill": true,
+		"river_kill_height": 5.0,
 		"void_outer_half_width": 14.0,
-		"void_kill_y": -3.0,
-		"void_kill_height": 6.0,
+		"void_kill_y": -2.5,
+		"void_kill_height": 7.0,
 		"void_darkness": 1.35,
 		"void_width_scale": 18.0,
 		"void_length_scale": 1.28,
-		"void_depth": -9.5,
+		"void_depth": 0.0,
 	}
 	blueprint.validation_requirements = {"requires_safe_route": true}
 	return blueprint
