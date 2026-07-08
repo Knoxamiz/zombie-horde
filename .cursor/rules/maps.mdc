@@ -1,0 +1,37 @@
+---
+description: Map authoring, catalog, loading, and certification rules
+globs:
+  - scripts/maps/**
+  - scenes/maps/**
+  - resources/maps/**
+  - scripts/debug/map_*.gd
+  - scripts/debug/*map*.gd
+---
+
+# Map rules
+
+See `docs/MAP_CERTIFICATION.md` and `docs/PROTECTED_SYSTEMS.md` (RaceMapController, RaceMapDefinition, City Highway).
+
+## Required
+
+- New maps: prototype/test only until certified (`enabled=false` or `enabled_for_testing=true`).
+- Every map: `RaceMapDefinition` `.tres` + scene contract (`RoadArena`, `CoreRoad`).
+- Promotion to playable: pass `--tier=certification` and promotion checklist in MAP_CERTIFICATION.md.
+
+## Banned unless explicitly requested
+
+- Silent City Highway fallback in debug/headless.
+- Competing finish triggers (`GoalCatch` emitting `zombie_reached_base`).
+- Authoritative void kill zones (use `Zombie._check_out_of_bounds`).
+- Map scene cameras hijacking spectator camera.
+- `enabled=true` / playable status without certification.
+
+## Tests
+
+| Change | Run |
+|--------|-----|
+| Catalog / controller / definition | smoke + certification |
+| Bridge layout / gameplay | + `--tier=map` or `broken_bridge_real_gameplay_test.gd --zombies=5 --skip-stress` |
+| Docs only | none |
+
+Fail loud: print map id and failed requirement. Never treat fallback City Highway as success.

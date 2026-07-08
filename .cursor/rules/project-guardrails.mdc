@@ -1,0 +1,37 @@
+---
+description: Core guardrails for Zombie Horde — protected systems, testing, and AI workflow
+alwaysApply: true
+---
+
+# Project guardrails
+
+Read before editing gameplay code:
+
+- `docs/PROTECTED_SYSTEMS.md` — hardened systems (PRs #38–#42)
+- `docs/AI_DEVELOPMENT_GUARDRAILS.md` — test matrix and anti-patterns
+- `docs/TESTING.md` — headless tiers
+- `docs/MAP_CERTIFICATION.md` — map promotion gate
+
+## Rules
+
+1. One task at a time. No broad refactors without explicit user request.
+2. No gameplay changes hidden in tooling, debug, or docs-adjacent code.
+3. No silent City Highway fallback in debug or headless (`RaceMapController`).
+4. No map promotion without `map_certification_test.gd`.
+5. No UI/Twitch/scoring changes unless the task explicitly says so.
+6. Do not make smoke tier slower than 60 seconds.
+
+## Architecture anchors (do not bypass)
+
+- **Finish:** `World/StreamerBase` (`StreamerBaseGoal`) only — no competing GoalCatch triggers.
+- **Fall/OOB:** `Zombie._check_out_of_bounds()` only — map void zones are visual.
+- **Map data:** `RaceMapDefinition` + `RaceMapController` — not hardcoded in zombies.
+- **Round flow:** `RoundManager` states + `GameEvents` signal bus.
+
+## Task report (required)
+
+End every implementation with: files changed, behavior changed, tests run, test results, manual test needed, remaining risks.
+
+## Merge gate
+
+Run `godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke` before merge. Add core, certification, or map tier per `AI_DEVELOPMENT_GUARDRAILS.md`.

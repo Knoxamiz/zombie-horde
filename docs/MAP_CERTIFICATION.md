@@ -2,6 +2,8 @@
 
 Every selectable map must pass certification before promotion. Certification is strict in debug and headless runs: failed maps fail loudly and never silently load City Highway.
 
+See also: [PROTECTED_SYSTEMS.md](PROTECTED_SYSTEMS.md), [AI_DEVELOPMENT_GUARDRAILS.md](AI_DEVELOPMENT_GUARDRAILS.md), [TESTING.md](TESTING.md).
+
 ## Map stages
 
 | Stage | Meaning |

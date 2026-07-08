@@ -1,0 +1,30 @@
+---
+description: Zombie movement, OOB authority, and locomotion protection
+globs:
+  - scripts/zombies/**
+  - scenes/zombies/**
+---
+
+# Zombie rules
+
+See `docs/PROTECTED_SYSTEMS.md` (Zombie movement, OOB authority).
+
+## Protected
+
+- `Zombie._check_out_of_bounds()` is the **sole** authoritative fall/OOB death path.
+- Zombie movement and `_apply_anti_clump_nudge` are protected — do not tune while doing map/visual/tooling tasks.
+- Per-map bounds come from `RaceMapDefinition` applied via `RaceMapController` → `ZombieConfig`.
+
+## Banned unless explicitly requested
+
+- Map-specific branches or hardcoded coordinates in `zombie.gd`.
+- Re-enabling map void kill zones as authoritative.
+- Changing movement/OOB while building unrelated features.
+
+## Death causes
+
+Use `fell` (below `out_of_bounds_min_y`) and `out_of_bounds` (lateral X/Z) distinctly — see `docs/TESTING.md`.
+
+## Tests
+
+Any change to `zombie.gd` locomotion, OOB, or anti-clump: `--tier=smoke` + `--tier=core` (`void_oob_authority_test.gd`).
