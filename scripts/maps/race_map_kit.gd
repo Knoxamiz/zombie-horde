@@ -50,7 +50,6 @@ const SCENE_CONTAINER_GREEN := preload(
 const MAT_SPAWN := preload("res://assets/materials/spawn_zone.tres")
 const MAT_GOAL := preload("res://assets/materials/goal_zone.tres")
 const MAT_CONCRETE := preload("res://assets/materials/base_concrete.tres")
-const SCRIPT_BRIDGE_VOID_KILL := preload("res://scripts/maps/bridge_void_kill_zone.gd")
 
 var _root: Node3D
 var _collision_root: Node3D
@@ -628,16 +627,14 @@ func _add_invisible_collision_box(box_name: String, size: Vector3, position: Vec
 
 
 func _add_bridge_void_kill_box(size: Vector3, position: Vector3) -> void:
-	var area := Area3D.new()
-	area.name = "BridgeVoidKill"
-	area.position = position
-	area.set_script(SCRIPT_BRIDGE_VOID_KILL)
-	var shape := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = size
-	shape.shape = box
-	area.add_child(shape)
-	_collision_root.add_child(area)
+	var marker := MeshInstance3D.new()
+	marker.name = "VoidKillMarker"
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	marker.mesh = mesh
+	marker.position = position
+	marker.visible = false
+	_collision_root.add_child(marker)
 
 
 func _add_marker_box(box_name: String, size: Vector3, position: Vector3, material: Material) -> void:

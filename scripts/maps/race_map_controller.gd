@@ -4,8 +4,12 @@ extends Node
 ## Finish authority: World/StreamerBase (StreamerBaseGoal) is the sole race finish trigger.
 ## Maps only supply goal_position / base_position via RaceMapDefinition; map-scene GoalCatch
 ## zones are visual markers only and must never emit zombie_reached_base.
+##
+## Fall/OOB authority: Zombie._check_out_of_bounds() driven by ZombieConfig / RaceMapDefinition.
+## Map void kill zones are visual markers only and must never kill zombies.
 
 const FINISH_POSITION_TOLERANCE := 1.25
+const SCRIPT_VOID_KILL := preload("res://scripts/maps/bridge_void_kill_zone.gd")
 
 signal active_map_changed(map_index: int, display_name: String)
 
@@ -652,6 +656,7 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		_minigun.global_position = definition.minigun_position
 
 	_apply_map_environment(definition)
+	_disable_map_void_kill_zones(_get_current_map())
 	_finish_contract_valid = _enforce_finish_contract(definition)
 
 
@@ -758,3 +763,25 @@ func _report_finish_contract_failure(reason: String) -> void:
 	var message: String = "RaceMapController FINISH CONTRACT: %s" % reason
 	push_error(message)
 	print(message)
+
+
+func _disable_map_void_kill_zones(map: Node3D) -> void:
+	if map == null:
+		return
+	_strip_void_kill_zones_recursive(map)
+
+
+func _strip_void_kill_zones_recursive(node: Node) -> void:
+	if node is Area3D:
+		var area: Area3D = node as Area3D
+		if area.get_script() == SCRIPT_VOID_KILL:
+			area.set_script(null)
+			area.monitoring = false
+			area.monitorable = false
+			area.collision_layer = 0
+			area.collision_mask = 0
+			for child in area.get_children():
+				if child is CollisionShape3D:
+					(child as CollisionShape3D).disabled = true
+	for child in node.get_children():
+		_strip_void_kill_zones_recursive(child)

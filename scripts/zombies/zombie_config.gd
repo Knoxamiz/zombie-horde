@@ -26,6 +26,7 @@ extends Resource
 @export var dismember_survivor_health: float = 28.0
 @export var dismemberment_causes: PackedStringArray = PackedStringArray(["mine", "obstacle", "minigun"])
 @export var out_of_bounds_enabled: bool = true
+## Lateral X/Z bounds and min-Y fall threshold. Zombie._check_out_of_bounds() is authoritative.
 @export var out_of_bounds_half_width: float = 10.2
 @export var out_of_bounds_min_z: float = -48.0
 @export var out_of_bounds_max_z: float = 48.0
