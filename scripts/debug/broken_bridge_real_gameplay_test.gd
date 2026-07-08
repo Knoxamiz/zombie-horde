@@ -65,6 +65,9 @@ func _run_single_scenario(zombie_count: int) -> void:
 		"spawned": 0,
 		"reached_goal": 0,
 		"killed_oob": 0,
+		"killed_fell": 0,
+		"killed_lateral_oob": 0,
+		"killed_sewer": 0,
 		"killed_other": 0,
 		"stuck": 0,
 		"off_bridge": 0,
@@ -155,6 +158,9 @@ func _run_single_scenario(zombie_count: int) -> void:
 	monitor.finish(zombie_manager)
 	metrics.reached_goal = monitor.reached_goal
 	metrics.killed_oob = monitor.killed_oob
+	metrics.killed_fell = monitor.killed_fell
+	metrics.killed_lateral_oob = monitor.killed_lateral_oob
+	metrics.killed_sewer = monitor.killed_sewer
 	metrics.killed_other = monitor.killed_other
 	metrics.stuck = monitor.stuck
 	metrics.off_bridge = monitor.off_bridge_violations
@@ -612,6 +618,9 @@ func _print_scenario_report(
 	print("- zombies spawned: %d" % metrics.spawned)
 	print("- zombies reached goal: %d" % metrics.reached_goal)
 	print("- zombies killed/OOB: %d" % metrics.killed_oob)
+	print("- zombies killed/fell: %d" % metrics.killed_fell)
+	print("- zombies killed/lateral_oob: %d" % metrics.killed_lateral_oob)
+	print("- zombies killed/sewer: %d" % metrics.killed_sewer)
 	print("- zombies killed/other: %d" % metrics.killed_other)
 	print("- zombies stuck: %d" % metrics.stuck)
 	print("- off-bridge violations: %d" % metrics.off_bridge)
@@ -758,6 +767,9 @@ class _ZombieRunMonitor:
 
 	var reached_goal: int = 0
 	var killed_oob: int = 0
+	var killed_fell: int = 0
+	var killed_lateral_oob: int = 0
+	var killed_sewer: int = 0
 	var killed_other: int = 0
 	var stuck: int = 0
 	var off_bridge_violations: int = 0
@@ -791,6 +803,9 @@ class _ZombieRunMonitor:
 		_off_bridge_marked.clear()
 		reached_goal = 0
 		killed_oob = 0
+		killed_fell = 0
+		killed_lateral_oob = 0
+		killed_sewer = 0
 		killed_other = 0
 		stuck = 0
 		off_bridge_violations = 0
@@ -875,10 +890,18 @@ class _ZombieRunMonitor:
 				reached_goal += 1
 			elif not zombie.is_alive():
 				var cause: String = str(_progress_by_name.get(name_key + "_cause", "unknown"))
-				if cause == "fell" or cause == "out_of_bounds" or cause == "sewer":
-					killed_oob += 1
-				else:
-					killed_other += 1
+				match cause:
+					"fell":
+						killed_fell += 1
+						killed_oob += 1
+					"out_of_bounds":
+						killed_lateral_oob += 1
+						killed_oob += 1
+					"sewer":
+						killed_sewer += 1
+						killed_oob += 1
+					_:
+						killed_other += 1
 			elif _marked_stuck.has(name_key) and _is_on_bridge_deck(zombie):
 				stuck += 1
 				_stuck_diagnostics.append(_build_stuck_diagnostic(zombie, zombie_manager))
