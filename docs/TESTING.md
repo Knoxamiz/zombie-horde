@@ -12,14 +12,14 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 
 | Tier | Command | Purpose |
 |------|---------|---------|
-| **smoke** | `--tier=smoke` | Fast gate for every Cursor/Codex task |
-| **core** | `--tier=core` | Race loop, finish contract, OOB authority, map selection |
+| **smoke** | `--tier=smoke` | Fast sanity check after almost every task |
+| **core** | `--tier=core` | Deeper contract + lifecycle regression |
 | **map** | `--tier=map` | Map catalog + lightweight Broken Bridge gameplay |
-| **all** | `--tier=all` | Core + map + stable unit/integration debug tests |
+| **all** | `--tier=all` | Broader stable debug suite |
 
-### smoke (~3–4 minutes)
+### smoke (target under 60 seconds)
 
-- `race_lifecycle_smoke_test.gd` — City Highway + Broken Bridge TEST lifecycle (dominates runtime)
+- `race_quick_smoke_test.gd` — minimum loop: boot, join, RUNNING, quick finish, reset, rejoin (City Highway + Broken Bridge TEST)
 - `map_selection_test.gd` — catalog, profile migration, runtime map load
 
 **When to run:** before and after every automated code change.
@@ -28,16 +28,16 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 
 ### core (~7 minutes)
 
-All smoke tests, plus:
-
+- `race_lifecycle_smoke_test.gd` — full finish + timeout lifecycle on both maps
 - `race_finish_contract_test.gd` — single finish authority
 - `void_oob_authority_test.gd` — deck safety, fall death, lateral OOB
+- `map_selection_test.gd` — catalog and runtime load
 
 **When to run:** before merging race loop, map, zombie, or round-manager changes.
 
 **Required before merge:** yes for gameplay-adjacent PRs.
 
-### map (~5–8 min additional over smoke)
+### map (~5–8 minutes)
 
 - `map_selection_test.gd`
 - `broken_bridge_real_gameplay_test.gd --zombies=5 --skip-stress`
@@ -46,9 +46,9 @@ All smoke tests, plus:
 
 **Required before merge:** recommended for map PRs; not required for docs-only changes.
 
-### all (~12–18 min)
+### all (~12–18 minutes)
 
-Core + map tiers, plus stable debug suites:
+Core + map tiers, plus stable unit/integration debug suites:
 
 - `race_finish_window_test.gd`
 - `podium_results_test.gd`
@@ -80,6 +80,7 @@ Core + map tiers, plus stable debug suites:
 Individual scripts still work directly:
 
 ```bash
+godot --headless --path . -s res://scripts/debug/race_quick_smoke_test.gd
 godot --headless --path . -s res://scripts/debug/race_lifecycle_smoke_test.gd
 godot --headless --path . -s res://scripts/debug/race_finish_contract_test.gd
 godot --headless --path . -s res://scripts/debug/void_oob_authority_test.gd
@@ -102,4 +103,4 @@ Do not lump `fell` into generic "killed/other" buckets in debug reports.
 - `0` — all tests in the tier passed
 - `1` — one or more tests failed
 
-Failed test names are printed in the `TEST RUNNER RESULT` summary.
+Failed test names are printed in the `TEST RUNNER RESULT` summary. Smoke tier also prints `smoke target` and `smoke status`.

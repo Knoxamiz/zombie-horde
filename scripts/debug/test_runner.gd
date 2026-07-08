@@ -12,7 +12,7 @@ const FAIL := 1
 const SCRIPT_DIR := "res://scripts/debug/"
 
 const SMOKE_TESTS: Array[Dictionary] = [
-	{"name": "race_lifecycle_smoke_test", "script": "race_lifecycle_smoke_test.gd", "args": []},
+	{"name": "race_quick_smoke_test", "script": "race_quick_smoke_test.gd", "args": []},
 	{"name": "map_selection_test", "script": "map_selection_test.gd", "args": []},
 ]
 
@@ -174,6 +174,7 @@ func _run_child_test(test: Dictionary) -> Dictionary:
 			or "PASSED" in text
 			or "ERROR" in text
 			or "MapSelectionTest" in text
+			or "QUICK SMOKE RUNTIME" in text
 		):
 			print(text)
 
@@ -212,6 +213,12 @@ func _print_summary(
 	print("- failed: %d" % failed.size())
 	print("- skipped: %d" % skipped.size())
 	print("- total time: %.1fs" % total_sec)
+	if _tier == "smoke":
+		print("- smoke target: 60.0s")
+		if total_sec <= 60.0:
+			print("- smoke status: WITHIN TARGET")
+		else:
+			print("- smoke status: SLOW (over 60s target)")
 	if failed.is_empty():
 		print("- failed test names:")
 	else:
