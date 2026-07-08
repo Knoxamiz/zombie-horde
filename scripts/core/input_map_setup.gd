@@ -13,7 +13,8 @@ const ACTION_BINDINGS: Dictionary = {
 	"camera_director": [KEY_F],
 	"round_start": [KEY_ENTER],
 	"round_reset": [KEY_R],
-	"debug_join": [KEY_J]
+	"debug_join": [KEY_J],
+	"dev_panel": [KEY_F3]
 }
 
 func _ready() -> void:

@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/dev_control_panel_controller.gd" id="1_script"]
+
+[node name="DevControlPanel" type="CanvasLayer"]
+visible = false
+script = ExtResource("1_script")
+round_manager_path = NodePath("../Systems/RoundManager")
+debug_join_source_path = NodePath("../Systems/DebugJoinSource")
+zombie_manager_path = NodePath("../Systems/ZombieManager")
+race_map_controller_path = NodePath("../Systems/RaceMapController")
+race_world_path = NodePath("../World")
