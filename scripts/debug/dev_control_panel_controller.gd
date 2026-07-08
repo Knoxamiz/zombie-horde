@@ -26,7 +26,7 @@ var _blueprint_debug_visible: bool = false
 var _root: PanelContainer
 var _state_label: Label
 var _npc_counts_label: Label
-var _map_info_label: Label
+var _config_inspector_label: Label
 var _force_end_button: Button
 var _clear_queue_button: Button
 var _flow_toggle: CheckButton
@@ -110,7 +110,7 @@ func _build_ui() -> void:
 	_root.add_child(margin)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(PANEL_WIDTH - 20.0, 520.0)
+	scroll.custom_minimum_size = Vector2(PANEL_WIDTH - 20.0, 560.0)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	margin.add_child(scroll)
 
@@ -139,9 +139,11 @@ func _build_ui() -> void:
 	])
 	_clear_queue_button = _add_button(body, "Clear Queued NPCs", _on_clear_queue_pressed)
 
-	_add_section(body, "Map")
-	_map_info_label = _add_readout(body, "Map: —")
-	_map_info_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_add_section(body, "Active Config Inspector")
+	_add_hint(body, "Read-only runtime values after map load.")
+	_config_inspector_label = _add_readout(body, "Config: —")
+	_config_inspector_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_add_button(body, "Copy / Print Config Snapshot", _on_copy_snapshot_pressed)
 
 	_add_section(body, "Debug Toggles")
 	_flow_toggle = CheckButton.new()
@@ -262,6 +264,18 @@ func _on_clear_queue_pressed() -> void:
 	_refresh_display()
 
 
+func _on_copy_snapshot_pressed() -> void:
+	var snapshot: String = ActiveConfigInspector.build_snapshot_text(
+		_round_manager,
+		_race_map_controller,
+		_zombie_manager
+	)
+	print(snapshot)
+	if DisplayServer.has_feature(DisplayServer.FEATURE_CLIPBOARD):
+		DisplayServer.clipboard_set(snapshot)
+	_refresh_display()
+
+
 func _on_flow_analyzer_toggled(enabled: bool) -> void:
 	_flow_analyzer_enabled = enabled
 	var analyzer := _ensure_flow_analyzer()
@@ -326,7 +340,7 @@ func _get_blueprint_arena() -> BlueprintMapArena:
 func _refresh_display() -> void:
 	_refresh_race_state()
 	_refresh_npc_counts()
-	_refresh_map_info()
+	_refresh_config_inspector()
 	_refresh_toggle_states()
 
 
@@ -374,48 +388,14 @@ func _refresh_npc_counts() -> void:
 	)
 
 
-func _refresh_map_info() -> void:
-	if _map_info_label == null or _race_map_controller == null:
+func _refresh_config_inspector() -> void:
+	if _config_inspector_label == null:
 		return
-
-	var map_id: String = _race_map_controller.get_resolved_map_id()
-	if map_id.is_empty():
-		map_id = _race_map_controller.active_map_id
-	var display_name: String = _race_map_controller.get_active_map_name()
-	var definition: RaceMapDefinition = _race_map_controller.get_active_map_definition()
-
-	var lines: PackedStringArray = PackedStringArray()
-	lines.append("id: %s" % map_id)
-	lines.append("name: %s" % display_name)
-	if definition != null:
-		var deck_y: float = definition.deck_y if definition.deck_y > 0.0 else definition.spawn_origin.y
-		lines.append("deck Y: %.2f" % deck_y)
-		lines.append("spawn: %s" % definition.spawn_origin)
-		lines.append("goal: %s" % definition.goal_position)
-		lines.append("base: %s" % definition.base_position)
-		lines.append("OOB min Y: %.2f" % definition.out_of_bounds_min_y)
-	else:
-		lines.append("definition: missing")
-	lines.append("certification: %s" % _format_certification_status(map_id))
-	_map_info_label.text = "\n".join(lines)
-
-
-func _format_certification_status(map_id: String) -> String:
-	if map_id.is_empty():
-		return "unknown map id"
-
-	var failures: Array[String] = MapCertification.certify_catalog_entry(map_id)
-	if not failures.is_empty():
-		return "FAIL catalog — %s" % failures[0]
-
-	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(map_id)
-	failures = MapCertification.certify_definition(definition, map_id)
-	if not failures.is_empty():
-		return "FAIL definition — %s" % failures[0]
-
-	if map_id in MapCertification.DEFAULT_CERTIFIED_MAP_IDS:
-		return "gate map (pass headless map_certification_test)"
-	return "static checks ok (run certification tier before promotion)"
+	_config_inspector_label.text = ActiveConfigInspector.build_display_text(
+		_round_manager,
+		_race_map_controller,
+		_zombie_manager
+	)
 
 
 func _refresh_toggle_states() -> void:
