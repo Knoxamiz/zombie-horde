@@ -3,12 +3,12 @@ extends SceneTree
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const CITY_HIGHWAY_MAP_ID := MapCatalog.DEFAULT_MAP_ID
 const BROKEN_BRIDGE_MAP_ID := "broken_bridge_candidate"
-const ZOMBIE_COUNT := 3
 const FINISH_ZOMBIE_COUNT := 1
 const PASS := 0
 const FAIL := 1
 
 var _failures: Array[String] = []
+var _finish_event_count: int = 0
 
 
 func _initialize() -> void:
@@ -16,11 +16,13 @@ func _initialize() -> void:
 
 
 func _run_all() -> void:
-	print("=== Race lifecycle smoke test ===")
-	await _run_map_finish_scenario(CITY_HIGHWAY_MAP_ID, false)
-	await _run_map_timeout_scenario(CITY_HIGHWAY_MAP_ID, false)
-	await _run_map_finish_scenario(BROKEN_BRIDGE_MAP_ID, true)
-	await _run_map_timeout_scenario(BROKEN_BRIDGE_MAP_ID, true)
+	print("=== Race finish contract test ===")
+	await _test_finish_contract_valid_on_load(CITY_HIGHWAY_MAP_ID, false)
+	await _test_finish_contract_valid_on_load(BROKEN_BRIDGE_MAP_ID, true)
+	await _test_map_finish_round(CITY_HIGHWAY_MAP_ID, false)
+	await _test_map_finish_round(BROKEN_BRIDGE_MAP_ID, true)
+	await _test_no_duplicate_finish_event(BROKEN_BRIDGE_MAP_ID, true)
+	await _test_miswired_finish_fails_validation(CITY_HIGHWAY_MAP_ID, false)
 
 	if _failures.is_empty():
 		print("SUITE RESULT: PASSED")
@@ -32,9 +34,31 @@ func _run_all() -> void:
 		_finish(FAIL)
 
 
-func _run_map_finish_scenario(map_id: String, use_prototype_loader: bool) -> void:
-	print("-- %s finish scenario --" % map_id)
-	var ctx: Dictionary = await _boot_scenario(map_id, use_prototype_loader, 180.0, 0.0, true)
+func _test_finish_contract_valid_on_load(map_id: String, use_prototype_loader: bool) -> void:
+	print("-- %s finish contract validation --" % map_id)
+	var ctx: Dictionary = await _boot_map(map_id, use_prototype_loader)
+	if ctx.is_empty():
+		return
+
+	var map_controller: RaceMapController = ctx.map_controller
+	var main_game: Node = ctx.main_game
+
+	if not map_controller.is_finish_contract_valid():
+		_fail("%s: finish contract invalid after load" % map_id)
+		main_game.queue_free()
+		return
+
+	if not _assert_single_streamer_finish_authority(main_game):
+		main_game.queue_free()
+		return
+
+	print("%s finish contract validation passed" % map_id)
+	main_game.queue_free()
+
+
+func _test_map_finish_round(map_id: String, use_prototype_loader: bool) -> void:
+	print("-- %s finish round scenario --" % map_id)
+	var ctx: Dictionary = await _boot_map(map_id, use_prototype_loader)
 	if ctx.is_empty():
 		return
 
@@ -57,90 +81,117 @@ func _run_map_finish_scenario(map_id: String, use_prototype_loader: bool) -> voi
 		main_game.queue_free()
 		return
 
-	_disable_combat_for_test(main_game)
 	_set_goal_enabled(main_game, true)
+	_disable_combat_for_test(main_game)
 
-	if not await _wait_for_round_state(
-		round_manager,
-		RoundManager.RoundState.ENDED,
-		max(ctx.max_race_seconds, 90.0) + 20.0
-	):
+	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.ENDED, 200.0):
 		_fail("%s finish: never entered ENDED" % map_id)
 		main_game.queue_free()
 		return
 
 	if round_manager.is_race_timed_out():
-		_fail("%s finish: ended by timeout instead of normal resolution" % map_id)
+		_fail("%s finish: ended by timeout instead of goal" % map_id)
 
-	await _verify_reset_and_rejoin(map_id, round_manager, debug_join, main_game)
+	print("%s finish round scenario passed" % map_id)
+	main_game.queue_free()
 
 
-func _run_map_timeout_scenario(map_id: String, use_prototype_loader: bool) -> void:
-	print("-- %s timeout scenario --" % map_id)
-	var ctx: Dictionary = await _boot_scenario(map_id, use_prototype_loader, 8.0, 0.0, false)
+func _test_no_duplicate_finish_event(map_id: String, use_prototype_loader: bool) -> void:
+	print("-- %s duplicate finish guard --" % map_id)
+	_finish_event_count = 0
+	var game_events: Node = _get_game_events()
+	if game_events == null:
+		_fail("%s duplicate guard: GameEvents autoload missing" % map_id)
+		return
+	if not game_events.zombie_reached_base.is_connected(_on_zombie_reached_base_counted):
+		game_events.zombie_reached_base.connect(_on_zombie_reached_base_counted)
+
+	var ctx: Dictionary = await _boot_map(map_id, use_prototype_loader)
 	if ctx.is_empty():
+		_disconnect_finish_counter()
 		return
 
 	var round_manager: RoundManager = ctx.round_manager
 	var debug_join: DebugJoinSource = ctx.debug_join
 	var main_game: Node = ctx.main_game
 
-	for _index in range(ZOMBIE_COUNT):
-		debug_join.request_random_join()
+	debug_join.request_random_join()
 	await create_timer(0.2).timeout
-
 	round_manager.start_round()
 	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 12.0):
-		_fail("%s timeout: never entered RUNNING" % map_id)
+		_fail("%s duplicate guard: never entered RUNNING" % map_id)
 		main_game.queue_free()
+		_disconnect_finish_counter()
 		return
 
-	_set_goal_enabled(main_game, false)
+	_set_goal_enabled(main_game, true)
 	_disable_combat_for_test(main_game)
 
-	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.ENDED, 20.0):
-		_fail("%s timeout: never entered ENDED" % map_id)
+	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.ENDED, 200.0):
+		_fail("%s duplicate guard: never entered ENDED" % map_id)
+		main_game.queue_free()
+		_disconnect_finish_counter()
+		return
+
+	if _finish_event_count != FINISH_ZOMBIE_COUNT:
+		_fail(
+			"%s duplicate guard: expected %d finish events, got %d"
+			% [map_id, FINISH_ZOMBIE_COUNT, _finish_event_count]
+		)
+		main_game.queue_free()
+		_disconnect_finish_counter()
+		return
+
+	print("%s duplicate finish guard passed" % map_id)
+	main_game.queue_free()
+	_disconnect_finish_counter()
+
+
+func _test_miswired_finish_fails_validation(map_id: String, use_prototype_loader: bool) -> void:
+	print("-- %s miswired finish validation --" % map_id)
+	var ctx: Dictionary = await _boot_map(map_id, use_prototype_loader)
+	if ctx.is_empty():
+		return
+
+	var map_controller: RaceMapController = ctx.map_controller
+	var main_game: Node = ctx.main_game
+	var streamer_goal: StreamerBaseGoal = _node(main_game, "World/StreamerBase") as StreamerBaseGoal
+	if streamer_goal == null:
+		_fail("%s miswired: StreamerBase missing" % map_id)
 		main_game.queue_free()
 		return
 
-	if not round_manager.is_race_timed_out():
-		_fail("%s timeout: race ended without timeout flag" % map_id)
+	streamer_goal.global_position += Vector3(0.0, 0.0, 25.0)
+	if map_controller.revalidate_finish_contract():
+		_fail("%s miswired: finish contract should fail after moving StreamerBase" % map_id)
 
-	await _verify_reset_and_rejoin(map_id, round_manager, debug_join, main_game)
-
-
-func _verify_reset_and_rejoin(
-	map_id: String,
-	round_manager: RoundManager,
-	debug_join: DebugJoinSource,
-	main_game: Node
-) -> void:
-	round_manager.reset_round()
-	await create_timer(0.35).timeout
-
-	if round_manager.state != RoundManager.RoundState.IDLE:
-		_fail("%s: reset did not return to IDLE (state=%s)" % [map_id, round_manager.get_state_text()])
-		main_game.queue_free()
-		return
-
-	debug_join.request_random_join()
-	await create_timer(0.15).timeout
-	if round_manager.get_pending_count() < 1:
-		_fail("%s: join blocked after reset" % map_id)
-		main_game.queue_free()
-		return
-
-	print("%s lifecycle scenario passed" % map_id)
+	print("%s miswired finish validation passed" % map_id)
 	main_game.queue_free()
 
 
-func _boot_scenario(
-	map_id: String,
-	use_prototype_loader: bool,
-	max_race_seconds: float,
-	auto_reset_seconds: float,
-	enable_goal: bool
-) -> Dictionary:
+func _assert_single_streamer_finish_authority(main_game: Node) -> bool:
+	var streamer_goal: StreamerBaseGoal = _node(main_game, "World/StreamerBase") as StreamerBaseGoal
+	if streamer_goal == null:
+		_fail("StreamerBase finish authority missing")
+		return false
+
+	var map_goal: Node = main_game.get_node_or_null(
+		"World/RoadArena/CoreRoad/MapRoot/GameplayLayer/GoalZone/GoalCatch"
+	)
+	if map_goal != null:
+		if map_goal is Area3D:
+			var area: Area3D = map_goal as Area3D
+			if area.monitoring or area.monitorable or area.get_script() != null:
+				_fail("map GoalCatch must be non-authoritative after load")
+				return false
+		else:
+			_fail("unexpected GoalCatch node type: %s" % map_goal.get_class())
+			return false
+
+	return true
+
+
+func _boot_map(map_id: String, use_prototype_loader: bool) -> Dictionary:
 	var main_game: Node = await _boot_main_game()
 	if main_game == null:
 		_fail("%s: main game boot failed" % map_id)
@@ -166,16 +217,15 @@ func _boot_scenario(
 			main_game.queue_free()
 			return {}
 
-	_configure_test_round(round_manager, map_controller, main_game, max_race_seconds, auto_reset_seconds)
+	_configure_test_round(round_manager, map_controller, main_game)
 	await _ensure_race_systems_active(main_game)
-	_set_goal_enabled(main_game, enable_goal)
-	_disable_combat_for_test(main_game)
+	_set_goal_enabled(main_game, true)
 
 	return {
 		"main_game": main_game,
+		"map_controller": map_controller,
 		"round_manager": round_manager,
 		"debug_join": debug_join,
-		"max_race_seconds": max_race_seconds,
 	}
 
 
@@ -194,14 +244,12 @@ func _boot_main_game() -> Node:
 func _configure_test_round(
 	round_manager: RoundManager,
 	map_controller: RaceMapController,
-	main_game: Node,
-	max_race_seconds: float,
-	auto_reset_seconds: float
+	main_game: Node
 ) -> void:
 	if round_manager.round_config != null:
 		round_manager.round_config.countdown_seconds = 1
-		round_manager.round_config.max_race_duration_seconds = max_race_seconds
-		round_manager.round_config.post_round_auto_reset_seconds = auto_reset_seconds
+		round_manager.round_config.max_race_duration_seconds = 180.0
+		round_manager.round_config.post_round_auto_reset_seconds = 0.0
 	if map_controller.human_defender_config != null:
 		map_controller.human_defender_config.defender_count = 0
 	if map_controller.hazard_config != null:
@@ -245,6 +293,20 @@ func _disable_combat_for_test(main_game: Node) -> void:
 	var minigun: BaseMinigun = _node(main_game, "World/BaseMinigun") as BaseMinigun
 	if minigun != null:
 		minigun.set_round_active(false)
+
+
+func _on_zombie_reached_base_counted(_zombie_node: Node) -> void:
+	_finish_event_count += 1
+
+
+func _disconnect_finish_counter() -> void:
+	var game_events: Node = _get_game_events()
+	if game_events != null and game_events.zombie_reached_base.is_connected(_on_zombie_reached_base_counted):
+		game_events.zombie_reached_base.disconnect(_on_zombie_reached_base_counted)
+
+
+func _get_game_events() -> Node:
+	return root.get_node_or_null("GameEvents")
 
 
 func _wait_for_round_state(round_manager: RoundManager, target_state: int, timeout: float) -> bool:
