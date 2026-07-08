@@ -528,6 +528,21 @@ func _on_podium_continue_requested() -> void:
 	if _podium_overlay != null:
 		_podium_overlay.hide_podium()
 	_set_world_results_visible(true)
+	_refresh_post_round_recovery_hint()
+
+func _refresh_post_round_recovery_hint() -> void:
+	if _round_manager == null or _round_manager.state != RoundManager.RoundState.ENDED:
+		return
+	var auto_reset_seconds: float = 45.0
+	if _round_manager.round_config != null:
+		auto_reset_seconds = max(_round_manager.round_config.post_round_auto_reset_seconds, 0.0)
+	if auto_reset_seconds > 0.0:
+		_command_text = "Race over — Return Lobby or press R (%ds auto-reset)." % int(round(auto_reset_seconds))
+	else:
+		_command_text = "Race over — Return Lobby or press R to join again."
+	if _command_label != null:
+		_command_label.text = _command_text
+	_refresh_world_command_board()
 
 func _join_strings(values: Array[String], separator: String) -> String:
 	var result: String = ""
