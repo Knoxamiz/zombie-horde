@@ -17,6 +17,7 @@ var _race_map_controller: RaceMapController
 var _race_world: Node3D
 var _flow_analyzer: ZombieFlowAnalyzer
 var _markers_root: Node3D
+var _fake_viewer_simulator: FakeViewerSimulator
 
 var _panel_open: bool = false
 var _refresh_elapsed: float = 0.0
@@ -29,6 +30,7 @@ var _npc_counts_label: Label
 var _config_inspector_label: Label
 var _force_end_button: Button
 var _clear_queue_button: Button
+var _simulator_status_label: Label
 var _flow_toggle: CheckButton
 var _blueprint_debug_toggle: CheckButton
 
@@ -43,6 +45,7 @@ func _ready() -> void:
 	visible = false
 	process_mode = Node.PROCESS_MODE_DISABLED
 	_resolve_nodes()
+	_ensure_fake_viewer_simulator()
 	_build_ui()
 	set_process(false)
 
@@ -110,7 +113,7 @@ func _build_ui() -> void:
 	_root.add_child(margin)
 
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(PANEL_WIDTH - 20.0, 560.0)
+	scroll.custom_minimum_size = Vector2(PANEL_WIDTH - 20.0, 620.0)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	margin.add_child(scroll)
 
@@ -138,6 +141,21 @@ func _build_ui() -> void:
 		["+20 NPCs", _on_add_twenty_npcs_pressed],
 	])
 	_clear_queue_button = _add_button(body, "Clear Queued NPCs", _on_clear_queue_pressed)
+
+	_add_section(body, "Fake Viewer Simulator")
+	_add_hint(body, "Stream-style joins via DebugJoinSource. Dev/debug only.")
+	_simulator_status_label = _add_readout(body, "Simulator: stopped")
+	_add_button_row(body, [
+		["Sim 5", _on_simulate_five_pressed],
+		["Sim 20", _on_simulate_twenty_pressed],
+		["Sim 100", _on_simulate_hundred_pressed],
+	])
+	_add_button(body, "Trickle: 1/sec for 20s", _on_trickle_joins_pressed)
+	_add_button(body, "Burst: 20 in 3s", _on_burst_joins_pressed)
+	_add_button_row(body, [
+		["Clear Sim Queue", _on_clear_sim_queue_pressed],
+		["Stop Simulation", _on_stop_simulation_pressed],
+	])
 
 	_add_section(body, "Active Config Inspector")
 	_add_hint(body, "Read-only runtime values after map load.")
@@ -221,6 +239,8 @@ func _on_start_race_pressed() -> void:
 
 
 func _on_reset_race_pressed() -> void:
+	if _fake_viewer_simulator != null:
+		_fake_viewer_simulator.stop_simulation()
 	if _round_manager != null:
 		_round_manager.reset_round()
 	_refresh_display()
@@ -233,6 +253,8 @@ func _on_force_end_pressed() -> void:
 
 
 func _on_return_lobby_pressed() -> void:
+	if _fake_viewer_simulator != null:
+		_fake_viewer_simulator.stop_simulation()
 	if _round_manager != null:
 		_round_manager.reset_round()
 	_refresh_display()
@@ -261,6 +283,62 @@ func _add_npcs(count: int) -> void:
 func _on_clear_queue_pressed() -> void:
 	if _round_manager != null:
 		_round_manager.debug_clear_pending_participants()
+	_refresh_display()
+
+
+func _ensure_fake_viewer_simulator() -> void:
+	_fake_viewer_simulator = get_node_or_null("FakeViewerSimulator") as FakeViewerSimulator
+	if _fake_viewer_simulator == null:
+		_fake_viewer_simulator = FakeViewerSimulator.new()
+		_fake_viewer_simulator.name = "FakeViewerSimulator"
+		add_child(_fake_viewer_simulator)
+	_fake_viewer_simulator.configure(_debug_join_source, _round_manager, _zombie_manager)
+
+
+func _on_simulate_five_pressed() -> void:
+	_run_simulator_batch(5)
+
+
+func _on_simulate_twenty_pressed() -> void:
+	_run_simulator_batch(20)
+
+
+func _on_simulate_hundred_pressed() -> void:
+	_run_simulator_batch(100)
+
+
+func _on_trickle_joins_pressed() -> void:
+	_ensure_fake_viewer_simulator()
+	if _fake_viewer_simulator != null:
+		_fake_viewer_simulator.start_trickle_joins()
+	_refresh_display()
+
+
+func _on_burst_joins_pressed() -> void:
+	_ensure_fake_viewer_simulator()
+	if _fake_viewer_simulator != null:
+		_fake_viewer_simulator.start_burst_joins()
+	_refresh_display()
+
+
+func _on_clear_sim_queue_pressed() -> void:
+	_ensure_fake_viewer_simulator()
+	if _fake_viewer_simulator != null:
+		_fake_viewer_simulator.clear_simulator_queue()
+	_refresh_display()
+
+
+func _on_stop_simulation_pressed() -> void:
+	_ensure_fake_viewer_simulator()
+	if _fake_viewer_simulator != null:
+		_fake_viewer_simulator.stop_simulation()
+	_refresh_display()
+
+
+func _run_simulator_batch(count: int) -> void:
+	_ensure_fake_viewer_simulator()
+	if _fake_viewer_simulator != null:
+		_fake_viewer_simulator.simulate_viewers(count)
 	_refresh_display()
 
 
@@ -340,6 +418,7 @@ func _get_blueprint_arena() -> BlueprintMapArena:
 func _refresh_display() -> void:
 	_refresh_race_state()
 	_refresh_npc_counts()
+	_refresh_simulator_status()
 	_refresh_config_inspector()
 	_refresh_toggle_states()
 
@@ -385,6 +464,27 @@ func _refresh_npc_counts() -> void:
 	_npc_counts_label.text = (
 		"Queued: %d | Racing: %d | Alive: %d | Finished: %d | Dead: %d | Total: %d"
 		% [queued, racing, living, finished, dead, total]
+	)
+
+
+func _refresh_simulator_status() -> void:
+	if _simulator_status_label == null:
+		return
+	_ensure_fake_viewer_simulator()
+	if _fake_viewer_simulator == null:
+		_simulator_status_label.text = "Simulator: unavailable"
+		return
+
+	var running_text: String = "running" if _fake_viewer_simulator.is_running() else "stopped"
+	_simulator_status_label.text = (
+		"Simulator: %s | mode: %s | pending: %d | sent: %d | rejected: %d"
+		% [
+			running_text,
+			_fake_viewer_simulator.get_mode_text(),
+			_fake_viewer_simulator.get_pending_simulated_joins(),
+			_fake_viewer_simulator.get_joins_sent(),
+			_fake_viewer_simulator.get_joins_rejected(),
+		]
 	)
 
 
