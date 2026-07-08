@@ -1,6 +1,12 @@
 class_name RaceMapController
 extends Node
 
+## Finish authority: World/StreamerBase (StreamerBaseGoal) is the sole race finish trigger.
+## Maps only supply goal_position / base_position via RaceMapDefinition; map-scene GoalCatch
+## zones are visual markers only and must never emit zombie_reached_base.
+
+const FINISH_POSITION_TOLERANCE := 1.25
+
 signal active_map_changed(map_index: int, display_name: String)
 
 @export var feature_config: FeatureAccessConfig
@@ -34,6 +40,7 @@ var _zombie_manager: ZombieManager
 var _base_goal: Node3D
 var _minigun: Node3D
 var _spectator_camera: SpectatorCameraController
+var _finish_contract_valid: bool = true
 
 func _ready() -> void:
 	_race_world = get_node_or_null(race_world_path) as Node3D
@@ -153,6 +160,12 @@ func set_active_map_by_id(
 		new_map.queue_free()
 		_active_map = null
 		_last_fallback_used = true
+		if OS.is_debug_build():
+			push_error(
+				"RaceMapController: map '%s' failed scene/finish integration; refusing City Highway fallback in debug"
+				% trimmed_id
+			)
+			return false
 		push_warning(
 			"RaceMapController: map '%s' failed scene integration; falling back to City Highway"
 			% trimmed_id
@@ -390,6 +403,19 @@ func _load_map_definition_for_test(map_id: String, definition: RaceMapDefinition
 
 	_apply_map_geometry(definition, new_map)
 	_apply_gameplay_dimensions(definition)
+	if not _finish_contract_valid:
+		new_map.queue_free()
+		_active_map = null
+		_prototype_test_map_id = ""
+		if OS.is_debug_build():
+			push_error(
+				"RaceMapController: prototype load for '%s' failed finish contract validation"
+				% map_id
+			)
+			return false
+		return _fallback_prototype_load_to_city_highway(
+			"finish contract validation failed for '%s'" % map_id
+		)
 	_log_prototype_dimension_report(definition)
 	active_map_changed.emit(-1, definition.display_name)
 	print("RaceMapController: prototype test load succeeded for '%s'" % map_id)
@@ -485,6 +511,9 @@ func _finalize_loaded_map_scene(
 	ensure_spectator_camera_active()
 	if not _validate_map_scene_contract(map):
 		_log_map_scene_integration_diagnostics("map_load_failed", entry)
+		return false
+	if not _finish_contract_valid:
+		_log_map_scene_integration_diagnostics("finish_contract_failed", entry)
 		return false
 	_log_map_scene_integration_diagnostics("map_load", entry)
 	if should_use_definition_race_camera() and _spectator_camera != null:
@@ -623,6 +652,7 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		_minigun.global_position = definition.minigun_position
 
 	_apply_map_environment(definition)
+	_finish_contract_valid = _enforce_finish_contract(definition)
 
 
 func _apply_map_environment(definition: RaceMapDefinition) -> void:
@@ -630,3 +660,101 @@ func _apply_map_environment(definition: RaceMapDefinition) -> void:
 		_active_race_environment_override = null
 		return
 	_active_race_environment_override = definition.race_environment_override
+
+
+func is_finish_contract_valid() -> bool:
+	return _finish_contract_valid
+
+
+func revalidate_finish_contract() -> bool:
+	var definition: RaceMapDefinition = get_active_map_definition()
+	_finish_contract_valid = _enforce_finish_contract(definition)
+	return _finish_contract_valid
+
+
+func _enforce_finish_contract(definition: RaceMapDefinition) -> bool:
+	if definition == null:
+		_report_finish_contract_failure("map definition is null")
+		return false
+
+	_disable_map_goal_catch_zones(_get_current_map())
+
+	if _base_goal == null:
+		_report_finish_contract_failure("missing World/StreamerBase finish authority")
+		return false
+	if not (_base_goal is StreamerBaseGoal):
+		_report_finish_contract_failure("World/StreamerBase must use StreamerBaseGoal")
+		return false
+	if _has_competing_finish_triggers(_get_current_map()):
+		_report_finish_contract_failure("map scene still contains an active GoalCatch finish trigger")
+		return false
+
+	return _validate_finish_zone_alignment(definition)
+
+
+func _validate_finish_zone_alignment(definition: RaceMapDefinition) -> bool:
+	var expected_base: Vector3 = definition.base_position
+	var actual_base: Vector3 = _base_goal.global_position
+	if actual_base.distance_to(expected_base) > FINISH_POSITION_TOLERANCE:
+		_report_finish_contract_failure(
+			"StreamerBase at %s does not match definition.base_position %s (tolerance %.2f)"
+			% [actual_base, expected_base, FINISH_POSITION_TOLERANCE]
+		)
+		return false
+
+	var goal_z_delta: float = abs(expected_base.z - definition.goal_position.z)
+	if goal_z_delta > FINISH_POSITION_TOLERANCE:
+		_report_finish_contract_failure(
+			"StreamerBase Z %.2f does not match definition.goal_position.z %.2f (tolerance %.2f)"
+			% [expected_base.z, definition.goal_position.z, FINISH_POSITION_TOLERANCE]
+		)
+		return false
+
+	return true
+
+
+func _disable_map_goal_catch_zones(map: Node3D) -> void:
+	if map == null:
+		return
+	_strip_map_goal_catch_recursive(map)
+
+
+func _strip_map_goal_catch_recursive(node: Node) -> void:
+	if node is Area3D and node.name == "GoalCatch" and node != _base_goal:
+		var area: Area3D = node as Area3D
+		area.set_script(null)
+		area.monitoring = false
+		area.monitorable = false
+		area.collision_layer = 0
+		area.collision_mask = 0
+		for child in area.get_children():
+			if child is CollisionShape3D:
+				(child as CollisionShape3D).disabled = true
+	for child in node.get_children():
+		_strip_map_goal_catch_recursive(child)
+
+
+func _has_competing_finish_triggers(map: Node3D) -> bool:
+	if map == null:
+		return false
+	return _find_competing_finish_trigger(map) != null
+
+
+func _find_competing_finish_trigger(node: Node) -> Node:
+	if node is Area3D and node.name == "GoalCatch" and node != _base_goal:
+		var area: Area3D = node as Area3D
+		if area.monitoring or area.monitorable:
+			return area
+		if area.get_script() != null:
+			return area
+	for child in node.get_children():
+		var found: Node = _find_competing_finish_trigger(child)
+		if found != null:
+			return found
+	return null
+
+
+func _report_finish_contract_failure(reason: String) -> void:
+	var message: String = "RaceMapController FINISH CONTRACT: %s" % reason
+	push_error(message)
+	print(message)

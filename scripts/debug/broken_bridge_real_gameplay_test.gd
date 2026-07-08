@@ -497,15 +497,6 @@ func _disable_combat_for_map_test(main_game: Node) -> void:
 	var minigun: BaseMinigun = _node(main_game, "World/BaseMinigun") as BaseMinigun
 	if minigun != null:
 		minigun.set_round_active(false)
-	_enable_map_goal_catch(main_game)
-
-
-func _enable_map_goal_catch(main_game: Node) -> void:
-	var goal_catch: StreamerBaseGoal = main_game.get_node_or_null(
-		"World/RoadArena/CoreRoad/MapRoot/GameplayLayer/GoalZone/GoalCatch"
-	) as StreamerBaseGoal
-	if goal_catch != null:
-		goal_catch.set_goal_enabled(true)
 
 
 func _evaluate_scenario(metrics: Dictionary, zombie_count: int) -> void:
