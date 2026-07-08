@@ -1,0 +1,337 @@
+extends SceneTree
+
+const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
+const JOIN_COUNT := 2
+const PASS := 0
+const FAIL := 1
+
+var _failures: Array[String] = []
+var _started_msec: int = 0
+
+
+func _initialize() -> void:
+	call_deferred("_run_all")
+
+
+func _run_all() -> void:
+	_started_msec = Time.get_ticks_msec()
+	print("=== Map certification test ===")
+
+	_test_scene_contract_guard()
+	await _test_invalid_map_id_rejected()
+
+	var map_ids: Array[String] = _parse_map_ids()
+	for map_id in map_ids:
+		await _certify_map_runtime(map_id)
+
+	var elapsed_sec: float = float(Time.get_ticks_msec() - _started_msec) / 1000.0
+	if _failures.is_empty():
+		print("SUITE RESULT: PASSED (%.1fs)" % elapsed_sec)
+		print("MAP CERTIFICATION RUNTIME: %.1fs" % elapsed_sec)
+		_finish(PASS)
+	else:
+		for failure in _failures:
+			push_error(failure)
+		print("SUITE RESULT: FAILED (%.1fs)" % elapsed_sec)
+		print("MAP CERTIFICATION RUNTIME: %.1fs" % elapsed_sec)
+		_finish(FAIL)
+
+
+func _parse_map_ids() -> Array[String]:
+	var map_ids: Array[String] = []
+	for arg in OS.get_cmdline_user_args():
+		var trimmed: String = arg.strip_edges()
+		if trimmed.begins_with("--map_id="):
+			var map_id: String = trimmed.substr("--map_id=".length()).strip_edges()
+			if not map_id.is_empty():
+				map_ids.append(map_id)
+	if map_ids.is_empty():
+		return MapCertification.get_default_certified_map_ids()
+	return map_ids
+
+
+func _certify_map_runtime(map_id: String) -> void:
+	print("-- certifying %s --" % map_id)
+	var failures: Array[String] = []
+	failures.append_array(MapCertification.certify_catalog_entry(map_id))
+	if not failures.is_empty():
+		_record_map_failures(map_id, failures)
+		return
+
+	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(map_id)
+	failures.append_array(MapCertification.certify_definition(definition, map_id))
+	if not failures.is_empty():
+		_record_map_failures(map_id, failures)
+		return
+
+	var main_game: Node = await _boot_main_game()
+	if main_game == null:
+		return
+
+	var map_controller: RaceMapController = _node(main_game, "Systems/RaceMapController") as RaceMapController
+	var round_manager: RoundManager = _node(main_game, "Systems/RoundManager") as RoundManager
+	var zombie_manager: ZombieManager = _node(main_game, "Systems/ZombieManager") as ZombieManager
+	var debug_join: DebugJoinSource = _node(main_game, "Systems/DebugJoinSource") as DebugJoinSource
+	if map_controller == null or round_manager == null or zombie_manager == null or debug_join == null:
+		_fail("%s: missing core systems" % map_id)
+		main_game.queue_free()
+		return
+
+	if not map_controller.set_active_map_by_id(map_id):
+		var reason: String = map_controller.get_last_load_failure_reason()
+		_record_map_failures(
+			map_id,
+			[
+				"runtime map load failed%s"
+				% (": %s" % reason if not reason.is_empty() else "")
+			]
+		)
+		main_game.queue_free()
+		return
+
+	if map_controller.did_last_load_use_fallback():
+		_record_map_failures(map_id, ["map load used City Highway fallback"])
+		main_game.queue_free()
+		return
+	if map_controller.get_resolved_map_id() != map_id:
+		_record_map_failures(
+			map_id,
+			[
+				"resolved map id '%s' does not match requested '%s'"
+				% [map_controller.get_resolved_map_id(), map_id]
+			]
+		)
+		main_game.queue_free()
+		return
+
+	var loaded_map: Node3D = main_game.get_node_or_null("World/RoadArena") as Node3D
+	failures.append_array(MapCertification.certify_scene_contract(loaded_map, map_id))
+	failures.append_array(
+		MapCertification.certify_finish_authority(
+			_node(main_game, "World/StreamerBase") as Node3D,
+			definition,
+			map_id
+		)
+	)
+	failures.append_array(
+		MapCertification.certify_oob_applied(
+			definition,
+			map_controller.zombie_config,
+			map_id
+		)
+	)
+	if not map_controller.is_finish_contract_valid():
+		failures.append("finish contract invalid after map load")
+
+	if not failures.is_empty():
+		_record_map_failures(map_id, failures)
+		main_game.queue_free()
+		return
+
+	_configure_test_round(round_manager, map_controller, main_game)
+	await _ensure_race_systems_active(main_game)
+
+	for _index in range(JOIN_COUNT):
+		debug_join.request_random_join()
+	await create_timer(0.1).timeout
+	if round_manager.get_pending_count() < 1:
+		_record_map_failures(map_id, ["no participants queued before race start"])
+		main_game.queue_free()
+		return
+
+	round_manager.start_round()
+	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 8.0):
+		_record_map_failures(map_id, ["race never entered RUNNING"])
+		main_game.queue_free()
+		return
+
+	_disable_combat_for_test(main_game)
+	_set_goal_enabled(main_game, true)
+	_teleport_zombies_to_goal(zombie_manager, definition)
+
+	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.ENDED, 12.0):
+		_record_map_failures(map_id, ["race never resolved to ENDED"])
+		main_game.queue_free()
+		return
+
+	if not _at_least_one_zombie_resolved(zombie_manager):
+		_record_map_failures(map_id, ["no zombie resolved by finish/death"])
+		main_game.queue_free()
+		return
+
+	round_manager.reset_round()
+	await create_timer(0.2).timeout
+	if round_manager.state != RoundManager.RoundState.IDLE:
+		_record_map_failures(
+			map_id,
+			["reset did not return to IDLE (state=%s)" % round_manager.get_state_text()]
+		)
+		main_game.queue_free()
+		return
+
+	debug_join.request_random_join()
+	await create_timer(0.1).timeout
+	if round_manager.get_pending_count() < 1:
+		_record_map_failures(map_id, ["join blocked after reset"])
+		main_game.queue_free()
+		return
+
+	print("%s certification passed" % map_id)
+	main_game.queue_free()
+
+
+func _test_scene_contract_guard() -> void:
+	print("-- scene contract guard --")
+	var stub_map := Node3D.new()
+	stub_map.name = "RoadArena"
+	var failures: Array[String] = MapCertification.certify_scene_contract(stub_map, "contract_guard_stub")
+	stub_map.free()
+	if failures.is_empty():
+		_fail("scene contract guard: missing CoreRoad should fail certification")
+	else:
+		print("scene contract guard passed")
+
+
+func _test_invalid_map_id_rejected() -> void:
+	print("-- invalid map id guard --")
+	var main_game: Node = await _boot_main_game()
+	if main_game == null:
+		return
+
+	var map_controller: RaceMapController = _node(main_game, "Systems/RaceMapController") as RaceMapController
+	if map_controller == null:
+		_fail("invalid map id guard: RaceMapController missing")
+		main_game.queue_free()
+		return
+
+	var invalid_id: String = "map_certification_invalid_id"
+	var loaded: bool = map_controller.set_active_map_by_id(invalid_id)
+	if loaded:
+		_fail("invalid map id guard: set_active_map_by_id returned true")
+	if map_controller.get_resolved_map_id() == invalid_id:
+		_fail("invalid map id guard: resolved to invalid map id")
+	if map_controller.get_last_load_failure_reason().is_empty():
+		_fail("invalid map id guard: missing failure reason")
+	if map_controller.did_last_load_use_fallback():
+		_fail("invalid map id guard: fallback flag set without successful requested load")
+
+	print("invalid map id guard passed")
+	main_game.queue_free()
+
+
+func _record_map_failures(map_id: String, failures: Array[String]) -> void:
+	var message: String = MapCertification.format_failures(map_id, failures)
+	print(message)
+	for failure in failures:
+		_fail("[%s] %s" % [map_id, failure])
+
+
+func _at_least_one_zombie_resolved(zombie_manager: ZombieManager) -> bool:
+	if zombie_manager.get_total_count() <= 0:
+		return false
+	for zombie in zombie_manager.get_living_zombies():
+		if zombie != null and zombie.has_finished_race():
+			return true
+	return zombie_manager.get_racing_count() == 0
+
+
+func _boot_main_game() -> Node:
+	var packed: PackedScene = load(MAIN_GAME_SCENE)
+	if packed == null:
+		_fail("Could not load main game scene")
+		return null
+
+	var main_game: Node = packed.instantiate()
+	root.add_child(main_game)
+	await create_timer(0.5).timeout
+	return main_game
+
+
+func _configure_test_round(
+	round_manager: RoundManager,
+	map_controller: RaceMapController,
+	main_game: Node
+) -> void:
+	if round_manager.round_config != null:
+		round_manager.round_config.countdown_seconds = 0
+		round_manager.round_config.max_race_duration_seconds = 60.0
+		round_manager.round_config.post_round_auto_reset_seconds = 0.0
+	if map_controller.human_defender_config != null:
+		map_controller.human_defender_config.defender_count = 0
+	if map_controller.hazard_config != null:
+		map_controller.hazard_config.mine_count = 0
+		map_controller.hazard_config.sewer_hole_count = 0
+		map_controller.hazard_config.obstacle_count = 0
+
+	var zombie_manager: ZombieManager = _node(main_game, "Systems/ZombieManager") as ZombieManager
+	if zombie_manager != null:
+		zombie_manager.set_spawn_rng_seed(6602)
+
+
+func _ensure_race_systems_active(main_game: Node) -> void:
+	var flow: GameFlowController = _node(main_game, "Systems/GameFlowController") as GameFlowController
+	if flow != null:
+		flow.show_race()
+	await create_timer(0.2).timeout
+
+	var world: Node3D = _node(main_game, "World") as Node3D
+	if world != null:
+		world.visible = true
+
+	for manager_path in [
+		"Systems/ZombieManager",
+		"Systems/HazardManager",
+		"Systems/PowerupManager",
+		"Systems/HumanDefenderManager",
+	]:
+		var manager: Node = _node(main_game, manager_path)
+		if manager != null:
+			manager.visible = true
+
+
+func _teleport_zombies_to_goal(zombie_manager: ZombieManager, definition: RaceMapDefinition) -> void:
+	var finish_position: Vector3 = Vector3(0.0, 1.5, 42.0)
+	if definition != null:
+		finish_position = definition.base_position + Vector3(0.0, 1.5, 0.0)
+	for zombie in zombie_manager.get_living_zombies():
+		if zombie == null or not is_instance_valid(zombie):
+			continue
+		zombie.global_position = finish_position
+		zombie.velocity = Vector3.ZERO
+	await create_timer(0.15).timeout
+
+
+func _set_goal_enabled(main_game: Node, enabled: bool) -> void:
+	var streamer_goal: StreamerBaseGoal = _node(main_game, "World/StreamerBase") as StreamerBaseGoal
+	if streamer_goal != null:
+		streamer_goal.set_goal_enabled(enabled)
+
+
+func _disable_combat_for_test(main_game: Node) -> void:
+	var minigun: BaseMinigun = _node(main_game, "World/BaseMinigun") as BaseMinigun
+	if minigun != null:
+		minigun.set_round_active(false)
+
+
+func _wait_for_round_state(round_manager: RoundManager, target_state: int, timeout: float) -> bool:
+	var elapsed: float = 0.0
+	while elapsed < timeout:
+		if round_manager.state == target_state:
+			return true
+		await create_timer(0.05).timeout
+		elapsed += 0.05
+	return round_manager.state == target_state
+
+
+func _node(root_node: Node, path: String) -> Node:
+	return root_node.get_node_or_null(path)
+
+
+func _fail(message: String) -> void:
+	_failures.append(message)
+	print("FAIL: %s" % message)
+
+
+func _finish(exit_code: int) -> void:
+	await create_timer(0.05).timeout
+	quit(exit_code)
