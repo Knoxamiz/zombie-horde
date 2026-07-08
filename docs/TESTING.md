@@ -2,6 +2,8 @@
 
 Headless Godot tests live under `scripts/debug/`. Use the unified runner for pre/post change checks.
 
+See also: [PROTECTED_SYSTEMS.md](PROTECTED_SYSTEMS.md), [AI_DEVELOPMENT_GUARDRAILS.md](AI_DEVELOPMENT_GUARDRAILS.md), [MAP_CERTIFICATION.md](MAP_CERTIFICATION.md).
+
 ## Quick start
 
 ```bash

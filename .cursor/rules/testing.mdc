@@ -1,0 +1,50 @@
+---
+description: Headless test runner, smoke tier, and certification testing rules
+globs:
+  - scripts/debug/**
+  - docs/TESTING.md
+  - docs/MAP_CERTIFICATION.md
+---
+
+# Testing rules
+
+See `docs/TESTING.md` and `docs/AI_DEVELOPMENT_GUARDRAILS.md`.
+
+## Smoke tier (protected, <60s)
+
+`test_runner.gd --tier=smoke` runs only:
+
+- `race_quick_smoke_test.gd`
+- `map_selection_test.gd`
+
+Do **not** add slow tests to `SMOKE_TESTS`.
+
+## Tier selection
+
+| Task | Tier |
+|------|------|
+| Small isolated code | smoke |
+| Race lifecycle | smoke + core |
+| Finish / OOB / zombie authority | smoke + core |
+| Map / catalog / controller | smoke + certification |
+| Bridge gameplay | + map tier |
+
+## Certification
+
+- `map_certification_test.gd` — City Highway + Broken Bridge TEST
+- Invalid map id and missing `CoreRoad` must fail loudly
+- Do not disable guards to green tests
+
+## Anti-patterns
+
+- Ignoring `MAP LOAD FAILED` or `MAP CERTIFICATION FAILED` in output.
+- Treating City Highway load as success when another map was requested.
+- Adding `race_lifecycle_smoke_test` or bridge gameplay to smoke.
+
+## Commands
+
+```bash
+godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
+godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=core
+godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=certification
+```
