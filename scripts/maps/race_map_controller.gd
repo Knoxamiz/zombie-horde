@@ -45,6 +45,7 @@ var _base_goal: Node3D
 var _minigun: Node3D
 var _spectator_camera: SpectatorCameraController
 var _finish_contract_valid: bool = true
+var _last_load_failure_reason: String = ""
 
 func _ready() -> void:
 	_race_world = get_node_or_null(race_world_path) as Node3D
@@ -83,6 +84,7 @@ func set_active_map_by_id(
 	source_settings_index: int = -1
 ) -> bool:
 	_prototype_test_map_id = ""
+	_last_load_failure_reason = ""
 	var trimmed_id: String = requested_map_id.strip_edges()
 	var settings_index: int = source_settings_index
 	if settings_index < 0:
@@ -103,25 +105,19 @@ func set_active_map_by_id(
 	_last_fallback_used = fallback_used
 
 	if fallback_used:
-		_log_race_start_map_selection(settings_index, entry, true, fallback_reason)
-		if is_fallback_attempt or trimmed_id == MapCatalog.DEFAULT_MAP_ID:
-			return false
-		push_warning(
-			"RaceMapController: %s; falling back to City Highway" % fallback_reason
-		)
-		return set_active_map_by_id(MapCatalog.DEFAULT_MAP_ID, true, 0)
+		return _fail_map_load(trimmed_id, settings_index, entry, fallback_reason, is_fallback_attempt)
 
 	var legacy_index: int = int(entry.get("legacy_index", 0))
 	var definition: RaceMapDefinition = get_map_definition_for_legacy_index(legacy_index)
 	if definition == null or definition.scene == null or _race_world == null:
 		_last_fallback_used = true
-		_log_race_start_map_selection(settings_index, entry, true, "definition or scene failed to load")
-		if is_fallback_attempt or trimmed_id == MapCatalog.DEFAULT_MAP_ID:
-			return false
-		push_warning(
-			"RaceMapController: map '%s' failed to load; falling back to City Highway" % trimmed_id
+		return _fail_map_load(
+			trimmed_id,
+			settings_index,
+			entry,
+			"definition or scene failed to load",
+			is_fallback_attempt
 		)
-		return set_active_map_by_id(MapCatalog.DEFAULT_MAP_ID, true, 0)
 
 	if (
 		active_map_id == trimmed_id
@@ -132,7 +128,7 @@ func set_active_map_by_id(
 		_apply_gameplay_dimensions(definition)
 		active_settings_map_index = settings_index
 		_last_fallback_used = false
-		return false
+		return true
 
 	var old_map: Node = _race_world.get_node_or_null("RoadArena")
 	if old_map != null:
@@ -142,13 +138,13 @@ func set_active_map_by_id(
 	var new_map: Node3D = definition.scene.instantiate() as Node3D
 	if new_map == null:
 		_last_fallback_used = true
-		_log_race_start_map_selection(settings_index, entry, true, "scene instantiation failed")
-		if is_fallback_attempt or trimmed_id == MapCatalog.DEFAULT_MAP_ID:
-			return false
-		push_warning(
-			"RaceMapController: failed to instantiate map '%s'; falling back to City Highway" % trimmed_id
+		return _fail_map_load(
+			trimmed_id,
+			settings_index,
+			entry,
+			"scene instantiation failed",
+			is_fallback_attempt
 		)
-		return set_active_map_by_id(MapCatalog.DEFAULT_MAP_ID, true, 0)
 
 	new_map.name = "RoadArena"
 	_race_world.add_child(new_map)
@@ -163,18 +159,16 @@ func set_active_map_by_id(
 	if not _finalize_loaded_map_scene(new_map, definition, entry):
 		new_map.queue_free()
 		_active_map = null
+		active_map_id = ""
+		active_map_index = -1
 		_last_fallback_used = true
-		if OS.is_debug_build():
-			push_error(
-				"RaceMapController: map '%s' failed scene/finish integration; refusing City Highway fallback in debug"
-				% trimmed_id
-			)
-			return false
-		push_warning(
-			"RaceMapController: map '%s' failed scene integration; falling back to City Highway"
-			% trimmed_id
+		return _fail_map_load(
+			trimmed_id,
+			settings_index,
+			entry,
+			"scene/finish integration failed",
+			is_fallback_attempt
 		)
-		return set_active_map_by_id(MapCatalog.DEFAULT_MAP_ID, true, 0)
 	active_map_changed.emit(active_map_index, get_map_name_by_id(active_map_id))
 	return true
 
@@ -258,7 +252,7 @@ func ensure_spectator_camera_active() -> void:
 
 func get_map_definition_for_legacy_index(legacy_index: int) -> RaceMapDefinition:
 	var definition: RaceMapDefinition = _get_exported_map_definition(legacy_index)
-	if definition != null:
+	if definition != null and definition.scene != null:
 		return definition
 	return MapCatalog.load_definition_for_legacy_index(legacy_index)
 
@@ -306,23 +300,38 @@ func get_prototype_test_map_id() -> String:
 	return _prototype_test_map_id
 
 
+func did_last_load_use_fallback() -> bool:
+	return _last_fallback_used
+
+
+func get_last_load_failure_reason() -> String:
+	return _last_load_failure_reason
+
+
+func get_resolved_map_id() -> String:
+	if is_prototype_test_load_active():
+		return _prototype_test_map_id
+	return active_map_id
+
+
 func load_prototype_map_for_test(map_id: String) -> bool:
+	_last_load_failure_reason = ""
 	if map_id.strip_edges().is_empty():
-		return _fallback_prototype_load_to_city_highway("empty map id")
+		return _fail_prototype_load("empty map id")
 
 	var entry: Dictionary = MapCatalog.get_entry_by_id(map_id)
 	if entry.is_empty():
-		return _fallback_prototype_load_to_city_highway("unknown map id '%s'" % map_id)
+		return _fail_prototype_load("unknown map id '%s'" % map_id)
 	if not MapCatalog.is_prototype_testable(entry):
-		return _fallback_prototype_load_to_city_highway(
+		return _fail_prototype_load(
 			"map '%s' is not an enabled=false prototype entry" % map_id
 		)
 
 	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(map_id)
 	if definition == null or definition.scene == null:
-		return _fallback_prototype_load_to_city_highway("missing definition or scene for '%s'" % map_id)
+		return _fail_prototype_load("missing definition or scene for '%s'" % map_id)
 	if _race_world == null:
-		return _fallback_prototype_load_to_city_highway("race world is not available")
+		return _fail_prototype_load("race world is not available")
 
 	return _load_map_definition_for_test(map_id, definition)
 
@@ -392,7 +401,7 @@ func _load_map_definition_for_test(map_id: String, definition: RaceMapDefinition
 
 	var new_map: Node3D = definition.scene.instantiate() as Node3D
 	if new_map == null:
-		return _fallback_prototype_load_to_city_highway("failed to instantiate scene for '%s'" % map_id)
+		return _fail_prototype_load("failed to instantiate scene for '%s'" % map_id)
 
 	new_map.name = "RoadArena"
 	_race_world.add_child(new_map)
@@ -404,26 +413,67 @@ func _load_map_definition_for_test(map_id: String, definition: RaceMapDefinition
 
 	_disable_scene_cameras(new_map)
 	ensure_spectator_camera_active()
+	_ensure_map_scene_built(new_map)
 
 	_apply_map_geometry(definition, new_map)
 	_apply_gameplay_dimensions(definition)
+
+	var scene_failures: Array[String] = MapCertification.certify_scene_contract(new_map, map_id)
+	if not scene_failures.is_empty():
+		new_map.queue_free()
+		_active_map = null
+		_prototype_test_map_id = ""
+		return _fail_prototype_load(scene_failures[0])
+
 	if not _finish_contract_valid:
 		new_map.queue_free()
 		_active_map = null
 		_prototype_test_map_id = ""
-		if OS.is_debug_build():
-			push_error(
-				"RaceMapController: prototype load for '%s' failed finish contract validation"
-				% map_id
-			)
-			return false
-		return _fallback_prototype_load_to_city_highway(
-			"finish contract validation failed for '%s'" % map_id
-		)
+		return _fail_prototype_load("finish contract validation failed for '%s'" % map_id)
 	_log_prototype_dimension_report(definition)
 	active_map_changed.emit(-1, definition.display_name)
 	print("RaceMapController: prototype test load succeeded for '%s'" % map_id)
 	return true
+
+
+func _should_refuse_city_highway_fallback() -> bool:
+	return OS.is_debug_build() or DisplayServer.get_name() == "headless"
+
+
+func _fail_map_load(
+	requested_map_id: String,
+	settings_index: int,
+	entry: Dictionary,
+	reason: String,
+	is_fallback_attempt: bool
+) -> bool:
+	_last_load_failure_reason = reason
+	_log_race_start_map_selection(settings_index, entry, true, reason)
+	if is_fallback_attempt or requested_map_id == MapCatalog.DEFAULT_MAP_ID:
+		push_error("RaceMapController MAP LOAD FAILED [%s]: %s" % [requested_map_id, reason])
+		return false
+	if _should_refuse_city_highway_fallback():
+		_last_fallback_used = false
+		push_error(
+			"RaceMapController MAP LOAD FAILED [%s]: %s (City Highway fallback refused in debug/headless)"
+			% [requested_map_id, reason]
+		)
+		return false
+	push_warning(
+		"RaceMapController: %s; falling back to City Highway" % reason
+	)
+	return set_active_map_by_id(MapCatalog.DEFAULT_MAP_ID, true, 0)
+
+
+func _fail_prototype_load(reason: String) -> bool:
+	_last_load_failure_reason = reason
+	if _should_refuse_city_highway_fallback():
+		push_error(
+			"RaceMapController PROTOTYPE LOAD FAILED: %s (City Highway fallback refused in debug/headless)"
+			% reason
+		)
+		return false
+	return _fallback_prototype_load_to_city_highway(reason)
 
 
 func _fallback_prototype_load_to_city_highway(reason: String) -> bool:
@@ -546,22 +596,7 @@ func _disable_scene_cameras(map: Node3D) -> void:
 
 
 func _validate_map_scene_contract(map: Node3D) -> bool:
-	if map == null or map.name != "RoadArena":
-		return false
-	var core_road: Node = map.get_node_or_null("CoreRoad")
-	if core_road == null:
-		return false
-	if core_road is BlueprintMapArena:
-		var map_root: Node = core_road.get_node_or_null("MapRoot")
-		if map_root == null:
-			return false
-		var visual_layer: Node = map_root.get_node_or_null("VisualLayer")
-		var gameplay_layer: Node = map_root.get_node_or_null("GameplayLayer")
-		if visual_layer == null or gameplay_layer == null:
-			return false
-		if visual_layer.get_child_count() <= 0:
-			return false
-	return true
+	return MapCertification.certify_scene_contract(map, active_map_id).is_empty()
 
 
 func _log_map_scene_integration_diagnostics(context: String, entry: Dictionary) -> void:

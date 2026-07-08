@@ -15,6 +15,7 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 | **smoke** | `--tier=smoke` | Fast sanity check after almost every task |
 | **core** | `--tier=core` | Deeper contract + lifecycle regression |
 | **map** | `--tier=map` | Map catalog + lightweight Broken Bridge gameplay |
+| **certification** | `--tier=certification` | Map catalog + strict per-map certification gate |
 | **all** | `--tier=all` | Broader stable debug suite |
 
 ### smoke (target under 60 seconds)
@@ -45,6 +46,17 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 **When to run:** before merging map content, bridge layout, or map controller changes.
 
 **Required before merge:** recommended for map PRs; not required for docs-only changes.
+
+### certification (~2–4 minutes)
+
+- `map_selection_test.gd`
+- `map_certification_test.gd` — City Highway + Broken Bridge TEST (catalog, load, contracts, mini race, reset)
+
+**When to run:** before merging map controller, map catalog, or promoting a map to playable.
+
+**Required before merge:** yes for map certification / map controller PRs. See [MAP_CERTIFICATION.md](MAP_CERTIFICATION.md).
+
+**Not in smoke:** certification stays on its own tier to keep smoke under 60 seconds.
 
 ### all (~12–18 minutes)
 
@@ -85,7 +97,10 @@ godot --headless --path . -s res://scripts/debug/race_lifecycle_smoke_test.gd
 godot --headless --path . -s res://scripts/debug/race_finish_contract_test.gd
 godot --headless --path . -s res://scripts/debug/void_oob_authority_test.gd
 godot --headless --path . -s res://scripts/debug/map_selection_test.gd
+godot --headless --path . -s res://scripts/debug/map_certification_test.gd
+godot --headless --path . -s res://scripts/debug/map_certification_test.gd -- --map_id=quarantine_boulevard
 godot --headless --path . -s res://scripts/debug/broken_bridge_real_gameplay_test.gd -- --zombies=5 --skip-stress
+godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=certification
 ```
 
 ## Death cause categories (debug reports)

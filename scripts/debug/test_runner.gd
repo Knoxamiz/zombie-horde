@@ -5,7 +5,7 @@ extends SceneTree
 ##   godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 ##   godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=core
 ##   godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=map
-##   godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=all
+##   godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=certification
 
 const PASS := 0
 const FAIL := 1
@@ -30,6 +30,11 @@ const MAP_TESTS: Array[Dictionary] = [
 		"script": "broken_bridge_real_gameplay_test.gd",
 		"args": ["--zombies=5", "--skip-stress"],
 	},
+]
+
+const CERTIFICATION_TESTS: Array[Dictionary] = [
+	{"name": "map_selection_test", "script": "map_selection_test.gd", "args": []},
+	{"name": "map_certification_test", "script": "map_certification_test.gd", "args": []},
 ]
 
 const ALL_EXTRA_TESTS: Array[Dictionary] = [
@@ -59,8 +64,8 @@ func _run_all() -> void:
 	_tier = _parse_tier()
 	_started_msec = Time.get_ticks_msec()
 
-	if not _tier in ["smoke", "core", "map", "all"]:
-		push_error("Unknown tier '%s'. Use smoke, core, map, or all." % _tier)
+	if not _tier in ["smoke", "core", "map", "certification", "all"]:
+		push_error("Unknown tier '%s'. Use smoke, core, map, certification, or all." % _tier)
 		_print_summary([], [], [], 0.0)
 		quit(FAIL)
 		return
@@ -104,6 +109,8 @@ func _tests_for_tier(tier: String) -> Array[Dictionary]:
 			return CORE_TESTS.duplicate(true)
 		"map":
 			return MAP_TESTS.duplicate(true)
+		"certification":
+			return CERTIFICATION_TESTS.duplicate(true)
 		"all":
 			return _build_all_tests()
 		_:
@@ -129,7 +136,7 @@ func _parse_tier() -> String:
 			return trimmed.substr("--tier=".length()).strip_edges().to_lower()
 		if trimmed == "--tier" or trimmed.begins_with("--tier "):
 			continue
-		if trimmed in ["smoke", "core", "map", "all"]:
+		if trimmed in ["smoke", "core", "map", "certification", "all"]:
 			return trimmed
 
 	for index in range(OS.get_cmdline_user_args().size()):
@@ -175,6 +182,8 @@ func _run_child_test(test: Dictionary) -> Dictionary:
 			or "ERROR" in text
 			or "MapSelectionTest" in text
 			or "QUICK SMOKE RUNTIME" in text
+			or "MAP CERTIFICATION" in text
+			or "MAP LOAD FAILED" in text
 		):
 			print(text)
 
@@ -219,6 +228,8 @@ func _print_summary(
 			print("- smoke status: WITHIN TARGET")
 		else:
 			print("- smoke status: SLOW (over 60s target)")
+	if _tier == "certification":
+		print("- certification runtime: %.1fs" % total_sec)
 	if failed.is_empty():
 		print("- failed test names:")
 	else:

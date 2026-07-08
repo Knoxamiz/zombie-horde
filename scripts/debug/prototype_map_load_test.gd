@@ -126,10 +126,16 @@ func _run_test() -> void:
 		var expected_position: Vector3 = _clamp_spectator_position(spectator, raw_position)
 		_assert_close(spectator.global_position, expected_position, "camera position")
 
-	if not map_controller.load_prototype_map_for_test("missing_map_id"):
-		_fail("Expected fallback load for missing map id to return false")
-	if map_controller.is_prototype_test_load_active():
-		_fail("Prototype flag should clear after fallback")
+	if map_controller.load_prototype_map_for_test("missing_map_id"):
+		_fail("Expected missing map id prototype load to return false")
+	if OS.is_debug_build() or DisplayServer.get_name() == "headless":
+		if map_controller.get_last_load_failure_reason().is_empty():
+			_fail("Expected loud failure reason for missing prototype map id")
+		if not map_controller.is_prototype_test_load_active():
+			_fail("Prototype test load should remain active after refused fallback")
+	else:
+		if map_controller.is_prototype_test_load_active():
+			_fail("Prototype flag should clear after release fallback")
 
 	var profile_after: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
 	if profile_after != null and profile_after.selected_map_index != saved_map_index:
