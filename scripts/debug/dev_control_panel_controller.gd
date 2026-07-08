@@ -22,6 +22,7 @@ var _fake_viewer_simulator: FakeViewerSimulator
 var _panel_open: bool = false
 var _refresh_elapsed: float = 0.0
 var _flow_analyzer_enabled: bool = false
+var _flow_markers_visible: bool = true
 var _blueprint_debug_visible: bool = false
 
 var _root: PanelContainer
@@ -31,7 +32,9 @@ var _config_inspector_label: Label
 var _force_end_button: Button
 var _clear_queue_button: Button
 var _simulator_status_label: Label
+var _flow_status_label: Label
 var _flow_toggle: CheckButton
+var _flow_markers_toggle: CheckButton
 var _blueprint_debug_toggle: CheckButton
 
 
@@ -163,12 +166,25 @@ func _build_ui() -> void:
 	_config_inspector_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_add_button(body, "Copy / Print Config Snapshot", _on_copy_snapshot_pressed)
 
-	_add_section(body, "Debug Toggles")
+	_add_section(body, "Zombie Flow Analyzer")
+	_add_hint(body, "Dev-only race diagnostics. No gameplay effect when disabled.")
+	_flow_status_label = _add_readout(body, "Analyzer: disabled")
 	_flow_toggle = CheckButton.new()
-	_flow_toggle.text = "Zombie Flow Analyzer"
+	_flow_toggle.text = "Enable Analyzer"
 	_flow_toggle.toggled.connect(_on_flow_analyzer_toggled)
 	body.add_child(_flow_toggle)
+	_flow_markers_toggle = CheckButton.new()
+	_flow_markers_toggle.text = "Show Markers"
+	_flow_markers_toggle.button_pressed = true
+	_flow_markers_toggle.toggled.connect(_on_flow_markers_toggled)
+	body.add_child(_flow_markers_toggle)
+	_add_button_row(body, [
+		["Clear Markers", _on_clear_flow_markers_pressed],
+		["Print Last Report", _on_print_flow_report_pressed],
+	])
+	_add_button(body, "Run 20-Viewer Test + Analyze", _on_run_flow_test_pressed)
 
+	_add_section(body, "Debug Toggles")
 	_blueprint_debug_toggle = CheckButton.new()
 	_blueprint_debug_toggle.text = "Blueprint Debug Layer"
 	_blueprint_debug_toggle.toggled.connect(_on_blueprint_debug_toggled)
@@ -359,6 +375,40 @@ func _on_flow_analyzer_toggled(enabled: bool) -> void:
 	var analyzer := _ensure_flow_analyzer()
 	if analyzer != null:
 		analyzer.set_force_enabled(enabled)
+	_refresh_display()
+
+
+func _on_flow_markers_toggled(visible: bool) -> void:
+	_flow_markers_visible = visible
+	var analyzer := _ensure_flow_analyzer()
+	if analyzer != null:
+		analyzer.set_markers_visible(visible)
+	_refresh_display()
+
+
+func _on_clear_flow_markers_pressed() -> void:
+	var analyzer := _ensure_flow_analyzer()
+	if analyzer != null:
+		analyzer.clear_markers()
+	_refresh_display()
+
+
+func _on_print_flow_report_pressed() -> void:
+	var analyzer := _ensure_flow_analyzer()
+	if analyzer != null:
+		analyzer.print_last_report()
+	_refresh_display()
+
+
+func _on_run_flow_test_pressed() -> void:
+	_ensure_fake_viewer_simulator()
+	var analyzer := _ensure_flow_analyzer()
+	if analyzer != null:
+		analyzer.set_force_enabled(true)
+		_flow_analyzer_enabled = true
+	if _fake_viewer_simulator != null:
+		_fake_viewer_simulator.simulate_viewers(20)
+	_refresh_display()
 
 
 func _on_blueprint_debug_toggled(enabled: bool) -> void:
@@ -420,6 +470,7 @@ func _refresh_display() -> void:
 	_refresh_npc_counts()
 	_refresh_simulator_status()
 	_refresh_config_inspector()
+	_refresh_flow_analyzer_status()
 	_refresh_toggle_states()
 
 
@@ -498,6 +549,21 @@ func _refresh_config_inspector() -> void:
 	)
 
 
+func _refresh_flow_analyzer_status() -> void:
+	if _flow_status_label == null:
+		return
+	var analyzer := _ensure_flow_analyzer()
+	if analyzer == null:
+		_flow_status_label.text = "Analyzer: unavailable"
+		return
+
+	var enabled_text: String = "enabled" if analyzer.is_recording_enabled() else "disabled"
+	_flow_status_label.text = (
+		"Analyzer: %s | records: %d | markers: %d"
+		% [enabled_text, analyzer.get_record_count(), analyzer.get_marker_count()]
+	)
+
+
 func _refresh_toggle_states() -> void:
 	if _flow_toggle != null:
 		var analyzer := _ensure_flow_analyzer()
@@ -507,6 +573,15 @@ func _refresh_toggle_states() -> void:
 			_flow_toggle.set_block_signals(true)
 			_flow_toggle.button_pressed = _flow_analyzer_enabled
 			_flow_toggle.set_block_signals(false)
+
+	if _flow_markers_toggle != null:
+		var analyzer := _ensure_flow_analyzer()
+		_flow_markers_toggle.disabled = analyzer == null
+		if analyzer != null:
+			_flow_markers_visible = analyzer.are_markers_visible()
+			_flow_markers_toggle.set_block_signals(true)
+			_flow_markers_toggle.button_pressed = _flow_markers_visible
+			_flow_markers_toggle.set_block_signals(false)
 
 	if _blueprint_debug_toggle != null:
 		var arena := _get_blueprint_arena()
