@@ -387,6 +387,23 @@ func _emit_post_round_recovery_hint() -> void:
 func is_race_timed_out() -> bool:
 	return _race_timed_out
 
+
+func debug_force_end_round() -> void:
+	if not OS.is_debug_build():
+		return
+	if state == RoundState.RUNNING:
+		_resolve_race_timeout()
+
+
+func debug_clear_pending_participants() -> void:
+	if not OS.is_debug_build():
+		return
+	if state != RoundState.IDLE:
+		return
+	pending_participants.clear()
+	_pending_join_info.clear()
+	_publish_queue()
+
 func _publish_state() -> void:
 	GameEvents.round_state_changed.emit(get_state_text())
 	if state == RoundState.IDLE:

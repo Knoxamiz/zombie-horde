@@ -1,4 +1,4 @@
-[gd_scene load_steps=53 format=3 uid="uid://cpckbkq2isxty"]
+[gd_scene load_steps=54 format=3 uid="uid://cpckbkq2isxty"]
 
 [ext_resource type="Script" uid="uid://bdrcas6cpq4y0" path="res://scripts/core/input_map_setup.gd" id="1_input"]
 [ext_resource type="Script" uid="uid://ddgxum5bath7f" path="res://scripts/core/debug_join_source.gd" id="2_join"]
@@ -52,6 +52,7 @@
 [ext_resource type="Resource" path="res://resources/maps/rooftop_causeway.tres" id="50_map_rooftop"]
 [ext_resource type="Script" path="res://scripts/ui/world_text_board.gd" id="51_world_board"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_menu_3d_button.tscn" id="52_3d_button"]
+[ext_resource type="PackedScene" path="res://scenes/debug/dev_control_panel.tscn" id="53_dev_panel"]
 
 [node name="MainGame" type="Node3D"]
 
@@ -624,6 +625,8 @@ debug_join_source_path = NodePath("../Systems/DebugJoinSource")
 twitch_join_source_path = NodePath("../Systems/TwitchJoinSource")
 leaderboard_store_path = NodePath("../Systems/LeaderboardStore")
 feature_config = ExtResource("42_feature_config")
+
+[node name="DevControlPanel" parent="." instance=ExtResource("53_dev_panel")]
 
 [node name="TransitionLayer" type="CanvasLayer" parent="."]
 layer = 100
