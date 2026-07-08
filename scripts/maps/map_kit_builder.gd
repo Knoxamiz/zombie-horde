@@ -22,7 +22,6 @@ const MAT_SPAWN := preload("res://assets/materials/spawn_zone.tres")
 const MAT_GOAL := preload("res://assets/materials/goal_zone.tres")
 const MAT_DEBUG_FLOOR := preload("res://assets/materials/road_asphalt.tres")
 const MAT_DEBUG_HAZARD := preload("res://assets/materials/obstacle_warning.tres")
-const SCRIPT_VOID_KILL := preload("res://scripts/maps/bridge_void_kill_zone.gd")
 
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _map_root: Node3D
@@ -287,11 +286,15 @@ func add_hazard_zone(position: Vector3, size: Vector3, parent: Node3D) -> Area3D
 	var area := Area3D.new()
 	area.name = "HazardZone"
 	area.position = position
-	area.set_script(SCRIPT_VOID_KILL)
+	area.monitoring = false
+	area.monitorable = false
+	area.collision_layer = 0
+	area.collision_mask = 0
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
 	box.size = size
 	shape.shape = box
+	shape.disabled = true
 	area.add_child(shape)
 	if _show_hazards:
 		var debug_mesh := MeshInstance3D.new()

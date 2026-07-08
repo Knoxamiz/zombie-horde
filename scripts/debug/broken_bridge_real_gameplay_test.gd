@@ -875,7 +875,7 @@ class _ZombieRunMonitor:
 				reached_goal += 1
 			elif not zombie.is_alive():
 				var cause: String = str(_progress_by_name.get(name_key + "_cause", "unknown"))
-				if cause == "out_of_bounds" or cause == "sewer":
+				if cause == "fell" or cause == "out_of_bounds" or cause == "sewer":
 					killed_oob += 1
 				else:
 					killed_other += 1

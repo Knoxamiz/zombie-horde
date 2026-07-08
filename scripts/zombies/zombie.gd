@@ -469,16 +469,24 @@ func _check_out_of_bounds(active_config: ZombieConfig) -> void:
 	if not _round_active or not active_config.out_of_bounds_enabled or not is_alive():
 		return
 
-	var is_out_of_bounds: bool = (
+	if global_position.y < active_config.out_of_bounds_min_y:
+		GameEvents.world_feedback_requested.emit(
+			global_position + Vector3.UP * 1.2, "FELL!", Color(0.7, 0.92, 1.0, 1.0)
+		)
+		kill("fell")
+		return
+
+	var is_lateral_out_of_bounds: bool = (
 		abs(global_position.x) > active_config.out_of_bounds_half_width
 		or global_position.z < active_config.out_of_bounds_min_z
 		or global_position.z > active_config.out_of_bounds_max_z
-		or global_position.y < active_config.out_of_bounds_min_y
 	)
-	if not is_out_of_bounds:
+	if not is_lateral_out_of_bounds:
 		return
 
-	GameEvents.world_feedback_requested.emit(global_position + Vector3.UP * 1.2, "OUT!", Color(0.7, 0.92, 1.0, 1.0))
+	GameEvents.world_feedback_requested.emit(
+		global_position + Vector3.UP * 1.2, "OUT!", Color(0.7, 0.92, 1.0, 1.0)
+	)
 	kill("out_of_bounds")
 
 func _update_timers(delta: float) -> void:
