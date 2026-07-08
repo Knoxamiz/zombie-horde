@@ -2,6 +2,17 @@
 
 Zombie Horde is a Godot 4.x PC/Steam-targeted 3D horde race game foundation. The playable slice is organized around production systems: explicit round state, event-driven gameplay, configurable resources, replaceable scenes, debug joins, and Twitch chat joins.
 
+## Development
+
+Before making code changes, read [docs/AI_DEVELOPMENT_GUARDRAILS.md](docs/AI_DEVELOPMENT_GUARDRAILS.md) and run the required test tier from [docs/TESTING.md](docs/TESTING.md).
+
+| Doc | Purpose |
+|-----|---------|
+| [PROTECTED_SYSTEMS.md](docs/PROTECTED_SYSTEMS.md) | Hardened systems and required tests per area |
+| [AI_DEVELOPMENT_GUARDRAILS.md](docs/AI_DEVELOPMENT_GUARDRAILS.md) | Cursor/Codex workflow, test matrix, anti-patterns |
+| [TESTING.md](docs/TESTING.md) | Headless test tiers (`smoke`, `core`, `certification`, `map`) |
+| [MAP_CERTIFICATION.md](docs/MAP_CERTIFICATION.md) | Map promotion and certification gate |
+
 ## Open The Project (Windows)
 
 1. Use this folder: `C:\dev\zombie-horde`
