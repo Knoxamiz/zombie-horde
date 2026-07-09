@@ -15,13 +15,10 @@ const CENTER_ROUTE_X_TOLERANCE: float = 1.25
 const SIGNATURE_DROP_BRIDGE_MAP_ID := "ai_generated_signature_drop_bridge"
 const PHASE2_DROP_GAP_PROBE_MAP_ID := "ai_generated_phase2_drop_gap_probe"
 const PHASE3_MOVING_HAZARD_PROBE_MAP_ID := "ai_generated_phase3_moving_hazard_probe"
-const MULTI_LAYER_FALLTHROUGH_PROBE_MAP_ID := "ai_generated_multi_layer_fallthrough_probe"
+const FALLTHROUGH_LOWER_DECK_TEST_MAP_ID := "ai_generated_fallthrough_lower_deck_test"
 
 const FOCUS_MAP_IDS: Array[String] = [
-	SIGNATURE_DROP_BRIDGE_MAP_ID,
-	PHASE2_DROP_GAP_PROBE_MAP_ID,
-	PHASE3_MOVING_HAZARD_PROBE_MAP_ID,
-	MULTI_LAYER_FALLTHROUGH_PROBE_MAP_ID,
+	FALLTHROUGH_LOWER_DECK_TEST_MAP_ID,
 ]
 
 

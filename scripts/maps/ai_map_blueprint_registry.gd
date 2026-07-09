@@ -1,10 +1,18 @@
 class_name AIMapBlueprintRegistry
 extends RefCounted
 
-## Blueprint registry for future AI-generated maps.
-## No prototype maps are registered until real maps are authored and exported.
+const FallthroughLowerDeckTestBlueprint := preload(
+	"res://scripts/maps/blueprints/fallthrough_lower_deck_test.gd"
+)
 
-const PROTOTYPE_ENTRIES: Array[Dictionary] = []
+const PROTOTYPE_ENTRIES: Array[Dictionary] = [
+	{
+		"blueprint_id": "fallthrough_lower_deck_test",
+		"generated_map_id": "ai_generated_fallthrough_lower_deck_test",
+		"scene_path": "res://scenes/maps/ai_generated_fallthrough_lower_deck_test.tscn",
+		"definition_path": "res://resources/maps/ai_generated_fallthrough_lower_deck_test.tres",
+	},
+]
 
 
 static func get_all_entries() -> Array[Dictionary]:
@@ -41,9 +49,17 @@ static func get_entry_by_generated_map_id(generated_map_id: String) -> Dictionar
 	return {}
 
 
-static func resolve_blueprint(_blueprint_id: String):
-	return null
+static func resolve_blueprint(blueprint_id: String):
+	var trimmed: String = blueprint_id.strip_edges()
+	match trimmed:
+		"fallthrough_lower_deck_test":
+			return FallthroughLowerDeckTestBlueprint.create()
+		_:
+			return null
 
 
-static func resolve_blueprint_for_generated_map(_generated_map_id: String):
-	return null
+static func resolve_blueprint_for_generated_map(generated_map_id: String):
+	var entry: Dictionary = get_entry_by_generated_map_id(generated_map_id)
+	if entry.is_empty():
+		return null
+	return resolve_blueprint(str(entry.get("blueprint_id", "")))

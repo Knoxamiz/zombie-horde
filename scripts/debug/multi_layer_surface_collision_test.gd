@@ -1,7 +1,7 @@
 extends SceneTree
 
 const Builder := preload("res://scripts/maps/ai_map_blueprint_builder.gd")
-const Blueprint := preload("res://scripts/maps/blueprints/multi_layer_fallthrough_probe.gd")
+const Blueprint := preload("res://scripts/maps/blueprints/fallthrough_lower_deck_test.gd")
 const Audit := preload("res://scripts/maps/ai_map_collision_audit.gd")
 const Validator := preload("res://scripts/maps/ai_map_blueprint_validator.gd")
 const MapSurfacePieceScript := preload("res://scripts/maps/map_surface_piece.gd")
@@ -57,7 +57,7 @@ func _run_all() -> void:
 			% definition.out_of_bounds_min_y
 		)
 
-	print("multi_layer_fallthrough_probe surface collision passed")
+	print("fallthrough_lower_deck_test surface collision passed")
 	host.queue_free()
 	_finish()
 

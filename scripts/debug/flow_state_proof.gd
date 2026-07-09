@@ -9,6 +9,12 @@ extends SceneTree
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const OUTPUT_PATH := "res://artifacts/flow_state_proof_latest.txt"
 const CITY_HIGHWAY_MAP_ID := MapCatalog.DEFAULT_MAP_ID
+const FALLTHROUGH_TEST_MAP_ID := "ai_generated_fallthrough_lower_deck_test"
+
+const Builder := preload("res://scripts/maps/ai_map_blueprint_builder.gd")
+const Registry := preload("res://scripts/maps/ai_map_blueprint_registry.gd")
+const Audit := preload("res://scripts/maps/ai_map_collision_audit.gd")
+const Validator := preload("res://scripts/maps/ai_map_blueprint_validator.gd")
 
 const PASS := 0
 const FAIL := 1
@@ -29,6 +35,7 @@ func _run_all() -> void:
 	_check_city_highway_assets_on_disk()
 	await _check_city_highway_runtime_load()
 	_check_playable_map_gate()
+	await _check_fallthrough_lower_deck_build()
 	_print_honesty_section()
 	_write_report_file()
 	_finish()
@@ -59,18 +66,15 @@ func _record_manual(check_name: String, detail: String) -> void:
 
 
 func _check_catalog_single_map() -> void:
-	var entries: Array[Dictionary] = MapCatalog.get_all_entries()
 	var selectable: Array[Dictionary] = MapCatalog.get_selectable_entries_for_settings()
-	var only_highway: bool = (
-		entries.size() == 1
-		and selectable.size() == 1
-		and str(entries[0].get("id", "")) == CITY_HIGHWAY_MAP_ID
+	var highway_only_selectable: bool = (
+		selectable.size() == 1
+		and str(selectable[0].get("id", "")) == CITY_HIGHWAY_MAP_ID
 	)
 	_record(
-		"Catalog single-map gate",
-		only_highway,
-		"%d catalog entries, %d selectable (expected City Highway only)"
-		% [entries.size(), selectable.size()]
+		"Streamer map gate",
+		highway_only_selectable,
+		"%d selectable maps (expected 1: City Highway)" % selectable.size()
 	)
 
 
@@ -138,16 +142,70 @@ func _check_playable_map_gate() -> void:
 	)
 
 
+func _check_fallthrough_lower_deck_build() -> void:
+	var entry: Dictionary = Registry.get_entry_by_blueprint_id("fallthrough_lower_deck_test")
+	var scene_path: String = str(entry.get("scene_path", ""))
+	var definition_path: String = str(entry.get("definition_path", ""))
+	var missing: PackedStringArray = PackedStringArray()
+	if not ResourceLoader.exists(scene_path):
+		missing.append(scene_path)
+	if not ResourceLoader.exists(definition_path):
+		missing.append(definition_path)
+	if not missing.is_empty():
+		_record(
+			"Fallthrough lower deck export",
+			false,
+			"missing=%s (run export_ai_generated_prototype.gd)" % ", ".join(missing)
+		)
+		return
+
+	var blueprint = Registry.resolve_blueprint("fallthrough_lower_deck_test")
+	if blueprint == null:
+		_record("Fallthrough lower deck build", false, "blueprint missing")
+		return
+
+	var blueprint_validation: Dictionary = Validator.validate_blueprint(blueprint)
+	if not bool(blueprint_validation.get("ok", false)):
+		_record("Fallthrough lower deck build", false, "blueprint invalid")
+		return
+
+	var host := Node3D.new()
+	root.add_child(host)
+	var builder := Builder.new()
+	var map_root: Node3D = builder.build_prototype(host, blueprint)
+	if map_root == null:
+		_record("Fallthrough lower deck build", false, "build_prototype failed")
+		host.queue_free()
+		return
+
+	var definition: RaceMapDefinition = builder.build_race_map_definition(blueprint)
+	var collision_errors: Array[String] = Audit.validate_generated_collision(
+		map_root, blueprint, definition
+	)
+	var probe_errors: Array[String] = Audit.probe_multi_layer_fallthrough(
+		map_root, blueprint, definition
+	)
+	var failed: bool = not collision_errors.is_empty() or not probe_errors.is_empty()
+	_record(
+		"Fallthrough lower deck collision",
+		not failed,
+		"collision=%d probe=%d"
+		% [collision_errors.size(), probe_errors.size()]
+	)
+	host.queue_free()
+
+
 func _print_honesty_section() -> void:
 	_line("-".repeat(80))
 	_line("")
 	_line("MANUAL ONLY (automation cannot prove these):")
 	_record_manual("Visual quality / art pass", "Run editor, load City Highway, inspect track and scenery")
-	_record_manual("Zombie walk feel on floors", "Queue 20 NPCs, watch for fall-through or snagging")
+	_record_manual("Zombie walk feel on floors", "Queue 20 NPCs on fallthrough test, watch hole → lower deck landing")
+	_record_manual("Fallthrough lower deck feel", "F3 → Load Fallthrough Lower Deck TEST → queue NPCs at hole")
 	_record_manual("Stream/OBS HUD layout", "Not covered by headless proof")
 	_line("")
 	_line("NEXT MAP WORK:")
-	_line("  Build real authored maps before re-enabling prototype exports or dev loaders.")
+	_line("  Polish fallthrough test visuals after collision/fall feel is confirmed in F3.")
 	_line("")
 	_line("RE-RUN THIS PROOF:")
 	_line("  godot --headless --path . -s res://scripts/debug/flow_state_proof.gd")
