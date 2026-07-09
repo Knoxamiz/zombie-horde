@@ -5,15 +5,15 @@
 
 [resource]
 script = ExtResource("2_ka5bq")
-display_name = "Fallthrough Lower Deck"
+display_name = "Fallthrough Lower Deck TEST"
 scene = ExtResource("1_o5bfd")
-premium_only = false
+premium_only = true
 road_core_scale = Vector3(1, 1, 1)
 spawn_origin = Vector3(0, 2.8, -4)
 spawn_area_size = Vector2(10, 4)
-goal_position = Vector3(0, -0.7, 44)
-base_position = Vector3(0, -1.5, 44)
-minigun_position = Vector3(0, -1.5, 40)
+goal_position = Vector3(0, 2.8, 44)
+base_position = Vector3(0, 2, 44)
+minigun_position = Vector3(0, 2, 40)
 lane_half_width = 4.0
 out_of_bounds_half_width = 10.0
 out_of_bounds_min_z = -12.0
@@ -34,3 +34,12 @@ powerup_placement_max_z = 40.0
 defender_placement_half_width = 3.5
 defender_placement_min_z = 4.0
 defender_placement_max_z = 40.0
+uses_map_hazard_profile = false
+map_mine_count = 6
+map_obstacle_count = 12
+map_sewer_hole_count = 2
+map_barrier_obstacle_weight = 42
+map_cone_obstacle_weight = 40
+map_vehicle_obstacle_weight = 18
+map_boost_pad_count = 3
+map_defender_count = 2

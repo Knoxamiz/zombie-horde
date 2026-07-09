@@ -1,6 +1,17 @@
 extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
+const MapKitLayoutPresetsScript := preload("res://scripts/maps/map_kit_layout_presets.gd")
+const EXPECTED_MAP_IDS: Array[String] = [
+	"quarantine_boulevard",
+	"ai_generated_fallthrough_lower_deck_test",
+	"broken_bridge_pass",
+	"mine_alley",
+	"cone_slalom",
+	"vehicle_yard",
+	"defender_gauntlet",
+	"boost_rush",
+]
 
 var _failures: PackedStringArray = PackedStringArray()
 var _main_game: Node
@@ -9,6 +20,7 @@ var _main_game: Node
 func _initialize() -> void:
 	_failures.append_array(_test_catalog_resolution())
 	_failures.append_array(_test_profile_migration())
+	_failures.append_array(_test_layout_preset_uniqueness())
 	call_deferred("_begin_runtime_load")
 
 
@@ -29,58 +41,100 @@ func _test_catalog_resolution() -> PackedStringArray:
 	var failures: PackedStringArray = PackedStringArray()
 	var settings_entries: Array[Dictionary] = MapCatalog.get_selectable_entries_for_settings()
 
-	if settings_entries.size() != 2:
+	if settings_entries.size() != EXPECTED_MAP_IDS.size():
 		failures.append(
-			"Expected 2 settings maps, got %d" % settings_entries.size()
+			"Expected %d settings maps, got %d"
+			% [EXPECTED_MAP_IDS.size(), settings_entries.size()]
 		)
 		return failures
 
-	if str(settings_entries[0].get("id", "")) != "quarantine_boulevard":
-		failures.append(
-			"Settings index 0 should be quarantine_boulevard, got %s"
-			% settings_entries[0].get("id", "")
-		)
-
-	if str(settings_entries[1].get("id", "")) != "ai_generated_fallthrough_lower_deck_test":
-		failures.append(
-			"Settings index 1 should be fallthrough map, got %s"
-			% settings_entries[1].get("id", "")
-		)
+	for index in range(EXPECTED_MAP_IDS.size()):
+		var expected_id: String = EXPECTED_MAP_IDS[index]
+		var actual_id: String = str(settings_entries[index].get("id", ""))
+		if actual_id != expected_id:
+			failures.append(
+				"Settings index %d should be %s, got %s" % [index, expected_id, actual_id]
+			)
 
 	if MapCatalog.get_settings_map_id(0) != "quarantine_boulevard":
 		failures.append("Settings map id 0 mismatch")
 
-	if MapCatalog.resolve_settings_index("", 7) != 0:
-		failures.append("Legacy index 7 should migrate to settings index 0")
+	if MapCatalog.resolve_settings_index("", 7) != 7:
+		failures.append("Legacy index 7 should resolve to settings index 7 (Boost Rush)")
 
-	if MapCatalog.get_playable_count() != 2:
-		failures.append("Expected two playable maps, got %d" % MapCatalog.get_playable_count())
+	if MapCatalog.get_settings_map_id(7) != "boost_rush":
+		failures.append("Settings index 7 should be boost_rush")
+
+	if MapCatalog.get_playable_count() != EXPECTED_MAP_IDS.size():
+		failures.append(
+			"Expected %d playable maps, got %d"
+			% [EXPECTED_MAP_IDS.size(), MapCatalog.get_playable_count()]
+		)
 
 	return failures
 
 
 func _test_profile_migration() -> PackedStringArray:
 	var failures: PackedStringArray = PackedStringArray()
-	var profile: StreamerSettingsProfile = StreamerSettingsProfile.new()
-	profile.selected_map_index = 7
-	profile.selected_map_id = ""
-	profile.sanitize_map_selection()
 
-	if profile.get_selected_map_id() != "quarantine_boulevard":
+	var legacy_profile: StreamerSettingsProfile = StreamerSettingsProfile.new()
+	legacy_profile.selected_map_index = 7
+	legacy_profile.selected_map_id = ""
+	legacy_profile.sanitize_map_selection()
+	if legacy_profile.get_selected_map_id() != "boost_rush":
 		failures.append(
-			"Profile migration from legacy index 7 failed: id=%s"
-			% profile.get_selected_map_id()
+			"Legacy index 7 should resolve to boost_rush, got id=%s"
+			% legacy_profile.get_selected_map_id()
 		)
-	if profile.get_selected_settings_map_index() != 0:
+	if legacy_profile.get_selected_settings_map_index() != 7:
 		failures.append(
-			"Profile migration should use settings index 0, got %d"
-			% profile.get_selected_settings_map_index()
+			"Legacy index 7 should use settings index 7, got %d"
+			% legacy_profile.get_selected_settings_map_index()
 		)
 
-	profile.set_selected_settings_map_index(0)
-	if profile.selected_map_id != "quarantine_boulevard":
+	var invalid_profile: StreamerSettingsProfile = StreamerSettingsProfile.new()
+	invalid_profile.selected_map_index = 99
+	invalid_profile.selected_map_id = ""
+	invalid_profile.sanitize_map_selection()
+	if invalid_profile.get_selected_map_id() != "quarantine_boulevard":
+		failures.append(
+			"Invalid legacy index should fall back to City Highway, got id=%s"
+			% invalid_profile.get_selected_map_id()
+		)
+
+	legacy_profile.set_selected_settings_map_index(0)
+	if legacy_profile.selected_map_id != "quarantine_boulevard":
 		failures.append("set_selected_settings_map_index(0) should sync map id")
 
+	return failures
+
+
+func _test_layout_preset_uniqueness() -> PackedStringArray:
+	var failures: PackedStringArray = PackedStringArray()
+	var preset_ids: Array[String] = [
+		"broken_bridge",
+		"mine_alley",
+		"cone_slalom",
+		"vehicle_yard",
+		"defender_gauntlet",
+		"boost_rush",
+	]
+	var signatures: Dictionary = {}
+	for preset_id in preset_ids:
+		var layout: Dictionary = MapKitLayoutPresetsScript.get_preset(preset_id)
+		var signature: String = "%s|%.0f|%.0f|%d|%d" % [
+			str(layout.get("style", "")),
+			float(layout.get("spawn_z", 0.0)),
+			float(layout.get("goal_z", 0.0)),
+			(layout.get("segments", []) as Array).size(),
+			(layout.get("gaps", []) as Array).size(),
+		]
+		if signatures.has(signature):
+			failures.append(
+				"Layout preset '%s' duplicates path signature of '%s'"
+				% [preset_id, signatures[signature]]
+			)
+		signatures[signature] = preset_id
 	return failures
 
 

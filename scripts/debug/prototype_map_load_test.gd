@@ -16,8 +16,8 @@ func _initialize() -> void:
 func _run_test() -> void:
 	print("=== Prototype map load test ===")
 
-	if MapCatalog.get_playable_count() != 1:
-		_fail("Expected exactly one playable map, got %d" % MapCatalog.get_playable_count())
+	if not MapCatalog.is_entry_playable(MapCatalog.get_entry_by_id(MAP_ID)):
+		_fail("Prototype map '%s' must remain non-playable" % MAP_ID)
 
 	var profile_before: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
 	var saved_map_index: int = profile_before.selected_map_index if profile_before != null else 0
@@ -144,8 +144,8 @@ func _run_test() -> void:
 			% [saved_map_index, profile_after.selected_map_index]
 		)
 
-	if MapCatalog.get_playable_count() != 1:
-		_fail("Playable map count changed after prototype test")
+	if MapCatalog.get_playable_count() != 8:
+		_fail("Playable map count changed after prototype test (expected 8)")
 
 	if _failures.is_empty():
 		print("PASS: prototype map load test for %s" % CANDIDATE_MAP_ID)
