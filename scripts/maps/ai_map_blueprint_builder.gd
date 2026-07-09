@@ -166,7 +166,7 @@ func _place_required_assets(
 	var required_assets: Array = segment.get("required_assets", [])
 	for asset_id_value in required_assets:
 		var asset_id: String = str(asset_id_value)
-		if asset_id == "safe_floor_plate" or asset_id == "phase1_safe_floor_plate" or asset_id == "phase2_safe_floor_plate":
+		if asset_id == "safe_floor_plate" or asset_id == "phase1_safe_floor_plate" or asset_id == "phase2_safe_floor_plate" or asset_id == "phase4_safe_floor_plate":
 			continue
 		if MapAssetLibraryScript.is_moving_obstacle_asset(asset_id):
 			continue
@@ -231,6 +231,20 @@ func _place_safe_floor_for_segment(
 	var floor_width: float = segment_width
 	var ratio: float = float(segment.get("safe_floor_width_ratio", 1.0))
 	floor_width = segment_width * ratio
+	var branch_widths: Array = segment.get("branch_widths", [])
+	var branch_offsets: Array = segment.get("branch_offsets", [])
+	if not branch_widths.is_empty():
+		for index in range(branch_widths.size()):
+			var branch_width: float = float(branch_widths[index]) * ratio
+			var branch_offset_x: float = (
+				float(branch_offsets[index]) if index < branch_offsets.size() else 0.0
+			)
+			_add_safe_floor_plate(
+				safe_floor,
+				Vector3(branch_offset_x, deck_y - FLOOR_THICKNESS * 0.5, center_z),
+				Vector3(branch_width, FLOOR_THICKNESS, segment_length)
+			)
+		return
 	if segment_type in [
 		MapSegmentDefinitionScript.TYPE_GAP,
 		MapSegmentDefinitionScript.TYPE_SMALL_CENTER_GAP,

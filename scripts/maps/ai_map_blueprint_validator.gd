@@ -40,6 +40,7 @@ static func validate_blueprint(blueprint) -> Dictionary:
 	_validate_gap_fall_settings(blueprint, result)
 	_validate_phase2_fall_gap_rules(blueprint, result)
 	_validate_phase3_moving_obstacle_rules(blueprint, result)
+	_validate_phase4_split_merge_rules(blueprint, result)
 	_validate_rail_barrier_match(blueprint, result)
 	_validate_route_length(blueprint, result)
 	_validate_definition_preview(blueprint, result)
@@ -215,6 +216,7 @@ static func _validate_gap_fall_settings(blueprint, result: Dictionary) -> void:
 			MapSegmentDefinitionScript.TYPE_BROKEN_BRIDGE_GAP,
 			MapSegmentDefinitionScript.TYPE_ELEVATED_RAMP_DROP,
 			MapSegmentDefinitionScript.TYPE_CRACKED_EDGE_LANE,
+			MapSegmentDefinitionScript.TYPE_SPLIT_GAP_CHOICE,
 		]:
 			needs_fall = true
 			break
@@ -290,6 +292,14 @@ static func _validate_definition_values(
 		)
 	if definition.out_of_bounds_half_width < definition.lane_half_width:
 		_add_error(result, "out_of_bounds_half_width must be >= lane_half_width.")
+	if blueprint.has_split_merge_segments():
+		var route_max_half: float = blueprint.get_route_max_half_width()
+		if definition.out_of_bounds_half_width < route_max_half + 1.0:
+			_add_error(
+				result,
+				"Split/merge route half-width %.1f exceeds OOB half-width %.1f."
+				% [route_max_half, definition.out_of_bounds_half_width]
+			)
 	if blueprint.fall_enabled and definition.out_of_bounds_min_y >= definition.spawn_origin.y - 0.25:
 		_add_error(result, "fall_enabled requires out_of_bounds_min_y below spawn height.")
 	if blueprint.fall_enabled and definition.out_of_bounds_min_y >= blueprint.deck_y - 0.5:
@@ -310,6 +320,201 @@ static func _validate_phase2_fall_gap_rules(blueprint, result: Dictionary) -> vo
 	_validate_elevated_water_clearance(blueprint, result)
 	_validate_side_drop_oob_clearance(blueprint, result)
 	_validate_elevated_camera_requirement(blueprint, result)
+
+
+static func _validate_phase4_split_merge_rules(blueprint, result: Dictionary) -> void:
+	if not blueprint.has_split_merge_segments():
+		return
+	_validate_split_merge_balance(blueprint, result)
+	_validate_split_merge_spawn_finish(blueprint, result)
+	_validate_branch_safe_floors(blueprint, result)
+	_validate_low_risk_branch_required(blueprint, result)
+	_validate_merge_recovery_length(blueprint, result)
+	_validate_branch_oob_bounds(blueprint, result)
+	_validate_hidden_branch_floors(blueprint, result)
+	_validate_split_route_camera_framing(blueprint, result)
+	_validate_risk_reward_route_markers(blueprint, result)
+
+
+static func _validate_split_merge_balance(blueprint, result: Dictionary) -> void:
+	var open_splits: int = 0
+	var saw_split: bool = false
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		var segment_type: String = str(segment.get("type", ""))
+		if MapSegmentDefinitionScript.is_split_segment_type(segment_type):
+			open_splits += 1
+			saw_split = true
+		if MapSegmentDefinitionScript.is_merge_segment_type(segment_type):
+			if open_splits <= 0:
+				_add_error(result, "Merge segment '%s' without preceding split." % segment_id)
+			else:
+				open_splits -= 1
+	if saw_split and open_splits > 0:
+		_add_error(result, "Split segments must merge before finish (unclosed split count=%d)." % open_splits)
+
+
+static func _validate_split_merge_spawn_finish(blueprint, result: Dictionary) -> void:
+	if blueprint.segment_sequence.is_empty():
+		return
+	var first_id: String = str(blueprint.segment_sequence[0])
+	var last_id: String = str(blueprint.segment_sequence.back())
+	for segment_id in [first_id, last_id]:
+		var segment_type: String = str(MapSegmentDefinitionScript.get_segment(segment_id).get("type", ""))
+		if MapSegmentDefinitionScript.is_split_segment_type(segment_type):
+			_add_error(result, "Spawn/finish cannot be split segment '%s'." % segment_id)
+		if MapSegmentDefinitionScript.is_merge_segment_type(segment_type):
+			_add_error(result, "Spawn/finish cannot be merge segment '%s'." % segment_id)
+		if MapSegmentDefinitionScript.is_branch_route_segment_type(segment_type):
+			_add_error(result, "Spawn/finish cannot be branch segment '%s'." % segment_id)
+
+
+static func _validate_branch_safe_floors(blueprint, result: Dictionary) -> void:
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		var branch_widths: Array = segment.get("branch_widths", [])
+		if branch_widths.is_empty() and MapSegmentDefinitionScript.is_branch_route_segment_type(
+			str(segment.get("type", ""))
+		):
+			_add_error(result, "Branch segment '%s' must define branch_widths with safe floor." % segment_id)
+			continue
+		if branch_widths.is_empty():
+			continue
+		var has_floor_asset: bool = false
+		for asset_id_value in segment.get("required_assets", []):
+			var asset_id: String = str(asset_id_value)
+			if "safe_floor_plate" in asset_id:
+				has_floor_asset = true
+				break
+		if not has_floor_asset:
+			_add_error(result, "Route segment '%s' must include a safe_floor_plate asset." % segment_id)
+
+
+static func _validate_low_risk_branch_required(blueprint, result: Dictionary) -> void:
+	var in_split_section: bool = false
+	var section_has_low_risk: bool = false
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		var segment_type: String = str(segment.get("type", ""))
+		if MapSegmentDefinitionScript.is_split_segment_type(segment_type):
+			in_split_section = true
+			section_has_low_risk = false
+			continue
+		if in_split_section:
+			var risk: int = int(segment.get("route_risk_level", 0))
+			if segment_type == MapSegmentDefinitionScript.TYPE_WIDE_SAFE_ROUTE or risk <= 0:
+				section_has_low_risk = true
+			if int(segment.get("difficulty", 1)) <= 2 and risk <= 1:
+				section_has_low_risk = true
+		if MapSegmentDefinitionScript.is_merge_segment_type(segment_type):
+			if in_split_section and not section_has_low_risk:
+				_add_error(
+					result,
+					"Split section ending at '%s' must include at least one low-risk branch."
+					% segment_id
+				)
+			in_split_section = false
+
+
+static func _validate_merge_recovery_length(blueprint, result: Dictionary) -> void:
+	var sequence: Array = blueprint.segment_sequence
+	for index in range(sequence.size()):
+		var segment_id: String = str(sequence[index])
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		if not MapSegmentDefinitionScript.is_merge_segment_type(str(segment.get("type", ""))):
+			continue
+		var min_recovery: float = float(segment.get("min_recovery_after_merge", 8.0))
+		if index + 1 >= sequence.size():
+			continue
+		var next_segment: Dictionary = MapSegmentDefinitionScript.get_segment(str(sequence[index + 1]))
+		var next_type: String = str(next_segment.get("type", ""))
+		if next_type in [MapSegmentDefinitionScript.TYPE_FINISH]:
+			_add_warning(
+				result,
+				"Merge segment '%s' is immediately followed by finish; consider recovery straight."
+				% segment_id
+			)
+			continue
+		var next_length: float = float(next_segment.get("length", 0.0))
+		if next_length < min_recovery and next_type not in [
+			MapSegmentDefinitionScript.TYPE_MERGE_RECOVERY,
+			MapSegmentDefinitionScript.TYPE_RECOVERY,
+			MapSegmentDefinitionScript.TYPE_STRAIGHT,
+		]:
+			_add_warning(
+				result,
+				"Segment after merge '%s' length %.1f < recommended recovery %.1f."
+				% [segment_id, next_length, min_recovery]
+			)
+
+
+static func _validate_branch_oob_bounds(blueprint, result: Dictionary) -> void:
+	if blueprint.fall_enabled:
+		return
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		var offsets: Array = segment.get("branch_offsets", [])
+		var widths: Array = segment.get("branch_widths", [])
+		for index in range(offsets.size()):
+			var offset_x: float = float(offsets[index])
+			var branch_half: float = float(widths[index] if index < widths.size() else 0.0) * 0.5
+			var extent: float = abs(offset_x) + branch_half
+			if extent > blueprint.get_route_max_half_width() + 0.5:
+				_add_error(
+					result,
+					"Branch on segment '%s' extends beyond route OOB bounds (extent %.1f)."
+					% [segment_id, extent]
+				)
+
+
+static func _validate_hidden_branch_floors(blueprint, result: Dictionary) -> void:
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		var ratio: float = float(segment.get("safe_floor_width_ratio", 1.0))
+		var total_width: float = float(segment.get("total_width", segment.get("width", 10.0)))
+		var branch_widths: Array = segment.get("branch_widths", [])
+		if branch_widths.is_empty():
+			continue
+		var branch_total: float = 0.0
+		for branch_width_value in branch_widths:
+			branch_total += float(branch_width_value)
+		if branch_total * ratio > total_width * 1.15:
+			_add_error(
+				result,
+				"Segment '%s' hidden branch floor width exceeds visible route width."
+				% segment_id
+			)
+
+
+static func _validate_split_route_camera_framing(blueprint, result: Dictionary) -> void:
+	var definition: RaceMapDefinition = blueprint.to_race_map_definition()
+	var camera_view: Dictionary = RaceMapController.compute_race_camera_view_for_definition(definition)
+	if camera_view.get("position", Vector3.ZERO) == Vector3.ZERO:
+		_add_error(result, "Split/merge route requires valid camera framing.")
+		return
+	var route_max_half: float = blueprint.get_route_max_half_width()
+	var camera_side: float = abs(float(camera_view.get("position", Vector3.ZERO).x))
+	if camera_side < route_max_half + 4.0:
+		_add_warning(
+			result,
+			"Camera side offset %.1f may be tight for route half-width %.1f."
+			% [camera_side, route_max_half]
+		)
+
+
+static func _validate_risk_reward_route_markers(blueprint, result: Dictionary) -> void:
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		if str(segment.get("type", "")) != MapSegmentDefinitionScript.TYPE_RISK_REWARD_SPLIT:
+			continue
+		var has_marker: bool = false
+		for asset_id_value in segment.get("required_assets", []) + segment.get("optional_assets", []):
+			var asset: Dictionary = MapAssetLibraryScript.get_asset(str(asset_id_value))
+			if str(asset.get("route_category", "")) == "route_marker":
+				has_marker = true
+				break
+		if not has_marker:
+			_add_warning(result, "risk_reward_split '%s' should include route sign/marker assets." % segment_id)
 
 
 static func _validate_phase3_moving_obstacle_rules(blueprint, result: Dictionary) -> void:

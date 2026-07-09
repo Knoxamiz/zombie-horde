@@ -42,6 +42,24 @@ const CATEGORY_NAMES: Dictionary = {
 
 const KIT_ENV := "res://assets/third_party/zombie_apocalypse_kit/imported/Environment"
 
+const PHASE4_ASSET_IDS: Array[String] = [
+	"phase4_fork_road_left",
+	"phase4_fork_road_right",
+	"phase4_merge_road",
+	"phase4_split_bridge",
+	"phase4_side_bridge",
+	"phase4_narrow_shortcut_bridge",
+	"phase4_wide_safe_bridge",
+	"phase4_high_path_ramp",
+	"phase4_low_path_ramp",
+	"phase4_divider_barrier",
+	"phase4_route_sign_arrow",
+	"phase4_lane_merge_marking",
+	"phase4_split_guardrail",
+	"phase4_side_support_pillar",
+	"phase4_safe_floor_plate",
+]
+
 const PHASE3_ASSET_IDS: Array[String] = [
 	"phase3_moving_block_crate",
 	"phase3_moving_block_wide",
@@ -184,6 +202,23 @@ static func validate_phase3_assets() -> Dictionary:
 	return result
 
 
+static func get_phase4_asset_ids() -> Array[String]:
+	return PHASE4_ASSET_IDS.duplicate()
+
+
+static func is_phase4_asset(asset_id: String) -> bool:
+	return asset_id in PHASE4_ASSET_IDS
+
+
+static func validate_phase4_assets() -> Dictionary:
+	var result: Dictionary = {"ok": true, "missing": []}
+	for asset_id in PHASE4_ASSET_IDS:
+		if not has_asset(asset_id):
+			result["ok"] = false
+			result["missing"].append(asset_id)
+	return result
+
+
 static func is_moving_obstacle_asset(asset_id: String) -> bool:
 	var entry: Dictionary = get_asset(asset_id)
 	return bool(entry.get("supports_moving", false)) or not str(entry.get("movement_category", "")).is_empty()
@@ -275,6 +310,7 @@ static func get_audit_report() -> Dictionary:
 			report["missing_categories"].append(category_name)
 
 	report["notes"] = [
+		"Phase 4 pack: %d canonical split/merge route assets (phase4_* ids)." % PHASE4_ASSET_IDS.size(),
 		"Phase 3 pack: %d canonical moving obstacle assets (phase3_* ids)." % PHASE3_ASSET_IDS.size(),
 		"Phase 2 pack: %d canonical assets (phase2_* ids)." % PHASE2_ASSET_IDS.size(),
 		"Phase 1 pack: %d canonical assets (phase1_* ids)." % PHASE1_ASSET_IDS.size(),
@@ -922,6 +958,142 @@ static func _build_assets() -> Array[Dictionary]:
 			"visual_only", "none",
 			"Marks persistent safe lane through obstacle segment."
 		),
+		# --- Phase 4 split/merge route asset pack ---
+		_route_entry(
+			"phase4_fork_road_left", "P4 Fork Road Left", "split_lane", Category.ROAD,
+			"%s/Street_Turn.gltf" % KIT_ENV,
+			8.0, 6.0, 0.2, Vector3(-2, 0, -4), Vector3(-2, 0, 4), 0.0,
+			false, true,
+			[Vector3(-2.5, 0, 0)], Vector3.ZERO,
+			"visual_only",
+			"Left fork road visual for split segments."
+		),
+		_route_entry(
+			"phase4_fork_road_right", "P4 Fork Road Right", "split_lane", Category.ROAD,
+			"%s/Street_Turn.gltf" % KIT_ENV,
+			8.0, 6.0, 0.2, Vector3(2, 0, -4), Vector3(2, 0, 4), 0.0,
+			false, true,
+			[Vector3(2.5, 0, 0)], Vector3.ZERO,
+			"visual_only",
+			"Right fork road visual for split segments."
+		),
+		_route_entry(
+			"phase4_merge_road", "P4 Merge Road", "merge_lane", Category.ROAD,
+			"%s/Street_Straight.gltf" % KIT_ENV,
+			8.0, 10.0, 0.2, Vector3(0, 0, -4), Vector3(0, 0, 4), 0.0,
+			false, true,
+			[], Vector3.ZERO,
+			"visual_only",
+			"Merge lane road visual."
+		),
+		_route_entry(
+			"phase4_split_bridge", "P4 Split Bridge", "alternate_route", Category.BRIDGE,
+			"",
+			8.0, 12.0, 0.16, Vector3(0, 0, -4), Vector3(0, 0, 4), 0.0,
+			false, true,
+			[Vector3(-3, 0, 0), Vector3(3, 0, 0)], Vector3.ZERO,
+			"visual_only",
+			"Split bridge deck visual; collision via safe floor plates."
+		),
+		_route_entry(
+			"phase4_side_bridge", "P4 Side Bridge", "alternate_route", Category.BRIDGE,
+			"%s/Street_Straight.gltf" % KIT_ENV,
+			8.0, 5.0, 0.16, Vector3(3.5, 0, -4), Vector3(3.5, 0, 4), 0.0,
+			false, true,
+			[Vector3(3.5, 0, 0)], Vector3.ZERO,
+			"visual_only",
+			"Side bridge path offset from center route."
+		),
+		_route_entry(
+			"phase4_narrow_shortcut_bridge", "P4 Narrow Shortcut Bridge", "shortcut", Category.BRIDGE,
+			"",
+			8.0, 4.0, 0.14, Vector3(-2.5, 0, -4), Vector3(-2.5, 0, 4), 0.0,
+			false, true,
+			[Vector3(-2.5, 0, 0)], Vector3.ZERO,
+			"visual_only",
+			"Narrow high-risk shortcut branch visual."
+		),
+		_route_entry(
+			"phase4_wide_safe_bridge", "P4 Wide Safe Bridge", "safe_route", Category.BRIDGE,
+			"",
+			8.0, 8.0, 0.14, Vector3(2.5, 0, -4), Vector3(2.5, 0, 4), 0.0,
+			false, true,
+			[Vector3(2.5, 0, 0)], Vector3.ZERO,
+			"visual_only",
+			"Wide low-risk safe branch visual."
+		),
+		_route_entry(
+			"phase4_high_path_ramp", "P4 High Path Ramp", "ramp", Category.RAMP,
+			"",
+			8.0, 5.0, 0.6, Vector3(-2, 0, -4), Vector3(-2, 0.6, 4), 0.0,
+			false, true,
+			[Vector3(-2, 0.3, 0)], Vector3.ZERO,
+			"visual_only",
+			"High path ramp for high/low split segments."
+		),
+		_route_entry(
+			"phase4_low_path_ramp", "P4 Low Path Ramp", "ramp", Category.RAMP,
+			"",
+			8.0, 5.0, 0.4, Vector3(2, 0, -4), Vector3(2, -0.2, 4), 0.0,
+			false, true,
+			[Vector3(2, -0.1, 0)], Vector3.ZERO,
+			"visual_only",
+			"Low path ramp for high/low split segments."
+		),
+		_route_entry(
+			"phase4_divider_barrier", "P4 Divider Barrier", "divider", Category.BARRIER,
+			"%s/PlasticBarrier.gltf" % KIT_ENV,
+			2.0, 0.5, 1.2, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true,
+			[], Vector3.ZERO,
+			"visual_only",
+			"Lane divider between split branches; collision sanitized."
+		),
+		_route_entry(
+			"phase4_route_sign_arrow", "P4 Route Sign Arrow", "route_marker", Category.DECORATION,
+			"%s/TownSign.gltf" % KIT_ENV,
+			1.5, 0.3, 2.0, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true,
+			[], Vector3.ZERO,
+			"visual_only",
+			"Route arrow sign for risk/reward splits."
+		),
+		_route_entry(
+			"phase4_lane_merge_marking", "P4 Lane Merge Marking", "route_marker", Category.HAZARD,
+			"res://assets/materials/obstacle_warning.tres",
+			8.0, 8.0, 0.05, Vector3.ZERO, Vector3.ZERO, 0.02,
+			false, true,
+			[], Vector3.ZERO,
+			"visual_only",
+			"Merge lane warning markings."
+		),
+		_route_entry(
+			"phase4_split_guardrail", "P4 Split Guardrail", "rail", Category.RAIL,
+			"%s/TrafficBarrier_1.gltf" % KIT_ENV,
+			2.5, 0.4, 1.0, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true,
+			[], Vector3.ZERO,
+			"visual_only",
+			"Guardrail for split path edges."
+		),
+		_route_entry(
+			"phase4_side_support_pillar", "P4 Side Support Pillar", "decoration", Category.SUPPORT,
+			"%s/CinderBlock.gltf" % KIT_ENV,
+			1.05, 1.05, 4.0, Vector3.ZERO, Vector3.ZERO, -2.0,
+			false, true,
+			[], Vector3.ZERO,
+			"visual_only",
+			"Support pillar for side bridge paths."
+		),
+		_route_entry(
+			"phase4_safe_floor_plate", "P4 Safe Floor Plate", "safe_route", Category.BRIDGE,
+			"",
+			8.0, 10.0, 0.12, Vector3(0, 0, -4), Vector3(0, 0, 4), -0.06,
+			true, false,
+			[], Vector3.ZERO,
+			"gameplay_collision",
+			"Phase 4 authoritative walk collision for branch lanes."
+		),
 	]
 
 
@@ -1015,6 +1187,49 @@ static func _moving_entry(
 	entry["pause_at_ends_sec"] = 0.2
 	entry["collision_expectation"] = collision_expectation
 	entry["hazard_behavior"] = hazard_behavior
+	return entry
+
+
+static func _route_entry(
+	asset_id: String,
+	display_name: String,
+	route_category: String,
+	category: int,
+	scene_path: String,
+	length: float,
+	width: float,
+	height: float,
+	entry_offset: Vector3,
+	exit_offset: Vector3,
+	deck_y_offset: float,
+	has_collision: bool,
+	is_visual_only: bool,
+	branch_offsets: Array,
+	merge_offset: Vector3,
+	collision_expectation: String,
+	notes: String
+) -> Dictionary:
+	var entry: Dictionary = _entry(
+		asset_id,
+		display_name,
+		category,
+		scene_path,
+		length,
+		width,
+		height,
+		entry_offset,
+		exit_offset,
+		deck_y_offset,
+		has_collision,
+		is_visual_only,
+		false,
+		false,
+		notes,
+	)
+	entry["route_category"] = route_category
+	entry["branch_offsets"] = branch_offsets
+	entry["merge_offset"] = merge_offset
+	entry["collision_expectation"] = collision_expectation
 	return entry
 
 
@@ -1120,6 +1335,18 @@ static func _instantiate_procedural(entry: Dictionary) -> Node3D:
 			var lane_mat: Material = load("res://assets/materials/spawn_zone.tres")
 			if lane_mat != null:
 				node.material_override = lane_mat
+		"phase4_split_bridge", "phase4_narrow_shortcut_bridge", "phase4_wide_safe_bridge", "phase4_safe_floor_plate":
+			mat.albedo_color = Color(0.24, 0.25, 0.27, 1.0)
+			mat.roughness = 0.9
+			node.material_override = mat
+		"phase4_high_path_ramp", "phase4_low_path_ramp":
+			mat.albedo_color = Color(0.28, 0.27, 0.25, 1.0)
+			mat.roughness = 0.88
+			node.material_override = mat
+		"phase4_lane_merge_marking":
+			var merge_mat: Material = load("res://assets/materials/obstacle_warning.tres")
+			if merge_mat != null:
+				node.material_override = merge_mat
 		_:
 			mat.albedo_color = Color(0.22, 0.23, 0.25, 1.0)
 			mat.roughness = 0.9

@@ -11,6 +11,16 @@ const TYPE_GAP := "gap"
 const TYPE_DROP := "drop"
 const TYPE_SPLIT_LANE := "split_lane"
 const TYPE_MERGE_LANE := "merge_lane"
+const TYPE_SPLIT_TWO_LANE := "split_two_lane"
+const TYPE_MERGE_TWO_LANE := "merge_two_lane"
+const TYPE_RISK_REWARD_SPLIT := "risk_reward_split"
+const TYPE_NARROW_SHORTCUT := "narrow_shortcut"
+const TYPE_WIDE_SAFE_ROUTE := "wide_safe_route"
+const TYPE_HIGH_LOW_SPLIT := "high_low_split"
+const TYPE_SIDE_BRIDGE_ROUTE := "side_bridge_route"
+const TYPE_OBSTACLE_ROUTE_CHOICE := "obstacle_route_choice"
+const TYPE_SPLIT_GAP_CHOICE := "split_gap_choice"
+const TYPE_MERGE_RECOVERY := "merge_recovery"
 const TYPE_SIDE_DROP := "side_drop"
 const TYPE_SMALL_CENTER_GAP := "small_center_gap"
 const TYPE_LEFT_SIDE_DROP := "left_side_drop"
@@ -66,9 +76,32 @@ const ALL_TYPES: Array[String] = [
 	TYPE_HAZARD_RECOVERY,
 	TYPE_SPLIT_LANE,
 	TYPE_MERGE_LANE,
+	TYPE_SPLIT_TWO_LANE,
+	TYPE_MERGE_TWO_LANE,
+	TYPE_RISK_REWARD_SPLIT,
+	TYPE_NARROW_SHORTCUT,
+	TYPE_WIDE_SAFE_ROUTE,
+	TYPE_HIGH_LOW_SPLIT,
+	TYPE_SIDE_BRIDGE_ROUTE,
+	TYPE_OBSTACLE_ROUTE_CHOICE,
+	TYPE_SPLIT_GAP_CHOICE,
+	TYPE_MERGE_RECOVERY,
 	TYPE_MOVING_BLOCK_LANE,
 	TYPE_HAZARD_LANE,
 	TYPE_FINISH,
+]
+
+const PHASE4_SEGMENT_IDS: Array[String] = [
+	"split_two_lane",
+	"merge_two_lane",
+	"risk_reward_split",
+	"narrow_shortcut",
+	"wide_safe_route",
+	"high_low_split",
+	"side_bridge_route",
+	"obstacle_route_choice",
+	"split_gap_choice",
+	"merge_recovery_straight",
 ]
 
 const PHASE3_SEGMENT_IDS: Array[String] = [
@@ -182,6 +215,64 @@ static func is_platform_gap_segment_type(segment_type: String) -> bool:
 	return segment_type == TYPE_MOVING_PLATFORM_GAP
 
 
+static func get_phase4_segment_ids() -> Array[String]:
+	return PHASE4_SEGMENT_IDS.duplicate()
+
+
+static func is_phase4_segment(segment_id: String) -> bool:
+	return segment_id in PHASE4_SEGMENT_IDS
+
+
+static func validate_phase4_segments() -> Dictionary:
+	var result: Dictionary = {"ok": true, "missing": []}
+	for segment_id in PHASE4_SEGMENT_IDS:
+		if not has_segment(segment_id):
+			result["ok"] = false
+			result["missing"].append(segment_id)
+	return result
+
+
+static func is_split_segment_type(segment_type: String) -> bool:
+	return segment_type in [
+		TYPE_SPLIT_LANE,
+		TYPE_SPLIT_TWO_LANE,
+		TYPE_RISK_REWARD_SPLIT,
+		TYPE_HIGH_LOW_SPLIT,
+		TYPE_SPLIT_GAP_CHOICE,
+		TYPE_OBSTACLE_ROUTE_CHOICE,
+	]
+
+
+static func is_merge_segment_type(segment_type: String) -> bool:
+	return segment_type in [
+		TYPE_MERGE_LANE,
+		TYPE_MERGE_TWO_LANE,
+		TYPE_MERGE_RECOVERY,
+	]
+
+
+static func is_branch_route_segment_type(segment_type: String) -> bool:
+	return segment_type in [
+		TYPE_NARROW_SHORTCUT,
+		TYPE_WIDE_SAFE_ROUTE,
+		TYPE_SIDE_BRIDGE_ROUTE,
+		TYPE_HIGH_LOW_SPLIT,
+	]
+
+
+static func is_route_shape_segment_type(segment_type: String) -> bool:
+	return (
+		is_split_segment_type(segment_type)
+		or is_merge_segment_type(segment_type)
+		or is_branch_route_segment_type(segment_type)
+	)
+
+
+static func get_segment_route_half_width(segment: Dictionary) -> float:
+	var total_width: float = float(segment.get("total_width", segment.get("width", 10.0)))
+	return total_width * 0.5
+
+
 static func is_fall_risk_segment_type(segment_type: String) -> bool:
 	return segment_type in [
 		TYPE_GAP,
@@ -194,6 +285,7 @@ static func is_fall_risk_segment_type(segment_type: String) -> bool:
 		TYPE_BROKEN_BRIDGE_GAP,
 		TYPE_ELEVATED_RAMP_DROP,
 		TYPE_CRACKED_EDGE_LANE,
+		TYPE_SPLIT_GAP_CHOICE,
 	]
 
 
@@ -730,6 +822,162 @@ static func _build_segments() -> Array[Dictionary]:
 			0, -999.0, 0.0, 1.0,
 			0, "x", 0.0, 0.0, true, 3.0,
 		),
+		# --- Phase 4 split/merge route segment templates ---
+		_route_segment(
+			"split_two_lane", TYPE_SPLIT_TWO_LANE, 8.0, 14.0, 0.0, 2,
+			[
+				"phase4_fork_road_left",
+				"phase4_fork_road_right",
+				"phase4_split_bridge",
+				"phase4_divider_barrier",
+				"phase4_safe_floor_plate",
+			],
+			["phase4_route_sign_arrow", "phase4_split_guardrail"],
+			14.0, 14.0, false, false, 0, 2,
+			"Two-lane fork; forward-compatible lane offsets only.",
+			0, -999.0, 2.0, 1.0,
+			2, [4.0, 4.0], [-2.5, 2.5], Vector3.ZERO, 0, true,
+		),
+		_route_segment(
+			"merge_two_lane", TYPE_MERGE_TWO_LANE, 8.0, 14.0, 0.0, 2,
+			[
+				"phase4_merge_road",
+				"phase4_lane_merge_marking",
+				"phase4_safe_floor_plate",
+			],
+			["phase4_split_guardrail", "phase4_divider_barrier"],
+			14.0, 10.0, false, false, 0, 1,
+			"Merge two offset branches back to center lane.",
+			0, -999.0, 1.5, 1.0,
+			2, [4.0, 4.0], [-2.5, 2.5], Vector3.ZERO, 0, true,
+		),
+		_route_segment(
+			"risk_reward_split", TYPE_RISK_REWARD_SPLIT, 8.0, 16.0, 0.0, 3,
+			[
+				"phase4_fork_road_left",
+				"phase4_fork_road_right",
+				"phase4_split_bridge",
+				"phase4_route_sign_arrow",
+				"phase4_safe_floor_plate",
+			],
+			["phase4_divider_barrier", "phase4_split_guardrail"],
+			16.0, 16.0, false, true, 0, 2,
+			"Risk/reward fork; requires route sign and one low-risk branch.",
+			0, -999.0, 3.0, 1.0,
+			2, [3.5, 6.0], [-3.0, 3.0], Vector3.ZERO, 1, true,
+		),
+		_route_segment(
+			"narrow_shortcut", TYPE_NARROW_SHORTCUT, 8.0, 5.0, 0.0, 3,
+			[
+				"phase4_narrow_shortcut_bridge",
+				"phase4_safe_floor_plate",
+				"phase4_route_sign_arrow",
+			],
+			["phase3_warning_stripes"],
+			5.0, 5.0, false, true, 1, 1,
+			"High-risk narrow shortcut branch (shorter visual lane).",
+			0, -999.0, 1.0, 0.7,
+			1, [3.5], [-2.5], Vector3.ZERO, 2, true,
+		),
+		_route_segment(
+			"wide_safe_route", TYPE_WIDE_SAFE_ROUTE, 8.0, 9.0, 0.0, 1,
+			[
+				"phase4_wide_safe_bridge",
+				"phase4_safe_floor_plate",
+			],
+			["phase4_route_sign_arrow", "phase4_side_support_pillar"],
+			9.0, 9.0, false, false, 0, 1,
+			"Low-risk wide safe branch (longer path).",
+			0, -999.0, 1.0, 1.0,
+			1, [6.0], [2.5], Vector3.ZERO, 0, true,
+		),
+		_route_segment(
+			"high_low_split", TYPE_HIGH_LOW_SPLIT, 8.0, 14.0, 0.0, 3,
+			[
+				"phase4_high_path_ramp",
+				"phase4_low_path_ramp",
+				"phase4_split_bridge",
+				"phase4_safe_floor_plate",
+			],
+			["phase4_route_sign_arrow", "phase4_divider_barrier"],
+			14.0, 14.0, false, false, 0, 2,
+			"High/low path split with ramp visuals.",
+			0, -999.0, 2.5, 1.0,
+			2, [4.0, 4.0], [-2.5, 2.5], Vector3.ZERO, 1, true,
+		),
+		_route_segment(
+			"side_bridge_route", TYPE_SIDE_BRIDGE_ROUTE, 8.0, 8.0, 0.0, 2,
+			[
+				"phase4_side_bridge",
+				"phase4_safe_floor_plate",
+				"phase4_split_guardrail",
+			],
+			["phase4_side_support_pillar"],
+			8.0, 8.0, false, false, 0, 1,
+			"Side bridge alternate route offset from center.",
+			0, -999.0, 2.0, 1.0,
+			1, [5.0], [3.5], Vector3.ZERO, 0, true,
+		),
+		_route_segment(
+			"obstacle_route_choice", TYPE_OBSTACLE_ROUTE_CHOICE, 8.0, 14.0, 0.0, 3,
+			[
+				"phase4_split_bridge",
+				"phase4_safe_floor_plate",
+				"phase3_warning_stripes",
+				"phase4_route_sign_arrow",
+			],
+			["phase3_moving_block_crate", "phase4_divider_barrier"],
+			14.0, 14.0, false, true, 1, 2,
+			"Fork with obstacle on one branch visual only.",
+			0, -999.0, 2.0, 1.0,
+			2, [4.0, 4.0], [-2.5, 2.5], Vector3.ZERO, 1, true,
+		),
+		_route_segment(
+			"split_gap_choice", TYPE_SPLIT_GAP_CHOICE, 8.0, 14.0, 0.0, 4,
+			[
+				"phase4_fork_road_left",
+				"phase4_fork_road_right",
+				"phase2_broken_bridge_gap",
+				"phase4_safe_floor_plate",
+				"phase4_route_sign_arrow",
+			],
+			["phase2_warning_stripes", "phase4_split_guardrail"],
+			14.0, 14.0, true, false, 1, 2,
+			"Split with gap on risky branch; requires fall_enabled.",
+			2, -5.5, 2.5, 0.65,
+			2, [3.5, 5.0], [-3.0, 3.0], Vector3.ZERO, 2, true,
+		),
+		_route_segment(
+			"merge_recovery_straight", TYPE_MERGE_RECOVERY, 8.0, 10.0, 0.0, 1,
+			[
+				"phase1_road_straight_8",
+				"phase4_safe_floor_plate",
+				"phase4_lane_merge_marking",
+			],
+			["phase4_route_sign_arrow"],
+			10.0, 10.0, false, false, 0, 1,
+			"Recovery straight after merge section.",
+			0, -999.0, 0.0, 1.0,
+			1, [8.0], [0.0], Vector3.ZERO, 0, true,
+		),
+		_route_segment(
+			"seg_test_branch_no_floor", TYPE_NARROW_SHORTCUT, 8.0, 5.0, 0.0, 3,
+			["phase4_narrow_shortcut_bridge"],
+			[],
+			5.0, 5.0, false, false, 0, 1,
+			"TEST ONLY — branch without safe floor plate.",
+			0, -999.0, 0.0, 0.7,
+			1, [], [], Vector3.ZERO, 2, false,
+		),
+		_route_segment(
+			"seg_test_oversized_route", TYPE_SPLIT_TWO_LANE, 8.0, 30.0, 0.0, 2,
+			["phase4_split_bridge", "phase4_safe_floor_plate"],
+			[],
+			30.0, 30.0, false, false, 0, 2,
+			"TEST ONLY — route wider than typical OOB bounds.",
+			0, -999.0, 4.0, 1.0,
+			2, [12.0, 12.0], [-6.0, 6.0], Vector3.ZERO, 0, true,
+		),
 	]
 
 
@@ -831,4 +1079,64 @@ static func _moving_segment(
 	segment["recommended_spacing"] = recommended_spacing
 	segment["fallback_safe_lane"] = fallback_safe_lane
 	segment["fallback_safe_lane_width"] = fallback_safe_lane_width
+	return segment
+
+
+static func _route_segment(
+	segment_id: String,
+	segment_type: String,
+	length: float,
+	total_width: float,
+	height_delta: float,
+	difficulty: int,
+	required_assets: Array,
+	optional_assets: Array,
+	entry_width: float,
+	exit_width: float,
+	allows_fall_edges: bool,
+	allows_moving_obstacles: bool,
+	hazard_slots: int,
+	safe_lane_count: int,
+	notes: String = "",
+	fall_risk_level: int = 0,
+	recommended_oob_min_y: float = -999.0,
+	recommended_camera_padding: float = 0.0,
+	safe_floor_width_ratio: float = 1.0,
+	branch_count: int = 1,
+	branch_widths: Array = [],
+	branch_offsets: Array = [],
+	merge_offset: Vector3 = Vector3.ZERO,
+	route_risk_level: int = 0,
+	low_risk_branch_required: bool = true,
+	min_recovery_after_merge: float = 8.0,
+) -> Dictionary:
+	var segment: Dictionary = _segment(
+		segment_id,
+		segment_type,
+		length,
+		total_width,
+		height_delta,
+		difficulty,
+		required_assets,
+		optional_assets,
+		entry_width,
+		exit_width,
+		allows_fall_edges,
+		allows_moving_obstacles,
+		hazard_slots,
+		safe_lane_count,
+		notes,
+		fall_risk_level,
+		recommended_oob_min_y,
+		recommended_camera_padding,
+		safe_floor_width_ratio,
+	)
+	segment["total_width"] = total_width
+	segment["branch_count"] = branch_count
+	segment["branch_widths"] = branch_widths
+	segment["branch_offsets"] = branch_offsets
+	segment["merge_offset"] = merge_offset
+	segment["route_risk_level"] = route_risk_level
+	segment["low_risk_branch_required"] = low_risk_branch_required
+	segment["min_recovery_after_merge"] = min_recovery_after_merge
 	return segment

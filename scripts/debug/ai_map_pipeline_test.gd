@@ -16,6 +16,9 @@ const Phase2DropGapTestBlueprint := preload(
 const Phase3MovingObstacleTestBlueprint := preload(
 	"res://scripts/maps/blueprints/phase3_moving_obstacle_test.gd"
 )
+const Phase4SplitLaneTestBlueprint := preload(
+	"res://scripts/maps/blueprints/phase4_split_lane_test.gd"
+)
 
 const PASS := 0
 const FAIL := 1
@@ -36,10 +39,13 @@ func _run_all() -> void:
 	_test_phase2_segments_validate()
 	_test_phase3_assets_validate()
 	_test_phase3_segments_validate()
+	_test_phase4_assets_validate()
+	_test_phase4_segments_validate()
 	_test_example_blueprint_validates()
 	_test_phase1_blueprint_validates()
 	_test_phase2_blueprint_validates()
 	_test_phase3_blueprint_validates()
+	_test_phase4_blueprint_validates()
 	_test_invalid_segment_fails()
 	_test_invalid_asset_id_fails()
 	_test_invalid_segment_order_fails()
@@ -52,10 +58,16 @@ func _run_all() -> void:
 	_test_invalid_obstacle_cycle_time_fails()
 	_test_obstacle_blocks_all_lanes_fails()
 	_test_moving_platform_without_recovery_fails()
+	_test_split_without_merge_fails()
+	_test_branch_no_safe_floor_fails()
+	_test_spawn_inside_split_fails()
+	_test_finish_inside_split_fails()
+	_test_split_route_oob_width_fails()
 	_test_generated_example_contract()
 	_test_generated_phase1_contract()
 	_test_generated_phase2_contract()
 	_test_generated_phase3_contract()
+	_test_generated_phase4_contract()
 	MapAssetLibrary.print_audit_report()
 
 	if _failures.is_empty():
@@ -82,6 +94,8 @@ func _test_asset_registry_loads() -> void:
 		_fail("phase2_warning_stripes missing from library")
 	if not MapAssetLibrary.has_asset("phase3_moving_block_crate"):
 		_fail("phase3_moving_block_crate missing from library")
+	if not MapAssetLibrary.has_asset("phase4_fork_road_left"):
+		_fail("phase4_fork_road_left missing from library")
 	var segments: Array = MapSegmentDefinition.get_all_segment_ids()
 	if segments.is_empty():
 		_fail("MapSegmentDefinition returned no segments")
@@ -130,6 +144,20 @@ func _test_phase3_segments_validate() -> void:
 		_fail("Phase 3 segments missing: %s" % str(result.get("missing", [])))
 
 
+func _test_phase4_assets_validate() -> void:
+	print("-- phase4 assets --")
+	var result: Dictionary = MapAssetLibrary.validate_phase4_assets()
+	if not bool(result.get("ok", false)):
+		_fail("Phase 4 assets missing: %s" % str(result.get("missing", [])))
+
+
+func _test_phase4_segments_validate() -> void:
+	print("-- phase4 segments --")
+	var result: Dictionary = MapSegmentDefinition.validate_phase4_segments()
+	if not bool(result.get("ok", false)):
+		_fail("Phase 4 segments missing: %s" % str(result.get("missing", [])))
+
+
 func _test_example_blueprint_validates() -> void:
 	print("-- example blueprint --")
 	var blueprint = ExampleBridgeSegmentsTestBlueprint.create()
@@ -164,6 +192,15 @@ func _test_phase3_blueprint_validates() -> void:
 	AIMapBlueprintValidator.print_validation_report(result)
 	if not bool(result.get("ok", false)):
 		_fail("phase3_moving_obstacle_test blueprint should validate")
+
+
+func _test_phase4_blueprint_validates() -> void:
+	print("-- phase4 blueprint --")
+	var blueprint = Phase4SplitLaneTestBlueprint.create()
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	AIMapBlueprintValidator.print_validation_report(result)
+	if not bool(result.get("ok", false)):
+		_fail("phase4_split_lane_test blueprint should validate")
 
 
 func _test_invalid_segment_fails() -> void:
@@ -306,6 +343,80 @@ func _test_moving_platform_without_recovery_fails() -> void:
 		_fail("moving platform gap without recovery floor should fail validation")
 
 
+func _test_split_without_merge_fails() -> void:
+	print("-- split without merge --")
+	var blueprint = Phase4SplitLaneTestBlueprint.create()
+	blueprint.segment_sequence = [
+		"start_straight",
+		"straight_road_short",
+		"split_two_lane",
+		"finish_straight",
+	]
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	if bool(result.get("ok", false)):
+		_fail("split without merge should fail validation")
+
+
+func _test_branch_no_safe_floor_fails() -> void:
+	print("-- branch no safe floor --")
+	var blueprint = Phase4SplitLaneTestBlueprint.create()
+	blueprint.segment_sequence = [
+		"start_straight",
+		"split_two_lane",
+		"seg_test_branch_no_floor",
+		"merge_two_lane",
+		"finish_straight",
+	]
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	if bool(result.get("ok", false)):
+		_fail("branch without safe floor should fail validation")
+
+
+func _test_spawn_inside_split_fails() -> void:
+	print("-- spawn inside split --")
+	var blueprint = Phase4SplitLaneTestBlueprint.create()
+	blueprint.segment_sequence = [
+		"split_two_lane",
+		"narrow_shortcut",
+		"wide_safe_route",
+		"merge_two_lane",
+		"finish_straight",
+	]
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	if bool(result.get("ok", false)):
+		_fail("spawn inside split segment should fail validation")
+
+
+func _test_finish_inside_split_fails() -> void:
+	print("-- finish inside split --")
+	var blueprint = Phase4SplitLaneTestBlueprint.create()
+	blueprint.segment_sequence = [
+		"start_straight",
+		"straight_road_medium",
+		"split_two_lane",
+		"merge_two_lane",
+	]
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	if bool(result.get("ok", false)):
+		_fail("finish inside merge segment should fail validation")
+
+
+func _test_split_route_oob_width_fails() -> void:
+	print("-- split route OOB width --")
+	var blueprint = Phase4SplitLaneTestBlueprint.create()
+	blueprint.route_half_width = 5.0
+	blueprint.lane_half_width = 4.5
+	blueprint.segment_sequence = [
+		"start_straight",
+		"seg_test_oversized_route",
+		"merge_two_lane",
+		"finish_straight",
+	]
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	if bool(result.get("ok", false)):
+		_fail("split route wider than OOB bounds should fail validation")
+
+
 func _test_generated_example_contract() -> void:
 	print("-- generated example contract --")
 	_validate_generated_prototype(ExampleBridgeSegmentsTestBlueprint.create(), "example")
@@ -324,6 +435,11 @@ func _test_generated_phase2_contract() -> void:
 func _test_generated_phase3_contract() -> void:
 	print("-- generated phase3 contract --")
 	_validate_generated_prototype(Phase3MovingObstacleTestBlueprint.create(), "phase3")
+
+
+func _test_generated_phase4_contract() -> void:
+	print("-- generated phase4 contract --")
+	_validate_generated_prototype(Phase4SplitLaneTestBlueprint.create(), "phase4")
 
 
 func _validate_generated_prototype(blueprint, label: String) -> void:
