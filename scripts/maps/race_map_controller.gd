@@ -575,6 +575,12 @@ func _finalize_loaded_map_scene(
 	return true
 
 
+func _is_ai_generated_map_arena(core_road: Node) -> bool:
+	if core_road == null or core_road.get_script() == null:
+		return false
+	return str(core_road.get_script().resource_path) == "res://scripts/maps/ai_generated_map_arena.gd"
+
+
 func _ensure_map_scene_built(map: Node3D) -> void:
 	if map == null:
 		return
@@ -583,6 +589,9 @@ func _ensure_map_scene_built(map: Node3D) -> void:
 		var arena: BlueprintMapArena = core_road as BlueprintMapArena
 		if arena.get_map_root() == null:
 			arena.build_map()
+	elif _is_ai_generated_map_arena(core_road):
+		if core_road.get_map_root() == null:
+			core_road.build_map()
 
 
 func _disable_scene_cameras(map: Node3D) -> void:

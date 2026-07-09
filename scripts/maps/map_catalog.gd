@@ -83,6 +83,17 @@ const ENTRIES: Array[Dictionary] = [
 		"status": STATUS_PROTOTYPE,
 		"legacy_index": 7,
 	},
+	{
+		"id": "ai_generated_phase1_bridge_ramp_test",
+		"display_name": "AI Phase 1 Bridge Ramp TEST",
+		"resource_path": "res://resources/maps/ai_generated_phase1_bridge_ramp_test.tres",
+		"scene_path": "res://scenes/maps/ai_generated_phase1_bridge_ramp_test.tscn",
+		"enabled": false,
+		"status": STATUS_PROTOTYPE,
+		"legacy_index": 8,
+		"ai_generated": true,
+		"ai_blueprint_id": "phase1_bridge_ramp_test",
+	},
 ]
 
 

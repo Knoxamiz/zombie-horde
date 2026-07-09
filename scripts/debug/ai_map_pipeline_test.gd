@@ -4,6 +4,7 @@ const MapAssetLibrary := preload("res://scripts/maps/map_asset_library.gd")
 const MapSegmentDefinition := preload("res://scripts/maps/map_segment_definition.gd")
 const AIMapBlueprintValidator := preload("res://scripts/maps/ai_map_blueprint_validator.gd")
 const AIMapBlueprintBuilder := preload("res://scripts/maps/ai_map_blueprint_builder.gd")
+const AIMapRouteLayout := preload("res://scripts/maps/ai_map_route_layout.gd")
 const ExampleBridgeSegmentsTestBlueprint := preload(
 	"res://scripts/maps/blueprints/example_bridge_segments_test.gd"
 )
@@ -63,6 +64,8 @@ func _run_all() -> void:
 	_test_spawn_inside_split_fails()
 	_test_finish_inside_split_fails()
 	_test_split_route_oob_width_fails()
+	_test_route_layout_alignment()
+	_test_misaligned_definition_span_fails()
 	_test_generated_example_contract()
 	_test_generated_phase1_contract()
 	_test_generated_phase2_contract()
@@ -415,6 +418,44 @@ func _test_split_route_oob_width_fails() -> void:
 	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
 	if bool(result.get("ok", false)):
 		_fail("split route wider than OOB bounds should fail validation")
+
+
+func _test_route_layout_alignment() -> void:
+	print("-- route layout alignment --")
+	var blueprint = Phase1BridgeRampTestBlueprint.create()
+	var layout: Dictionary = AIMapRouteLayout.compute_layout(blueprint)
+	if absf(float(layout.get("spawn_z", 0.0)) + 4.0) > 0.01:
+		_fail("spawn_z should be -4 for forward-built routes")
+	if absf(float(layout.get("goal_z", 0.0)) - 68.0) > 0.01:
+		_fail("phase1 goal_z expected 68, got %s" % str(layout.get("goal_z", 0.0)))
+	var definition: RaceMapDefinition = blueprint.to_race_map_definition()
+	var errors: Array = AIMapRouteLayout.definition_matches_layout(definition, blueprint)
+	if not errors.is_empty():
+		_fail("phase1 definition layout mismatch: %s" % str(errors))
+
+
+func _test_misaligned_definition_span_fails() -> void:
+	print("-- misaligned definition span --")
+	var blueprint = Phase1BridgeRampTestBlueprint.create()
+	var definition: RaceMapDefinition = blueprint.to_race_map_definition()
+	definition.goal_position.z += 20.0
+	var errors: Array = AIMapRouteLayout.definition_matches_layout(definition, blueprint)
+	if errors.is_empty():
+		_fail("misaligned goal_position.z should fail layout validation")
+	var host := Node3D.new()
+	root.add_child(host)
+	var builder = AIMapBlueprintBuilder.new()
+	var map_root: Node3D = builder.build_prototype(host, blueprint)
+	if map_root == null:
+		_fail("expected valid prototype build for misalignment test")
+		host.queue_free()
+		return
+	var scene_result: Dictionary = AIMapBlueprintValidator.validate_generated_scene(
+		map_root, blueprint, definition
+	)
+	if bool(scene_result.get("ok", false)):
+		_fail("misaligned definition should fail generated scene validation")
+	host.queue_free()
 
 
 func _test_generated_example_contract() -> void:
