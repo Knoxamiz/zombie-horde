@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/maps/obstacles/map_moving_obstacle.gd" id="1_script"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_visual"]
+size = Vector3(2.4, 2.2, 2.4)
+
+[sub_resource type="StandardMaterial3D" id="Mat_visual"]
+albedo_color = Color(0.75, 0.25, 0.2, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape_collision"]
+size = Vector3(2.4, 2.2, 2.4)
+
+[node name="MovingBlockSideToSide" type="AnimatableBody3D"]
+script = ExtResource("1_script")
+movement_type = "ping_pong"
+movement_axis = "x"
+movement_distance = 2.8
+cycle_time = 4.0
+pause_at_start_sec = 0.2
+pause_at_end_sec = 0.2
+hazard_behavior = "block"
+obstacle_display_name = "Moving Block Side To Side"
+
+[node name="Visual" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_visual")
+material_override = SubResource("Mat_visual")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("BoxShape_collision")

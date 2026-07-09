@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="RaceMapDefinition" load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/maps/ai_generated_phase3_moving_hazard_probe.tscn" id="1_hten4"]
+[ext_resource type="Script" path="res://scripts/maps/race_map_definition.gd" id="2_85ou8"]
+
+[resource]
+script = ExtResource("2_85ou8")
+display_name = "Phase 3 Moving Hazard PROBE"
+scene = ExtResource("1_hten4")
+premium_only = true
+road_core_scale = Vector3(1, 1, 1)
+spawn_origin = Vector3(0, 1.6, -4)
+spawn_area_size = Vector2(10, 4)
+goal_position = Vector3(0, 1.6, 52)
+base_position = Vector3(0, 0.8, 52)
+minigun_position = Vector3(0, 0.8, 48)
+lane_half_width = 4.0
+out_of_bounds_half_width = 10.0
+out_of_bounds_min_z = -12.0
+out_of_bounds_max_z = 60.0
+out_of_bounds_min_y = -2.2
+deck_y = 0.8
+hazard_placement_half_width = 4.0
+hazard_placement_min_z = 0.0
+hazard_placement_max_z = 48.0
+obstacle_half_width = 4.0
+obstacle_min_z = 0.0
+obstacle_max_z = 48.0
+obstacle_lane_count = 1
+obstacle_segment_length = 4.4
+powerup_placement_half_width = 3.5
+powerup_placement_min_z = 4.0
+powerup_placement_max_z = 48.0
+defender_placement_half_width = 3.5
+defender_placement_min_z = 4.0
+defender_placement_max_z = 48.0

@@ -64,6 +64,7 @@ AIMapBlueprint (validated blueprint_id)
 |--------------|------------------|-------|
 | `phase1_bridge_ramp_test` | `ai_generated_phase1_bridge_ramp_test` | Phase 1 |
 | `phase2_drop_gap_probe` | `ai_generated_phase2_drop_gap_probe` | Phase 2 probe |
+| `phase3_moving_hazard_probe` | `ai_generated_phase3_moving_hazard_probe` | Phase 3 moving hazard probe |
 
 The exporter **fails loudly** on unknown `blueprint_id` values — it does not fall back to Phase 1 or City Highway.
 
@@ -354,7 +355,45 @@ Factory: `scripts/maps/blueprints/phase2_drop_gap_test.gd`
 | `MapLabSimMover` | `scripts/maps/map_lab_sim_mover.gd` — MapLab simulation probes only |
 | Kit meshes | `Container_Red`, `Container_Green`, `PlasticBarrier`, `TrafficBarrier_*`, `Pallet`, `Pipes`, `CinderBlock` |
 | `moving_block_slot` | Phase 0 placeholder in `MapAssetLibrary` — superseded by `phase3_*` assets |
-| **Missing** | Dedicated swinging arm GLTF, certified crusher prefab scenes, tween library for map obstacles, production hazard wiring from AI builder |
+| `MapMovingObstacle` | `scripts/maps/obstacles/map_moving_obstacle.gd` — kinematic prototype controller |
+| Drop-and-Play scenes | `scenes/maps/obstacles/*.tscn` — reset-safe placeholder modules (v1) |
+| **Still missing** | Production `BounceObstacle`/`GameEvents` wiring from embedded map obstacles; direct-kill crushers deferred |
+
+### Drop-and-Play Moving Hazard Kit v1
+
+Reusable prototype obstacle scenes under `scenes/maps/obstacles/`:
+
+| Asset id | Scene | Behavior |
+|----------|-------|----------|
+| `dp_moving_block_side_to_side` | `moving_block_side_to_side.tscn` | Side-to-side lane block |
+| `dp_side_pusher_wall` | `side_pusher_wall.tscn` | Side push toward edge |
+| `dp_timed_gate` | `timed_gate.tscn` | Open/close timing gate |
+| `dp_crusher_block` | `crusher_block.tscn` | Down/up crusher (prototype-safe, no kill) |
+| `dp_rotating_arm` | `rotating_arm.tscn` | Rotating sweep bar |
+
+List: `MapAssetLibrary.get_drop_and_play_obstacle_asset_ids()`
+
+**Export probe:** `phase3_moving_hazard_probe` → `ai_generated_phase3_moving_hazard_probe`
+
+```
+start_straight → straight_road_medium → moving_block_lane → hazard_recovery_straight
+→ timed_gate_straight → finish_straight
+```
+
+**How AI maps should use them:**
+1. Reference `phase3_*` segment types or `dp_*` assets via `MapAssetLibrary`.
+2. Set `moving_obstacles_enabled = true` and `obstacle_cycle_time` between 1.5–12.0s.
+3. Follow obstacle segments with `hazard_recovery_straight` when needed.
+4. Export via `AIMapBlueprintExporter.export_validated_blueprint_prototype(blueprint_id)`.
+
+**Banned:**
+- Direct kill `hazard_behavior` on `MapMovingObstacle` (use block/push/timing/prototype only)
+- Obstacles on spawn/finish segments
+- Permanent full-lane blockage (`movement_distance` must leave safe lane)
+- `GoalCatch`, authoritative void kill zones, scene cameras on obstacle prefabs
+- Custom per-map obstacle scripts
+
+**Warning:** Direct-kill hazards are deferred unless routed through approved systems (`BounceObstacle` + `GameEvents.obstacle_triggered`). Crushers in v1 block briefly only.
 
 ### Phase 3 moving obstacle assets
 
@@ -368,9 +407,10 @@ Each entry includes: `movement_type`, `movement_axis`, `movement_distance`, `cyc
 
 `scripts/maps/obstacles/map_moving_obstacle.gd` (`MapMovingObstacle` extends `AnimatableBody3D`):
 
-- Supports `linear`, `ping_pong`, `rotation`
-- Configurable axis, distance, cycle time, phase offset, pause at ends
-- `reset_obstacle()` / `pause_obstacle()` for clean prototype resets
+- Supports `linear`, `ping_pong`, `rotation`, `gate`
+- Configurable axis, distance, cycle time, phase offset, pause at start/end
+- `reset_obstacle()` / `reset_to_start()` — restores origin transform
+- Listens to `GameEvents.round_reset` for automatic obstacle reset
 - **Kinematic collision only** — does not kill zombies or edit `zombie.gd`
 - Damage/knockback must use existing paths (e.g. `BounceObstacle` + `GameEvents`)
 

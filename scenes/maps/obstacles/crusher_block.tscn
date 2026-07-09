@@ -1,0 +1,32 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/maps/obstacles/map_moving_obstacle.gd" id="1_script"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_visual"]
+size = Vector3(2.8, 0.6, 2.8)
+
+[sub_resource type="StandardMaterial3D" id="Mat_visual"]
+albedo_color = Color(0.55, 0.35, 0.15, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape_collision"]
+size = Vector3(2.8, 0.6, 2.8)
+
+[node name="CrusherBlock" type="AnimatableBody3D"]
+script = ExtResource("1_script")
+movement_type = "ping_pong"
+movement_axis = "y"
+movement_distance = 1.0
+cycle_time = 4.5
+pause_at_start_sec = 0.35
+pause_at_end_sec = 0.35
+hazard_behavior = "prototype"
+obstacle_display_name = "Crusher Block"
+
+[node name="Visual" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+mesh = SubResource("BoxMesh_visual")
+material_override = SubResource("Mat_visual")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("BoxShape_collision")

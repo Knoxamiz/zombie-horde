@@ -22,6 +22,9 @@ const AIMapBlueprintRegistry := preload("res://scripts/maps/ai_map_blueprint_reg
 const Phase3MovingObstacleTestBlueprint := preload(
 	"res://scripts/maps/blueprints/phase3_moving_obstacle_test.gd"
 )
+const Phase3MovingHazardProbeBlueprint := preload(
+	"res://scripts/maps/blueprints/phase3_moving_hazard_probe.gd"
+)
 const Phase4SplitLaneTestBlueprint := preload(
 	"res://scripts/maps/blueprints/phase4_split_lane_test.gd"
 )
@@ -52,6 +55,8 @@ func _run_all() -> void:
 	_test_phase2_blueprint_validates()
 	_test_phase2_probe_blueprint_validates()
 	_test_phase3_blueprint_validates()
+	_test_phase3_moving_hazard_probe_validates()
+	_test_drop_and_play_obstacle_assets()
 	_test_phase4_blueprint_validates()
 	_test_invalid_segment_fails()
 	_test_invalid_asset_id_fails()
@@ -80,6 +85,7 @@ func _run_all() -> void:
 	_test_generated_phase2_contract()
 	_test_generated_phase2_probe_contract()
 	_test_generated_phase3_contract()
+	_test_generated_phase3_moving_hazard_probe_contract()
 	_test_generated_phase4_contract()
 	MapAssetLibrary.print_audit_report()
 
@@ -214,6 +220,32 @@ func _test_phase3_blueprint_validates() -> void:
 	AIMapBlueprintValidator.print_validation_report(result)
 	if not bool(result.get("ok", false)):
 		_fail("phase3_moving_obstacle_test blueprint should validate")
+
+
+func _test_phase3_moving_hazard_probe_validates() -> void:
+	print("-- phase3 moving hazard probe blueprint --")
+	var blueprint = Phase3MovingHazardProbeBlueprint.create()
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	AIMapBlueprintValidator.print_validation_report(result)
+	if not bool(result.get("ok", false)):
+		_fail("phase3_moving_hazard_probe blueprint should validate")
+
+
+func _test_drop_and_play_obstacle_assets() -> void:
+	print("-- drop-and-play obstacle assets --")
+	for asset_id in MapAssetLibrary.get_drop_and_play_obstacle_asset_ids():
+		var asset: Dictionary = MapAssetLibrary.get_asset(asset_id)
+		if asset.is_empty():
+			_fail("drop-and-play asset '%s' missing" % asset_id)
+			continue
+		var scene_path: String = str(asset.get("scene_path", ""))
+		if not ResourceLoader.exists(scene_path):
+			_fail("drop-and-play scene missing for '%s'" % asset_id)
+		var obstacle: Node3D = MapAssetLibrary.instantiate_moving_obstacle(asset_id)
+		if obstacle == null:
+			_fail("failed to instantiate drop-and-play asset '%s'" % asset_id)
+		else:
+			obstacle.queue_free()
 
 
 func _test_phase4_blueprint_validates() -> void:
@@ -542,6 +574,11 @@ func _test_generated_phase2_probe_contract() -> void:
 func _test_generated_phase3_contract() -> void:
 	print("-- generated phase3 contract --")
 	_validate_generated_prototype(Phase3MovingObstacleTestBlueprint.create(), "phase3")
+
+
+func _test_generated_phase3_moving_hazard_probe_contract() -> void:
+	print("-- generated phase3 moving hazard probe contract --")
+	_validate_generated_prototype(Phase3MovingHazardProbeBlueprint.create(), "phase3_probe")
 
 
 func _test_generated_phase4_contract() -> void:
