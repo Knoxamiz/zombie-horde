@@ -17,7 +17,7 @@ root_path = NodePath("../CoreRoad")
 
 [node name="MapBanner" type="Label3D" parent="MapDressing"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, -86)
-text = "BOOST RUSH"
+text = "DIVE TUNNEL BOOST RUSH"
 font_size = 34
 outline_size = 10
 modulate = Color(0.45, 1, 0.72, 1)

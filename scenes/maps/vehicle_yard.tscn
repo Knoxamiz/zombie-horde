@@ -17,7 +17,7 @@ root_path = NodePath("../CoreRoad")
 
 [node name="MapBanner" type="Label3D" parent="MapDressing"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, -82)
-text = "ELEVATED YARD"
+text = "HIGH BRIDGE PIT GAP"
 font_size = 34
 outline_size = 10
 modulate = Color(0.55, 0.82, 1, 1)

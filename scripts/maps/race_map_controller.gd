@@ -695,7 +695,10 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		hazard_config.placement_half_width = definition.hazard_placement_half_width
 		hazard_config.placement_min_z = definition.hazard_placement_min_z
 		hazard_config.placement_max_z = definition.hazard_placement_max_z
-		hazard_config.placement_surface_y = _resolve_deck_y(definition) if definition.deck_y > 0.0 else 0.0
+		if definition.uses_map_hazard_profile:
+			hazard_config.placement_surface_y = definition.resolve_hazard_surface_y()
+		else:
+			hazard_config.placement_surface_y = _resolve_deck_y(definition) if definition.deck_y > 0.0 else 0.0
 		hazard_config.obstacle_half_width = definition.obstacle_half_width
 		hazard_config.obstacle_min_z = definition.obstacle_min_z
 		hazard_config.obstacle_max_z = definition.obstacle_max_z

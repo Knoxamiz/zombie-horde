@@ -17,7 +17,7 @@ root_path = NodePath("../CoreRoad")
 
 [node name="MapBanner" type="Label3D" parent="MapDressing"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, -78)
-text = "DEFENDER GAUNTLET"
+text = "BULLET HELL GAUNTLET"
 font_size = 30
 outline_size = 10
 modulate = Color(1, 0.55, 0.55, 1)

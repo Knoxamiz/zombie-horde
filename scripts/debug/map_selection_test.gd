@@ -143,7 +143,14 @@ func _test_layout_preset_uniqueness() -> PackedStringArray:
 
 func _test_kit_elevation_presets() -> PackedStringArray:
 	var failures: PackedStringArray = PackedStringArray()
-	var elevated_ids: Array[String] = ["mine_alley", "cone_slalom", "vehicle_yard"]
+	var elevated_ids: Array[String] = [
+		"mine_alley",
+		"cone_slalom",
+		"vehicle_yard",
+		"broken_bridge",
+		"defender_gauntlet",
+		"boost_rush",
+	]
 	for preset_id in elevated_ids:
 		var layout: Dictionary = MapKitLayoutPresetsScript.get_preset(preset_id)
 		var pieces: Array = layout.get("surface_pieces", [])
