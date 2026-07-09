@@ -1,0 +1,167 @@
+class_name MapKitLayoutPresets
+extends RefCounted
+
+## Authored route presets for hazard-kit maps. Each preset defines a unique path shape.
+
+
+static func get_preset(preset_id: String) -> Dictionary:
+	match preset_id:
+		"broken_bridge":
+			return _broken_bridge()
+		"mine_alley":
+			return _mine_alley()
+		"cone_slalom":
+			return _cone_slalom()
+		"vehicle_yard":
+			return _vehicle_yard()
+		"defender_gauntlet":
+			return _defender_gauntlet()
+		"boost_rush":
+			return _boost_rush()
+		_:
+			push_warning("MapKitLayoutPresets: unknown preset '%s', using broken_bridge" % preset_id)
+			return _broken_bridge()
+
+
+static func _broken_bridge() -> Dictionary:
+	return {
+		"style": RaceMapKit.MapStyle.BROKEN_BRIDGE,
+		"seed": 8802,
+		"path_half_width": 4.5,
+		"visual_width": 8.0,
+		"void_width": 64.0,
+		"track_length": 192.0,
+		"spawn_z": -84.0,
+		"goal_z": 84.0,
+		"start_gate_z": -76.0,
+		"finish_gate_z": 76.0,
+		"segments": [
+			{"z0": -84.0, "z1": -48.0},
+			{"z0": -40.0, "z1": -8.0},
+			{"z0": 0.0, "z1": 32.0},
+			{"z0": 40.0, "z1": 84.0},
+		],
+		"gaps": [
+			{"z0": -48.0, "z1": -40.0},
+			{"z0": -8.0, "z1": 0.0},
+			{"z0": 32.0, "z1": 40.0},
+		],
+	}
+
+
+static func _mine_alley() -> Dictionary:
+	return {
+		"style": RaceMapKit.MapStyle.LONG_ROAD,
+		"seed": 4104,
+		"path_half_width": 5.5,
+		"visual_width": 11.0,
+		"void_width": 48.0,
+		"track_length": 176.0,
+		"spawn_z": -76.0,
+		"goal_z": 76.0,
+		"start_gate_z": -68.0,
+		"finish_gate_z": 68.0,
+		"segments": [
+			{"z0": -76.0, "z1": 76.0},
+		],
+		"gaps": [],
+	}
+
+
+static func _cone_slalom() -> Dictionary:
+	return {
+		"style": RaceMapKit.MapStyle.LONG_ROAD,
+		"seed": 5205,
+		"path_half_width": 7.0,
+		"visual_width": 18.0,
+		"void_width": 56.0,
+		"track_length": 200.0,
+		"spawn_z": -88.0,
+		"goal_z": 88.0,
+		"start_gate_z": -80.0,
+		"finish_gate_z": 80.0,
+		"segments": [
+			{"z0": -88.0, "z1": -56.0},
+			{"z0": -48.0, "z1": -16.0},
+			{"z0": -8.0, "z1": 24.0},
+			{"z0": 32.0, "z1": 64.0},
+			{"z0": 72.0, "z1": 88.0},
+		],
+		"gaps": [
+			{"z0": -56.0, "z1": -48.0},
+			{"z0": -16.0, "z1": -8.0},
+			{"z0": 24.0, "z1": 32.0},
+			{"z0": 64.0, "z1": 72.0},
+		],
+	}
+
+
+static func _vehicle_yard() -> Dictionary:
+	return {
+		"style": RaceMapKit.MapStyle.BROKEN_BRIDGE,
+		"seed": 6306,
+		"path_half_width": 8.5,
+		"visual_width": 14.0,
+		"void_width": 72.0,
+		"track_length": 200.0,
+		"spawn_z": -88.0,
+		"goal_z": 88.0,
+		"start_gate_z": -80.0,
+		"finish_gate_z": 80.0,
+		"segments": [
+			{"z0": -88.0, "z1": -28.0},
+			{"z0": 12.0, "z1": 88.0},
+		],
+		"gaps": [
+			{"z0": -28.0, "z1": 12.0},
+		],
+	}
+
+
+static func _defender_gauntlet() -> Dictionary:
+	return {
+		"style": RaceMapKit.MapStyle.BROKEN_BRIDGE,
+		"seed": 7407,
+		"path_half_width": 5.0,
+		"visual_width": 9.0,
+		"void_width": 60.0,
+		"track_length": 184.0,
+		"spawn_z": -84.0,
+		"goal_z": 84.0,
+		"start_gate_z": -76.0,
+		"finish_gate_z": 76.0,
+		"segments": [
+			{"z0": -84.0, "z1": -64.0},
+			{"z0": -56.0, "z1": -36.0},
+			{"z0": -28.0, "z1": -8.0},
+			{"z0": 4.0, "z1": 24.0},
+			{"z0": 36.0, "z1": 56.0},
+			{"z0": 68.0, "z1": 84.0},
+		],
+		"gaps": [
+			{"z0": -64.0, "z1": -56.0},
+			{"z0": -36.0, "z1": -28.0},
+			{"z0": -8.0, "z1": 4.0},
+			{"z0": 24.0, "z1": 36.0},
+			{"z0": 56.0, "z1": 68.0},
+		],
+	}
+
+
+static func _boost_rush() -> Dictionary:
+	return {
+		"style": RaceMapKit.MapStyle.LONG_ROAD,
+		"seed": 8508,
+		"path_half_width": 9.0,
+		"visual_width": 22.0,
+		"void_width": 64.0,
+		"track_length": 208.0,
+		"spawn_z": -92.0,
+		"goal_z": 92.0,
+		"start_gate_z": -84.0,
+		"finish_gate_z": 84.0,
+		"segments": [
+			{"z0": -92.0, "z1": 92.0},
+		],
+		"gaps": [],
+	}

@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="RaceMapDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/maps/race_map_definition.gd" id="1_definition"]
+[ext_resource type="PackedScene" path="res://scenes/maps/broken_bridge_pass.tscn" id="2_scene"]
+[ext_resource type="Environment" path="res://resources/environment/broken_bridge_race_environment.tres" id="3_env"]
+
+[resource]
+script = ExtResource("1_definition")
+display_name = "Broken Bridge"
+scene = ExtResource("2_scene")
+premium_only = false
+spawn_origin = Vector3(0, 0.8, -84)
+spawn_area_size = Vector2(8, 3)
+goal_position = Vector3(0, 0.8, 84)
+base_position = Vector3(0, 0, 84)
+minigun_position = Vector3(0, 0, 80.5)
+lane_half_width = 4.0
+out_of_bounds_half_width = 14.0
+out_of_bounds_min_z = -88.0
+out_of_bounds_max_z = 88.0
+out_of_bounds_min_y = -4.0
+race_environment_override = ExtResource("3_env")
+hazard_placement_half_width = 3.8
+hazard_placement_min_z = -70.0
+hazard_placement_max_z = 70.0
+obstacle_half_width = 3.5
+obstacle_min_z = -72.0
+obstacle_max_z = 72.0
+obstacle_lane_count = 1
+powerup_placement_half_width = 3.5
+powerup_placement_min_z = -60.0
+powerup_placement_max_z = 60.0
+defender_placement_half_width = 3.5
+defender_placement_min_z = -60.0
+defender_placement_max_z = 60.0
+uses_map_hazard_profile = true
+map_mine_count = 2
+map_obstacle_count = 8
+map_sewer_hole_count = 1
+map_barrier_obstacle_weight = 55
+map_cone_obstacle_weight = 35
+map_vehicle_obstacle_weight = 10
+map_boost_pad_count = 2
+map_defender_count = 1

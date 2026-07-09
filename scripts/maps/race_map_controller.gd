@@ -32,6 +32,7 @@ signal active_map_changed(map_index: int, display_name: String)
 @export var map_4_definition: RaceMapDefinition
 @export var map_5_definition: RaceMapDefinition
 @export var map_6_definition: RaceMapDefinition
+@export var map_7_definition: RaceMapDefinition
 
 var active_map_index: int = -1
 var active_map_id: String = ""
@@ -273,6 +274,8 @@ func _get_exported_map_definition(index: int) -> RaceMapDefinition:
 			return map_5_definition
 		6:
 			return map_6_definition
+		7:
+			return map_7_definition
 		_:
 			return null
 
@@ -712,6 +715,8 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		human_defender_config.placement_half_width = definition.defender_placement_half_width
 		human_defender_config.placement_min_z = definition.defender_placement_min_z
 		human_defender_config.placement_max_z = definition.defender_placement_max_z
+
+	definition.apply_hazard_profile_to(hazard_config, powerup_config, human_defender_config)
 
 	if _base_goal != null:
 		_base_goal.global_position = definition.base_position

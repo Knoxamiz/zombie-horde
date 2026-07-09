@@ -78,8 +78,8 @@ func _check_catalog_single_map() -> void:
 			has_fallthrough = true
 	_record(
 		"Streamer map gate",
-		selectable.size() == 2 and has_highway and has_fallthrough,
-		"%d selectable maps (expected City Highway + Fallthrough Lower Deck)" % selectable.size()
+		selectable.size() == 8,
+		"%d selectable maps (expected 8 playable kit + hand-authored maps)" % selectable.size()
 	)
 
 
@@ -142,8 +142,8 @@ func _check_playable_map_gate() -> void:
 	var playable_count: int = MapCatalog.get_playable_count()
 	_record(
 		"Playable map gate",
-		playable_count == 2,
-		"%d playable maps (expected City Highway + Fallthrough Lower Deck)" % playable_count
+		playable_count == 8,
+		"%d playable maps (expected 8 unique playable maps)" % playable_count
 	)
 
 

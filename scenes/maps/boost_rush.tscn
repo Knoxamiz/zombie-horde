@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/maps/kit_map_arena.gd" id="1_arena"]
+[ext_resource type="Script" path="res://scripts/core/visual_collision_sanitizer.gd" id="2_sanitizer"]
+
+[node name="RoadArena" type="Node3D"]
+
+[node name="CoreRoad" type="Node3D" parent="."]
+script = ExtResource("1_arena")
+layout_preset_id = "boost_rush"
+
+[node name="MapDressing" type="Node3D" parent="."]
+
+[node name="VisualCollisionSanitizer" type="Node" parent="MapDressing"]
+script = ExtResource("2_sanitizer")
+root_path = NodePath("../CoreRoad")
+
+[node name="MapBanner" type="Label3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, -86)
+text = "BOOST RUSH"
+font_size = 34
+outline_size = 10
+modulate = Color(0.45, 1, 0.72, 1)
