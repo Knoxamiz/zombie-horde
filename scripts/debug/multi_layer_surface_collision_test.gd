@@ -1,11 +1,12 @@
 extends SceneTree
 
-const Builder := preload("res://scripts/maps/ai_map_blueprint_builder.gd")
+const ArenaScript := preload("res://scripts/maps/fallthrough_lower_deck_arena.gd")
 const Blueprint := preload("res://scripts/maps/blueprints/fallthrough_lower_deck_test.gd")
 const Audit := preload("res://scripts/maps/ai_map_collision_audit.gd")
 const Validator := preload("res://scripts/maps/ai_map_blueprint_validator.gd")
 const MapSurfacePieceScript := preload("res://scripts/maps/map_surface_piece.gd")
 
+const MAP_ID := "ai_generated_fallthrough_lower_deck_test"
 const PASS := 0
 const FAIL := 1
 
@@ -25,10 +26,11 @@ func _run_all() -> void:
 
 	var host := Node3D.new()
 	root.add_child(host)
-	var builder = Builder.new()
-	var map_root: Node3D = builder.build_prototype(host, blueprint)
+	var arena = ArenaScript.new()
+	host.add_child(arena)
+	var map_root: Node3D = arena.build_map()
 	if map_root == null:
-		_fail("build_prototype returned null")
+		_fail("hand-authored arena build_map returned null")
 		_finish()
 		return
 
@@ -38,7 +40,10 @@ func _run_all() -> void:
 	else:
 		_test_surface_pieces(surfaces)
 
-	var definition: RaceMapDefinition = builder.build_race_map_definition(blueprint)
+	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(MAP_ID)
+	if definition == null:
+		_fail("missing RaceMapDefinition for %s" % MAP_ID)
+
 	var collision_errors: Array[String] = Audit.validate_generated_collision(
 		map_root, blueprint, definition
 	)
@@ -51,11 +56,17 @@ func _run_all() -> void:
 	for error in probe_errors:
 		_fail(error)
 
-	if definition.out_of_bounds_min_y >= blueprint.deck_y - 3.5 - 1.0:
+	if definition != null and definition.out_of_bounds_min_y >= blueprint.deck_y - 3.5 - 1.0:
 		_fail(
 			"out_of_bounds_min_y %.2f should be below lower recovery deck"
 			% definition.out_of_bounds_min_y
 		)
+
+	var visual_layer: Node = map_root.get_node_or_null("VisualLayer")
+	if visual_layer != null:
+		for child in visual_layer.get_children():
+			if str(child.name).to_lower().contains("water"):
+				_fail("hand-authored arena must not place water void visuals")
 
 	print("fallthrough_lower_deck_test surface collision passed")
 	host.queue_free()

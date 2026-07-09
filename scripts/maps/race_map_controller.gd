@@ -579,7 +579,11 @@ func _finalize_loaded_map_scene(
 func _is_ai_generated_map_arena(core_road: Node) -> bool:
 	if core_road == null or core_road.get_script() == null:
 		return false
-	return str(core_road.get_script().resource_path) == "res://scripts/maps/ai_generated_map_arena.gd"
+	var script_path: String = str(core_road.get_script().resource_path)
+	return script_path in [
+		"res://scripts/maps/ai_generated_map_arena.gd",
+		"res://scripts/maps/fallthrough_lower_deck_arena.gd",
+	]
 
 
 func _ensure_map_scene_built(map: Node3D) -> void:
