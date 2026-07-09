@@ -7,6 +7,9 @@ const AIMapBlueprintBuilder := preload("res://scripts/maps/ai_map_blueprint_buil
 const ExampleBridgeSegmentsTestBlueprint := preload(
 	"res://scripts/maps/blueprints/example_bridge_segments_test.gd"
 )
+const Phase1BridgeRampTestBlueprint := preload(
+	"res://scripts/maps/blueprints/phase1_bridge_ramp_test.gd"
+)
 
 const PASS := 0
 const FAIL := 1
@@ -21,11 +24,16 @@ func _initialize() -> void:
 func _run_all() -> void:
 	print("=== AI Map Pipeline Test ===")
 	_test_asset_registry_loads()
+	_test_phase1_assets_validate()
+	_test_phase1_segments_validate()
 	_test_example_blueprint_validates()
+	_test_phase1_blueprint_validates()
 	_test_invalid_segment_fails()
 	_test_invalid_asset_id_fails()
 	_test_invalid_segment_order_fails()
-	_test_generated_prototype_contract()
+	_test_gap_without_fall_fails()
+	_test_generated_example_contract()
+	_test_generated_phase1_contract()
 	MapAssetLibrary.print_audit_report()
 
 	if _failures.is_empty():
@@ -46,12 +54,26 @@ func _test_asset_registry_loads() -> void:
 		return
 	if not MapAssetLibrary.has_asset("street_straight"):
 		_fail("street_straight missing from library")
-	if not MapAssetLibrary.has_asset("safe_floor_plate"):
-		_fail("safe_floor_plate missing from library")
+	if not MapAssetLibrary.has_asset("phase1_road_straight_8"):
+		_fail("phase1_road_straight_8 missing from library")
 	var segments: Array = MapSegmentDefinition.get_all_segment_ids()
 	if segments.is_empty():
 		_fail("MapSegmentDefinition returned no segments")
 	print("assets=%d segments=%d" % [ids.size(), segments.size()])
+
+
+func _test_phase1_assets_validate() -> void:
+	print("-- phase1 assets --")
+	var result: Dictionary = MapAssetLibrary.validate_phase1_assets()
+	if not bool(result.get("ok", false)):
+		_fail("Phase 1 assets missing: %s" % str(result.get("missing", [])))
+
+
+func _test_phase1_segments_validate() -> void:
+	print("-- phase1 segments --")
+	var result: Dictionary = MapSegmentDefinition.validate_phase1_segments()
+	if not bool(result.get("ok", false)):
+		_fail("Phase 1 segments missing: %s" % str(result.get("missing", [])))
 
 
 func _test_example_blueprint_validates() -> void:
@@ -61,6 +83,15 @@ func _test_example_blueprint_validates() -> void:
 	AIMapBlueprintValidator.print_validation_report(result)
 	if not bool(result.get("ok", false)):
 		_fail("example_bridge_segments_test blueprint should validate")
+
+
+func _test_phase1_blueprint_validates() -> void:
+	print("-- phase1 blueprint --")
+	var blueprint = Phase1BridgeRampTestBlueprint.create()
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	AIMapBlueprintValidator.print_validation_report(result)
+	if not bool(result.get("ok", false)):
+		_fail("phase1_bridge_ramp_test blueprint should validate")
 
 
 func _test_invalid_segment_fails() -> void:
@@ -90,16 +121,33 @@ func _test_invalid_segment_order_fails() -> void:
 		_fail("segment order without start/finish ends should fail")
 
 
-func _test_generated_prototype_contract() -> void:
-	print("-- generated prototype contract --")
-	var blueprint = ExampleBridgeSegmentsTestBlueprint.create()
+func _test_gap_without_fall_fails() -> void:
+	print("-- gap without fall_enabled --")
+	var blueprint = Phase1BridgeRampTestBlueprint.create()
+	blueprint.fall_enabled = false
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	if bool(result.get("ok", false)):
+		_fail("gap blueprint without fall_enabled should fail validation")
+
+
+func _test_generated_example_contract() -> void:
+	print("-- generated example contract --")
+	_validate_generated_prototype(ExampleBridgeSegmentsTestBlueprint.create(), "example")
+
+
+func _test_generated_phase1_contract() -> void:
+	print("-- generated phase1 contract --")
+	_validate_generated_prototype(Phase1BridgeRampTestBlueprint.create(), "phase1")
+
+
+func _validate_generated_prototype(blueprint, label: String) -> void:
 	var host := Node3D.new()
 	root.add_child(host)
 
 	var builder = AIMapBlueprintBuilder.new()
 	var map_root: Node3D = builder.build_prototype(host, blueprint)
 	if map_root == null:
-		_fail("build_prototype returned null for valid example blueprint")
+		_fail("%s build_prototype returned null" % label)
 		host.queue_free()
 		return
 
@@ -109,13 +157,13 @@ func _test_generated_prototype_contract() -> void:
 	)
 	AIMapBlueprintValidator.print_validation_report(scene_result)
 	if not bool(scene_result.get("ok", false)):
-		_fail("generated example scene failed validation")
+		_fail("%s generated scene failed validation" % label)
 
 	if _find_node_named(map_root, "GoalCatch") != null:
-		_fail("generated prototype must not create GoalCatch")
+		_fail("%s generated prototype must not create GoalCatch" % label)
 
 	if _find_void_kill_authority(map_root):
-		_fail("generated prototype must not create authoritative void kill zones")
+		_fail("%s generated prototype must not create authoritative void kill zones" % label)
 
 	host.queue_free()
 

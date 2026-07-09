@@ -11,6 +11,7 @@ const TYPE_GAP := "gap"
 const TYPE_DROP := "drop"
 const TYPE_SPLIT_LANE := "split_lane"
 const TYPE_MERGE_LANE := "merge_lane"
+const TYPE_SIDE_DROP := "side_drop"
 const TYPE_MOVING_BLOCK_LANE := "moving_block_lane"
 const TYPE_HAZARD_LANE := "hazard_lane"
 const TYPE_FINISH := "finish"
@@ -24,6 +25,7 @@ const ALL_TYPES: Array[String] = [
 	TYPE_NARROW_BRIDGE,
 	TYPE_GAP,
 	TYPE_DROP,
+	TYPE_SIDE_DROP,
 	TYPE_SPLIT_LANE,
 	TYPE_MERGE_LANE,
 	TYPE_MOVING_BLOCK_LANE,
@@ -31,7 +33,38 @@ const ALL_TYPES: Array[String] = [
 	TYPE_FINISH,
 ]
 
+const PHASE1_SEGMENT_IDS: Array[String] = [
+	"start_straight",
+	"straight_road_short",
+	"straight_road_medium",
+	"straight_road_long",
+	"bridge_straight",
+	"narrow_bridge",
+	"ramp_up",
+	"ramp_down",
+	"small_gap",
+	"side_drop_edges",
+	"finish_straight",
+]
+
 static var _segments_cache: Array[Dictionary] = []
+
+
+static func get_phase1_segment_ids() -> Array[String]:
+	return PHASE1_SEGMENT_IDS.duplicate()
+
+
+static func is_phase1_segment(segment_id: String) -> bool:
+	return segment_id in PHASE1_SEGMENT_IDS
+
+
+static func validate_phase1_segments() -> Dictionary:
+	var result: Dictionary = {"ok": true, "missing": []}
+	for segment_id in PHASE1_SEGMENT_IDS:
+		if not has_segment(segment_id):
+			result["ok"] = false
+			result["missing"].append(segment_id)
+	return result
 
 
 static func has_segment(segment_id: String) -> bool:
@@ -172,6 +205,89 @@ static func _build_segments() -> Array[Dictionary]:
 			[],
 			10.0, 10.0, false, false, 0, 1,
 			"TEST ONLY — invalid asset id for validator tests."
+		),
+		# --- Phase 1 canonical segment templates ---
+		_segment(
+			"start_straight", TYPE_START, 8.0, 10.0, 0.0, 1,
+			["phase1_spawn_marker", "phase1_road_straight_8", "phase1_safe_floor_plate"],
+			["phase1_deco_cone"],
+			10.0, 10.0, false, false, 0, 1,
+			"Phase 1 spawn straight."
+		),
+		_segment(
+			"straight_road_short", TYPE_STRAIGHT, 8.0, 10.0, 0.0, 1,
+			["phase1_road_straight_8", "phase1_safe_floor_plate"],
+			["phase1_deco_light", "phase1_barrier_plastic"],
+			10.0, 10.0, false, false, 0, 1,
+			"Short 8m straight road."
+		),
+		_segment(
+			"straight_road_medium", TYPE_STRAIGHT, 16.0, 10.0, 0.0, 2,
+			["phase1_road_straight_8", "phase1_safe_floor_plate"],
+			["phase1_deco_light"],
+			10.0, 10.0, false, false, 0, 1,
+			"Medium 16m straight; safe floor spans full length."
+		),
+		_segment(
+			"straight_road_long", TYPE_STRAIGHT, 24.0, 10.0, 0.0, 2,
+			["phase1_road_straight_8", "phase1_safe_floor_plate"],
+			["phase1_deco_light", "phase1_deco_pipes"],
+			10.0, 10.0, false, false, 0, 1,
+			"Long 24m straight; safe floor spans full length."
+		),
+		_segment(
+			"bridge_straight", TYPE_BRIDGE, 8.0, 10.0, 0.0, 2,
+			["phase1_bridge_deck_8", "phase1_safe_floor_plate", "phase1_rail_traffic_a"],
+			["phase1_support_pillar", "phase1_water_segment"],
+			10.0, 10.0, true, false, 0, 1,
+			"Elevated bridge deck with rails and supports."
+		),
+		_segment(
+			"narrow_bridge", TYPE_NARROW_BRIDGE, 8.0, 6.0, 0.0, 3,
+			["phase1_bridge_deck_8", "phase1_safe_floor_plate", "phase1_rail_traffic_b"],
+			["phase1_support_pillar"],
+			6.0, 6.0, true, false, 0, 1,
+			"Narrow bridge skill-check segment."
+		),
+		_segment(
+			"ramp_up", TYPE_RAMP_UP, 8.0, 10.0, 0.8, 2,
+			["phase1_ramp_surface_8", "phase1_safe_floor_plate"],
+			["phase1_support_pillar"],
+			10.0, 10.0, false, false, 0, 1,
+			"Raises route deck by 0.8m over 8m."
+		),
+		_segment(
+			"ramp_down", TYPE_RAMP_DOWN, 8.0, 10.0, -0.8, 2,
+			["phase1_ramp_surface_8", "phase1_safe_floor_plate"],
+			[],
+			10.0, 10.0, false, false, 0, 1,
+			"Lowers route deck by 0.8m over 8m."
+		),
+		_segment(
+			"small_gap", TYPE_GAP, 8.0, 10.0, 0.0, 3,
+			["phase1_gap_void", "phase1_drop_lip", "phase1_road_cracked_heavy", "phase1_safe_floor_plate"],
+			["phase1_water_segment"],
+			10.0, 10.0, true, false, 1, 1,
+			"Small gap with narrow safe plate; requires fall_enabled."
+		),
+		_segment(
+			"side_drop_edges", TYPE_SIDE_DROP, 8.0, 10.0, 0.0, 3,
+			[
+				"phase1_broken_edge_light",
+				"phase1_broken_edge_heavy",
+				"phase1_gap_void",
+				"phase1_safe_floor_plate",
+			],
+			["phase1_water_segment", "phase1_deco_pallet"],
+			10.0, 10.0, true, false, 1, 1,
+			"Fall edges on sides; center safe lane remains."
+		),
+		_segment(
+			"finish_straight", TYPE_FINISH, 8.0, 10.0, 0.0, 1,
+			["phase1_finish_marker", "phase1_road_straight_8", "phase1_safe_floor_plate"],
+			[],
+			10.0, 10.0, false, false, 0, 1,
+			"Phase 1 finish straight; goal visual only."
 		),
 	]
 

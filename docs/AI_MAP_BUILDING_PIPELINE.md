@@ -48,21 +48,100 @@ MapCertification  →  required before MapCatalog playable promotion
 |----------|---------|
 | `road` | Street tiles, cracks |
 | `bridge` | Deck plates, safe floor collision |
-| `ramp` | Procedural ramp boxes (no GLTF yet) |
+| `ramp` | Procedural ramp surfaces (no GLTF yet) |
 | `gap` / `drop` | Visual void lips; falls use OOB min-Y |
 | `rail` / `barrier` | Edge guides (visual; sanitized collision) |
-| `support` | Pillars (placeholder cinder block) |
+| `support` | Pillars / cinder blocks |
 | `water` | Void visuals only |
-| `hazard` | Warning markers — not kill volumes |
-| `moving_obstacle` | Slot markers for future MapLab movers |
-| `decoration` | Cones, lights, containers |
+| `decoration` | Cones, lights, barrels, pallets |
 | `spawn` / `finish` | Visual markers only |
 
-Registry: `scripts/maps/map_asset_library.gd`
+Registry: `scripts/maps/map_asset_library.gd`  
+Phase 1 canonical ids use `phase1_*` prefix — see `MapAssetLibrary.get_phase1_asset_ids()`.
 
 ---
 
-## Segment grammar
+## Phase 1 asset pack (roads, bridges, ramps, rails)
+
+**Scope:** foundational race pieces only — no moving obstacles.
+
+### Phase 1 asset categories
+
+| Category | Phase 1 ids (examples) |
+|----------|------------------------|
+| `road` | `phase1_road_straight_8`, `phase1_road_cracked_light`, `phase1_road_cracked_heavy` |
+| `bridge` | `phase1_bridge_deck_8`, `phase1_safe_floor_plate` |
+| `ramp` | `phase1_ramp_surface_8` |
+| `rail` | `phase1_rail_traffic_a`, `phase1_rail_traffic_b` |
+| `barrier` | `phase1_barrier_plastic` |
+| `support` | `phase1_support_pillar`, `phase1_support_cinder` |
+| `water` | `phase1_water_river`, `phase1_water_segment` |
+| `gap` | `phase1_gap_void` |
+| `drop` | `phase1_drop_lip`, `phase1_broken_edge_light`, `phase1_broken_edge_heavy` |
+| `decoration` | `phase1_deco_cone`, `phase1_deco_light`, `phase1_deco_barrel`, `phase1_deco_pipes`, `phase1_deco_pallet` |
+| `spawn` / `finish` | `phase1_spawn_marker`, `phase1_finish_marker` |
+
+### Phase 1 approved segments
+
+| Segment id | Type | Length |
+|------------|------|--------|
+| `start_straight` | start | 8m |
+| `straight_road_short` | straight | 8m |
+| `straight_road_medium` | straight | 16m |
+| `straight_road_long` | straight | 24m |
+| `bridge_straight` | bridge | 8m |
+| `narrow_bridge` | narrow_bridge | 8m |
+| `ramp_up` | ramp_up | 8m (+0.8m) |
+| `ramp_down` | ramp_down | 8m (−0.8m) |
+| `small_gap` | gap | 8m |
+| `side_drop_edges` | side_drop | 8m |
+| `finish_straight` | finish | 8m |
+
+List: `MapSegmentDefinition.get_phase1_segment_ids()`
+
+### Phase 1 blueprint example
+
+`phase1_bridge_ramp_test` (non-playable, not in map dropdown):
+
+```gdscript
+var blueprint := Phase1BridgeRampTestBlueprint.create()
+# start_straight → straight_road_medium → ramp_up → bridge_straight
+# → small_gap → straight_road_short → ramp_down → finish_straight
+```
+
+Factory: `scripts/maps/blueprints/phase1_bridge_ramp_test.gd`
+
+### How AI should request a new map (Phase 1)
+
+1. Pick segments from the Phase 1 approved list only.
+2. Set `deck_y`, `target_length`, `water_enabled`, `fall_enabled` (required when using gap/drop segments).
+3. Build `AIMapBlueprint` with `segment_sequence` — one `start_*` first, one `finish_*` last.
+4. Run `AIMapBlueprintValidator.validate_blueprint(blueprint)`.
+5. Build prototype with `AIMapBlueprintBuilder.build_prototype(parent, blueprint)`.
+6. Do **not** add to `MapCatalog` or promote without certification.
+
+### Rules for ramps (Phase 1)
+
+- Use `ramp_up` / `ramp_down` segments only for elevation changes.
+- `ramp_up` must have positive `height_delta`; `ramp_down` must have negative.
+- Do not change zombie movement — elevation is visual + safe-floor placement only.
+- After a ramp sequence, bridge segments should follow at the new deck height.
+
+### Rules for bridge rails / barriers (Phase 1)
+
+- `bridge_straight` and `narrow_bridge` **must** include a rail or barrier asset.
+- Rails/barriers are **visual only** (collision sanitized).
+- Gameplay walk surface = `phase1_safe_floor_plate` under `GameplayLayer/SafeFloor`.
+
+### Rules for drops / gaps (Phase 1)
+
+- `small_gap` and `side_drop_edges` require `fall_enabled = true` on the blueprint.
+- Visual void assets do **not** kill zombies — `out_of_bounds_min_y` handles falls.
+- Never add authoritative void kill zones or `GoalCatch`.
+
+---
+
+## Segment grammar (all packs)
 
 Segment types (`MapSegmentDefinition`):
 
@@ -140,7 +219,18 @@ Factory: `scripts/maps/blueprints/example_bridge_segments_test.gd`
 | Certified | Pass `map_certification_test.gd` | Add to `DEFAULT_CERTIFIED_MAP_IDS` when required |
 | Playable | `MapCatalog` `enabled=true`, `status=playable` | Settings dropdown + production |
 
-`example_bridge_segments_test` stays at **test/prototype** — do not promote.
+`example_bridge_segments_test` and `phase1_bridge_ramp_test` stay at **test/prototype** — do not promote.
+
+---
+
+## Asset gaps before richer maps
+
+- Dedicated ramp / bridge deck **GLTF** modules with snap metadata
+- Curved road pieces and multi-lane highway segments
+- Certified moving-obstacle prefabs (Phase 2+)
+- Automatic `.tscn` + `.tres` export from builder
+- Art-directed themes beyond kit placeholders
+- `RaceMapController` prototype loader integration
 
 ---
 
@@ -156,11 +246,6 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 
 ---
 
-## What's missing before rich AI maps
+## Legacy / pre-Phase-1 notes
 
-- Dedicated ramp / bridge deck GLTF modules with snap metadata
-- Certified moving-obstacle prefabs wired to MapLab simulation
-- Automatic `.tscn` + `.tres` export from builder (manual hook-up still required)
-- Segment catalog expansion (curves, multi-lane highway, indoor modules)
-- Art-directed themes beyond kit placeholders
-- Integration test loading AI prototype into `RaceMapController` (future; not required for this pass)
+Older `seg_*` segment ids and non-prefixed assets remain for backward compatibility with `example_bridge_segments_test`. New AI maps should prefer Phase 1 ids.

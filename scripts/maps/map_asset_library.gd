@@ -42,6 +42,33 @@ const CATEGORY_NAMES: Dictionary = {
 
 const KIT_ENV := "res://assets/third_party/zombie_apocalypse_kit/imported/Environment"
 
+const PHASE1_ASSET_IDS: Array[String] = [
+	"phase1_road_straight_8",
+	"phase1_road_cracked_light",
+	"phase1_road_cracked_heavy",
+	"phase1_bridge_deck_8",
+	"phase1_safe_floor_plate",
+	"phase1_ramp_surface_8",
+	"phase1_rail_traffic_a",
+	"phase1_rail_traffic_b",
+	"phase1_barrier_plastic",
+	"phase1_support_pillar",
+	"phase1_support_cinder",
+	"phase1_water_river",
+	"phase1_water_segment",
+	"phase1_gap_void",
+	"phase1_drop_lip",
+	"phase1_broken_edge_light",
+	"phase1_broken_edge_heavy",
+	"phase1_deco_cone",
+	"phase1_deco_light",
+	"phase1_deco_barrel",
+	"phase1_deco_pipes",
+	"phase1_deco_pallet",
+	"phase1_spawn_marker",
+	"phase1_finish_marker",
+]
+
 static var _assets_cache: Array[Dictionary] = []
 
 
@@ -62,6 +89,23 @@ static func get_assets_by_category(category: int) -> Array[Dictionary]:
 		if int(entry.get("category", Category.UNKNOWN)) == category:
 			matches.append(entry.duplicate(true))
 	return matches
+
+
+static func get_phase1_asset_ids() -> Array[String]:
+	return PHASE1_ASSET_IDS.duplicate()
+
+
+static func is_phase1_asset(asset_id: String) -> bool:
+	return asset_id in PHASE1_ASSET_IDS
+
+
+static func validate_phase1_assets() -> Dictionary:
+	var result: Dictionary = {"ok": true, "missing": []}
+	for asset_id in PHASE1_ASSET_IDS:
+		if not has_asset(asset_id):
+			result["ok"] = false
+			result["missing"].append(asset_id)
+	return result
 
 
 static func get_all_asset_ids() -> Array[String]:
@@ -132,12 +176,13 @@ static func get_audit_report() -> Dictionary:
 			report["missing_categories"].append(category_name)
 
 	report["notes"] = [
-		"Road/bridge deck collision is procedural (safe_floor_plate), not GLTF collision.",
-		"Dedicated ramp GLTF meshes are missing; ramp segments use procedural boxes.",
-		"No certified moving-obstacle prefab yet; moving_block_lane uses placeholder slot markers.",
-		"Finish authority remains World/StreamerBase; finish_marker is visual-only.",
-		"Water/void visuals are procedural; void death is Zombie._check_out_of_bounds only.",
-		"City Highway and Broken Bridge TEST scenes use hand-authored or grid blueprints, not AIMapBlueprint yet.",
+		"Phase 1 pack: %d canonical assets (phase1_* ids)." % PHASE1_ASSET_IDS.size(),
+		"Road/bridge deck collision is procedural (safe_floor_plate / phase1_safe_floor_plate).",
+		"Dedicated ramp GLTF meshes are missing; phase1_ramp_surface_8 is procedural.",
+		"No certified moving-obstacle prefabs in Phase 1 (deferred to later packs).",
+		"Finish authority remains World/StreamerBase; markers are visual-only.",
+		"Water visuals are procedural; void death is Zombie._check_out_of_bounds only.",
+		"Missing for rich maps: curved road GLTF, dedicated bridge parapet meshes, art themes.",
 	]
 	return report
 
@@ -317,6 +362,175 @@ static func _build_assets() -> Array[Dictionary]:
 			true, false, true, false,
 			"Authoritative walk collision; builder-owned procedural mesh."
 		),
+		# --- Phase 1 canonical asset pack ---
+		_entry(
+			"phase1_road_straight_8", "P1 Road Straight 8m", Category.ROAD,
+			"%s/Street_Straight.gltf" % KIT_ENV,
+			8.0, 8.0, 0.2, Vector3(0, 0, -4), Vector3(0, 0, 4), 0.0,
+			false, true, false, false,
+			"Phase 1 primary straight road tile."
+		),
+		_entry(
+			"phase1_road_cracked_light", "P1 Road Cracked Light", Category.ROAD,
+			"%s/Street_Straight_Crack1.gltf" % KIT_ENV,
+			8.0, 8.0, 0.2, Vector3(0, 0, -4), Vector3(0, 0, 4), 0.0,
+			false, true, false, false,
+			"Light damage road surface."
+		),
+		_entry(
+			"phase1_road_cracked_heavy", "P1 Road Cracked Heavy", Category.ROAD,
+			"%s/Street_Straight_Crack2.gltf" % KIT_ENV,
+			8.0, 8.0, 0.2, Vector3(0, 0, -4), Vector3(0, 0, 4), 0.0,
+			false, true, false, false,
+			"Heavy crack road for gap lips and broken edges."
+		),
+		_entry(
+			"phase1_bridge_deck_8", "P1 Bridge Deck 8m", Category.BRIDGE,
+			"",
+			8.0, 10.0, 0.16, Vector3(0, 0, -4), Vector3(0, 0, 4), 0.0,
+			false, true, true, false,
+			"Procedural bridge deck visual; collision via safe floor plate."
+		),
+		_entry(
+			"phase1_safe_floor_plate", "P1 Safe Floor Plate", Category.BRIDGE,
+			"",
+			8.0, 10.0, 0.12, Vector3(0, 0, -4), Vector3(0, 0, 4), -0.06,
+			true, false, true, false,
+			"Phase 1 authoritative walk collision plate."
+		),
+		_entry(
+			"phase1_ramp_surface_8", "P1 Ramp Surface 8m", Category.RAMP,
+			"",
+			8.0, 10.0, 0.8, Vector3(0, 0, -4), Vector3(0, 0.8, 4), 0.0,
+			false, true, false, false,
+			"Procedural ramp visual; height_delta comes from segment."
+		),
+		_entry(
+			"phase1_rail_traffic_a", "P1 Rail Traffic A", Category.RAIL,
+			"%s/TrafficBarrier_1.gltf" % KIT_ENV,
+			2.5, 0.4, 1.0, Vector3(0, 0, -1.25), Vector3(0, 0, 1.25), 0.0,
+			false, true, false, false,
+			"Bridge parapet / guardrail visual."
+		),
+		_entry(
+			"phase1_rail_traffic_b", "P1 Rail Traffic B", Category.RAIL,
+			"%s/TrafficBarrier_2.gltf" % KIT_ENV,
+			2.5, 0.4, 1.0, Vector3(0, 0, -1.25), Vector3(0, 0, 1.25), 0.0,
+			false, true, false, false,
+			"Alternate bridge rail visual."
+		),
+		_entry(
+			"phase1_barrier_plastic", "P1 Barrier Plastic", Category.BARRIER,
+			"%s/PlasticBarrier.gltf" % KIT_ENV,
+			2.0, 0.5, 1.2, Vector3(0, 0, -1), Vector3(0, 0, 1), 0.0,
+			false, true, false, false,
+			"Lane-edge soft barrier visual."
+		),
+		_entry(
+			"phase1_support_pillar", "P1 Support Pillar", Category.SUPPORT,
+			"",
+			1.05, 1.05, 4.0, Vector3.ZERO, Vector3.ZERO, -2.0,
+			false, true, false, false,
+			"Procedural bridge support column."
+		),
+		_entry(
+			"phase1_support_cinder", "P1 Support Cinder Block", Category.SUPPORT,
+			"%s/CinderBlock.gltf" % KIT_ENV,
+			1.2, 0.8, 0.5, Vector3.ZERO, Vector3.ZERO, -0.25,
+			false, true, false, false,
+			"Kit cinder block support prop."
+		),
+		_entry(
+			"phase1_water_river", "P1 Water River", Category.WATER,
+			"",
+			40.0, 0.08, 80.0, Vector3.ZERO, Vector3.ZERO, -4.0,
+			false, true, true, false,
+			"Route-wide void water visual; never authoritative kill."
+		),
+		_entry(
+			"phase1_water_segment", "P1 Water Segment", Category.WATER,
+			"",
+			12.0, 0.08, 10.0, Vector3.ZERO, Vector3.ZERO, -3.5,
+			false, true, true, false,
+			"Per-segment void water under gaps/bridge."
+		),
+		_entry(
+			"phase1_gap_void", "P1 Gap Void", Category.GAP,
+			"",
+			8.0, 10.0, 0.1, Vector3(0, 0, -4), Vector3(0, 0, 4), -0.5,
+			false, true, true, false,
+			"Visual void slot for small_gap segments."
+		),
+		_entry(
+			"phase1_drop_lip", "P1 Drop Lip", Category.DROP,
+			"%s/Street_Straight_Crack2.gltf" % KIT_ENV,
+			8.0, 8.0, 0.2, Vector3(0, 0, -4), Vector3(0, -0.4, 4), 0.0,
+			false, true, true, false,
+			"Broken lip before a height drop."
+		),
+		_entry(
+			"phase1_broken_edge_light", "P1 Broken Edge Light", Category.DROP,
+			"%s/Street_Straight_Crack1.gltf" % KIT_ENV,
+			8.0, 8.0, 0.2, Vector3(0, 0, -4), Vector3(0, -0.2, 4), 0.0,
+			false, true, true, false,
+			"Side fall-edge lip visual (light crack)."
+		),
+		_entry(
+			"phase1_broken_edge_heavy", "P1 Broken Edge Heavy", Category.DROP,
+			"%s/Street_Straight_Crack2.gltf" % KIT_ENV,
+			8.0, 8.0, 0.2, Vector3(0, 0, -4), Vector3(0, -0.4, 4), 0.0,
+			false, true, true, false,
+			"Side fall-edge lip visual (heavy crack)."
+		),
+		_entry(
+			"phase1_deco_cone", "P1 Deco Cone", Category.DECORATION,
+			"%s/TrafficCone_1.gltf" % KIT_ENV,
+			0.6, 0.6, 0.8, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true, false, false,
+			"Lane guide cone."
+		),
+		_entry(
+			"phase1_deco_light", "P1 Deco Street Light", Category.DECORATION,
+			"%s/StreetLights.gltf" % KIT_ENV,
+			1.0, 1.0, 4.5, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true, false, false,
+			"Roadside light prop."
+		),
+		_entry(
+			"phase1_deco_barrel", "P1 Deco Barrel", Category.DECORATION,
+			"%s/Barrel.gltf" % KIT_ENV,
+			0.7, 0.7, 1.0, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true, false, false,
+			"Void-side barrel prop."
+		),
+		_entry(
+			"phase1_deco_pipes", "P1 Deco Pipes", Category.DECORATION,
+			"%s/Pipes.gltf" % KIT_ENV,
+			2.5, 2.5, 0.8, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true, false, false,
+			"Industrial pipe debris."
+		),
+		_entry(
+			"phase1_deco_pallet", "P1 Deco Pallet", Category.DECORATION,
+			"%s/Pallet_Broken.gltf" % KIT_ENV,
+			1.2, 1.6, 0.4, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true, false, false,
+			"Broken pallet debris."
+		),
+		_entry(
+			"phase1_spawn_marker", "P1 Spawn Marker", Category.SPAWN,
+			"res://assets/materials/spawn_zone.tres",
+			10.0, 4.0, 0.06, Vector3(0, 0, -2), Vector3(0, 0, 2), 0.12,
+			false, true, false, false,
+			"Phase 1 spawn band visual only."
+		),
+		_entry(
+			"phase1_finish_marker", "P1 Finish Marker", Category.FINISH,
+			"res://assets/materials/goal_zone.tres",
+			10.0, 4.0, 0.06, Vector3(0, 0, -2), Vector3(0, 0, 2), 0.13,
+			false, true, false, false,
+			"Phase 1 goal band visual only; finish is StreamerBase."
+		),
 	]
 
 
@@ -393,6 +607,32 @@ static func _instantiate_procedural(entry: Dictionary) -> Node3D:
 			mat.albedo_color = Color(0.01, 0.02, 0.05, 0.9)
 			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 			node.material_override = mat
+		"phase1_gap_void":
+			mat.albedo_color = Color(0.01, 0.02, 0.05, 0.9)
+			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			node.material_override = mat
+		"phase1_water_river", "phase1_water_segment":
+			mat.albedo_color = Color(0.02, 0.06, 0.1, 0.95)
+			mat.emission_enabled = true
+			mat.emission = Color(0.02, 0.07, 0.12)
+			mat.emission_energy_multiplier = 0.25
+			node.material_override = mat
+		"phase1_support_pillar":
+			mat.albedo_color = Color(0.2, 0.21, 0.23, 1.0)
+			mat.roughness = 0.92
+			node.material_override = mat
+		"phase1_bridge_deck_8", "phase1_ramp_surface_8", "phase1_safe_floor_plate":
+			mat.albedo_color = Color(0.24, 0.25, 0.27, 1.0)
+			mat.roughness = 0.9
+			node.material_override = mat
+		"phase1_spawn_marker":
+			var spawn_mat: Material = load("res://assets/materials/spawn_zone.tres")
+			if spawn_mat != null:
+				node.material_override = spawn_mat
+		"phase1_finish_marker":
+			var goal_mat: Material = load("res://assets/materials/goal_zone.tres")
+			if goal_mat != null:
+				node.material_override = goal_mat
 		_:
 			mat.albedo_color = Color(0.22, 0.23, 0.25, 1.0)
 			mat.roughness = 0.9

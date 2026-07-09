@@ -33,6 +33,9 @@ static func validate_blueprint(blueprint) -> Dictionary:
 
 	_validate_segment_sequence(blueprint, result)
 	_validate_segment_assets(blueprint, result)
+	_validate_height_transitions(blueprint, result)
+	_validate_gap_fall_settings(blueprint, result)
+	_validate_rail_barrier_match(blueprint, result)
 	_validate_route_length(blueprint, result)
 	_validate_definition_preview(blueprint, result)
 
@@ -140,6 +143,103 @@ static func _validate_segment_assets(blueprint, result: Dictionary) -> void:
 			var asset_id: String = str(asset_id_value)
 			if not MapAssetLibraryScript.has_asset(asset_id):
 				_add_error(result, "Segment '%s' requires missing asset '%s'." % [segment_id, asset_id])
+
+
+static func _validate_height_transitions(blueprint, result: Dictionary) -> void:
+	var route_height: float = blueprint.deck_y
+	var height_adjusting_types: Array[String] = [
+		MapSegmentDefinitionScript.TYPE_RAMP_UP,
+		MapSegmentDefinitionScript.TYPE_RAMP_DOWN,
+		MapSegmentDefinitionScript.TYPE_DROP,
+		MapSegmentDefinitionScript.TYPE_SIDE_DROP,
+	]
+
+	for index in range(blueprint.segment_sequence.size()):
+		var segment_id: String = str(blueprint.segment_sequence[index])
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		if segment.is_empty():
+			continue
+
+		var segment_type: String = str(segment.get("type", ""))
+		var height_delta: float = float(segment.get("height_delta", 0.0))
+
+		if absf(height_delta) > 0.001 and not segment_type in height_adjusting_types:
+			_add_error(
+				result,
+				"Segment '%s' has height_delta %.2f but type '%s' cannot adjust elevation."
+				% [segment_id, height_delta, segment_type]
+			)
+
+		if segment_type in [
+			MapSegmentDefinitionScript.TYPE_RAMP_UP,
+			MapSegmentDefinitionScript.TYPE_RAMP_DOWN,
+		] and absf(height_delta) < 0.001:
+			_add_error(result, "Ramp segment '%s' must define a non-zero height_delta." % segment_id)
+
+		if segment_type == MapSegmentDefinitionScript.TYPE_RAMP_UP and height_delta <= 0.0:
+			_add_error(result, "ramp_up segment '%s' must have positive height_delta." % segment_id)
+		if segment_type == MapSegmentDefinitionScript.TYPE_RAMP_DOWN and height_delta >= 0.0:
+			_add_error(result, "ramp_down segment '%s' must have negative height_delta." % segment_id)
+
+		route_height += height_delta
+
+	if route_height < blueprint.deck_y - 12.0 or route_height > blueprint.deck_y + 12.0:
+		_add_warning(
+			result,
+			"Route cumulative height %.2f may be extreme relative to deck_y %.2f."
+			% [route_height, blueprint.deck_y]
+		)
+
+
+static func _validate_gap_fall_settings(blueprint, result: Dictionary) -> void:
+	var needs_fall: bool = false
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		var segment_type: String = str(segment.get("type", ""))
+		if segment_type in [
+			MapSegmentDefinitionScript.TYPE_GAP,
+			MapSegmentDefinitionScript.TYPE_DROP,
+			MapSegmentDefinitionScript.TYPE_SIDE_DROP,
+		]:
+			needs_fall = true
+			break
+
+	if needs_fall and not blueprint.fall_enabled:
+		_add_error(
+			result,
+			"Blueprint contains gap/drop segments but fall_enabled is false; enable fall for OOB min-Y."
+		)
+
+
+static func _validate_rail_barrier_match(blueprint, result: Dictionary) -> void:
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		var segment_type: String = str(segment.get("type", ""))
+		if segment_type not in [
+			MapSegmentDefinitionScript.TYPE_BRIDGE,
+			MapSegmentDefinitionScript.TYPE_NARROW_BRIDGE,
+		]:
+			continue
+
+		var has_edge_guard: bool = false
+		for asset_id_value in segment.get("required_assets", []):
+			var asset_id: String = str(asset_id_value)
+			var asset: Dictionary = MapAssetLibraryScript.get_asset(asset_id)
+			if asset.is_empty():
+				continue
+			var category: int = int(asset.get("category", MapAssetLibraryScript.Category.UNKNOWN))
+			if category in [
+				MapAssetLibraryScript.Category.RAIL,
+				MapAssetLibraryScript.Category.BARRIER,
+			]:
+				has_edge_guard = true
+				break
+
+		if not has_edge_guard:
+			_add_error(
+				result,
+				"Bridge segment '%s' must include at least one rail or barrier asset." % segment_id
+			)
 
 
 static func _validate_route_length(blueprint, result: Dictionary) -> void:

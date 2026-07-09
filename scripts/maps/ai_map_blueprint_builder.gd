@@ -135,7 +135,7 @@ func _assemble_segment(
 			_place_marker(spawn_zone, "SpawnMarker", segment_width, segment_length, center_z, deck_y_at_segment, true)
 		MapSegmentDefinitionScript.TYPE_FINISH:
 			_place_marker(goal_zone, "GoalMarker", segment_width, segment_length, center_z, deck_y_at_segment, false)
-		MapSegmentDefinitionScript.TYPE_GAP, MapSegmentDefinitionScript.TYPE_DROP:
+		MapSegmentDefinitionScript.TYPE_GAP, MapSegmentDefinitionScript.TYPE_DROP, MapSegmentDefinitionScript.TYPE_SIDE_DROP:
 			if _blueprint.water_enabled:
 				_place_segment_water(water_bucket, segment_width + 8.0, segment_length + 2.0, center_z)
 
@@ -155,7 +155,7 @@ func _place_required_assets(
 	var required_assets: Array = segment.get("required_assets", [])
 	for asset_id_value in required_assets:
 		var asset_id: String = str(asset_id_value)
-		if asset_id == "safe_floor_plate":
+		if asset_id == "safe_floor_plate" or asset_id == "phase1_safe_floor_plate":
 			continue
 		var asset: Dictionary = MapAssetLibraryScript.get_asset(asset_id)
 		if asset.is_empty():
@@ -187,7 +187,11 @@ func _place_safe_floor_for_segment(
 	safe_floor: Node3D
 ) -> void:
 	var floor_width: float = segment_width
-	if segment_type in [MapSegmentDefinitionScript.TYPE_GAP, MapSegmentDefinitionScript.TYPE_NARROW_BRIDGE]:
+	if segment_type in [
+		MapSegmentDefinitionScript.TYPE_GAP,
+		MapSegmentDefinitionScript.TYPE_NARROW_BRIDGE,
+		MapSegmentDefinitionScript.TYPE_SIDE_DROP,
+	]:
 		floor_width = min(segment_width, _blueprint.route_half_width * 2.0 - 2.0)
 	_add_safe_floor_plate(
 		safe_floor,
