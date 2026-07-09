@@ -2,7 +2,6 @@ extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const CITY_HIGHWAY_MAP_ID := MapCatalog.DEFAULT_MAP_ID
-const BROKEN_BRIDGE_MAP_ID := "broken_bridge_candidate"
 const FINISH_ZOMBIE_COUNT := 1
 const PASS := 0
 const FAIL := 1
@@ -18,10 +17,7 @@ func _initialize() -> void:
 func _run_all() -> void:
 	print("=== Race finish contract test ===")
 	await _test_finish_contract_valid_on_load(CITY_HIGHWAY_MAP_ID, false)
-	await _test_finish_contract_valid_on_load(BROKEN_BRIDGE_MAP_ID, true)
 	await _test_map_finish_round(CITY_HIGHWAY_MAP_ID, false)
-	await _test_map_finish_round(BROKEN_BRIDGE_MAP_ID, true)
-	await _test_no_duplicate_finish_event(BROKEN_BRIDGE_MAP_ID, true)
 	await _test_miswired_finish_fails_validation(CITY_HIGHWAY_MAP_ID, false)
 
 	if _failures.is_empty():

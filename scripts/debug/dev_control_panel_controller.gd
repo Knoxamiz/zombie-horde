@@ -3,7 +3,6 @@ extends CanvasLayer
 
 const PANEL_WIDTH := 360.0
 const REFRESH_INTERVAL_SEC := 0.25
-const AIMapCollisionAudit := preload("res://scripts/maps/ai_map_collision_audit.gd")
 
 @export var round_manager_path: NodePath
 @export var debug_join_source_path: NodePath
@@ -40,13 +39,6 @@ var _flow_markers_toggle: CheckButton
 var _stress_status_label: Label
 var _blueprint_debug_toggle: CheckButton
 var _hint_label: Label
-var _prototype_review_status_label: Label
-var _prototype_list_label: Label
-var _selected_prototype_map_id: String = ""
-
-const SIGNATURE_DROP_BRIDGE_MAP_ID := "ai_generated_signature_drop_bridge"
-const PHASE3_MOVING_HAZARD_PROBE_MAP_ID := "ai_generated_phase3_moving_hazard_probe"
-const MULTI_LAYER_FALLTHROUGH_PROBE_MAP_ID := "ai_generated_multi_layer_fallthrough_probe"
 
 
 func _enter_tree() -> void:
@@ -151,7 +143,6 @@ func _build_ui() -> void:
 			+ "Map Info: active map id in Self Check and Active Config Inspector.\n"
 			+ "Active Config Inspector: read-only runtime map and race settings.\n"
 			+ "Fake Viewer Simulator: add fake stream viewers without Twitch.\n"
-			+ "Prototype Map Review: load AI-generated prototype maps for visual review (debug only).\n"
 			+ "Zombie Flow Analyzer: shows where zombies spawn, finish, fall, die, or get stuck.\n"
 			+ "Performance Profiler: measures FPS with 20/100/250/500 zombies."
 		)
@@ -175,25 +166,6 @@ func _build_ui() -> void:
 		["+20 NPCs", _on_add_twenty_npcs_pressed],
 	])
 	_clear_queue_button = _add_button(body, "Clear Queued NPCs", _on_clear_queue_pressed)
-
-	_add_section(body, "Prototype Map Review")
-	_add_hint(
-		body,
-		(
-			"Prototype review only — not playable. Uses load_prototype_map_for_test(). "
-			+ "Does not change MapCatalog enabled/status or production dropdown."
-		)
-	)
-	_prototype_list_label = _add_readout(body, "Prototype maps: —")
-	_prototype_review_status_label = _add_readout(body, "Prototype load: idle")
-	_add_button(body, "Load Phase 1 Bridge/Ramp Prototype", _on_load_phase1_prototype_pressed)
-	_add_button(body, "Load Phase 2 Drop/Gap Probe", _on_load_phase2_probe_pressed)
-	_add_button(body, "Load Phase 3 Moving Hazard Probe", _on_load_phase3_probe_pressed)
-	_add_button(body, "Load Multi-Layer Fallthrough PROBE", _on_load_multi_layer_probe_pressed)
-	_add_button(body, "Load The Drop Bridge Prototype", _on_load_drop_bridge_prototype_pressed)
-	_add_button_row(body, [
-		["Load Drop Bridge + Queue 20", _on_load_drop_bridge_queue_twenty_pressed],
-	])
 
 	_add_section(body, "Fake Viewer Simulator")
 	_add_hint(body, "Stream-style joins via DebugJoinSource. Dev/debug only.")
@@ -407,122 +379,6 @@ func _on_clear_queue_pressed() -> void:
 	if _round_manager != null:
 		_round_manager.debug_clear_pending_participants()
 	_refresh_display()
-
-
-func _on_load_phase1_prototype_pressed() -> void:
-	_load_prototype_for_review("ai_generated_phase1_bridge_ramp_test")
-
-
-func _on_load_phase2_probe_pressed() -> void:
-	_load_prototype_for_review("ai_generated_phase2_drop_gap_probe")
-
-
-func _on_load_phase3_probe_pressed() -> void:
-	_load_prototype_for_review(PHASE3_MOVING_HAZARD_PROBE_MAP_ID)
-
-
-func _on_load_multi_layer_probe_pressed() -> void:
-	_load_prototype_for_review(MULTI_LAYER_FALLTHROUGH_PROBE_MAP_ID)
-
-
-func _on_load_drop_bridge_prototype_pressed() -> void:
-	_load_prototype_for_review(SIGNATURE_DROP_BRIDGE_MAP_ID)
-
-
-func _on_load_drop_bridge_queue_twenty_pressed() -> void:
-	if not _load_prototype_for_review(SIGNATURE_DROP_BRIDGE_MAP_ID):
-		return
-	_run_simulator_batch(20)
-
-
-func _load_prototype_for_review(map_id: String) -> bool:
-	_selected_prototype_map_id = map_id
-	if not OS.is_debug_build():
-		push_error("Prototype Map Review is only available in debug/editor builds")
-		_refresh_display()
-		return false
-	if _race_map_controller == null:
-		push_error("Prototype Map Review: RaceMapController missing")
-		_refresh_display()
-		return false
-
-	var prep_error: String = _prepare_for_prototype_map_load()
-	if not prep_error.is_empty():
-		push_error("Prototype Map Review blocked: %s" % prep_error)
-		_refresh_display()
-		return false
-
-	var catalog_entry: Dictionary = MapCatalog.get_entry_by_id(map_id)
-	if catalog_entry.is_empty():
-		push_error("Prototype Map Review: unknown map id '%s'" % map_id)
-		_refresh_display()
-		return false
-	if not MapCatalog.is_prototype_testable(catalog_entry):
-		push_error(
-			"Prototype Map Review: '%s' is not prototype-testable (enabled=%s status=%s)"
-			% [
-				map_id,
-				str(catalog_entry.get("enabled", false)),
-				str(catalog_entry.get("status", "")),
-			]
-		)
-		_refresh_display()
-		return false
-
-	var loaded: bool = _race_map_controller.load_prototype_map_for_test(map_id)
-	if not loaded:
-		push_error(
-			"PROTOTYPE LOAD FAILED [%s]: %s"
-			% [map_id, _race_map_controller.get_last_load_failure_reason()]
-		)
-		_refresh_display()
-		return false
-	if _race_map_controller.did_last_load_use_fallback():
-		push_error(
-			"PROTOTYPE LOAD FAILED [%s]: City Highway fallback was used (not allowed in debug)"
-			% map_id
-		)
-		_refresh_display()
-		return false
-	if _race_map_controller.get_resolved_map_id() != map_id:
-		push_error(
-			"PROTOTYPE LOAD FAILED [%s]: resolved map id '%s'"
-			% [map_id, _race_map_controller.get_resolved_map_id()]
-		)
-		_refresh_display()
-		return false
-
-	print(
-		"DevControlPanel: prototype review load succeeded for '%s' (resolved=%s)"
-		% [map_id, _race_map_controller.get_resolved_map_id()]
-	)
-	_print_loaded_map_collision_audit(map_id)
-	_refresh_display()
-	return true
-
-
-func _print_loaded_map_collision_audit(map_id: String) -> void:
-	if _race_world == null:
-		return
-	var map_root: Node3D = _race_world.get_node_or_null("RoadArena/CoreRoad/MapRoot") as Node3D
-	if map_root == null:
-		return
-	AIMapCollisionAudit.print_collision_audit(map_root, map_id)
-
-
-func _prepare_for_prototype_map_load() -> String:
-	if _round_manager == null:
-		return ""
-	var state: int = _round_manager.state
-	if state in [RoundManager.RoundState.RUNNING, RoundManager.RoundState.COUNTDOWN]:
-		if _fake_viewer_simulator != null:
-			_fake_viewer_simulator.stop_simulation()
-		_round_manager.reset_round()
-	elif state == RoundManager.RoundState.ENDED:
-		if _fake_viewer_simulator != null:
-			_fake_viewer_simulator.stop_simulation()
-		_round_manager.reset_round()
-	return ""
 
 
 func _ensure_fake_viewer_simulator() -> void:
@@ -759,7 +615,6 @@ func _get_blueprint_arena() -> BlueprintMapArena:
 func _refresh_display() -> void:
 	_refresh_race_state()
 	_refresh_npc_counts()
-	_refresh_prototype_review_status()
 	_refresh_simulator_status()
 	_refresh_config_inspector()
 	_refresh_flow_analyzer_status()
@@ -808,77 +663,6 @@ func _refresh_npc_counts() -> void:
 	_npc_counts_label.text = (
 		"Queued: %d | Racing: %d | Alive: %d | Finished: %d | Dead: %d | Total: %d"
 		% [queued, racing, living, finished, dead, total]
-	)
-
-
-func _refresh_prototype_review_status() -> void:
-	if _prototype_list_label != null:
-		var listed_ids: PackedStringArray = PackedStringArray()
-		for entry in MapCatalog.get_ai_generated_prototype_entries():
-			listed_ids.append(str(entry.get("id", "")))
-		_prototype_list_label.text = (
-			"Prototype maps: %s"
-			% (", ".join(listed_ids) if not listed_ids.is_empty() else "none")
-		)
-
-	if _prototype_review_status_label == null:
-		return
-
-	if not OS.is_debug_build():
-		_prototype_review_status_label.text = "Prototype load: unavailable (release build)"
-		return
-	if _race_map_controller == null:
-		_prototype_review_status_label.text = "Prototype load: RaceMapController missing"
-		return
-
-	var active_map_id: String = _race_map_controller.get_resolved_map_id()
-	var selected_id: String = _selected_prototype_map_id
-	if selected_id.is_empty() and _race_map_controller.is_prototype_test_load_active():
-		selected_id = _race_map_controller.get_prototype_test_map_id()
-
-	var load_status: String = "idle"
-	if not selected_id.is_empty():
-		if _race_map_controller.is_prototype_test_load_active():
-			if _race_map_controller.get_prototype_test_map_id() == selected_id:
-				load_status = "loaded"
-			else:
-				load_status = "active other prototype"
-		elif not _race_map_controller.get_last_load_failure_reason().is_empty():
-			load_status = "failed"
-
-	var failure_reason: String = _race_map_controller.get_last_load_failure_reason()
-	var fallback_text: String = (
-		"yes" if _race_map_controller.did_last_load_use_fallback() else "no"
-	)
-	var reminder: String = "Prototype review only — not playable"
-	var catalog_note: String = _prototype_catalog_guard_text(selected_id)
-
-	_prototype_review_status_label.text = (
-		(
-			"%s\nActive map id: %s\nSelected prototype id: %s\nLoad status: %s\n"
-			+ "Last failure: %s\nFallback used: %s\n%s"
-		)
-		% [
-			reminder,
-			active_map_id if not active_map_id.is_empty() else "unknown",
-			selected_id if not selected_id.is_empty() else "none",
-			load_status,
-			failure_reason if not failure_reason.is_empty() else "none",
-			fallback_text,
-			catalog_note,
-		]
-	)
-
-
-func _prototype_catalog_guard_text(map_id: String) -> String:
-	if map_id.is_empty():
-		return "Catalog guard: n/a"
-	var entry: Dictionary = MapCatalog.get_entry_by_id(map_id)
-	if entry.is_empty():
-		return "Catalog guard: entry missing"
-	return (
-		"Catalog guard: enabled=%s status=%s"
-		% [str(entry.get("enabled", false)), str(entry.get("status", ""))]
 	)
 
 

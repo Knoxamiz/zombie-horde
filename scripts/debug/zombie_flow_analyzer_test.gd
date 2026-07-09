@@ -2,7 +2,6 @@ extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const CITY_HIGHWAY_MAP_ID := MapCatalog.DEFAULT_MAP_ID
-const BROKEN_BRIDGE_MAP_ID := "broken_bridge_candidate"
 const VIEWER_COUNT := 5
 const PASS := 0
 const FAIL := 1
@@ -17,7 +16,6 @@ func _initialize() -> void:
 func _run_all() -> void:
 	print("=== Zombie Flow Analyzer test suite ===")
 	await _test_analyzer_enable_spawn_report_markers()
-	await _test_fell_classification_not_killed()
 
 	if _failures.is_empty():
 		print("SUITE RESULT: PASSED")
@@ -111,83 +109,6 @@ func _test_analyzer_enable_spawn_report_markers() -> void:
 
 	if not _scenario_failed("analyzer"):
 		print("analyzer enable/spawn/report/markers passed")
-	main_game.queue_free()
-
-
-func _test_fell_classification_not_killed() -> void:
-	print("-- Fell classification (not killed) --")
-	var main_game: Node = await _boot_main_game()
-	if main_game == null:
-		return
-
-	var map_controller: RaceMapController = _node(main_game, "Systems/RaceMapController") as RaceMapController
-	var round_manager: RoundManager = _node(main_game, "Systems/RoundManager") as RoundManager
-	var zombie_manager: ZombieManager = _node(main_game, "Systems/ZombieManager") as ZombieManager
-	var debug_join: DebugJoinSource = _node(main_game, "Systems/DebugJoinSource") as DebugJoinSource
-	if map_controller == null or round_manager == null or zombie_manager == null or debug_join == null:
-		_fail("fell test: core systems missing")
-		main_game.queue_free()
-		return
-
-	var analyzer: ZombieFlowAnalyzer = _ensure_analyzer(main_game)
-	if analyzer == null:
-		_fail("fell test: analyzer missing")
-		main_game.queue_free()
-		return
-	analyzer.set_force_enabled(true)
-
-	if not map_controller.load_prototype_map_for_test(BROKEN_BRIDGE_MAP_ID):
-		_fail("fell test: prototype map load failed")
-		main_game.queue_free()
-		return
-
-	_configure_test_round(round_manager, map_controller, main_game)
-	await _ensure_race_systems_active(main_game)
-
-	debug_join.request_random_join()
-	await create_timer(0.2).timeout
-	round_manager.start_round()
-	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 12.0):
-		_fail("fell test: never entered RUNNING")
-		main_game.queue_free()
-		return
-
-	var zombies: Array[Zombie] = zombie_manager.get_living_zombies()
-	if zombies.is_empty():
-		_fail("fell test: no zombie spawned")
-		main_game.queue_free()
-		return
-
-	var zombie: Zombie = zombies[0]
-	zombie.global_position = Vector3(7.5, BrokenBridgeTestLayout.ZOMBIE_SPAWN_Y, 0.0)
-	zombie.velocity = Vector3.ZERO
-	_disable_combat_for_test(main_game)
-
-	var elapsed: float = 0.0
-	while elapsed < 12.0 and zombie.is_alive():
-		await create_timer(0.1).timeout
-		elapsed += 0.1
-
-	if zombie.is_alive():
-		_fail("fell test: zombie did not die after leaving bridge deck")
-		main_game.queue_free()
-		return
-
-	analyzer.finalize_round_report()
-	await create_timer(0.35).timeout
-
-	var report: String = analyzer.get_last_report_text()
-	if report.is_empty():
-		_fail("fell test: report was not printed")
-		main_game.queue_free()
-		return
-	if not report.contains("fell: 1"):
-		_fail("fell test: expected fell: 1 in report:\n%s" % report)
-	if report.contains("killed: 1") and not report.contains("killed: 0"):
-		_fail("fell test: fell was classified as killed:\n%s" % report)
-
-	if not _scenario_failed("fell"):
-		print("fell classification passed")
 	main_game.queue_free()
 
 
