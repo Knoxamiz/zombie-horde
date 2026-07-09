@@ -518,10 +518,6 @@ func _on_round_started(_round_number: int) -> void:
 	_log_race_start_map_selection(selected_settings_index, entry, _last_fallback_used)
 	_log_map_scene_integration_diagnostics("race_start", entry)
 	ensure_spectator_camera_active()
-	var definition: RaceMapDefinition = get_active_map_definition()
-	if should_use_definition_race_camera() and _spectator_camera != null and definition != null:
-		var allow_mouse_look: bool = false
-		frame_spectator_camera_for_definition(_spectator_camera, definition, allow_mouse_look)
 
 
 func _entry_paths_exist(entry: Dictionary) -> bool:
