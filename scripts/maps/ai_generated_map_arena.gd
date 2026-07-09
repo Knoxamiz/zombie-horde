@@ -2,9 +2,7 @@ class_name AIGeneratedMapArena
 extends Node3D
 
 const AIMapBlueprintBuilderScript := preload("res://scripts/maps/ai_map_blueprint_builder.gd")
-const Phase1BridgeRampTestBlueprint := preload(
-	"res://scripts/maps/blueprints/phase1_bridge_ramp_test.gd"
-)
+const AIMapBlueprintRegistryScript := preload("res://scripts/maps/ai_map_blueprint_registry.gd")
 
 @export var ai_blueprint_id: String = "phase1_bridge_ramp_test"
 
@@ -42,8 +40,4 @@ func get_ai_blueprint_id() -> String:
 
 
 static func _resolve_blueprint(blueprint_id: String):
-	match blueprint_id:
-		"phase1_bridge_ramp_test":
-			return Phase1BridgeRampTestBlueprint.create()
-		_:
-			return null
+	return AIMapBlueprintRegistryScript.resolve_blueprint(blueprint_id)

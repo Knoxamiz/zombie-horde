@@ -2,18 +2,16 @@ extends SceneTree
 
 const AIMapBlueprintExporterScript := preload("res://scripts/maps/ai_map_blueprint_exporter.gd")
 const AIMapBlueprintValidatorScript := preload("res://scripts/maps/ai_map_blueprint_validator.gd")
-const Phase1BridgeRampTestBlueprint := preload(
-	"res://scripts/maps/blueprints/phase1_bridge_ramp_test.gd"
-)
+const AIMapBlueprintRegistryScript := preload("res://scripts/maps/ai_map_blueprint_registry.gd")
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
-const GENERATED_MAP_ID := "ai_generated_phase1_bridge_ramp_test"
 const JOIN_COUNT := 2
 const PASS := 0
 const FAIL := 1
 
 var _failures: Array[String] = []
 var _started_msec: int = 0
+var _target_map_ids: Array[String] = []
 
 
 func _initialize() -> void:
@@ -22,11 +20,12 @@ func _initialize() -> void:
 
 func _run_all() -> void:
 	_started_msec = Time.get_ticks_msec()
+	_target_map_ids = _resolve_target_map_ids()
 	print("=== AI generated map certification test ===")
+	print("targets: %s" % str(_target_map_ids))
 
-	_test_catalog_entry()
-	_test_exporter_definition()
-	await _test_runtime_certification()
+	for generated_map_id in _target_map_ids:
+		await _certify_generated_map(generated_map_id)
 
 	var elapsed_sec: float = float(Time.get_ticks_msec() - _started_msec) / 1000.0
 	if _failures.is_empty():
@@ -39,49 +38,84 @@ func _run_all() -> void:
 		_finish(FAIL)
 
 
-func _test_catalog_entry() -> void:
-	print("-- catalog entry --")
-	var entry: Dictionary = MapCatalog.get_entry_by_id(GENERATED_MAP_ID)
+func _resolve_target_map_ids() -> Array[String]:
+	var requested_map_id: String = _read_cli_arg("--map_id=").strip_edges()
+	if not requested_map_id.is_empty():
+		return [requested_map_id]
+	return AIMapBlueprintRegistryScript.get_all_generated_map_ids()
+
+
+func _read_cli_arg(prefix: String) -> String:
+	for arg in OS.get_cmdline_user_args():
+		if str(arg).begins_with(prefix):
+			return str(arg).substr(prefix.length())
+	return ""
+
+
+func _certify_generated_map(generated_map_id: String) -> void:
+	print("-- %s --" % generated_map_id)
+	_test_catalog_entry(generated_map_id)
+	_test_exporter_definition(generated_map_id)
+	await _test_runtime_certification(generated_map_id)
+
+
+func _test_catalog_entry(generated_map_id: String) -> void:
+	print("  catalog entry")
+	var entry: Dictionary = MapCatalog.get_entry_by_id(generated_map_id)
 	if entry.is_empty():
-		_fail("generated map id missing from MapCatalog")
+		_fail("generated map id '%s' missing from MapCatalog" % generated_map_id)
 		return
 	if bool(entry.get("enabled", false)):
-		_fail("generated map must not be enabled/playable")
+		_fail("generated map '%s' must not be enabled/playable" % generated_map_id)
 	if str(entry.get("status", "")) != MapCatalog.STATUS_PROTOTYPE:
-		_fail("generated map must remain prototype status")
+		_fail("generated map '%s' must remain prototype status" % generated_map_id)
 	if not MapCatalog.is_prototype_testable(entry):
-		_fail("generated map must be prototype-testable")
+		_fail("generated map '%s' must be prototype-testable" % generated_map_id)
 	if not ResourceLoader.exists(str(entry.get("resource_path", ""))):
-		_fail("generated RaceMapDefinition resource missing")
+		_fail("generated RaceMapDefinition resource missing for '%s'" % generated_map_id)
 	if not ResourceLoader.exists(str(entry.get("scene_path", ""))):
-		_fail("generated scene wrapper missing")
+		_fail("generated scene wrapper missing for '%s'" % generated_map_id)
 
 
-func _test_exporter_definition() -> void:
-	print("-- exporter definition --")
-	var export_result: Dictionary = AIMapBlueprintExporterScript.export_phase1_bridge_ramp_prototype()
-	if not bool(export_result.get("ok", false)):
-		_fail("AIMapBlueprintExporter failed: %s" % str(export_result.get("errors", [])))
+func _test_exporter_definition(generated_map_id: String) -> void:
+	print("  exporter definition")
+	var registry_entry: Dictionary = AIMapBlueprintRegistryScript.get_entry_by_generated_map_id(
+		generated_map_id
+	)
+	if registry_entry.is_empty():
+		_fail("no registry entry for generated map '%s'" % generated_map_id)
 		return
-	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(GENERATED_MAP_ID)
+
+	var blueprint_id: String = str(registry_entry.get("blueprint_id", ""))
+	var export_result: Dictionary = AIMapBlueprintExporterScript.export_validated_blueprint_prototype(
+		blueprint_id
+	)
+	if not bool(export_result.get("ok", false)):
+		_fail(
+			"AIMapBlueprintExporter failed for '%s': %s"
+			% [blueprint_id, str(export_result.get("errors", []))]
+		)
+		return
+
+	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(generated_map_id)
 	if definition == null:
-		_fail("could not reload exported definition")
+		_fail("could not reload exported definition for '%s'" % generated_map_id)
 		return
 	if definition.spawn_origin.z >= definition.goal_position.z:
-		_fail("exported spawn_origin.z must be less than goal_position.z")
+		_fail("exported spawn_origin.z must be less than goal_position.z for '%s'" % generated_map_id)
 
 
-func _test_runtime_certification() -> void:
-	print("-- runtime certification --")
-	var failures: Array[String] = _certify_prototype_catalog_entry(GENERATED_MAP_ID)
+func _test_runtime_certification(generated_map_id: String) -> void:
+	print("  runtime certification")
+	var failures: Array[String] = _certify_prototype_catalog_entry(generated_map_id)
 	if not failures.is_empty():
-		_record_failures(failures)
+		_record_failures(generated_map_id, failures)
 		return
 
-	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(GENERATED_MAP_ID)
-	failures.append_array(MapCertification.certify_definition(definition, GENERATED_MAP_ID))
+	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(generated_map_id)
+	failures.append_array(MapCertification.certify_definition(definition, generated_map_id))
 	if not failures.is_empty():
-		_record_failures(failures)
+		_record_failures(generated_map_id, failures)
 		return
 
 	var main_game: Node = await _boot_main_game()
@@ -93,12 +127,13 @@ func _test_runtime_certification() -> void:
 	var zombie_manager: ZombieManager = _node(main_game, "Systems/ZombieManager") as ZombieManager
 	var debug_join: DebugJoinSource = _node(main_game, "Systems/DebugJoinSource") as DebugJoinSource
 	if map_controller == null or round_manager == null or zombie_manager == null or debug_join == null:
-		_fail("missing core systems")
+		_fail("missing core systems for '%s'" % generated_map_id)
 		main_game.queue_free()
 		return
 
-	if not map_controller.load_prototype_map_for_test(GENERATED_MAP_ID):
+	if not map_controller.load_prototype_map_for_test(generated_map_id):
 		_record_failures(
+			generated_map_id,
 			[
 				"prototype load failed: %s"
 				% map_controller.get_last_load_failure_reason()
@@ -108,33 +143,34 @@ func _test_runtime_certification() -> void:
 		return
 
 	if map_controller.did_last_load_use_fallback():
-		_record_failures(["prototype load used City Highway fallback"])
+		_record_failures(generated_map_id, ["prototype load used City Highway fallback"])
 		main_game.queue_free()
 		return
-	if map_controller.get_resolved_map_id() != GENERATED_MAP_ID:
+	if map_controller.get_resolved_map_id() != generated_map_id:
 		_record_failures(
+			generated_map_id,
 			[
 				"resolved map id '%s' != '%s'"
-				% [map_controller.get_resolved_map_id(), GENERATED_MAP_ID]
+				% [map_controller.get_resolved_map_id(), generated_map_id]
 			]
 		)
 		main_game.queue_free()
 		return
 
 	var loaded_map: Node3D = main_game.get_node_or_null("World/RoadArena") as Node3D
-	failures.append_array(MapCertification.certify_scene_contract(loaded_map, GENERATED_MAP_ID))
+	failures.append_array(MapCertification.certify_scene_contract(loaded_map, generated_map_id))
 	failures.append_array(
 		MapCertification.certify_finish_authority(
 			_node(main_game, "World/StreamerBase") as Node3D,
 			definition,
-			GENERATED_MAP_ID
+			generated_map_id
 		)
 	)
 	failures.append_array(
 		MapCertification.certify_oob_applied(
 			definition,
 			map_controller.zombie_config,
-			GENERATED_MAP_ID
+			generated_map_id
 		)
 	)
 	if not map_controller.is_finish_contract_valid():
@@ -144,16 +180,19 @@ func _test_runtime_certification() -> void:
 	if map_root == null:
 		failures.append("CoreRoad/MapRoot missing after generated build")
 	else:
-		var blueprint = Phase1BridgeRampTestBlueprint.create()
-		var scene_validation: Dictionary = AIMapBlueprintValidatorScript.validate_generated_scene(
-			map_root as Node3D, blueprint, definition
-		)
-		if not bool(scene_validation.get("ok", false)):
-			failures.append("post-load geometry validation failed")
-			failures.append_array(scene_validation.get("errors", []))
+		var blueprint = AIMapBlueprintRegistryScript.resolve_blueprint_for_generated_map(generated_map_id)
+		if blueprint == null:
+			failures.append("could not resolve blueprint for '%s'" % generated_map_id)
+		else:
+			var scene_validation: Dictionary = AIMapBlueprintValidatorScript.validate_generated_scene(
+				map_root as Node3D, blueprint, definition
+			)
+			if not bool(scene_validation.get("ok", false)):
+				failures.append("post-load geometry validation failed")
+				failures.append_array(scene_validation.get("errors", []))
 
 	if not failures.is_empty():
-		_record_failures(failures)
+		_record_failures(generated_map_id, failures)
 		main_game.queue_free()
 		return
 
@@ -164,13 +203,13 @@ func _test_runtime_certification() -> void:
 		debug_join.request_random_join()
 	await create_timer(0.1).timeout
 	if round_manager.get_pending_count() < 1:
-		_record_failures(["no participants queued before race start"])
+		_record_failures(generated_map_id, ["no participants queued before race start"])
 		main_game.queue_free()
 		return
 
 	round_manager.start_round()
 	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 8.0):
-		_record_failures(["race never entered RUNNING"])
+		_record_failures(generated_map_id, ["race never entered RUNNING"])
 		main_game.queue_free()
 		return
 
@@ -179,12 +218,12 @@ func _test_runtime_certification() -> void:
 	_teleport_zombies_to_goal(zombie_manager, definition)
 
 	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.ENDED, 12.0):
-		_record_failures(["race never resolved to ENDED"])
+		_record_failures(generated_map_id, ["race never resolved to ENDED"])
 		main_game.queue_free()
 		return
 
 	if not _at_least_one_zombie_resolved(zombie_manager):
-		_record_failures(["no zombie resolved by finish/death"])
+		_record_failures(generated_map_id, ["no zombie resolved by finish/death"])
 		main_game.queue_free()
 		return
 
@@ -192,6 +231,7 @@ func _test_runtime_certification() -> void:
 	await create_timer(0.2).timeout
 	if round_manager.state != RoundManager.RoundState.IDLE:
 		_record_failures(
+			generated_map_id,
 			["reset did not return to IDLE (state=%s)" % round_manager.get_state_text()]
 		)
 		main_game.queue_free()
@@ -200,11 +240,11 @@ func _test_runtime_certification() -> void:
 	debug_join.request_random_join()
 	await create_timer(0.1).timeout
 	if round_manager.get_pending_count() < 1:
-		_record_failures(["join blocked after reset"])
+		_record_failures(generated_map_id, ["join blocked after reset"])
 		main_game.queue_free()
 		return
 
-	print("%s generated-map certification passed" % GENERATED_MAP_ID)
+	print("%s generated-map certification passed" % generated_map_id)
 	main_game.queue_free()
 
 
@@ -227,11 +267,11 @@ func _certify_prototype_catalog_entry(map_id: String) -> Array[String]:
 	return failures
 
 
-func _record_failures(failures: Array[String]) -> void:
-	var message: String = MapCertification.format_failures(GENERATED_MAP_ID, failures)
+func _record_failures(map_id: String, failures: Array[String]) -> void:
+	var message: String = MapCertification.format_failures(map_id, failures)
 	print(message)
 	for failure in failures:
-		_fail(failure)
+		_fail("[%s] %s" % [map_id, failure])
 
 
 func _boot_main_game() -> Node:
