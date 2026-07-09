@@ -76,6 +76,8 @@ func _ready() -> void:
 
 	GameEvents.participant_registered.connect(_on_participant_registered)
 	GameEvents.participant_queue_changed.connect(_on_participant_queue_changed)
+	GameEvents.join_rejected.connect(_on_join_rejected)
+	GameEvents.join_accepted_late.connect(_on_join_accepted_late)
 	GameEvents.bits_cheer_received.connect(_on_bits_cheer_received)
 	GameEvents.command_text_changed.connect(_on_command_text_changed)
 	GameEvents.chat_connection_status_changed.connect(_on_chat_connection_status_changed)
@@ -187,6 +189,20 @@ func _on_participant_registered(join_info: ParticipantJoinInfo, _queued_count: i
 		return
 
 	_join_feed_lines.append("%s joined the queue.%s" % [clean_name, join_info.get_join_feed_suffix()])
+	while _join_feed_lines.size() > MAX_JOIN_FEED_LINES:
+		_join_feed_lines.remove_at(0)
+	_refresh_labels()
+
+
+func _on_join_rejected(display_name: String, reason: String) -> void:
+	_join_feed_lines.append(StreamerFeedbackMessages.format_join_rejected(display_name, reason))
+	while _join_feed_lines.size() > MAX_JOIN_FEED_LINES:
+		_join_feed_lines.remove_at(0)
+	_refresh_labels()
+
+
+func _on_join_accepted_late(display_name: String) -> void:
+	_join_feed_lines.append(StreamerFeedbackMessages.format_join_accepted_late(display_name))
 	while _join_feed_lines.size() > MAX_JOIN_FEED_LINES:
 		_join_feed_lines.remove_at(0)
 	_refresh_labels()

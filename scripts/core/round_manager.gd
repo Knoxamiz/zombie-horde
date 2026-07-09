@@ -171,21 +171,30 @@ func reset_round() -> void:
 
 func _on_participant_join_requested(join_info: ParticipantJoinInfo) -> void:
 	var clean_name: String = join_info.display_name.strip_edges()
-	if clean_name.is_empty() or _has_participant_name(clean_name):
+	if clean_name.is_empty():
+		GameEvents.join_rejected.emit("", "invalid_name")
+		return
+	if _has_participant_name(clean_name):
+		GameEvents.join_rejected.emit(clean_name, "duplicate_name")
 		return
 
 	if state == RoundState.COUNTDOWN and _zombie_manager != null:
 		var spawned_zombie: Zombie = _zombie_manager.spawn_zombie(clean_name, join_info)
 		if spawned_zombie != null:
 			spawned_zombie.set_round_active(false)
-		GameEvents.participant_registered.emit(join_info, pending_participants.size())
-		_publish_queue()
+			GameEvents.participant_registered.emit(join_info, pending_participants.size())
+			GameEvents.join_accepted_late.emit(clean_name)
+			_publish_queue()
+			return
+		GameEvents.join_rejected.emit(clean_name, "countdown_spawn_failed")
 		return
 
 	if state == RoundState.ENDED:
+		GameEvents.join_rejected.emit(clean_name, "race_ended")
 		_emit_post_round_recovery_hint()
 		return
 	if state != RoundState.IDLE:
+		GameEvents.join_rejected.emit(clean_name, "race_running")
 		GameEvents.command_text_changed.emit("Race in progress — joins reopen after reset.")
 		return
 
@@ -193,6 +202,7 @@ func _on_participant_join_requested(join_info: ParticipantJoinInfo) -> void:
 	if round_config != null:
 		max_pending = round_config.max_pending_participants
 	if pending_participants.size() >= max_pending:
+		GameEvents.join_rejected.emit(clean_name, "queue_full")
 		return
 
 	pending_participants.append(clean_name)
@@ -364,26 +374,26 @@ func _schedule_post_round_auto_reset() -> void:
 	_run_post_round_auto_reset(_post_round_reset_token, auto_reset_seconds)
 
 func _run_post_round_auto_reset(token: int, auto_reset_seconds: float) -> void:
-	await get_tree().create_timer(auto_reset_seconds).timeout
+	var remaining: float = auto_reset_seconds
+	while remaining > 0.0:
+		if token != _post_round_reset_token or state != RoundState.ENDED:
+			return
+		GameEvents.post_round_auto_reset_tick.emit(int(ceil(remaining)))
+		var step: float = min(1.0, remaining)
+		await get_tree().create_timer(step).timeout
+		remaining -= step
 	if token != _post_round_reset_token or state != RoundState.ENDED:
 		return
 	reset_round()
 
 func _cancel_post_round_auto_reset() -> void:
 	_post_round_reset_token += 1
+	GameEvents.post_round_auto_reset_tick.emit(0)
 
 func _emit_post_round_recovery_hint() -> void:
-	var auto_reset_seconds: float = _get_post_round_auto_reset_seconds()
-	if auto_reset_seconds > 0.0:
-		GameEvents.command_text_changed.emit(
-			"Race over! Return to Lobby or press R, then queue viewers for the next race "
-			+ "(auto-reset in %ds)."
-			% int(round(auto_reset_seconds))
-		)
-	else:
-		GameEvents.command_text_changed.emit(
-			"Race over! Return to Lobby or press R, then queue viewers for the next race."
-		)
+	GameEvents.command_text_changed.emit(
+		"Race over! Return to Lobby or press R, then queue viewers for the next race."
+	)
 
 func is_race_timed_out() -> bool:
 	return _race_timed_out
