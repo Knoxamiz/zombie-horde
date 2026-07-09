@@ -11,6 +11,7 @@ Before making code changes, read [docs/AI_DEVELOPMENT_GUARDRAILS.md](docs/AI_DEV
 | [PROTECTED_SYSTEMS.md](docs/PROTECTED_SYSTEMS.md) | Hardened systems and required tests per area |
 | [AI_DEVELOPMENT_GUARDRAILS.md](docs/AI_DEVELOPMENT_GUARDRAILS.md) | Cursor/Codex workflow, test matrix, anti-patterns |
 | [TESTING.md](docs/TESTING.md) | Headless test tiers (`smoke`, `core`, `certification`, `map`) |
+| [DEV_TOOLS_OVERVIEW.md](docs/DEV_TOOLS_OVERVIEW.md) | In-game dev panel (F3) and manual test tools |
 | [MAP_CERTIFICATION.md](docs/MAP_CERTIFICATION.md) | Map promotion and certification gate |
 
 ## Open The Project (Windows)

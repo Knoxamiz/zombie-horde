@@ -38,6 +38,7 @@ var _flow_toggle: CheckButton
 var _flow_markers_toggle: CheckButton
 var _stress_status_label: Label
 var _blueprint_debug_toggle: CheckButton
+var _hint_label: Label
 
 
 func _enter_tree() -> void:
@@ -47,12 +48,13 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	layer = 90
-	visible = false
-	process_mode = Node.PROCESS_MODE_DISABLED
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	visible = true
 	_resolve_nodes()
 	_ensure_fake_viewer_simulator()
 	_ensure_stress_profiler()
 	_build_ui()
+	_build_hint_overlay()
 	set_process(false)
 
 
@@ -88,16 +90,18 @@ func _process(delta: float) -> void:
 
 func _open_panel() -> void:
 	_panel_open = true
-	visible = true
-	process_mode = Node.PROCESS_MODE_INHERIT
+	_root.visible = true
+	if _hint_label != null:
+		_hint_label.visible = false
 	set_process(true)
 	_refresh_display()
 
 
 func _close_panel() -> void:
 	_panel_open = false
-	visible = false
-	process_mode = Node.PROCESS_MODE_DISABLED
+	_root.visible = false
+	if _hint_label != null:
+		_hint_label.visible = true
 	set_process(false)
 
 
@@ -128,9 +132,24 @@ func _build_ui() -> void:
 	scroll.add_child(body)
 
 	_add_header(body, "Dev Control Panel (F3)")
-	_add_hint(body, "Debug builds only. Hidden when closed.")
+	_add_hint(body, "Debug builds only. Press F3 or Esc to close.")
 
-	_add_section(body, "Race")
+	_add_section(body, "Dev Tools Home")
+	_add_hint(
+		body,
+		(
+			"Race Controls: start, reset, or force-end a test race.\n"
+			+ "NPC Controls: queue individual test joins.\n"
+			+ "Map Info: active map id in Self Check and Active Config Inspector.\n"
+			+ "Active Config Inspector: read-only runtime map and race settings.\n"
+			+ "Fake Viewer Simulator: add fake stream viewers without Twitch.\n"
+			+ "Zombie Flow Analyzer: shows where zombies spawn, finish, fall, die, or get stuck.\n"
+			+ "Performance Profiler: measures FPS with 20/100/250/500 zombies."
+		)
+	)
+	_add_button(body, "Run Dev Tools Self Check", _on_self_check_pressed)
+
+	_add_section(body, "Race Controls")
 	_state_label = _add_readout(body, "State: —")
 	_add_button_row(body, [
 		["Start Race", _on_start_race_pressed],
@@ -139,7 +158,7 @@ func _build_ui() -> void:
 	_force_end_button = _add_button(body, "Force End Race", _on_force_end_pressed)
 	_add_button(body, "Return to Lobby", _on_return_lobby_pressed)
 
-	_add_section(body, "NPCs")
+	_add_section(body, "NPC Controls")
 	_npc_counts_label = _add_readout(body, "Counts: —")
 	_add_button_row(body, [
 		["+1 NPC", _on_add_one_npc_pressed],
@@ -210,6 +229,47 @@ func _build_ui() -> void:
 	body.add_child(_blueprint_debug_toggle)
 
 	_add_button(body, "Close (F3 / Esc)", _on_close_pressed)
+
+	_root.visible = false
+
+
+func _build_hint_overlay() -> void:
+	_hint_label = Label.new()
+	_hint_label.name = "DevToolsHint"
+	_hint_label.text = "Dev Tools: Press F3"
+	_hint_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hint_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_hint_label.offset_left = -220.0
+	_hint_label.offset_top = -36.0
+	_hint_label.offset_right = -12.0
+	_hint_label.offset_bottom = -12.0
+	_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_hint_label.modulate = Color(0.82, 0.86, 0.92, 0.88)
+	add_child(_hint_label)
+
+
+func _on_self_check_pressed() -> void:
+	DevToolsSelfCheck.print_report(
+		true,
+		_round_manager,
+		_debug_join_source,
+		_race_map_controller,
+		_fake_viewer_simulator,
+		_get_flow_analyzer_reference(),
+		_get_stress_profiler_reference()
+	)
+	_refresh_display()
+
+
+func _get_flow_analyzer_reference() -> ZombieFlowAnalyzer:
+	var systems: Node = get_node_or_null("../../Systems")
+	if systems == null:
+		return null
+	return systems.get_node_or_null("ZombieFlowAnalyzer") as ZombieFlowAnalyzer
+
+
+func _get_stress_profiler_reference() -> PerformanceStressProfiler:
+	return get_node_or_null("PerformanceStressProfiler") as PerformanceStressProfiler
 
 
 func _add_header(parent: Control, text: String) -> void:
