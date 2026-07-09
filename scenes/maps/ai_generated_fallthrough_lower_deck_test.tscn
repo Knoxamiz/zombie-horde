@@ -16,8 +16,8 @@ script = ExtResource("2_sanitizer")
 root_path = NodePath("../CoreRoad/MapRoot/VisualLayer")
 
 [node name="PrototypeBanner" type="Label3D" parent="MapDressing"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, -2)
-text = "FALLTHROUGH LOWER DECK TEST"
-font_size = 24
-outline_size = 6
-modulate = Color(0.7, 0.95, 1, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, -6)
+text = "FALLTHROUGH LOWER DECK TEST — NOT BROKEN BRIDGE"
+font_size = 32
+outline_size = 10
+modulate = Color(0.55, 1, 0.65, 1)

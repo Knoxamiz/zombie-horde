@@ -755,7 +755,7 @@ func _refresh_dev_map_status() -> void:
 		load_status = "failed"
 
 	_dev_map_status_label.text = (
-		"Active map: %s | Dev test status: %s | Failure: %s"
+		"Active map: %s\nDev test status: %s\nExpected: ai_generated_fallthrough_lower_deck_test\nFailure: %s"
 		% [
 			active_id if not active_id.is_empty() else "unknown",
 			load_status,
