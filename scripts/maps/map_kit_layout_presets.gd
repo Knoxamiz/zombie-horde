@@ -24,6 +24,7 @@ static func get_preset(preset_id: String) -> Dictionary:
 
 
 static func _broken_bridge() -> Dictionary:
+	var road_width: float = 9.0
 	return {
 		"style": RaceMapKit.MapStyle.BROKEN_BRIDGE,
 		"seed": 8802,
@@ -45,6 +46,14 @@ static func _broken_bridge() -> Dictionary:
 			{"z0": -48.0, "z1": -40.0},
 			{"z0": -8.0, "z1": 0.0},
 			{"z0": 32.0, "z1": 40.0},
+		],
+		"surface_pieces": [
+			{"shape": "deck", "z0": -84.0, "z1": -48.0, "top_y": 0.0, "width": road_width},
+			{"shape": "ramp", "z0": -40.0, "z1": -32.0, "start_y": 0.0, "height_delta": 0.35, "width": road_width},
+			{"shape": "deck", "z0": -32.0, "z1": -8.0, "top_y": 0.35, "width": road_width},
+			{"shape": "deck", "z0": 0.0, "z1": 32.0, "top_y": 0.35, "width": road_width},
+			{"shape": "ramp", "z0": 40.0, "z1": 48.0, "start_y": 0.35, "height_delta": -0.35, "width": road_width},
+			{"shape": "deck", "z0": 48.0, "z1": 84.0, "top_y": 0.0, "width": road_width},
 		],
 	}
 
@@ -144,6 +153,7 @@ static func _vehicle_yard() -> Dictionary:
 
 
 static func _defender_gauntlet() -> Dictionary:
+	var road_width: float = 10.0
 	return {
 		"style": RaceMapKit.MapStyle.BROKEN_BRIDGE,
 		"seed": 7407,
@@ -170,10 +180,19 @@ static func _defender_gauntlet() -> Dictionary:
 			{"z0": 24.0, "z1": 36.0},
 			{"z0": 56.0, "z1": 68.0},
 		],
+		"surface_pieces": [
+			{"shape": "deck", "z0": -84.0, "z1": -64.0, "top_y": 0.45, "width": road_width},
+			{"shape": "deck", "z0": -56.0, "z1": -36.0, "top_y": 0.45, "width": road_width},
+			{"shape": "deck", "z0": -28.0, "z1": -8.0, "top_y": 0.45, "width": road_width},
+			{"shape": "deck", "z0": 4.0, "z1": 24.0, "top_y": 0.45, "width": road_width},
+			{"shape": "deck", "z0": 36.0, "z1": 56.0, "top_y": 0.45, "width": road_width},
+			{"shape": "deck", "z0": 68.0, "z1": 84.0, "top_y": 0.45, "width": road_width},
+		],
 	}
 
 
 static func _boost_rush() -> Dictionary:
+	var road_width: float = 18.0
 	return {
 		"style": RaceMapKit.MapStyle.LONG_ROAD,
 		"seed": 8508,
@@ -189,4 +208,11 @@ static func _boost_rush() -> Dictionary:
 			{"z0": -92.0, "z1": 92.0},
 		],
 		"gaps": [],
+		"surface_pieces": [
+			{"shape": "deck", "z0": -92.0, "z1": -58.0, "top_y": 0.0, "width": road_width},
+			{"shape": "ramp", "z0": -58.0, "z1": -50.0, "start_y": 0.0, "height_delta": -1.0, "width": road_width},
+			{"shape": "deck", "z0": -50.0, "z1": 50.0, "top_y": -1.0, "width": road_width},
+			{"shape": "ramp", "z0": 50.0, "z1": 58.0, "start_y": -1.0, "height_delta": 1.0, "width": road_width},
+			{"shape": "deck", "z0": 58.0, "z1": 92.0, "top_y": 0.0, "width": road_width},
+		],
 	}

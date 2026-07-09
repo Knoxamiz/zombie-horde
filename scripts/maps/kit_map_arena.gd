@@ -40,7 +40,9 @@ func _build_from_preset(preset_id: String) -> void:
 	_kit.build_water(void_width, track_length)
 
 	if uses_surface_pieces:
-		SURFACE_BUILDER.build_surfaces(self, surface_pieces, road_width)
+		var surfaces: Node3D = SURFACE_BUILDER.build_surfaces(self, surface_pieces, road_width)
+		if style == RaceMapKit.MapStyle.BROKEN_BRIDGE and not gaps.is_empty():
+			SURFACE_BUILDER.build_gap_crossings(surfaces, gaps, path_half_width, surface_pieces)
 		_kit.set_elevation_zones(SURFACE_BUILDER.build_elevation_zones_from_pieces(surface_pieces))
 	else:
 		match style:

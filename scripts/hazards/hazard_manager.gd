@@ -301,6 +301,5 @@ func _append_weighted_scene(weighted_scenes: Array[PackedScene], scene: PackedSc
 
 
 func _surface_y(offset: float) -> float:
-	if hazard_config != null and hazard_config.placement_surface_y > 0.0:
-		return hazard_config.placement_surface_y + offset
-	return offset
+	var base_y: float = hazard_config.placement_surface_y if hazard_config != null else 0.0
+	return base_y + offset

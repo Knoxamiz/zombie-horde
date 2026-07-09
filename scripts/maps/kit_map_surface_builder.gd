@@ -122,3 +122,29 @@ static func collect_ramp_visual_specs(surface_pieces: Array) -> Array[Dictionary
 		if str(spec.get("shape", "deck")) == "ramp":
 			ramps.append(spec.duplicate(true))
 	return ramps
+
+
+static func build_gap_crossings(
+	surfaces: Node3D,
+	gaps: Array,
+	path_half_width: float,
+	surface_pieces: Array
+) -> void:
+	var crossing_width: float = max(path_half_width * 2.0 * 0.72, 4.0)
+	for raw_gap in gaps:
+		if raw_gap is not Dictionary:
+			continue
+		var gap: Dictionary = raw_gap
+		var z0: float = float(gap.get("z0", 0.0))
+		var z1: float = float(gap.get("z1", z0))
+		if z1 <= z0:
+			continue
+		var length: float = z1 - z0
+		var center_z: float = (z0 + z1) * 0.5
+		var top_y: float = get_top_y_at_z(surface_pieces, center_z, 0.0)
+		var piece: MapSurfacePiece = MapSurfacePieceScript.create_deck(
+			Vector3(crossing_width, MapSurfacePieceScript.MIN_THICKNESS, length),
+			top_y
+		)
+		piece.position.z = center_z
+		surfaces.add_child(piece)

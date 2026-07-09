@@ -60,7 +60,7 @@ func _get_pad_position(hazard_positions: Array[Vector3], boost_positions: Array[
 func _get_random_pad_position() -> Vector3:
 	return Vector3(
 		_rng.randf_range(-powerup_config.placement_half_width, powerup_config.placement_half_width),
-		0.12,
+		powerup_config.placement_surface_y + 0.12,
 		_rng.randf_range(powerup_config.placement_min_z, powerup_config.placement_max_z)
 	)
 
