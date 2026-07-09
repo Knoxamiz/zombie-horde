@@ -41,6 +41,7 @@ var _chat_detail_text: String = ""
 @onready var _ready_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ReadyButton") as Button
 @onready var _reset_button: HoldToConfirmButton = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/ResetButton") as HoldToConfirmButton
 @onready var _lobby_join_button: Button = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/AddNpcButton") as Button
+@onready var _auto_repeat_button: CheckButton = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/AutoRepeatButton") as CheckButton
 @onready var _join_viewer_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinViewerButton") as Button
 @onready var _join_sub_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinSubButton") as Button
 @onready var _join_gift_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinGiftButton") as Button
@@ -63,6 +64,10 @@ func _ready() -> void:
 	_leaderboard_store = get_node_or_null(leaderboard_store_path) as LeaderboardStore
 
 	_lobby_join_button.pressed.connect(_on_add_npc_pressed)
+	if _auto_repeat_button != null:
+		_auto_repeat_button.toggled.connect(_on_auto_repeat_toggled)
+		if _round_manager != null:
+			_auto_repeat_button.button_pressed = _round_manager.is_auto_repeat_enabled()
 	_join_viewer_button.pressed.connect(_on_join_viewer_pressed)
 	_join_sub_button.pressed.connect(_on_join_sub_pressed)
 	_join_gift_button.pressed.connect(_on_join_gift_pressed)
@@ -123,6 +128,12 @@ func _on_ready_pressed() -> void:
 func _on_reset_confirmed() -> void:
 	if _round_manager != null:
 		_round_manager.reset_round()
+
+
+func _on_auto_repeat_toggled(enabled: bool) -> void:
+	if _round_manager == null:
+		return
+	_round_manager.set_auto_repeat_enabled(enabled)
 
 func _on_add_npc_pressed() -> void:
 	var debug_source: DebugJoinSource = _get_debug_join_source()
@@ -374,6 +385,8 @@ func _refresh_ready_button() -> void:
 		_ready_button.text = "Start Race (%d)" % _queued_names.size()
 	if _main_menu_button != null:
 		_main_menu_button.disabled = _state_text != "Joining"
+	if _auto_repeat_button != null and _round_manager != null:
+		_auto_repeat_button.set_pressed_no_signal(_round_manager.is_auto_repeat_enabled())
 
 func _join_strings(values: Array[String], separator: String) -> String:
 	var result: String = ""

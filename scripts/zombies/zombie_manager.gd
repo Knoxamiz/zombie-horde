@@ -199,6 +199,30 @@ func _remove_invalid_all() -> void:
 		if not is_instance_valid(_all_zombies[index]):
 			_all_zombies.remove_at(index)
 
+func capture_roster_snapshot() -> Array[Dictionary]:
+	_remove_invalid_all()
+	var roster: Array[Dictionary] = []
+	var seen_names: Dictionary = {}
+	for zombie in _all_zombies:
+		if not is_instance_valid(zombie):
+			continue
+		var clean_name: String = zombie.display_name.strip_edges()
+		if clean_name.is_empty():
+			continue
+		var lookup_key: String = clean_name.to_lower()
+		if seen_names.has(lookup_key):
+			continue
+		seen_names[lookup_key] = true
+		var join_info: ParticipantJoinInfo = zombie.get_join_info()
+		roster.append(
+			{
+				"display_name": clean_name,
+				"join_info": join_info if join_info != null else ParticipantJoinInfo.for_name(clean_name),
+			}
+		)
+	return roster
+
+
 func get_result_for_display_name(display_name: String) -> Dictionary:
 	_remove_invalid_all()
 	var lower_name: String = display_name.to_lower()
