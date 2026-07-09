@@ -550,6 +550,34 @@ func _print_report() -> void:
 	print(_last_report_text)
 
 
+func get_outcome_counts() -> Dictionary:
+	var counts: Dictionary = {
+		"spawned": _records.size(),
+		"finished": 0,
+		"fell": 0,
+		"lateral_oob": 0,
+		"killed": 0,
+		"stuck": 0,
+		"unresolved": 0,
+	}
+	for record_key in _records.keys():
+		var outcome: String = str(_records[record_key].get("outcome", "unresolved"))
+		match outcome:
+			"finished":
+				counts["finished"] = int(counts["finished"]) + 1
+			"fell":
+				counts["fell"] = int(counts["fell"]) + 1
+			"out_of_bounds":
+				counts["lateral_oob"] = int(counts["lateral_oob"]) + 1
+			"killed":
+				counts["killed"] = int(counts["killed"]) + 1
+			"stuck":
+				counts["stuck"] = int(counts["stuck"]) + 1
+			_:
+				counts["unresolved"] = int(counts["unresolved"]) + 1
+	return counts
+
+
 func _ensure_markers() -> void:
 	if _markers == null:
 		_resolve_nodes()

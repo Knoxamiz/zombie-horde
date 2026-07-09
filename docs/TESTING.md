@@ -82,6 +82,7 @@ Core + map tiers, plus stable unit/integration debug suites:
 |------|--------|
 | `broken_bridge_real_gameplay_test.gd` (default 5/20/100) | Too slow for routine runs; map tier uses `--zombies=5 --skip-stress` |
 | `zombie_flow_analyzer_test.gd` | Experimental; requires dev-only ZombieFlowAnalyzer wiring |
+| `performance_stress_profiler_test.gd` | Dev-only FPS profiler; synthetic sampling only |
 | `twitch_channel_setup_test.gd` | External Twitch integration |
 | `race_hud_integration_test.gd` | Heavy HUD scene integration |
 | `hud_layout_*_test.gd` | HUD layout editor tooling |
