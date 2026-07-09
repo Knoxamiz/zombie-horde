@@ -2,6 +2,8 @@ extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const MapKitLayoutPresetsScript := preload("res://scripts/maps/map_kit_layout_presets.gd")
+const KitMapArenaScript := preload("res://scripts/maps/kit_map_arena.gd")
+const KitMapSurfaceBuilderScript := preload("res://scripts/maps/kit_map_surface_builder.gd")
 const EXPECTED_MAP_IDS: Array[String] = [
 	"quarantine_boulevard",
 	"ai_generated_fallthrough_lower_deck_test",
@@ -21,6 +23,7 @@ func _initialize() -> void:
 	_failures.append_array(_test_catalog_resolution())
 	_failures.append_array(_test_profile_migration())
 	_failures.append_array(_test_layout_preset_uniqueness())
+	_failures.append_array(_test_kit_elevation_presets())
 	call_deferred("_begin_runtime_load")
 
 
@@ -135,6 +138,40 @@ func _test_layout_preset_uniqueness() -> PackedStringArray:
 				% [preset_id, signatures[signature]]
 			)
 		signatures[signature] = preset_id
+	return failures
+
+
+func _test_kit_elevation_presets() -> PackedStringArray:
+	var failures: PackedStringArray = PackedStringArray()
+	var elevated_ids: Array[String] = ["mine_alley", "cone_slalom", "vehicle_yard"]
+	for preset_id in elevated_ids:
+		var layout: Dictionary = MapKitLayoutPresetsScript.get_preset(preset_id)
+		var pieces: Array = layout.get("surface_pieces", [])
+		if pieces.is_empty():
+			failures.append("Preset '%s' should define surface_pieces for elevation" % preset_id)
+			continue
+
+		var arena = KitMapArenaScript.new()
+		arena.layout_preset_id = preset_id
+		root.add_child(arena)
+
+		var surfaces: Node = arena.get_node_or_null("KitSurfaces")
+		if surfaces == null or surfaces.get_child_count() < 2:
+			failures.append(
+				"Preset '%s' should build multiple KitSurfaces pieces, got %d"
+				% [preset_id, surfaces.get_child_count() if surfaces != null else 0]
+			)
+
+		var sample_z: float = (
+			float(layout.get("spawn_z", 0.0)) + float(layout.get("goal_z", 0.0))
+		) * 0.5
+		var mid_y: float = KitMapSurfaceBuilderScript.get_top_y_at_z(pieces, sample_z, 0.0)
+		if mid_y <= 0.01:
+			failures.append(
+				"Preset '%s' should have elevated mid-route Y, got %.2f" % [preset_id, mid_y]
+			)
+
+		arena.queue_free()
 	return failures
 
 

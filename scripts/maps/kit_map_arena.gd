@@ -5,6 +5,7 @@ extends Node3D
 
 const KIT_SCRIPT := preload("res://scripts/maps/race_map_kit.gd")
 const PRESETS := preload("res://scripts/maps/map_kit_layout_presets.gd")
+const SURFACE_BUILDER := preload("res://scripts/maps/kit_map_surface_builder.gd")
 
 @export var layout_preset_id: String = "broken_bridge"
 
@@ -20,6 +21,7 @@ func _build_from_preset(preset_id: String) -> void:
 	var style: RaceMapKit.MapStyle = layout.get("style", RaceMapKit.MapStyle.LONG_ROAD)
 	var segments: Array[Dictionary] = _to_segment_array(layout.get("segments", []))
 	var gaps: Array[Dictionary] = _to_segment_array(layout.get("gaps", []))
+	var surface_pieces: Array = layout.get("surface_pieces", [])
 	var path_half_width: float = float(layout.get("path_half_width", 6.0))
 	var visual_width: float = float(layout.get("visual_width", 12.0))
 	var void_width: float = float(layout.get("void_width", 64.0))
@@ -29,22 +31,33 @@ func _build_from_preset(preset_id: String) -> void:
 	var start_gate_z: float = float(layout.get("start_gate_z", spawn_z + 8.0))
 	var finish_gate_z: float = float(layout.get("finish_gate_z", goal_z - 8.0))
 	var seed: int = int(layout.get("seed", 8802))
+	var road_width: float = path_half_width * 2.0
+	var uses_surface_pieces: bool = not surface_pieces.is_empty()
 
 	_kit = KIT_SCRIPT.new()
 	_kit.attach(self, style, seed)
 	_kit.build_environment()
 	_kit.build_water(void_width, track_length)
 
-	match style:
-		RaceMapKit.MapStyle.BROKEN_BRIDGE:
-			_kit.build_broken_bridge_play_surface(segments, gaps, path_half_width)
-			_kit.build_bridge_fall_zones(segments, gaps, path_half_width, void_width)
-		_:
-			_kit.build_continuous_play_surface(path_half_width * 2.0, spawn_z, goal_z)
+	if uses_surface_pieces:
+		SURFACE_BUILDER.build_surfaces(self, surface_pieces, road_width)
+		_kit.set_elevation_zones(SURFACE_BUILDER.build_elevation_zones_from_pieces(surface_pieces))
+	else:
+		match style:
+			RaceMapKit.MapStyle.BROKEN_BRIDGE:
+				_kit.build_broken_bridge_play_surface(segments, gaps, path_half_width)
+				_kit.build_bridge_fall_zones(segments, gaps, path_half_width, void_width)
+			_:
+				_kit.build_continuous_play_surface(road_width, spawn_z, goal_z)
 
 	_kit.compose_map(segments, gaps)
+	if uses_surface_pieces:
+		_kit.build_ramp_visuals(SURFACE_BUILDER.collect_ramp_visual_specs(surface_pieces), road_width)
 	_kit.build_markers(visual_width, spawn_z, goal_z, start_gate_z, finish_gate_z)
-	print("KitMapArena: built preset '%s' (%d segments, %d gaps)" % [preset_id, segments.size(), gaps.size()])
+	print(
+		"KitMapArena: built preset '%s' (%d segments, %d gaps, elevation=%s)"
+		% [preset_id, segments.size(), gaps.size(), uses_surface_pieces]
+	)
 
 
 func _to_segment_array(raw_segments: Variant) -> Array[Dictionary]:

@@ -56,6 +56,7 @@ var _collision_root: Node3D
 var _visual_root: Node3D
 var _style: MapStyle = MapStyle.LONG_ROAD
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
+var _elevation_zones: Array[Dictionary] = []
 
 
 func attach(root: Node3D, style: MapStyle, random_seed: int) -> void:
@@ -64,6 +65,30 @@ func attach(root: Node3D, style: MapStyle, random_seed: int) -> void:
 	_rng.seed = random_seed
 	_collision_root = _make_child("Collision", root)
 	_visual_root = _make_child("VisualKit", root)
+
+
+func set_elevation_zones(zones: Array) -> void:
+	_elevation_zones.clear()
+	for zone in zones:
+		if zone is Dictionary:
+			_elevation_zones.append(zone)
+
+
+func _surface_y_at(z: float) -> float:
+	if _elevation_zones.is_empty():
+		return 0.0
+	for zone in _elevation_zones:
+		var z0: float = float(zone.get("z0", 0.0))
+		var z1: float = float(zone.get("z1", z0))
+		if z < z0 or z > z1:
+			continue
+		if bool(zone.get("is_ramp", false)):
+			var start_y: float = float(zone.get("start_y", 0.0))
+			var end_y: float = float(zone.get("end_y", start_y))
+			var t: float = 0.0 if z1 <= z0 else (z - z0) / (z1 - z0)
+			return lerpf(start_y, end_y, t)
+		return float(zone.get("y", 0.0))
+	return 0.0
 
 
 func build_environment() -> void:
@@ -212,12 +237,24 @@ func build_markers(
 	finish_gate_z: float
 ) -> void:
 	var gate_half: float = max(visual_width * 0.5 - 1.0, 6.0)
-	_add_marker_box("SpawnZone", Vector3(visual_width, 0.06, 8.0), Vector3(0.0, 0.12, spawn_z), MAT_SPAWN)
-	_add_marker_box("GoalGuide", Vector3(visual_width, 0.06, 8.0), Vector3(0.0, 0.13, goal_z), MAT_GOAL)
-	_add_marker_box("StartLine", Vector3(visual_width, 0.07, 0.45), Vector3(0.0, 0.12, start_gate_z), MAT_SPAWN)
-	_add_marker_box("FinishLine", Vector3(visual_width, 0.07, 0.45), Vector3(0.0, 0.12, finish_gate_z), MAT_GOAL)
-	_add_gate(Vector3(-gate_half, 1.6, start_gate_z), Vector3(gate_half, 1.6, start_gate_z), MAT_SPAWN)
-	_add_gate(Vector3(-gate_half, 1.6, finish_gate_z), Vector3(gate_half, 1.6, finish_gate_z), MAT_GOAL)
+	var spawn_y: float = _surface_y_at(spawn_z)
+	var goal_y: float = _surface_y_at(goal_z)
+	var start_y: float = _surface_y_at(start_gate_z)
+	var finish_y: float = _surface_y_at(finish_gate_z)
+	_add_marker_box("SpawnZone", Vector3(visual_width, 0.06, 8.0), Vector3(0.0, spawn_y + 0.12, spawn_z), MAT_SPAWN)
+	_add_marker_box("GoalGuide", Vector3(visual_width, 0.06, 8.0), Vector3(0.0, goal_y + 0.13, goal_z), MAT_GOAL)
+	_add_marker_box("StartLine", Vector3(visual_width, 0.07, 0.45), Vector3(0.0, start_y + 0.12, start_gate_z), MAT_SPAWN)
+	_add_marker_box("FinishLine", Vector3(visual_width, 0.07, 0.45), Vector3(0.0, finish_y + 0.12, finish_gate_z), MAT_GOAL)
+	_add_gate(
+		Vector3(-gate_half, start_y + 1.6, start_gate_z),
+		Vector3(gate_half, start_y + 1.6, start_gate_z),
+		MAT_SPAWN
+	)
+	_add_gate(
+		Vector3(-gate_half, finish_y + 1.6, finish_gate_z),
+		Vector3(gate_half, finish_y + 1.6, finish_gate_z),
+		MAT_GOAL
+	)
 
 
 func _compose_long_road(segments: Array[Dictionary], gaps: Array[Dictionary]) -> void:
@@ -570,7 +607,7 @@ func _hashf(a: int, b: int = 0) -> float:
 
 
 func _place_street_tile(x: float, y: float, z: float, variant: StreetVariant) -> void:
-	_place_prop(_scene_for_variant(variant), Vector3(x, y, z), 1.0, 0.0)
+	_place_prop(_scene_for_variant(variant), Vector3(x, y + _surface_y_at(z), z), 1.0, 0.0)
 
 
 func _scene_for_variant(variant: StreetVariant) -> PackedScene:
@@ -584,20 +621,52 @@ func _scene_for_variant(variant: StreetVariant) -> PackedScene:
 
 
 func _place_plastic_barrier(z: float, x: float) -> void:
-	_place_prop(SCENE_PLASTIC_BARRIER, Vector3(x, 0.0, z), 1.4, 90.0 if x < 0.0 else -90.0)
+	var y: float = _surface_y_at(z)
+	_place_prop(SCENE_PLASTIC_BARRIER, Vector3(x, y, z), 1.4, 90.0 if x < 0.0 else -90.0)
 
 
 func _place_traffic_barrier(z: float, x: float, flip: bool) -> void:
+	var y: float = _surface_y_at(z)
 	var scene: PackedScene = SCENE_TRAFFIC_BARRIER_1 if _hashf(int(z), 67) > 0.5 else SCENE_TRAFFIC_BARRIER_2
-	_place_prop(scene, Vector3(x, 0.0, z), 1.3, 90.0 if flip else -90.0)
+	_place_prop(scene, Vector3(x, y, z), 1.3, 90.0 if flip else -90.0)
 
 
 func _place_cone(z: float, x: float) -> void:
-	_place_prop(SCENE_TRAFFIC_CONE_1, Vector3(x, 0.0, z), 1.15, _hashf(int(z + x), 73) * 40.0)
+	var y: float = _surface_y_at(z)
+	_place_prop(SCENE_TRAFFIC_CONE_1, Vector3(x, y, z), 1.15, _hashf(int(z + x), 73) * 40.0)
 
 
 func _place_street_light(z: float, x: float, yaw_degrees: float) -> void:
-	_place_prop(SCENE_STREET_LIGHT, Vector3(x, 0.0, z), 1.3, yaw_degrees)
+	var y: float = _surface_y_at(z)
+	_place_prop(SCENE_STREET_LIGHT, Vector3(x, y, z), 1.3, yaw_degrees)
+
+
+func build_ramp_visuals(ramp_specs: Array, road_width: float) -> void:
+	for raw_spec in ramp_specs:
+		if raw_spec is not Dictionary:
+			continue
+		var spec: Dictionary = raw_spec
+		var z0: float = float(spec.get("z0", 0.0))
+		var z1: float = float(spec.get("z1", z0))
+		if z1 <= z0:
+			continue
+		var length: float = z1 - z0
+		var center_z: float = (z0 + z1) * 0.5
+		var start_y: float = float(spec.get("start_y", 0.0))
+		var height_delta: float = float(spec.get("height_delta", 0.0))
+		var slope_angle: float = atan2(height_delta, length)
+		var ramp_span: float = sqrt(length * length + height_delta * height_delta)
+		var center_y: float = start_y + height_delta * 0.5
+
+		var ramp_mesh := MeshInstance3D.new()
+		ramp_mesh.name = "RampVisual"
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(road_width, 0.14, maxf(ramp_span, 0.5))
+		ramp_mesh.mesh = mesh
+		ramp_mesh.material_override = MAT_CONCRETE
+		ramp_mesh.position = Vector3(0.0, center_y, center_z)
+		ramp_mesh.rotation.x = -slope_angle
+		_visual_root.add_child(ramp_mesh)
 
 
 func _place_prop(scene: PackedScene, position: Vector3, scale_value: float, yaw_degrees: float) -> void:
