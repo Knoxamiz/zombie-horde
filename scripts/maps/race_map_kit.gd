@@ -50,6 +50,8 @@ const SCENE_CONTAINER_GREEN := preload(
 const MAT_SPAWN := preload("res://assets/materials/spawn_zone.tres")
 const MAT_GOAL := preload("res://assets/materials/goal_zone.tres")
 const MAT_CONCRETE := preload("res://assets/materials/base_concrete.tres")
+const MAT_ARENA_GROUND := preload("res://assets/materials/arena_ground.tres")
+const SURFACE_BUILDER := preload("res://scripts/maps/kit_map_surface_builder.gd")
 
 var _root: Node3D
 var _collision_root: Node3D
@@ -104,6 +106,163 @@ func build_environment() -> void:
 	_add_omni("FinishPoolLight", Vector3(0.0, 5.2, 76.0), Color(1.0, 0.32, 0.12, 1.0), 2.0, 36.0)
 	_add_omni("RoadAmberLightA", Vector3(-14.0, 4.4, -20.0), Color(1.0, 0.64, 0.18, 1.0), 1.45, 24.0)
 	_add_omni("RoadAmberLightB", Vector3(14.0, 4.4, 36.0), Color(1.0, 0.64, 0.18, 1.0), 1.35, 24.0)
+
+
+func build_route_context(
+	spawn_z: float,
+	goal_z: float,
+	path_half_width: float,
+	segments: Array[Dictionary],
+	gaps: Array[Dictionary],
+	void_width: float,
+	track_length: float,
+	surface_pieces: Array = []
+) -> void:
+	var edge_x: float = 5.4 if _style == MapStyle.BROKEN_BRIDGE else 10.5
+	var barrier_spacing: float = 5.0 if _style == MapStyle.BROKEN_BRIDGE else 6.5
+	var lowest_y: float = _lowest_surface_y(surface_pieces)
+	var bed_y: float = minf(lowest_y - 1.35, -1.2)
+
+	build_ground_bed(void_width, track_length, bed_y)
+	build_route_shoulders(spawn_z, goal_z, path_half_width, 3.2, bed_y + 0.08)
+	build_continuous_guardrails(spawn_z, goal_z, edge_x, barrier_spacing)
+	build_gap_guardrails(gaps, edge_x)
+	if not gaps.is_empty():
+		build_gap_support_piers(gaps, path_half_width, bed_y, surface_pieces)
+	if not surface_pieces.is_empty():
+		build_elevated_deck_supports(surface_pieces, path_half_width * 2.0, bed_y)
+
+
+func build_ground_bed(width: float, length: float, y: float = -1.35) -> void:
+	var bed := MeshInstance3D.new()
+	bed.name = "GroundBed"
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(width + 20.0, 0.22, length + 24.0)
+	bed.mesh = mesh
+	bed.position = Vector3(0.0, y, 0.0)
+	bed.material_override = MAT_ARENA_GROUND
+	_root.add_child(bed)
+
+
+func build_route_shoulders(
+	z_start: float,
+	z_end: float,
+	road_half_width: float,
+	shoulder_width: float,
+	shoulder_y: float
+) -> void:
+	var strip_length: float = 6.0
+	var z: float = z_start
+	while z < z_end:
+		var center_z: float = min(z + strip_length * 0.5, z_end - strip_length * 0.5)
+		var surface_y: float = _surface_y_at(center_z)
+		var y: float = max(shoulder_y, surface_y - 0.18)
+		for side in [-1.0, 1.0]:
+			var shoulder := MeshInstance3D.new()
+			shoulder.name = "RouteShoulder"
+			var mesh := BoxMesh.new()
+			mesh.size = Vector3(shoulder_width, 0.1, strip_length)
+			shoulder.mesh = mesh
+			shoulder.material_override = MAT_ARENA_GROUND
+			var x: float = side * (road_half_width + shoulder_width * 0.5 + 0.35)
+			shoulder.position = Vector3(x, y, center_z)
+			_visual_root.add_child(shoulder)
+		z += strip_length
+
+
+func build_continuous_guardrails(
+	z_start: float,
+	z_end: float,
+	edge_x: float,
+	spacing: float
+) -> void:
+	var z: float = z_start + 2.0
+	while z < z_end - 1.5:
+		_place_traffic_barrier(z, -edge_x, false)
+		_place_traffic_barrier(z + spacing * 0.45, edge_x, true)
+		if _hashf(int(z * 10.0), 57) > 0.55:
+			_place_plastic_barrier(z + 1.2, -edge_x - 0.55)
+		z += spacing + _hashf(int(z), 3) * 1.5
+
+
+func build_gap_guardrails(gaps: Array[Dictionary], edge_x: float) -> void:
+	for gap in gaps:
+		var z0: float = float(gap["z0"])
+		var z1: float = float(gap["z1"])
+		var gap_center: float = (z0 + z1) * 0.5
+		for edge_z in [z0 + 0.35, z1 - 0.35]:
+			_place_traffic_barrier(edge_z, -edge_x, false)
+			_place_traffic_barrier(edge_z, edge_x, true)
+			_place_cone(edge_z, -edge_x * 0.42)
+			_place_cone(edge_z, edge_x * 0.42)
+		_place_plastic_barrier(gap_center, -edge_x - 0.4)
+		_place_plastic_barrier(gap_center, edge_x + 0.4)
+
+
+func build_gap_support_piers(
+	gaps: Array[Dictionary],
+	path_half_width: float,
+	bed_y: float,
+	surface_pieces: Array
+) -> void:
+	for gap_index in range(gaps.size()):
+		var gap: Dictionary = gaps[gap_index]
+		var z0: float = float(gap["z0"])
+		var z1: float = float(gap["z1"])
+		var gap_center: float = (z0 + z1) * 0.5
+		var deck_y: float = _surface_y_at(gap_center)
+		if surface_pieces.size() > 0:
+			deck_y = SURFACE_BUILDER.get_top_y_at_z(surface_pieces, gap_center, deck_y)
+		var pier_height: float = maxf(deck_y - bed_y - 0.35, 0.8)
+		var pier_center_y: float = bed_y + pier_height * 0.5
+		for pier_z in [z0 + 0.5, gap_center, z1 - 0.5]:
+			for side in [-1.0, 1.0]:
+				var pier := MeshInstance3D.new()
+				pier.name = "GapPier"
+				var mesh := BoxMesh.new()
+				mesh.size = Vector3(0.85, pier_height, 0.85)
+				pier.mesh = mesh
+				pier.material_override = MAT_CONCRETE
+				pier.position = Vector3(side * (path_half_width + 0.9), pier_center_y, pier_z)
+				_visual_root.add_child(pier)
+
+
+func build_elevated_deck_supports(
+	surface_pieces: Array,
+	road_width: float,
+	bed_y: float
+) -> void:
+	for raw_spec in surface_pieces:
+		if raw_spec is not Dictionary:
+			continue
+		var spec: Dictionary = raw_spec
+		if str(spec.get("shape", "deck")) != "deck":
+			continue
+		var top_y: float = float(spec.get("top_y", 0.0))
+		if top_y < 0.25:
+			continue
+		var z0: float = float(spec.get("z0", 0.0))
+		var z1: float = float(spec.get("z1", z0))
+		var center_z: float = (z0 + z1) * 0.5
+		var length: float = z1 - z0
+		var strut_height: float = maxf(top_y - bed_y - 0.2, 0.6)
+		var strut_y: float = bed_y + strut_height * 0.5
+		var edge_x: float = road_width * 0.5 + 0.55
+		for side in [-1.0, 1.0]:
+			var strut := MeshInstance3D.new()
+			strut.name = "DeckSupport"
+			var mesh := BoxMesh.new()
+			mesh.size = Vector3(0.55, strut_height, minf(length * 0.85, 18.0))
+			strut.mesh = mesh
+			strut.material_override = MAT_CONCRETE
+			strut.position = Vector3(side * edge_x, strut_y, center_z)
+			_visual_root.add_child(strut)
+
+
+func _lowest_surface_y(surface_pieces: Array) -> float:
+	if surface_pieces.is_empty():
+		return 0.0
+	return SURFACE_BUILDER.get_lowest_top_y(surface_pieces, 0.0)
 
 
 func build_water(width: float, length: float, y: float = -6.0) -> void:
@@ -274,7 +433,6 @@ func _compose_long_road(segments: Array[Dictionary], gaps: Array[Dictionary]) ->
 		_place_sparse_shoulders(float(segment["z0"]), float(segment["z1"]), 11.5, 0.22)
 
 	_compose_gap_visuals(gaps, edge_x, false)
-	_place_edge_guides(segments, edge_x, 7.5, 0.35)
 	_place_street_lights_authored(-72.0, 72.0, light_x, 28.0, 5.0)
 	_place_scattered_props(
 		[
@@ -315,10 +473,8 @@ func _compose_broken_bridge(segments: Array[Dictionary], gaps: Array[Dictionary]
 
 	_compose_bridge_gap_visuals(gaps)
 	_place_bridge_lane_guides(segments, gaps)
-	_place_bridge_edge_rails(segments, edge_x)
 	_place_street_lights_authored(-70.0, 70.0, light_x, 24.0, 6.0)
 	_place_bridge_void_props(damage_clusters)
-	_place_deck_supports(segments, edge_x)
 
 
 func _place_bridge_side_shreds(

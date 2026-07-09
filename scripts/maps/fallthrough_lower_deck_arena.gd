@@ -23,6 +23,7 @@ const MAT_ROAD := preload("res://assets/materials/road_asphalt.tres")
 const MAT_SPAWN := preload("res://assets/materials/spawn_zone.tres")
 const MAT_GOAL := preload("res://assets/materials/goal_zone.tres")
 const MAT_CONCRETE := preload("res://assets/materials/base_concrete.tres")
+const MAT_ARENA_GROUND := preload("res://assets/materials/arena_ground.tres")
 
 var _map_root: Node3D
 
@@ -63,6 +64,7 @@ func _build_map_root() -> Node3D:
 	var goal_zone := _make_child("GoalZone", gameplay_layer)
 
 	_build_environment(map_root)
+	_build_ground_context(visual_layer)
 	_build_upper_track_visuals(visual_layer)
 	_build_lower_track_visuals(visual_layer)
 	_build_labels(visual_layer)
@@ -84,6 +86,56 @@ func _build_environment(root: Node3D) -> void:
 	_add_omni(root, "HoleLight", Vector3(0.0, 4.8, 28.0), Color(1.0, 0.72, 0.2, 1.0), 1.8, 20.0)
 	_add_omni(root, "LowerDeckLight", Vector3(0.0, 3.6, 38.0), Color(0.35, 1.0, 0.55, 1.0), 2.0, 22.0)
 	_add_omni(root, "FinishPoolLight", Vector3(0.0, 4.2, GOAL_Z), Color(1.0, 0.32, 0.12, 1.0), 1.8, 24.0)
+
+
+func _build_ground_context(parent: Node3D) -> void:
+	var context := _make_child("GroundContext", parent)
+	_add_road_slab(
+		context,
+		"ArenaGroundBed",
+		Vector3(42.0, 0.22, 64.0),
+		Vector3(0.0, -2.35, 20.0),
+		MAT_ARENA_GROUND
+	)
+	_add_road_slab(
+		context,
+		"LowerGroundShoulder",
+		Vector3(ROUTE_WIDTH + 8.0, 0.12, 20.0),
+		Vector3(0.0, LOWER_DECK_Y - 0.22, 40.0),
+		MAT_ARENA_GROUND
+	)
+	_add_pit_walls(context)
+
+
+func _add_pit_walls(parent: Node3D) -> void:
+	var pit := _make_child("PitWalls", parent)
+	var wall_height: float = DECK_Y - LOWER_DECK_Y + 0.4
+	var wall_y: float = LOWER_DECK_Y + wall_height * 0.5
+	var pit_half_width: float = ROUTE_WIDTH * 0.2
+	var pit_half_depth: float = 3.6
+	for side_sign in [-1.0, 1.0]:
+		_add_road_slab(
+			pit,
+			"PitSideWall",
+			Vector3(0.28, wall_height, pit_half_depth * 2.0),
+			Vector3(side_sign * pit_half_width, wall_y, 28.0),
+			MAT_CONCRETE
+		)
+	_add_road_slab(
+		pit,
+		"PitEndWall",
+		Vector3(pit_half_width * 2.0, wall_height, 0.28),
+		Vector3(0.0, wall_y, 28.0 - pit_half_depth),
+		MAT_CONCRETE
+	)
+	_add_road_slab(
+		pit,
+		"PitFloor",
+		Vector3(pit_half_width * 2.0 + 0.4, 0.08, pit_half_depth * 2.0 + 0.4),
+		Vector3(0.0, LOWER_DECK_Y - 0.12, 28.0),
+		null,
+		Color(0.05, 0.07, 0.1, 1.0)
+	)
 
 
 func _build_upper_track_visuals(parent: Node3D) -> void:
@@ -127,16 +179,7 @@ func _build_upper_track_visuals(parent: Node3D) -> void:
 
 	_add_edge_rails(track, 24.0, 32.0, DECK_Y + 0.08)
 	_add_center_lane_line(track, 0.0, 24.0, DECK_Y + 0.09)
-
-	var pit := _make_child("CenterPitVisual", track)
-	_add_road_slab(
-		pit,
-		"PitFloor",
-		Vector3(ROUTE_WIDTH * 0.34, 0.04, 7.2),
-		Vector3(0.0, LOWER_DECK_Y - 0.08, 28.0),
-		null,
-		Color(0.03, 0.05, 0.08, 1.0)
-	)
+	_add_shoulder_strips(track, 0.0, 24.0, DECK_Y - 0.1)
 
 
 func _build_lower_track_visuals(parent: Node3D) -> void:
@@ -154,6 +197,7 @@ func _build_lower_track_visuals(parent: Node3D) -> void:
 	)
 	_add_edge_rails(track, 32.0, 48.0, LOWER_DECK_Y + 0.08)
 	_add_center_lane_line(track, 32.0, 48.0, LOWER_DECK_Y + 0.09)
+	_add_shoulder_strips(track, 32.0, 48.0, LOWER_DECK_Y - 0.1)
 
 
 func _build_labels(parent: Node3D) -> void:
@@ -262,6 +306,19 @@ func _add_road_slab(
 		mat.roughness = 0.82
 		slab.material_override = mat
 	parent.add_child(slab)
+
+
+func _add_shoulder_strips(parent: Node3D, z_start: float, z_end: float, y: float) -> void:
+	var length: float = z_end - z_start
+	var center_z: float = (z_start + z_end) * 0.5
+	for side_sign in [-1.0, 1.0]:
+		_add_road_slab(
+			parent,
+			"ShoulderStrip",
+			Vector3(2.4, 0.1, length),
+			Vector3(side_sign * (ROUTE_HALF + 1.6), y, center_z),
+			MAT_ARENA_GROUND
+		)
 
 
 func _add_edge_rails(parent: Node3D, z_start: float, z_end: float, y: float) -> void:
