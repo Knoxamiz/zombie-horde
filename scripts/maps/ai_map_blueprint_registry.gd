@@ -10,6 +10,9 @@ const Phase2DropGapProbeBlueprint := preload(
 const SignatureDropBridgeBlueprint := preload(
 	"res://scripts/maps/blueprints/signature_drop_bridge.gd"
 )
+const Phase3MovingHazardProbeBlueprint := preload(
+	"res://scripts/maps/blueprints/phase3_moving_hazard_probe.gd"
+)
 
 const PROTOTYPE_ENTRIES: Array[Dictionary] = [
 	{
@@ -29,6 +32,12 @@ const PROTOTYPE_ENTRIES: Array[Dictionary] = [
 		"generated_map_id": "ai_generated_signature_drop_bridge",
 		"scene_path": "res://scenes/maps/ai_generated_signature_drop_bridge.tscn",
 		"definition_path": "res://resources/maps/ai_generated_signature_drop_bridge.tres",
+	},
+	{
+		"blueprint_id": "phase3_moving_hazard_probe",
+		"generated_map_id": "ai_generated_phase3_moving_hazard_probe",
+		"scene_path": "res://scenes/maps/ai_generated_phase3_moving_hazard_probe.tscn",
+		"definition_path": "res://resources/maps/ai_generated_phase3_moving_hazard_probe.tres",
 	},
 ]
 
@@ -76,6 +85,8 @@ static func resolve_blueprint(blueprint_id: String):
 			return Phase2DropGapProbeBlueprint.create()
 		"signature_drop_bridge":
 			return SignatureDropBridgeBlueprint.create()
+		"phase3_moving_hazard_probe":
+			return Phase3MovingHazardProbeBlueprint.create()
 		_:
 			return null
 

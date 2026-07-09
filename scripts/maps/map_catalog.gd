@@ -116,6 +116,17 @@ const ENTRIES: Array[Dictionary] = [
 		"ai_generated": true,
 		"ai_blueprint_id": "signature_drop_bridge",
 	},
+	{
+		"id": "ai_generated_phase3_moving_hazard_probe",
+		"display_name": "AI Phase 3 Moving Hazard PROBE",
+		"resource_path": "res://resources/maps/ai_generated_phase3_moving_hazard_probe.tres",
+		"scene_path": "res://scenes/maps/ai_generated_phase3_moving_hazard_probe.tscn",
+		"enabled": false,
+		"status": STATUS_PROTOTYPE,
+		"legacy_index": 11,
+		"ai_generated": true,
+		"ai_blueprint_id": "phase3_moving_hazard_probe",
+	},
 ]
 
 

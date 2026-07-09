@@ -1,0 +1,30 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/maps/obstacles/map_moving_obstacle.gd" id="1_script"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_visual"]
+size = Vector3(3.5, 0.35, 0.35)
+
+[sub_resource type="StandardMaterial3D" id="Mat_visual"]
+albedo_color = Color(0.85, 0.2, 0.2, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape_collision"]
+size = Vector3(3.5, 0.35, 0.35)
+
+[node name="RotatingArm" type="AnimatableBody3D"]
+script = ExtResource("1_script")
+movement_type = "rotation"
+movement_axis = "y"
+movement_distance = 3.5
+cycle_time = 5.0
+hazard_behavior = "block"
+obstacle_display_name = "Rotating Arm"
+
+[node name="Visual" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+mesh = SubResource("BoxMesh_visual")
+material_override = SubResource("Mat_visual")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("BoxShape_collision")

@@ -84,6 +84,10 @@ static func validate_generated_scene(
 	_validate_no_scene_cameras(root, result)
 	_validate_no_obstacle_finish_hijack(root, result)
 
+	var obstacles_bucket: Node = root.get_node_or_null("GameplayLayer/MovingObstacles")
+	if obstacles_bucket != null:
+		_validate_moving_obstacle_scene_contract(obstacles_bucket, result)
+
 	if definition != null:
 		_validate_definition_values(definition, blueprint, result)
 		_validate_route_layout_alignment(blueprint, result, definition)
@@ -623,6 +627,7 @@ static func _validate_phase3_moving_obstacle_rules(blueprint, result: Dictionary
 	_validate_moving_obstacle_cycle_times(blueprint, result)
 	_validate_moving_obstacle_movement_bounds(blueprint, result)
 	_validate_moving_platform_recovery(blueprint, result)
+	_validate_drop_and_play_obstacle_assets(blueprint, result)
 
 
 static func _validate_moving_obstacle_spawn_finish_placement(blueprint, result: Dictionary) -> void:
@@ -630,16 +635,12 @@ static func _validate_moving_obstacle_spawn_finish_placement(blueprint, result: 
 		return
 	var first_id: String = str(blueprint.segment_sequence[0])
 	var last_id: String = str(blueprint.segment_sequence.back())
-	var blocked_types: Array[String] = [
-		MapSegmentDefinitionScript.TYPE_CRUSHER_CORRIDOR,
-		MapSegmentDefinitionScript.TYPE_SIDE_PUSHER_LANE,
-	]
 	for segment_id in [first_id, last_id]:
 		var segment_type: String = str(MapSegmentDefinitionScript.get_segment(segment_id).get("type", ""))
-		if segment_type in blocked_types:
+		if MapSegmentDefinitionScript.is_moving_obstacle_segment_type(segment_type):
 			_add_error(
 				result,
-				"Crusher/pusher segment '%s' cannot be used as spawn or finish segment." % segment_id
+				"Moving obstacle segment '%s' cannot be used as spawn or finish segment." % segment_id
 			)
 
 
@@ -743,6 +744,65 @@ static func _validate_moving_platform_recovery(blueprint, result: Dictionary) ->
 				"Moving platform gap '%s' must be followed by hazard_recovery_straight or safe straight (not finish)."
 				% segment_id
 			)
+
+
+static func _validate_drop_and_play_obstacle_assets(blueprint, result: Dictionary) -> void:
+	if not blueprint.has_moving_obstacle_segments():
+		return
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		if not MapSegmentDefinitionScript.is_moving_obstacle_segment_type(str(segment.get("type", ""))):
+			continue
+		for asset_id_value in segment.get("required_assets", []):
+			var asset_id: String = str(asset_id_value)
+			if not MapAssetLibraryScript.is_moving_obstacle_asset(asset_id):
+				continue
+			var asset: Dictionary = MapAssetLibraryScript.get_asset(asset_id)
+			if asset.is_empty():
+				_add_error(result, "Moving obstacle asset '%s' is missing from MapAssetLibrary." % asset_id)
+				continue
+			var scene_path: String = str(asset.get("scene_path", ""))
+			if MapAssetLibraryScript.is_drop_and_play_obstacle_asset(asset_id):
+				if scene_path.is_empty() or not scene_path.ends_with(".tscn"):
+					_add_error(
+						result,
+						"Drop-and-play obstacle '%s' must define a .tscn scene_path." % asset_id
+					)
+				elif not ResourceLoader.exists(scene_path):
+					_add_error(
+						result,
+						"Drop-and-play obstacle scene missing for '%s' at %s." % [asset_id, scene_path]
+					)
+			var cycle_time: float = blueprint.get_effective_cycle_time(segment)
+			if cycle_time <= 0.0:
+				_add_error(
+					result,
+					"Moving obstacle segment '%s' cycle_time must be > 0." % segment_id
+				)
+			if str(asset.get("hazard_behavior", "")) == "kill":
+				_add_error(
+					result,
+					"Moving obstacle '%s' direct kill hazard_behavior is banned; use block/push/timing/prototype."
+					% asset_id
+				)
+
+
+static func _validate_moving_obstacle_scene_contract(obstacles_bucket: Node, result: Dictionary) -> void:
+	for child in obstacles_bucket.get_children():
+		_validate_single_moving_obstacle_node(child, result)
+
+
+static func _validate_single_moving_obstacle_node(node: Node, result: Dictionary) -> void:
+	if node is Camera3D:
+		_add_error(result, "Moving obstacle must not include Camera3D: %s" % node.get_path())
+	if node is Area3D and node.name == "GoalCatch":
+		_add_error(result, "Moving obstacle must not include GoalCatch: %s" % node.get_path())
+	if node.get_script() != null:
+		var script_path: String = str(node.get_script().resource_path)
+		if script_path == VOID_KILL_SCRIPT_PATH:
+			_add_error(result, "Moving obstacle must not use bridge_void_kill_zone: %s" % node.get_path())
+	for child in node.get_children():
+		_validate_single_moving_obstacle_node(child, result)
 
 
 static func _get_segment_max_movement_distance(segment: Dictionary) -> float:

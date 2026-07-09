@@ -81,6 +81,14 @@ const PHASE3_ASSET_IDS: Array[String] = [
 	"phase3_safe_lane_marker",
 ]
 
+const DROP_AND_PLAY_OBSTACLE_ASSET_IDS: Array[String] = [
+	"dp_moving_block_side_to_side",
+	"dp_side_pusher_wall",
+	"dp_timed_gate",
+	"dp_crusher_block",
+	"dp_rotating_arm",
+]
+
 const PHASE2_ASSET_IDS: Array[String] = [
 	"phase2_gap_edge_left",
 	"phase2_gap_edge_right",
@@ -189,6 +197,14 @@ static func get_phase3_asset_ids() -> Array[String]:
 	return PHASE3_ASSET_IDS.duplicate()
 
 
+static func get_drop_and_play_obstacle_asset_ids() -> Array[String]:
+	return DROP_AND_PLAY_OBSTACLE_ASSET_IDS.duplicate()
+
+
+static func is_drop_and_play_obstacle_asset(asset_id: String) -> bool:
+	return asset_id in DROP_AND_PLAY_OBSTACLE_ASSET_IDS
+
+
 static func is_phase3_asset(asset_id: String) -> bool:
 	return asset_id in PHASE3_ASSET_IDS
 
@@ -230,6 +246,22 @@ static func instantiate_moving_obstacle(asset_id: String, cycle_override: float 
 	if entry.is_empty():
 		push_warning("MapAssetLibrary: missing moving asset_id=%s" % asset_id)
 		return null
+
+	var scene_path: String = str(entry.get("scene_path", ""))
+	if scene_path.ends_with(".tscn") and ResourceLoader.exists(scene_path):
+		var packed: PackedScene = load(scene_path) as PackedScene
+		if packed != null:
+			var scene_instance: Node = packed.instantiate()
+			if scene_instance.has_method("configure_from_asset"):
+				scene_instance.configure_from_asset(entry, cycle_override)
+				return scene_instance as Node3D
+			if scene_instance != null:
+				scene_instance.queue_free()
+			push_warning(
+				"MapAssetLibrary: obstacle scene '%s' must root MapMovingObstacle (asset=%s)"
+				% [scene_path, asset_id]
+			)
+
 	var obstacle = MapMovingObstacleScript.new()
 	obstacle.configure_from_asset(entry, cycle_override)
 	var visual: Node3D = instantiate_visual(asset_id)
@@ -798,12 +830,13 @@ static func _build_assets() -> Array[Dictionary]:
 		# --- Phase 3 moving obstacle asset pack ---
 		_moving_entry(
 			"phase3_moving_block_crate", "P3 Moving Block Crate", "moving_obstacle", Category.MOVING_OBSTACLE,
-			"%s/Container_Red.gltf" % KIT_ENV,
+			"res://scenes/maps/obstacles/moving_block_side_to_side.tscn",
 			3.0, 2.4, 2.6, Vector3(0, 0, -1.5), Vector3(0, 0, 1.5), 0.0,
 			true, false,
 			"ping_pong", "x", 2.8, 4.0, 0.0,
 			"kinematic_block", "block",
-			"Lane-moving crate; leaves center safe lane open."
+			"Lane-moving crate; leaves center safe lane open.",
+			true, true
 		),
 		_moving_entry(
 			"phase3_moving_block_wide", "P3 Moving Block Wide", "moving_obstacle", Category.MOVING_OBSTACLE,
@@ -816,12 +849,13 @@ static func _build_assets() -> Array[Dictionary]:
 		),
 		_moving_entry(
 			"phase3_side_pusher", "P3 Side Pusher", "pusher", Category.MOVING_OBSTACLE,
-			"%s/PlasticBarrier.gltf" % KIT_ENV,
+			"res://scenes/maps/obstacles/side_pusher_wall.tscn",
 			2.0, 0.6, 1.2, Vector3(0, 0, -1), Vector3(0, 0, 1), 0.0,
 			true, false,
 			"ping_pong", "x", 2.0, 3.5, 0.0,
 			"kinematic_push", "push",
-			"Side lane pusher; physics push only, no direct kill."
+			"Side lane pusher; physics push only, no direct kill.",
+			true, true
 		),
 		_moving_entry(
 			"phase3_pusher_plate", "P3 Pusher Plate", "pusher", Category.MOVING_OBSTACLE,
@@ -834,12 +868,13 @@ static func _build_assets() -> Array[Dictionary]:
 		),
 		_moving_entry(
 			"phase3_crusher_plate", "P3 Crusher Plate", "crusher", Category.MOVING_OBSTACLE,
-			"",
+			"res://scenes/maps/obstacles/crusher_block.tscn",
 			3.0, 3.0, 0.5, Vector3.ZERO, Vector3.ZERO, 1.2,
 			true, false,
 			"ping_pong", "y", 1.0, 4.5, 0.0,
-			"kinematic_crush", "crush",
-			"Overhead crusher plate; blocks lane briefly, no authoritative kill."
+			"kinematic_crush", "prototype",
+			"Overhead crusher plate; blocks lane briefly, no authoritative kill.",
+			true, true
 		),
 		_moving_entry(
 			"phase3_crusher_frame", "P3 Crusher Frame", "crusher", Category.DECORATION,
@@ -852,12 +887,13 @@ static func _build_assets() -> Array[Dictionary]:
 		),
 		_moving_entry(
 			"phase3_rotating_arm", "P3 Rotating Arm", "rotating_arm", Category.MOVING_OBSTACLE,
-			"%s/Pipes.gltf" % KIT_ENV,
+			"res://scenes/maps/obstacles/rotating_arm.tscn",
 			4.0, 0.5, 0.5, Vector3.ZERO, Vector3.ZERO, 1.2,
 			true, false,
 			"rotation", "y", 3.5, 5.0, 0.0,
 			"kinematic_sweep", "block",
-			"Rotating sweep arm over bridge segment."
+			"Rotating sweep arm over bridge segment.",
+			true, true
 		),
 		_moving_entry(
 			"phase3_sliding_wall", "P3 Sliding Wall", "sliding_wall", Category.MOVING_OBSTACLE,
@@ -870,12 +906,13 @@ static func _build_assets() -> Array[Dictionary]:
 		),
 		_moving_entry(
 			"phase3_timed_gate", "P3 Timed Gate", "timed_gate", Category.MOVING_OBSTACLE,
-			"%s/TrafficBarrier_1.gltf" % KIT_ENV,
+			"res://scenes/maps/obstacles/timed_gate.tscn",
 			2.5, 0.4, 1.0, Vector3(0, 0, -1.25), Vector3(0, 0, 1.25), 0.0,
 			true, false,
-			"ping_pong", "x", 3.2, 6.0, 0.0,
-			"kinematic_gate", "gate",
-			"Timed gate that opens/closes lane; always leaves safe window."
+			"gate", "x", 3.2, 6.0, 0.0,
+			"kinematic_gate", "timing",
+			"Timed gate that opens/closes lane; always leaves safe window.",
+			true, true
 		),
 		_moving_entry(
 			"phase3_gate_barrier", "P3 Gate Barrier", "timed_gate", Category.BARRIER,
@@ -957,6 +994,58 @@ static func _build_assets() -> Array[Dictionary]:
 			"linear", "x", 0.0, 0.0, 0.0,
 			"visual_only", "none",
 			"Marks persistent safe lane through obstacle segment."
+		),
+		# --- Drop-and-Play Moving Hazard Kit v1 ---
+		_moving_entry(
+			"dp_moving_block_side_to_side", "DP Moving Block Side To Side", "moving_obstacle",
+			Category.MOVING_OBSTACLE,
+			"res://scenes/maps/obstacles/moving_block_side_to_side.tscn",
+			2.4, 2.2, 2.4, Vector3.ZERO, Vector3.ZERO, 0.0,
+			true, false,
+			"ping_pong", "x", 2.8, 4.0, 0.0,
+			"kinematic_block", "block",
+			"Drop-and-play side-to-side lane block; reset-safe prototype hazard.",
+			true, true
+		),
+		_moving_entry(
+			"dp_side_pusher_wall", "DP Side Pusher Wall", "pusher", Category.MOVING_OBSTACLE,
+			"res://scenes/maps/obstacles/side_pusher_wall.tscn",
+			2.0, 1.4, 0.5, Vector3.ZERO, Vector3.ZERO, 0.0,
+			true, false,
+			"ping_pong", "x", 2.0, 3.5, 0.0,
+			"kinematic_push", "push",
+			"Drop-and-play side pusher; push only, no direct kill.",
+			true, true
+		),
+		_moving_entry(
+			"dp_timed_gate", "DP Timed Gate", "timed_gate", Category.MOVING_OBSTACLE,
+			"res://scenes/maps/obstacles/timed_gate.tscn",
+			2.2, 0.35, 1.0, Vector3.ZERO, Vector3.ZERO, 0.0,
+			true, false,
+			"gate", "x", 3.0, 6.0, 0.0,
+			"kinematic_gate", "timing",
+			"Drop-and-play timed gate; never permanently blocks all lanes.",
+			true, true
+		),
+		_moving_entry(
+			"dp_crusher_block", "DP Crusher Block", "crusher", Category.MOVING_OBSTACLE,
+			"res://scenes/maps/obstacles/crusher_block.tscn",
+			2.8, 0.6, 2.8, Vector3.ZERO, Vector3.ZERO, 1.2,
+			true, false,
+			"ping_pong", "y", 1.0, 4.5, 0.0,
+			"kinematic_crush", "prototype",
+			"Drop-and-play crusher block; prototype-safe, no authoritative kill.",
+			true, true
+		),
+		_moving_entry(
+			"dp_rotating_arm", "DP Rotating Arm", "rotating_arm", Category.MOVING_OBSTACLE,
+			"res://scenes/maps/obstacles/rotating_arm.tscn",
+			3.5, 0.35, 0.35, Vector3.ZERO, Vector3.ZERO, 1.2,
+			true, false,
+			"rotation", "y", 3.5, 5.0, 0.0,
+			"kinematic_sweep", "block",
+			"Drop-and-play rotating arm; push/block only.",
+			true, true
 		),
 		# --- Phase 4 split/merge route asset pack ---
 		_route_entry(
@@ -1159,7 +1248,9 @@ static func _moving_entry(
 	phase_offset: float,
 	collision_expectation: String,
 	hazard_behavior: String,
-	notes: String
+	notes: String,
+	reset_safe: bool = false,
+	drop_and_play: bool = false
 ) -> Dictionary:
 	var entry: Dictionary = _entry(
 		asset_id,
@@ -1185,8 +1276,14 @@ static func _moving_entry(
 	entry["cycle_time"] = cycle_time
 	entry["phase_offset"] = phase_offset
 	entry["pause_at_ends_sec"] = 0.2
+	entry["pause_at_start_sec"] = -1.0
+	entry["pause_at_end_sec"] = -1.0
+	entry["gate_open_ratio"] = 0.65
 	entry["collision_expectation"] = collision_expectation
 	entry["hazard_behavior"] = hazard_behavior
+	entry["gameplay_collision"] = has_collision and not is_visual_only
+	entry["reset_safe"] = reset_safe
+	entry["drop_and_play"] = drop_and_play
 	return entry
 
 

@@ -1,0 +1,30 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/maps/obstacles/map_moving_obstacle.gd" id="1_script"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_visual"]
+size = Vector3(2.2, 0.35, 1.0)
+
+[sub_resource type="StandardMaterial3D" id="Mat_visual"]
+albedo_color = Color(0.2, 0.65, 0.95, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape_collision"]
+size = Vector3(2.2, 0.35, 1.0)
+
+[node name="TimedGate" type="AnimatableBody3D"]
+script = ExtResource("1_script")
+movement_type = "gate"
+movement_axis = "x"
+movement_distance = 3.0
+cycle_time = 6.0
+gate_open_ratio = 0.65
+hazard_behavior = "timing"
+obstacle_display_name = "Timed Gate"
+
+[node name="Visual" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_visual")
+material_override = SubResource("Mat_visual")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.175, 0)
+shape = SubResource("BoxShape_collision")
