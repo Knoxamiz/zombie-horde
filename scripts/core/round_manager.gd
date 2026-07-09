@@ -94,7 +94,7 @@ func start_round() -> void:
 
 	if pending_participants.size() < minimum_count:
 		GameEvents.command_text_changed.emit(
-			"Waiting for zombies. %s" % TwitchConfigResolver.get_join_command_text()
+			"Waiting for viewers. %s" % TwitchConfigResolver.get_join_command_text()
 		)
 		return
 
@@ -186,7 +186,7 @@ func _on_participant_join_requested(join_info: ParticipantJoinInfo) -> void:
 		_emit_post_round_recovery_hint()
 		return
 	if state != RoundState.IDLE:
-		GameEvents.command_text_changed.emit("Round in progress. Join opens after reset.")
+		GameEvents.command_text_changed.emit("Race in progress — joins reopen after reset.")
 		return
 
 	var max_pending: int = 128
@@ -376,12 +376,13 @@ func _emit_post_round_recovery_hint() -> void:
 	var auto_reset_seconds: float = _get_post_round_auto_reset_seconds()
 	if auto_reset_seconds > 0.0:
 		GameEvents.command_text_changed.emit(
-			"Race over — press R or Return Lobby to join again (auto-reset in %ds)."
+			"Race over! Return to Lobby or press R, then queue viewers for the next race "
+			+ "(auto-reset in %ds)."
 			% int(round(auto_reset_seconds))
 		)
 	else:
 		GameEvents.command_text_changed.emit(
-			"Race over — press R or Return Lobby to join again."
+			"Race over! Return to Lobby or press R, then queue viewers for the next race."
 		)
 
 func is_race_timed_out() -> bool:

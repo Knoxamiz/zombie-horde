@@ -63,6 +63,7 @@ var _standings_refresh_timer: float = 0.0
 var _queued_names: PackedStringArray = PackedStringArray()
 var _feed_lines: Array[String] = []
 var _last_stats: Dictionary = {}
+var _round_number: int = 0
 var _layout_profile
 var _layout_editor
 var _layout_edit_active: bool = false
@@ -126,6 +127,7 @@ func _ready() -> void:
 	GameEvents.participant_queue_changed.connect(_on_participant_queue_changed)
 	GameEvents.zombie_count_changed.connect(_on_zombie_count_changed)
 	GameEvents.zombie_died.connect(_on_zombie_died)
+	GameEvents.zombie_status_changed.connect(_on_zombie_status_changed)
 	GameEvents.leader_changed.connect(_on_leader_changed)
 	GameEvents.command_text_changed.connect(_on_command_text_changed)
 	GameEvents.chat_connection_status_changed.connect(_on_chat_connection_status_changed)
@@ -346,6 +348,7 @@ func _on_round_state_changed(state_text: String) -> void:
 	_refresh_world_leaders_board()
 
 func _on_round_started(round_number: int) -> void:
+	_round_number = round_number
 	_winner_text = "Winner: -"
 	_results_showing = false
 	_podium_showing = false
@@ -354,14 +357,17 @@ func _on_round_started(round_number: int) -> void:
 	if _results_overlay != null:
 		_results_overlay.hide_results()
 	_set_world_results_visible(false)
-	if _state_label != null:
-		_state_label.text = "Round %d: Running" % round_number
+	_record_feed(
+		"GO! Round %d is live — %d zombies racing."
+		% [round_number, max(_total_count, _living_count)]
+	)
 	_state_text = "Running"
 	_standings_refresh_timer = 0.0
 	_refresh_static_labels()
 	_refresh_world_leaders_board()
 
 func _on_round_reset() -> void:
+	_round_number = 0
 	_queued_count = 0
 	_queued_names = PackedStringArray()
 	_feed_lines.clear()
@@ -385,13 +391,18 @@ func _on_round_ended(winner_name: String, base_won: bool) -> void:
 	_last_base_won = base_won
 	if base_won:
 		_winner_text = "Winner: Streamer Base"
+		_record_feed("RACE OVER — Base holds! No zombie reached the streamer base.")
 	else:
 		_winner_text = "Winner: %s" % winner_name
+		_record_feed("RACE OVER — %s reached the streamer base!" % winner_name)
 	_show_result_panel(winner_name, base_won)
 	_refresh_static_labels()
 
-func _on_participant_registered(_join_info: ParticipantJoinInfo, queued_count: int) -> void:
+func _on_participant_registered(join_info: ParticipantJoinInfo, queued_count: int) -> void:
 	_queued_count = queued_count
+	var display_name: String = join_info.display_name.strip_edges() if join_info != null else ""
+	if not display_name.is_empty() and _state_text in ["Joining", "Countdown"]:
+		_record_feed("+ %s joined queue (%d waiting)" % [display_name, queued_count])
 	_refresh_static_labels()
 
 func _on_participant_queue_changed(display_names: PackedStringArray) -> void:
@@ -407,8 +418,22 @@ func _on_zombie_count_changed(living_count: int, total_count: int) -> void:
 	_refresh_world_leaders_board()
 
 func _on_zombie_died(zombie_node: Node, cause: String) -> void:
-	_record_feed("%s - %s" % [_get_zombie_display_name(zombie_node), _format_kill_cause(cause)])
+	_record_feed("%s — %s" % [_get_zombie_display_name(zombie_node), _format_kill_cause(cause)])
 	_refresh_world_leaders_board()
+
+
+func _on_zombie_status_changed(display_name: String, status: String) -> void:
+	if status.begins_with("Finished #"):
+		_record_feed("%s %s — reached the base!" % [display_name, status.to_upper()])
+		return
+	if status == "Winner":
+		_record_feed("%s WINS THE RACE!" % display_name)
+		return
+	if status == "Winner (time limit)":
+		_record_feed("%s wins on time!" % display_name)
+		return
+	if status == "DNF (time limit)":
+		_record_feed("%s did not finish in time" % display_name)
 
 func _on_leader_changed(leader_name: String, progress: float) -> void:
 	if leader_name.is_empty():
@@ -441,6 +466,8 @@ func _on_round_countdown_changed(seconds_remaining: int) -> void:
 	_countdown_panel.visible = seconds_remaining > 0
 	if seconds_remaining > 0:
 		_countdown_label.text = str(seconds_remaining)
+		if seconds_remaining == 1:
+			_record_feed("Get ready...")
 	if _world_countdown_board != null:
 		_world_countdown_board.set_board_visible(false)
 
@@ -460,7 +487,18 @@ func _on_results_reset_requested() -> void:
 
 func _refresh_static_labels() -> void:
 	if _state_label != null:
-		_state_label.text = "State: %s | Queued: %d" % [_state_text, _queued_count]
+		match _state_text:
+			"Running":
+				if _round_number > 0:
+					_state_label.text = "Round %d | LIVE | Queued: %d" % [_round_number, _queued_count]
+				else:
+					_state_label.text = "Round LIVE | Queued: %d" % _queued_count
+			"Countdown":
+				_state_label.text = "Round starting... | Queued: %d" % _queued_count
+			"Ended":
+				_state_label.text = "Race over | Queued: %d" % _queued_count
+			_:
+				_state_label.text = "State: %s | Queued: %d" % [_state_text, _queued_count]
 	if _count_label != null:
 		_count_label.text = "Zombies: %d alive / %d total" % [_living_count, _total_count]
 	if _winner_label != null:
@@ -501,18 +539,20 @@ func _refresh_leaderboard() -> void:
 
 func _format_queue_text() -> String:
 	if _queued_names.is_empty():
-		return "Lotto: waiting for !brains"
+		if _state_text in ["Running", "Countdown", "Ended"]:
+			return "Queue: joins reopen after reset"
+		return "Queue: waiting for !brains"
 
 	var names: Array[String] = []
 	for queued_name in _queued_names:
 		names.append(str(queued_name))
-	return "Lotto: %d in | %s" % [_queued_names.size(), _join_strings(names, ", ")]
+	return "Queue: %d waiting | %s" % [_queued_names.size(), _join_strings(names, ", ")]
 
 func _format_roster_text() -> String:
 	if _feed_lines.is_empty():
-		return "Kills:\n-"
+		return "Race feed:\n(waiting for action)"
 
-	var lines: Array[String] = ["Kills:"]
+	var lines: Array[String] = ["Race feed:"]
 	for feed_line in _feed_lines:
 		lines.append(feed_line)
 	return _join_strings(lines, "\n")
@@ -537,9 +577,13 @@ func _refresh_post_round_recovery_hint() -> void:
 	if _round_manager.round_config != null:
 		auto_reset_seconds = max(_round_manager.round_config.post_round_auto_reset_seconds, 0.0)
 	if auto_reset_seconds > 0.0:
-		_command_text = "Race over — Return Lobby or press R (%ds auto-reset)." % int(round(auto_reset_seconds))
+		_command_text = (
+			"Next race: Return to Lobby or press R — then queue viewers "
+			+ "(auto-reset in %ds)."
+			% int(round(auto_reset_seconds))
+		)
 	else:
-		_command_text = "Race over — Return Lobby or press R to join again."
+		_command_text = "Next race: Return to Lobby or press R, then queue viewers to join."
 	if _command_label != null:
 		_command_label.text = _command_text
 	_refresh_world_command_board()
@@ -569,19 +613,21 @@ func _get_zombie_display_name(zombie_node: Node) -> String:
 func _format_kill_cause(cause: String) -> String:
 	match cause:
 		"mine":
-			return "Mine"
+			return "killed by mine"
 		"minigun":
-			return "Minigun"
+			return "shot by minigun"
 		"base":
-			return "Base"
+			return "stopped at base"
 		"obstacle":
-			return "Obstacle"
+			return "hit obstacle"
 		"defender":
-			return "Defender"
+			return "stopped by defender"
 		"sewer":
-			return "Sewer"
+			return "fell in sewer"
+		"fell":
+			return "fell off track"
 		"out_of_bounds":
-			return "Out of Bounds"
+			return "left the lane"
 	return cause.capitalize()
 
 func _format_finish_time(seconds: float) -> String:
