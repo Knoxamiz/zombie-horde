@@ -35,6 +35,7 @@ static func validate_blueprint(blueprint) -> Dictionary:
 	_validate_segment_assets(blueprint, result)
 	_validate_height_transitions(blueprint, result)
 	_validate_gap_fall_settings(blueprint, result)
+	_validate_phase2_fall_gap_rules(blueprint, result)
 	_validate_rail_barrier_match(blueprint, result)
 	_validate_route_length(blueprint, result)
 	_validate_definition_preview(blueprint, result)
@@ -77,6 +78,7 @@ static func validate_generated_scene(
 
 	if definition != null:
 		_validate_definition_values(definition, blueprint, result)
+		_validate_elevated_camera_framing(definition, blueprint, result)
 		var camera_view: Dictionary = RaceMapController.compute_race_camera_view_for_definition(definition)
 		if camera_view.get("position", Vector3.ZERO) == Vector3.ZERO:
 			_add_error(result, "Camera framing position is invalid for generated definition.")
@@ -152,6 +154,7 @@ static func _validate_height_transitions(blueprint, result: Dictionary) -> void:
 		MapSegmentDefinitionScript.TYPE_RAMP_DOWN,
 		MapSegmentDefinitionScript.TYPE_DROP,
 		MapSegmentDefinitionScript.TYPE_SIDE_DROP,
+		MapSegmentDefinitionScript.TYPE_ELEVATED_RAMP_DROP,
 	]
 
 	for index in range(blueprint.segment_sequence.size()):
@@ -200,6 +203,13 @@ static func _validate_gap_fall_settings(blueprint, result: Dictionary) -> void:
 			MapSegmentDefinitionScript.TYPE_GAP,
 			MapSegmentDefinitionScript.TYPE_DROP,
 			MapSegmentDefinitionScript.TYPE_SIDE_DROP,
+			MapSegmentDefinitionScript.TYPE_SMALL_CENTER_GAP,
+			MapSegmentDefinitionScript.TYPE_LEFT_SIDE_DROP,
+			MapSegmentDefinitionScript.TYPE_RIGHT_SIDE_DROP,
+			MapSegmentDefinitionScript.TYPE_DOUBLE_SIDE_DROP,
+			MapSegmentDefinitionScript.TYPE_BROKEN_BRIDGE_GAP,
+			MapSegmentDefinitionScript.TYPE_ELEVATED_RAMP_DROP,
+			MapSegmentDefinitionScript.TYPE_CRACKED_EDGE_LANE,
 		]:
 			needs_fall = true
 			break
@@ -277,8 +287,199 @@ static func _validate_definition_values(
 		_add_error(result, "out_of_bounds_half_width must be >= lane_half_width.")
 	if blueprint.fall_enabled and definition.out_of_bounds_min_y >= definition.spawn_origin.y - 0.25:
 		_add_error(result, "fall_enabled requires out_of_bounds_min_y below spawn height.")
+	if blueprint.fall_enabled and definition.out_of_bounds_min_y >= blueprint.deck_y - 0.5:
+		_add_error(
+			result,
+			"fall_enabled requires out_of_bounds_min_y below deck_y (%.2f vs deck %.2f)."
+			% [definition.out_of_bounds_min_y, blueprint.deck_y]
+		)
 	if abs(definition.base_position.z - definition.goal_position.z) > RaceMapController.FINISH_POSITION_TOLERANCE:
 		_add_error(result, "base_position.z must align with goal_position.z for finish contract.")
+
+
+static func _validate_phase2_fall_gap_rules(blueprint, result: Dictionary) -> void:
+	_validate_spawn_finish_not_in_fall_segments(blueprint, result)
+	_validate_gap_recovery_floors(blueprint, result)
+	_validate_safe_floor_before_gaps(blueprint, result)
+	_validate_hidden_floor_width(blueprint, result)
+	_validate_elevated_water_clearance(blueprint, result)
+	_validate_side_drop_oob_clearance(blueprint, result)
+	_validate_elevated_camera_requirement(blueprint, result)
+
+
+static func _validate_spawn_finish_not_in_fall_segments(blueprint, result: Dictionary) -> void:
+	if blueprint.segment_sequence.is_empty():
+		return
+	var first_id: String = str(blueprint.segment_sequence[0])
+	var last_id: String = str(blueprint.segment_sequence.back())
+	var first_type: String = str(MapSegmentDefinitionScript.get_segment(first_id).get("type", ""))
+	var last_type: String = str(MapSegmentDefinitionScript.get_segment(last_id).get("type", ""))
+	if MapSegmentDefinitionScript.is_fall_risk_segment_type(first_type):
+		_add_error(result, "Spawn segment '%s' cannot be a gap/drop/fall-risk segment." % first_id)
+	if MapSegmentDefinitionScript.is_fall_risk_segment_type(last_type):
+		_add_error(result, "Finish segment '%s' cannot be a gap/drop/fall-risk segment." % last_id)
+	if MapSegmentDefinitionScript.is_gap_segment_type(first_type):
+		_add_error(result, "Spawn cannot be placed inside gap segment '%s'." % first_id)
+	if MapSegmentDefinitionScript.is_gap_segment_type(last_type):
+		_add_error(result, "Finish cannot be placed inside gap segment '%s'." % last_id)
+
+
+static func _validate_gap_recovery_floors(blueprint, result: Dictionary) -> void:
+	var sequence: Array = blueprint.segment_sequence
+	for index in range(sequence.size()):
+		var segment_id: String = str(sequence[index])
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		var segment_type: String = str(segment.get("type", ""))
+		if not MapSegmentDefinitionScript.is_gap_segment_type(segment_type):
+			continue
+		if index + 1 >= sequence.size():
+			_add_error(result, "Gap segment '%s' must be followed by recovery safe floor." % segment_id)
+			continue
+		var next_segment: Dictionary = MapSegmentDefinitionScript.get_segment(str(sequence[index + 1]))
+		var next_type: String = str(next_segment.get("type", ""))
+		if not (
+			MapSegmentDefinitionScript.is_recovery_segment_type(next_type)
+			or next_type in [
+				MapSegmentDefinitionScript.TYPE_STRAIGHT,
+				MapSegmentDefinitionScript.TYPE_BRIDGE,
+				MapSegmentDefinitionScript.TYPE_ELEVATED,
+				MapSegmentDefinitionScript.TYPE_FINISH,
+			]
+		):
+			_add_error(
+				result,
+				"Gap segment '%s' must be followed by recovery_straight_after_gap or safe straight."
+				% segment_id
+			)
+
+
+static func _validate_safe_floor_before_gaps(blueprint, result: Dictionary) -> void:
+	var sequence: Array = blueprint.segment_sequence
+	for index in range(sequence.size()):
+		var segment_id: String = str(sequence[index])
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		var segment_type: String = str(segment.get("type", ""))
+		if not MapSegmentDefinitionScript.is_gap_segment_type(segment_type):
+			continue
+		if index <= 0:
+			_add_error(result, "Gap segment '%s' must have safe floor segment before it." % segment_id)
+			continue
+		var prev_segment: Dictionary = MapSegmentDefinitionScript.get_segment(str(sequence[index - 1]))
+		var prev_type: String = str(prev_segment.get("type", ""))
+		if prev_type in [
+			MapSegmentDefinitionScript.TYPE_GAP,
+			MapSegmentDefinitionScript.TYPE_BROKEN_BRIDGE_GAP,
+			MapSegmentDefinitionScript.TYPE_SMALL_CENTER_GAP,
+		]:
+			_add_error(
+				result,
+				"Gap segment '%s' must have valid safe floor before it (not another gap)." % segment_id
+			)
+
+
+static func _validate_hidden_floor_width(blueprint, result: Dictionary) -> void:
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		var segment_type: String = str(segment.get("type", ""))
+		var ratio: float = float(segment.get("safe_floor_width_ratio", 1.0))
+		var segment_width: float = float(segment.get("width", 10.0))
+		var visible_half: float = blueprint.route_half_width
+		var floor_half: float = segment_width * ratio * 0.5
+		if MapSegmentDefinitionScript.is_gap_segment_type(segment_type) and ratio > 0.75:
+			_add_error(
+				result,
+				"Gap segment '%s' safe_floor_width_ratio %.2f is too wide; hidden floor beyond visible road."
+				% [segment_id, ratio]
+			)
+		if floor_half > visible_half * 1.25 and segment_type not in [
+			MapSegmentDefinitionScript.TYPE_RECOVERY,
+			MapSegmentDefinitionScript.TYPE_STRAIGHT,
+			MapSegmentDefinitionScript.TYPE_START,
+			MapSegmentDefinitionScript.TYPE_FINISH,
+		]:
+			_add_error(
+				result,
+				"Segment '%s' floor width %.1f exceeds visible road half-width %.1f."
+				% [segment_id, floor_half * 2.0, visible_half * 2.0]
+			)
+
+
+static func _validate_elevated_water_clearance(blueprint, result: Dictionary) -> void:
+	if not blueprint.water_enabled:
+		return
+	var has_elevated: bool = false
+	for segment_id in blueprint.segment_sequence:
+		var segment_type: String = str(
+			MapSegmentDefinitionScript.get_segment(segment_id).get("type", "")
+		)
+		if MapSegmentDefinitionScript.is_elevated_segment_type(segment_type):
+			has_elevated = true
+			break
+	if not has_elevated:
+		return
+	var void_y: float = blueprint.get_water_void_y()
+	if blueprint.deck_y <= void_y:
+		_add_error(
+			result,
+			"Elevated map requires deck_y (%.2f) above water/void_y (%.2f)."
+			% [blueprint.deck_y, void_y]
+		)
+	var definition: RaceMapDefinition = blueprint.to_race_map_definition()
+	if definition.out_of_bounds_min_y >= void_y:
+		_add_error(
+			result,
+			"Elevated map out_of_bounds_min_y (%.2f) must be below water/void_y (%.2f)."
+			% [definition.out_of_bounds_min_y, void_y]
+		)
+
+
+static func _validate_side_drop_oob_clearance(blueprint, result: Dictionary) -> void:
+	if not blueprint.fall_enabled:
+		return
+	var definition: RaceMapDefinition = blueprint.to_race_map_definition()
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		var segment_type: String = str(segment.get("type", ""))
+		if segment_type not in [
+			MapSegmentDefinitionScript.TYPE_SIDE_DROP,
+			MapSegmentDefinitionScript.TYPE_LEFT_SIDE_DROP,
+			MapSegmentDefinitionScript.TYPE_RIGHT_SIDE_DROP,
+			MapSegmentDefinitionScript.TYPE_DOUBLE_SIDE_DROP,
+		]:
+			continue
+		if definition.out_of_bounds_min_y >= blueprint.deck_y - 0.25:
+			_add_error(
+				result,
+				"Side drop segment '%s' requires out_of_bounds_min_y below deck; zombies at deck height must not die."
+				% segment_id
+			)
+
+
+static func _validate_elevated_camera_requirement(blueprint, result: Dictionary) -> void:
+	if not blueprint.has_elevated_or_drop_segments():
+		return
+	var definition: RaceMapDefinition = blueprint.to_race_map_definition()
+	var camera_view: Dictionary = RaceMapController.compute_race_camera_view_for_definition(definition)
+	if camera_view.get("position", Vector3.ZERO) == Vector3.ZERO:
+		_add_error(result, "Elevated/drop map requires valid camera framing from RaceMapController.")
+
+
+static func _validate_elevated_camera_framing(
+	definition: RaceMapDefinition,
+	blueprint,
+	result: Dictionary
+) -> void:
+	if not blueprint.has_elevated_or_drop_segments():
+		return
+	var padding: float = blueprint.get_recommended_camera_padding()
+	if padding > 0.0:
+		var camera_view: Dictionary = RaceMapController.compute_race_camera_view_for_definition(definition)
+		var cam_pos: Vector3 = camera_view.get("position", Vector3.ZERO)
+		if cam_pos.y < definition.spawn_origin.y + padding * 0.5:
+			_add_warning(
+				result,
+				"Camera height may be low for elevated/drop map (padding=%.1f)." % padding
+			)
 
 
 static func _validate_no_goal_catch(root: Node, result: Dictionary) -> void:

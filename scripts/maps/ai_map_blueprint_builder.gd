@@ -121,7 +121,9 @@ func _assemble_segment(
 	var deck_y_at_segment: float = _route_deck_y
 
 	_place_required_assets(segment, road_bucket, rails_bucket, props_bucket, center_z, deck_y_at_segment)
+	_place_optional_visuals(segment, props_bucket, rails_bucket, water_bucket, center_z, deck_y_at_segment)
 	_place_safe_floor_for_segment(
+		segment,
 		segment_type,
 		segment_width,
 		segment_length,
@@ -135,7 +137,7 @@ func _assemble_segment(
 			_place_marker(spawn_zone, "SpawnMarker", segment_width, segment_length, center_z, deck_y_at_segment, true)
 		MapSegmentDefinitionScript.TYPE_FINISH:
 			_place_marker(goal_zone, "GoalMarker", segment_width, segment_length, center_z, deck_y_at_segment, false)
-		MapSegmentDefinitionScript.TYPE_GAP, MapSegmentDefinitionScript.TYPE_DROP, MapSegmentDefinitionScript.TYPE_SIDE_DROP:
+		MapSegmentDefinitionScript.TYPE_GAP, MapSegmentDefinitionScript.TYPE_DROP, MapSegmentDefinitionScript.TYPE_SIDE_DROP, MapSegmentDefinitionScript.TYPE_SMALL_CENTER_GAP, MapSegmentDefinitionScript.TYPE_LEFT_SIDE_DROP, MapSegmentDefinitionScript.TYPE_RIGHT_SIDE_DROP, MapSegmentDefinitionScript.TYPE_DOUBLE_SIDE_DROP, MapSegmentDefinitionScript.TYPE_BROKEN_BRIDGE_GAP, MapSegmentDefinitionScript.TYPE_ELEVATED_RAMP_DROP, MapSegmentDefinitionScript.TYPE_CRACKED_EDGE_LANE:
 			if _blueprint.water_enabled:
 				_place_segment_water(water_bucket, segment_width + 8.0, segment_length + 2.0, center_z)
 
@@ -155,7 +157,7 @@ func _place_required_assets(
 	var required_assets: Array = segment.get("required_assets", [])
 	for asset_id_value in required_assets:
 		var asset_id: String = str(asset_id_value)
-		if asset_id == "safe_floor_plate" or asset_id == "phase1_safe_floor_plate":
+		if asset_id == "safe_floor_plate" or asset_id == "phase1_safe_floor_plate" or asset_id == "phase2_safe_floor_plate":
 			continue
 		var asset: Dictionary = MapAssetLibraryScript.get_asset(asset_id)
 		if asset.is_empty():
@@ -178,7 +180,36 @@ func _place_required_assets(
 		parent_bucket.add_child(instance)
 
 
+func _place_optional_visuals(
+	segment: Dictionary,
+	props_bucket: Node3D,
+	rails_bucket: Node3D,
+	water_bucket: Node3D,
+	center_z: float,
+	deck_y: float
+) -> void:
+	for asset_id_value in segment.get("optional_assets", []):
+		var asset_id: String = str(asset_id_value)
+		var asset: Dictionary = MapAssetLibraryScript.get_asset(asset_id)
+		if asset.is_empty():
+			continue
+		if not bool(asset.get("is_visual_only", true)):
+			continue
+		var category: int = int(asset.get("category", MapAssetLibraryScript.Category.UNKNOWN))
+		var parent_bucket: Node3D = props_bucket
+		if category in [MapAssetLibraryScript.Category.RAIL, MapAssetLibraryScript.Category.BARRIER]:
+			parent_bucket = rails_bucket
+		elif category == MapAssetLibraryScript.Category.WATER:
+			parent_bucket = water_bucket
+		var instance: Node3D = MapAssetLibraryScript.instantiate_visual(asset_id)
+		if instance == null:
+			continue
+		instance.position = Vector3(0.0, deck_y + float(asset.get("deck_y_offset", 0.0)), center_z)
+		parent_bucket.add_child(instance)
+
+
 func _place_safe_floor_for_segment(
+	segment: Dictionary,
 	segment_type: String,
 	segment_width: float,
 	segment_length: float,
@@ -187,15 +218,31 @@ func _place_safe_floor_for_segment(
 	safe_floor: Node3D
 ) -> void:
 	var floor_width: float = segment_width
+	var ratio: float = float(segment.get("safe_floor_width_ratio", 1.0))
+	floor_width = segment_width * ratio
 	if segment_type in [
 		MapSegmentDefinitionScript.TYPE_GAP,
+		MapSegmentDefinitionScript.TYPE_SMALL_CENTER_GAP,
+		MapSegmentDefinitionScript.TYPE_BROKEN_BRIDGE_GAP,
 		MapSegmentDefinitionScript.TYPE_NARROW_BRIDGE,
+		MapSegmentDefinitionScript.TYPE_NARROW_NO_RAILS_BRIDGE,
 		MapSegmentDefinitionScript.TYPE_SIDE_DROP,
+		MapSegmentDefinitionScript.TYPE_LEFT_SIDE_DROP,
+		MapSegmentDefinitionScript.TYPE_RIGHT_SIDE_DROP,
+		MapSegmentDefinitionScript.TYPE_DOUBLE_SIDE_DROP,
+		MapSegmentDefinitionScript.TYPE_CRACKED_EDGE_LANE,
 	]:
-		floor_width = min(segment_width, _blueprint.route_half_width * 2.0 - 2.0)
+		floor_width = min(floor_width, _blueprint.route_half_width * 2.0 - 2.0)
+	if segment_type == MapSegmentDefinitionScript.TYPE_RECOVERY:
+		floor_width = segment_width
+	var floor_offset_x: float = 0.0
+	if segment_type == MapSegmentDefinitionScript.TYPE_LEFT_SIDE_DROP:
+		floor_offset_x = segment_width * 0.15
+	elif segment_type == MapSegmentDefinitionScript.TYPE_RIGHT_SIDE_DROP:
+		floor_offset_x = -segment_width * 0.15
 	_add_safe_floor_plate(
 		safe_floor,
-		Vector3(0.0, deck_y - FLOOR_THICKNESS * 0.5, center_z),
+		Vector3(floor_offset_x, deck_y - FLOOR_THICKNESS * 0.5, center_z),
 		Vector3(floor_width, FLOOR_THICKNESS, segment_length)
 	)
 

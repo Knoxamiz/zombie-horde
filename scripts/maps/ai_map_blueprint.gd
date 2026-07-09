@@ -35,6 +35,45 @@ func get_total_route_length() -> float:
 	return total
 
 
+func get_recommended_oob_min_y() -> float:
+	var min_y: float = deck_y - 6.0 if fall_enabled else deck_y - 3.0
+	for segment_id in segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		if segment.is_empty():
+			continue
+		var recommended: float = float(segment.get("recommended_oob_min_y", -999.0))
+		if recommended > -900.0:
+			min_y = minf(min_y, recommended)
+	return min_y
+
+
+func get_recommended_camera_padding() -> float:
+	var padding: float = 0.0
+	for segment_id in segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		if segment.is_empty():
+			continue
+		padding = maxf(padding, float(segment.get("recommended_camera_padding", 0.0)))
+	return padding
+
+
+func has_elevated_or_drop_segments() -> bool:
+	for segment_id in segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		if segment.is_empty():
+			continue
+		var segment_type: String = str(segment.get("type", ""))
+		if MapSegmentDefinitionScript.is_elevated_segment_type(segment_type):
+			return true
+		if MapSegmentDefinitionScript.is_fall_risk_segment_type(segment_type):
+			return true
+	return false
+
+
+func get_water_void_y() -> float:
+	return deck_y - 4.0
+
+
 func get_segment_types() -> Array[String]:
 	var types: Array[String] = []
 	for segment_id in segment_sequence:
@@ -67,7 +106,7 @@ func to_race_map_definition() -> RaceMapDefinition:
 	definition.out_of_bounds_half_width = max(lane_half_width + 6.0, route_half_width + 2.0)
 	definition.out_of_bounds_min_z = spawn_z - 8.0
 	definition.out_of_bounds_max_z = goal_z + 8.0
-	definition.out_of_bounds_min_y = deck_y - 6.0 if fall_enabled else deck_y - 3.0
+	definition.out_of_bounds_min_y = get_recommended_oob_min_y()
 	definition.hazard_placement_half_width = lane_half_width
 	definition.hazard_placement_min_z = spawn_z + 4.0
 	definition.hazard_placement_max_z = goal_z - 4.0
