@@ -5,6 +5,9 @@ extends RefCounted
 
 const MapSurfacePieceScript := preload("res://scripts/maps/map_surface_piece.gd")
 
+## Narrow plate ratio for broken-bridge gap crossings (matches phase2 safe_floor ~40-45%).
+const DEFAULT_GAP_CROSSING_WIDTH_RATIO: float = 0.45
+
 
 static func build_surfaces(
 	parent: Node3D,
@@ -85,6 +88,18 @@ static func get_lowest_top_y(surface_pieces: Array, fallback: float = 0.0) -> fl
 	return lowest if lowest < INF else fallback
 
 
+static func get_gap_crossing_top_y(surface_pieces: Array, z0: float, z1: float, fallback: float = 0.0) -> float:
+	var approach_y: float = get_top_y_at_z(surface_pieces, z0 - 0.05, fallback)
+	var exit_y: float = get_top_y_at_z(surface_pieces, z1 + 0.05, fallback)
+	if abs(approach_y - exit_y) > 0.02:
+		return maxf(approach_y, exit_y)
+	return approach_y
+
+
+static func gap_crossing_half_width(path_half_width: float, width_ratio: float = DEFAULT_GAP_CROSSING_WIDTH_RATIO) -> float:
+	return maxf(path_half_width * width_ratio, 1.35)
+
+
 static func build_elevation_zones_from_pieces(surface_pieces: Array) -> Array[Dictionary]:
 	var zones: Array[Dictionary] = []
 	for raw_spec in surface_pieces:
@@ -128,9 +143,10 @@ static func build_gap_crossings(
 	surfaces: Node3D,
 	gaps: Array,
 	path_half_width: float,
-	surface_pieces: Array
+	surface_pieces: Array,
+	width_ratio: float = DEFAULT_GAP_CROSSING_WIDTH_RATIO
 ) -> void:
-	var crossing_width: float = max(path_half_width * 2.0 * 0.72, 4.0)
+	var crossing_half_width: float = gap_crossing_half_width(path_half_width, width_ratio)
 	for raw_gap in gaps:
 		if raw_gap is not Dictionary:
 			continue
@@ -141,10 +157,11 @@ static func build_gap_crossings(
 			continue
 		var length: float = z1 - z0
 		var center_z: float = (z0 + z1) * 0.5
-		var top_y: float = get_top_y_at_z(surface_pieces, center_z, 0.0)
+		var top_y: float = get_gap_crossing_top_y(surface_pieces, z0, z1, 0.0)
 		var piece: MapSurfacePiece = MapSurfacePieceScript.create_deck(
-			Vector3(crossing_width, MapSurfacePieceScript.MIN_THICKNESS, length),
+			Vector3(crossing_half_width * 2.0, MapSurfacePieceScript.MIN_THICKNESS, length),
 			top_y
 		)
+		piece.segment_id = "gap_crossing"
 		piece.position.z = center_z
 		surfaces.add_child(piece)

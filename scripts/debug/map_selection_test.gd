@@ -25,6 +25,7 @@ func _initialize() -> void:
 	_failures.append_array(_test_layout_preset_uniqueness())
 	_failures.append_array(_test_kit_elevation_presets())
 	_failures.append_array(_test_kit_route_context())
+	_failures.append_array(_test_broken_bridge_gap_crossings())
 	call_deferred("_begin_runtime_load")
 
 
@@ -224,6 +225,60 @@ func _test_kit_route_context() -> PackedStringArray:
 				)
 
 		arena.queue_free()
+	return failures
+
+
+func _test_broken_bridge_gap_crossings() -> PackedStringArray:
+	var failures: PackedStringArray = PackedStringArray()
+	var layout: Dictionary = MapKitLayoutPresetsScript.get_preset("broken_bridge")
+	var path_half_width: float = float(layout.get("path_half_width", 4.5))
+	var ratio: float = float(
+		layout.get("gap_crossing_width_ratio", KitMapSurfaceBuilderScript.DEFAULT_GAP_CROSSING_WIDTH_RATIO)
+	)
+	var expected_half: float = KitMapSurfaceBuilderScript.gap_crossing_half_width(path_half_width, ratio)
+
+	var arena = KitMapArenaScript.new()
+	arena.layout_preset_id = "broken_bridge"
+	root.add_child(arena)
+	arena.ensure_built()
+
+	var surfaces: Node = arena.get_node_or_null("KitSurfaces")
+	if surfaces == null:
+		failures.append("Broken Bridge should build KitSurfaces")
+		arena.queue_free()
+		return failures
+
+	var crossing_count: int = 0
+	for child in surfaces.get_children():
+		if child is MapSurfacePiece and str((child as MapSurfacePiece).segment_id) == "gap_crossing":
+			crossing_count += 1
+			var shape_node: CollisionShape3D = child.get_node_or_null("Collision") as CollisionShape3D
+			if shape_node == null or shape_node.shape == null:
+				failures.append("Gap crossing piece missing collision shape")
+				continue
+			var box: BoxShape3D = shape_node.shape as BoxShape3D
+			if box == null:
+				continue
+			var actual_half: float = box.size.x * 0.5
+			if actual_half > expected_half + 0.05:
+				failures.append(
+					"Gap crossing too wide: %.2f > allowed %.2f"
+					% [actual_half, expected_half]
+				)
+
+	if crossing_count != 3:
+		failures.append("Broken Bridge should have 3 gap crossings, got %d" % crossing_count)
+
+	var visual_kit: Node = arena.get_node_or_null("VisualKit")
+	if visual_kit != null:
+		var plank_count: int = 0
+		for child in visual_kit.get_children():
+			if str(child.name).begins_with("GapCrossingPlank"):
+				plank_count += 1
+		if plank_count != 3:
+			failures.append("Broken Bridge should show 3 gap crossing planks, got %d" % plank_count)
+
+	arena.queue_free()
 	return failures
 
 
