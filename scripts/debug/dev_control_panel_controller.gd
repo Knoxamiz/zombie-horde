@@ -848,8 +848,10 @@ func _refresh_prototype_review_status() -> void:
 	var catalog_note: String = _prototype_catalog_guard_text(selected_id)
 
 	_prototype_review_status_label.text = (
-		"%s\nActive map id: %s\nSelected prototype id: %s\nLoad status: %s\n"
-		+ "Last failure: %s\nFallback used: %s\n%s"
+		(
+			"%s\nActive map id: %s\nSelected prototype id: %s\nLoad status: %s\n"
+			+ "Last failure: %s\nFallback used: %s\n%s"
+		)
 		% [
 			reminder,
 			active_map_id if not active_map_id.is_empty() else "unknown",
