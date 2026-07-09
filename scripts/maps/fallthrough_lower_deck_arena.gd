@@ -28,7 +28,7 @@ var _map_root: Node3D
 
 
 func _ready() -> void:
-	pass
+	build_map()
 
 
 func build_map() -> Node3D:

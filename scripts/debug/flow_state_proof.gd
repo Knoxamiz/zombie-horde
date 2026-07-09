@@ -68,14 +68,18 @@ func _record_manual(check_name: String, detail: String) -> void:
 
 func _check_catalog_single_map() -> void:
 	var selectable: Array[Dictionary] = MapCatalog.get_selectable_entries_for_settings()
-	var highway_only_selectable: bool = (
-		selectable.size() == 1
-		and str(selectable[0].get("id", "")) == CITY_HIGHWAY_MAP_ID
-	)
+	var has_highway: bool = false
+	var has_fallthrough: bool = false
+	for entry in selectable:
+		var map_id: String = str(entry.get("id", ""))
+		if map_id == CITY_HIGHWAY_MAP_ID:
+			has_highway = true
+		if map_id == FALLTHROUGH_TEST_MAP_ID:
+			has_fallthrough = true
 	_record(
 		"Streamer map gate",
-		highway_only_selectable,
-		"%d selectable maps (expected 1: City Highway)" % selectable.size()
+		selectable.size() == 2 and has_highway and has_fallthrough,
+		"%d selectable maps (expected City Highway + Fallthrough Lower Deck)" % selectable.size()
 	)
 
 
@@ -138,8 +142,8 @@ func _check_playable_map_gate() -> void:
 	var playable_count: int = MapCatalog.get_playable_count()
 	_record(
 		"Playable map gate",
-		playable_count == 1,
-		"%d playable maps (expected 1: City Highway)" % playable_count
+		playable_count == 2,
+		"%d playable maps (expected City Highway + Fallthrough Lower Deck)" % playable_count
 	)
 
 

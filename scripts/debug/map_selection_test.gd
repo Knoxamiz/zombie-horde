@@ -29,9 +29,9 @@ func _test_catalog_resolution() -> PackedStringArray:
 	var failures: PackedStringArray = PackedStringArray()
 	var settings_entries: Array[Dictionary] = MapCatalog.get_selectable_entries_for_settings()
 
-	if settings_entries.size() != 1:
+	if settings_entries.size() != 2:
 		failures.append(
-			"Expected 1 settings map, got %d" % settings_entries.size()
+			"Expected 2 settings maps, got %d" % settings_entries.size()
 		)
 		return failures
 
@@ -41,14 +41,20 @@ func _test_catalog_resolution() -> PackedStringArray:
 			% settings_entries[0].get("id", "")
 		)
 
+	if str(settings_entries[1].get("id", "")) != "ai_generated_fallthrough_lower_deck_test":
+		failures.append(
+			"Settings index 1 should be fallthrough map, got %s"
+			% settings_entries[1].get("id", "")
+		)
+
 	if MapCatalog.get_settings_map_id(0) != "quarantine_boulevard":
 		failures.append("Settings map id 0 mismatch")
 
 	if MapCatalog.resolve_settings_index("", 7) != 0:
 		failures.append("Legacy index 7 should migrate to settings index 0")
 
-	if MapCatalog.get_playable_count() != 1:
-		failures.append("Expected exactly one playable map, got %d" % MapCatalog.get_playable_count())
+	if MapCatalog.get_playable_count() != 2:
+		failures.append("Expected two playable maps, got %d" % MapCatalog.get_playable_count())
 
 	return failures
 

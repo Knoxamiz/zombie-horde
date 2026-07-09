@@ -16,7 +16,7 @@ root_path = NodePath("../CoreRoad/MapRoot/VisualLayer")
 
 [node name="PrototypeBanner" type="Label3D" parent="MapDressing"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6, -2)
-text = "FALLTHROUGH LOWER DECK TEST"
+text = "FALLTHROUGH LOWER DECK"
 font_size = 34
 outline_size = 10
 modulate = Color(0.55, 1, 0.65, 1)
