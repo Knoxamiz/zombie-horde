@@ -71,6 +71,27 @@ func has_elevated_or_drop_segments() -> bool:
 	return false
 
 
+func get_route_max_half_width() -> float:
+	var max_half: float = route_half_width
+	for segment_id in segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		if segment.is_empty():
+			continue
+		max_half = maxf(max_half, MapSegmentDefinitionScript.get_segment_route_half_width(segment))
+	return max_half
+
+
+func has_split_merge_segments() -> bool:
+	for segment_id in segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		if segment.is_empty():
+			continue
+		var segment_type: String = str(segment.get("type", ""))
+		if MapSegmentDefinitionScript.is_route_shape_segment_type(segment_type):
+			return true
+	return false
+
+
 func get_water_void_y() -> float:
 	return deck_y - 4.0
 
@@ -120,7 +141,11 @@ func to_race_map_definition() -> RaceMapDefinition:
 	definition.base_position = Vector3(0.0, deck_y, goal_z)
 	definition.minigun_position = Vector3(0.0, deck_y, goal_z - 4.0)
 	definition.lane_half_width = lane_half_width
-	definition.out_of_bounds_half_width = max(lane_half_width + 6.0, route_half_width + 2.0)
+	var route_max_half: float = get_route_max_half_width()
+	definition.out_of_bounds_half_width = maxf(
+		lane_half_width + 6.0,
+		maxf(route_max_half + 2.0, route_half_width + 2.0)
+	)
 	definition.out_of_bounds_min_z = spawn_z - 8.0
 	definition.out_of_bounds_max_z = goal_z + 8.0
 	definition.out_of_bounds_min_y = get_recommended_oob_min_y()

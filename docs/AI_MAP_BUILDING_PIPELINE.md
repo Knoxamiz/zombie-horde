@@ -338,6 +338,93 @@ Factory: `scripts/maps/blueprints/phase3_moving_obstacle_test.gd`
 
 ---
 
+## Phase 4 asset pack (split lanes, alternate routes, merge lanes)
+
+**Scope:** route variety via split/merge shapes — visual lane offsets and branch floors. **No zombie pathfinding changes.**
+
+### Route assumptions audit (current engine — unchanged)
+
+| System | Assumption | Impact on splits |
+|--------|------------|------------------|
+| **Race axis** | Single spawn→goal Z axis (`zombie._get_race_forward`) | Branches are lateral offsets, not separate paths |
+| **Progress** | Dot product along spawn→goal vector (`zombie.get_progress`) | Shortcut length does not change progress metric |
+| **OOB bounds** | Axis-aligned box: `abs(x) <= out_of_bounds_half_width`, Z min/max | Branch offsets must stay inside OOB half-width |
+| **Lane width** | `lane_half_width` soft-clamps lateral position | All branches share one lane clamp — no per-branch AI |
+| **Camera** | `RaceMapController.compute_race_camera_view_for_definition` uses spawn/goal Z span + `lane_half_width + 6` side offset | Wide splits need larger `route_half_width` / OOB |
+| **Zombie pathing** | Forward velocity + lateral lane offset toward goal side vector | No branch selection — zombies do not "choose" shortcuts |
+| **Finish/base** | `goal_position.z` / `base_position.z` aligned on center axis | Merge returns to center lane before finish |
+
+**Limitation:** Phase 4 splits are **forward-compatible route shapes** (visual + offset safe floors), not true alternate-path pathfinding. Document this when authoring risk/reward maps.
+
+### Phase 4 assets (15 `phase4_*` ids)
+
+List: `MapAssetLibrary.get_phase4_asset_ids()`
+
+Categories: `split_lane`, `merge_lane`, `alternate_route`, `shortcut`, `safe_route`, `divider`, `route_marker`, `bridge`, `ramp`, `rail`, `decoration`
+
+Each entry includes: `branch_offsets`, `merge_offset`, `collision_expectation`, `collision_mode`, `notes`.
+
+### Phase 4 approved segments
+
+| Segment id | Type |
+|------------|------|
+| `split_two_lane` | split_two_lane |
+| `merge_two_lane` | merge_two_lane |
+| `risk_reward_split` | risk_reward_split |
+| `narrow_shortcut` | narrow_shortcut |
+| `wide_safe_route` | wide_safe_route |
+| `high_low_split` | high_low_split |
+| `side_bridge_route` | side_bridge_route |
+| `obstacle_route_choice` | obstacle_route_choice |
+| `split_gap_choice` | split_gap_choice |
+| `merge_recovery_straight` | merge_recovery |
+
+List: `MapSegmentDefinition.get_phase4_segment_ids()`
+
+### Phase 4 blueprint example
+
+`phase4_split_lane_test` (non-playable):
+
+```gdscript
+var blueprint := Phase4SplitLaneTestBlueprint.create()
+# start_straight → straight_road_medium → split_two_lane → narrow_shortcut
+# → wide_safe_route → merge_two_lane → moving_block_lane → finish_straight
+```
+
+Factory: `scripts/maps/blueprints/phase4_split_lane_test.gd`
+
+### Allowed split route patterns
+
+| Pattern | Sequence shape |
+|---------|----------------|
+| Simple fork | `split_two_lane` → branch segment(s) → `merge_two_lane` |
+| Risk/reward | `risk_reward_split` → `narrow_shortcut` → `wide_safe_route` → merge |
+| High/low | `high_low_split` → branch ramps → merge |
+| Side bridge | `side_bridge_route` between split and merge |
+| Recovery | `merge_two_lane` → `merge_recovery_straight` (recommended) |
+
+### Risk/reward route rules
+
+- At least one **low-risk** branch (`wide_safe_route` or `route_risk_level <= 0`) per split section.
+- High-risk shortcuts (`narrow_shortcut`) should be shorter/narrower visually.
+- `risk_reward_split` should include `phase4_route_sign_arrow` or similar marker.
+- `split_gap_choice` requires `fall_enabled` (gap on risky branch).
+
+### What AI must NOT do with split lanes
+
+| Banned | Why |
+|--------|-----|
+| Split without merge before finish | Unclosed fork |
+| Spawn/finish on split/merge/branch segments | Invalid lifecycle placement |
+| Branch segment without `safe_floor_plate` | No walk surface |
+| Branch offsets outside OOB half-width | Silent lateral kills |
+| Hidden branch floor wider than visible route | Certification trap |
+| Assume zombies pick shortcuts | No pathfinding — forward track only |
+| Edit `zombie.gd` for map-specific routing | Protected system |
+| Promote `phase4_split_lane_test` to playable | Requires certification |
+
+---
+
 ## Segment grammar (all packs)
 
 Segment types (`MapSegmentDefinition`):
@@ -416,7 +503,7 @@ Factory: `scripts/maps/blueprints/example_bridge_segments_test.gd`
 | Certified | Pass `map_certification_test.gd` | Add to `DEFAULT_CERTIFIED_MAP_IDS` when required |
 | Playable | `MapCatalog` `enabled=true`, `status=playable` | Settings dropdown + production |
 
-`example_bridge_segments_test` and `phase1_bridge_ramp_test` and `phase2_drop_gap_test` and `phase3_moving_obstacle_test` stay at **test/prototype** — do not promote.
+`example_bridge_segments_test` and `phase1_bridge_ramp_test` and `phase2_drop_gap_test` and `phase4_split_lane_test` stay at **test/prototype** — do not promote.
 
 ---
 
