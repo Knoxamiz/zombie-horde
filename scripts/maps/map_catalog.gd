@@ -344,6 +344,17 @@ static func get_prototype_test_entries() -> Array[Dictionary]:
 	return entries
 
 
+static func get_ai_generated_prototype_entries() -> Array[Dictionary]:
+	var entries: Array[Dictionary] = []
+	for entry in ENTRIES:
+		if not bool(entry.get("ai_generated", false)):
+			continue
+		if not is_prototype_testable(entry):
+			continue
+		entries.append(entry.duplicate(true))
+	return entries
+
+
 static func is_prototype_testable(entry: Dictionary) -> bool:
 	if entry.is_empty():
 		return false
