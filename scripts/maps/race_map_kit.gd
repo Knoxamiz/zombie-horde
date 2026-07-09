@@ -59,6 +59,8 @@ var _visual_root: Node3D
 var _style: MapStyle = MapStyle.LONG_ROAD
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _elevation_zones: Array[Dictionary] = []
+var _path_half_width: float = 6.0
+var _gap_crossing_width_ratio: float = SURFACE_BUILDER.DEFAULT_GAP_CROSSING_WIDTH_RATIO
 
 
 func attach(root: Node3D, style: MapStyle, random_seed: int) -> void:
@@ -93,6 +95,14 @@ func _surface_y_at(z: float) -> float:
 	return 0.0
 
 
+func set_path_half_width(half_width: float) -> void:
+	_path_half_width = maxf(half_width, 1.0)
+
+
+func set_gap_crossing_width_ratio(ratio: float) -> void:
+	_gap_crossing_width_ratio = clampf(ratio, 0.25, 0.75)
+
+
 func build_environment() -> void:
 	var sun := DirectionalLight3D.new()
 	sun.name = "Sun"
@@ -116,7 +126,8 @@ func build_route_context(
 	gaps: Array[Dictionary],
 	void_width: float,
 	track_length: float,
-	surface_pieces: Array = []
+	surface_pieces: Array = [],
+	gap_crossing_width_ratio: float = SURFACE_BUILDER.DEFAULT_GAP_CROSSING_WIDTH_RATIO
 ) -> void:
 	var edge_x: float = 5.4 if _style == MapStyle.BROKEN_BRIDGE else 10.5
 	var barrier_spacing: float = 5.0 if _style == MapStyle.BROKEN_BRIDGE else 6.5
@@ -127,10 +138,65 @@ func build_route_context(
 	build_route_shoulders(spawn_z, goal_z, path_half_width, 3.2, bed_y + 0.08)
 	build_continuous_guardrails(spawn_z, goal_z, edge_x, barrier_spacing)
 	build_gap_guardrails(gaps, edge_x)
+	if not gaps.is_empty() and _style == MapStyle.BROKEN_BRIDGE:
+		build_gap_crossing_visuals(gaps, surface_pieces, path_half_width, gap_crossing_width_ratio)
+		build_gap_void_visuals(gaps, path_half_width, surface_pieces)
 	if not gaps.is_empty():
 		build_gap_support_piers(gaps, path_half_width, bed_y, surface_pieces)
 	if not surface_pieces.is_empty():
 		build_elevated_deck_supports(surface_pieces, path_half_width * 2.0, bed_y)
+
+
+func build_gap_crossing_visuals(
+	gaps: Array[Dictionary],
+	surface_pieces: Array,
+	path_half_width: float,
+	width_ratio: float = SURFACE_BUILDER.DEFAULT_GAP_CROSSING_WIDTH_RATIO
+) -> void:
+	var crossing_half_width: float = SURFACE_BUILDER.gap_crossing_half_width(path_half_width, width_ratio)
+	for gap_index in range(gaps.size()):
+		var gap: Dictionary = gaps[gap_index]
+		var z0: float = float(gap["z0"])
+		var z1: float = float(gap["z1"])
+		var length: float = z1 - z0
+		var center_z: float = (z0 + z1) * 0.5
+		var top_y: float = SURFACE_BUILDER.get_gap_crossing_top_y(surface_pieces, z0, z1, _surface_y_at(center_z))
+		var plank := MeshInstance3D.new()
+		plank.name = "GapCrossingPlank_%d" % gap_index
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(crossing_half_width * 2.0, 0.16, length * 0.92)
+		plank.mesh = mesh
+		plank.material_override = MAT_CONCRETE
+		plank.position = Vector3(0.0, top_y - 0.04, center_z)
+		_visual_root.add_child(plank)
+
+
+func build_gap_void_visuals(
+	gaps: Array[Dictionary],
+	path_half_width: float,
+	surface_pieces: Array,
+	bed_y: float = -2.2
+) -> void:
+	var void_color := Color(0.04, 0.06, 0.09, 1.0)
+	for gap_index in range(gaps.size()):
+		var gap: Dictionary = gaps[gap_index]
+		var z0: float = float(gap["z0"])
+		var z1: float = float(gap["z1"])
+		var length: float = z1 - z0
+		var center_z: float = (z0 + z1) * 0.5
+		var lip_y: float = SURFACE_BUILDER.get_gap_crossing_top_y(surface_pieces, z0, z1, _surface_y_at(center_z))
+		var pit_depth: float = maxf(lip_y - bed_y, 1.0)
+		var pit := MeshInstance3D.new()
+		pit.name = "GapVoidPit_%d" % gap_index
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(path_half_width * 2.4, pit_depth, length)
+		pit.mesh = mesh
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = void_color
+		mat.roughness = 0.95
+		pit.material_override = mat
+		pit.position = Vector3(0.0, lip_y - pit_depth * 0.5 - 0.08, center_z)
+		_visual_root.add_child(pit)
 
 
 func build_ground_bed(width: float, length: float, y: float = -1.35) -> void:
@@ -210,9 +276,7 @@ func build_gap_support_piers(
 		var z0: float = float(gap["z0"])
 		var z1: float = float(gap["z1"])
 		var gap_center: float = (z0 + z1) * 0.5
-		var deck_y: float = _surface_y_at(gap_center)
-		if surface_pieces.size() > 0:
-			deck_y = SURFACE_BUILDER.get_top_y_at_z(surface_pieces, gap_center, deck_y)
+		var deck_y: float = SURFACE_BUILDER.get_gap_crossing_top_y(surface_pieces, z0, z1, _surface_y_at(gap_center))
 		var pier_height: float = maxf(deck_y - bed_y - 0.35, 0.8)
 		var pier_center_y: float = bed_y + pier_height * 0.5
 		for pier_z in [z0 + 0.5, gap_center, z1 - 0.5]:
@@ -304,9 +368,12 @@ func build_broken_bridge_play_surface(
 	gaps: Array[Dictionary],
 	path_half_width: float,
 	y: float = 0.0,
-	thickness: float = 0.12
+	thickness: float = 0.12,
+	gap_crossing_width_ratio: float = SURFACE_BUILDER.DEFAULT_GAP_CROSSING_WIDTH_RATIO
 ) -> void:
-	var gap_crossing_half_width: float = path_half_width * 0.72
+	var gap_crossing_half_width: float = SURFACE_BUILDER.gap_crossing_half_width(
+		path_half_width, gap_crossing_width_ratio
+	)
 	for segment_index in range(segments.size()):
 		var segment: Dictionary = segments[segment_index]
 		var length: float = float(segment["z1"]) - float(segment["z0"])
@@ -332,12 +399,15 @@ func build_bridge_fall_zones(
 	segments: Array[Dictionary],
 	gaps: Array[Dictionary],
 	path_half_width: float,
-	void_half_width: float
+	void_half_width: float,
+	gap_crossing_width_ratio: float = SURFACE_BUILDER.DEFAULT_GAP_CROSSING_WIDTH_RATIO
 ) -> void:
 	var kill_height: float = 8.0
 	var kill_y: float = -2.5
 	var lateral_half: float = max(void_half_width * 0.5, path_half_width + 8.0)
-	var gap_crossing_half_width: float = path_half_width * 0.72
+	var gap_crossing_half_width: float = SURFACE_BUILDER.gap_crossing_half_width(
+		path_half_width, gap_crossing_width_ratio
+	)
 
 	for segment in segments:
 		var z0: float = float(segment["z0"])
@@ -506,24 +576,24 @@ func _compose_bridge_gap_visuals(gaps: Array[Dictionary]) -> void:
 		var z1: float = float(gap["z1"])
 		var gap_center: float = (z0 + z1) * 0.5
 
-		for edge_z in [z0 - TILE_HALF, z1 + TILE_HALF]:
+		# Cracked deck lips on the segment side only — no full-width tiles across the chasm.
+		for edge_z in [z0 - 0.55, z1 + 0.55]:
 			var lip_variant: StreetVariant = (
 				StreetVariant.CRACK1 if _hashf(int(edge_z), 41 + gap_index) > 0.5 else StreetVariant.CRACK2
 			)
 			_place_street_tile(0.0, 0.0, edge_z, lip_variant)
-			if _hashf(int(edge_z + gap_index), 83) > 0.35:
-				_place_street_tile(-4.0, 0.0, edge_z, StreetVariant.CRACK2)
-			if _hashf(int(edge_z - gap_index), 89) > 0.35:
-				_place_street_tile(4.0, 0.0, edge_z, StreetVariant.CRACK1)
 
-		for guide_z in [z0 + 1.0, gap_center, z1 - 1.0]:
-			_place_cone(guide_z, -2.0)
-			_place_cone(guide_z, 2.0)
+		for guide_z in [z0 + 0.8, gap_center, z1 - 0.8]:
+			var cone_x: float = (
+				SURFACE_BUILDER.gap_crossing_half_width(_path_half_width, _gap_crossing_width_ratio) + 0.55
+			)
+			_place_cone(guide_z, -cone_x)
+			_place_cone(guide_z, cone_x)
 
 		if gap_index % 2 == 0:
-			_place_prop(SCENE_PALLET_BROKEN, Vector3(-16.0, 0.0, gap_center + 1.2), 1.15, 36.0)
+			_place_prop(SCENE_PALLET_BROKEN, Vector3(-14.0, 0.0, gap_center + 1.2), 1.15, 36.0)
 		else:
-			_place_prop(SCENE_CINDER_BLOCK, Vector3(16.5, 0.0, gap_center - 1.4), 1.1, -14.0)
+			_place_prop(SCENE_CINDER_BLOCK, Vector3(14.5, 0.0, gap_center - 1.4), 1.1, -14.0)
 
 
 func _place_bridge_lane_guides(segments: Array[Dictionary], gaps: Array[Dictionary]) -> void:
