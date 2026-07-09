@@ -130,17 +130,26 @@ func _assemble_segment(
 	if segment_type == MapSegmentDefinitionScript.TYPE_LOWER_RECOVERY_DECK:
 		visual_deck_y += float(segment.get("lower_deck_y_offset", -3.5))
 
-	_place_required_assets(segment, road_bucket, rails_bucket, props_bucket, center_z, visual_deck_y)
-	_place_optional_visuals(
-		segment,
-		props_bucket,
-		rails_bucket,
-		water_bucket,
-		center_z,
-		visual_deck_y,
-		segment_width,
-		segment_length
-	)
+	if segment_type == MapSegmentDefinitionScript.TYPE_UPPER_DECK_GAP:
+		_place_upper_deck_gap_visuals(road_bucket, props_bucket, segment_width, segment_length, center_z, visual_deck_y)
+	elif segment_type == MapSegmentDefinitionScript.TYPE_LOWER_RECOVERY_DECK:
+		_place_lower_recovery_deck_visuals(road_bucket, props_bucket, segment_width, segment_length, center_z, visual_deck_y)
+	else:
+		_place_required_assets(segment, road_bucket, rails_bucket, props_bucket, center_z, visual_deck_y)
+	if segment_type not in [
+		MapSegmentDefinitionScript.TYPE_UPPER_DECK_GAP,
+		MapSegmentDefinitionScript.TYPE_LOWER_RECOVERY_DECK,
+	]:
+		_place_optional_visuals(
+			segment,
+			props_bucket,
+			rails_bucket,
+			water_bucket,
+			center_z,
+			visual_deck_y,
+			segment_width,
+			segment_length
+		)
 	_place_surface_pieces_for_segment(
 		segment,
 		segment_type,
@@ -202,6 +211,99 @@ func _place_surface_pieces_for_segment(
 			segment_id,
 		)
 		surfaces_bucket.add_child(piece)
+
+
+func _place_upper_deck_gap_visuals(
+	road_bucket: Node3D,
+	props_bucket: Node3D,
+	segment_width: float,
+	segment_length: float,
+	center_z: float,
+	deck_y: float
+) -> void:
+	var wing_width: float = segment_width * 0.32
+	var wing_offset: float = segment_width * 0.34
+	var wing_color := Color(0.95, 0.55, 0.15, 1.0)
+	for side_sign in [-1.0, 1.0]:
+		var wing := _make_colored_deck_slab(
+			"UpperWingVisual",
+			Vector3(wing_width, 0.14, segment_length),
+			Vector3(side_sign * wing_offset, deck_y, center_z),
+			wing_color
+		)
+		road_bucket.add_child(wing)
+
+	var hole := _make_colored_deck_slab(
+		"CenterHoleVisual",
+		Vector3(segment_width * 0.28, 0.06, segment_length * 0.9),
+		Vector3(0.0, deck_y - 0.2, center_z),
+		Color(0.02, 0.04, 0.08, 0.9)
+	)
+	props_bucket.add_child(hole)
+	_place_segment_label(
+		props_bucket,
+		"UPPER DECK — HOLE AHEAD",
+		Vector3(0.0, deck_y + 1.6, center_z),
+		Color(1.0, 0.82, 0.2, 1.0)
+	)
+
+
+func _place_lower_recovery_deck_visuals(
+	road_bucket: Node3D,
+	props_bucket: Node3D,
+	segment_width: float,
+	segment_length: float,
+	center_z: float,
+	deck_y: float
+) -> void:
+	var landing := _make_colored_deck_slab(
+		"LowerLandingVisual",
+		Vector3(segment_width, 0.16, segment_length),
+		Vector3(0.0, deck_y, center_z),
+		Color(0.25, 0.85, 0.45, 1.0)
+	)
+	road_bucket.add_child(landing)
+	_place_segment_label(
+		props_bucket,
+		"LOWER LANDING DECK",
+		Vector3(0.0, deck_y + 1.4, center_z),
+		Color(0.55, 1.0, 0.65, 1.0)
+	)
+
+
+func _make_colored_deck_slab(
+	slab_name: String,
+	size: Vector3,
+	position: Vector3,
+	color: Color
+) -> MeshInstance3D:
+	var slab := MeshInstance3D.new()
+	slab.name = slab_name
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	slab.mesh = mesh
+	slab.position = position
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	mat.roughness = 0.85
+	slab.material_override = mat
+	return slab
+
+
+func _place_segment_label(
+	parent: Node3D,
+	text: String,
+	position: Vector3,
+	color: Color
+) -> void:
+	var label := Label3D.new()
+	label.text = text
+	label.font_size = 28
+	label.outline_size = 8
+	label.modulate = color
+	label.position = position
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	parent.add_child(label)
 
 
 func _place_required_assets(

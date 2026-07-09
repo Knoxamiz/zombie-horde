@@ -12,7 +12,7 @@ static func create():
 	blueprint.map_id = "fallthrough_lower_deck_test"
 	blueprint.display_name = "Fallthrough Lower Deck TEST"
 	blueprint.theme = "fallthrough_test"
-	blueprint.visual_theme = "phase2_kit"
+	blueprint.visual_theme = "phase1_kit"
 	blueprint.deck_y = 2.0
 	blueprint.target_length = 44.0
 	blueprint.difficulty = 2
