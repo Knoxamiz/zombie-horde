@@ -13,7 +13,7 @@ layout_preset_id = "broken_bridge"
 
 [node name="VisualCollisionSanitizer" type="Node" parent="MapDressing"]
 script = ExtResource("2_sanitizer")
-root_path = NodePath("../CoreRoad")
+root_path = NodePath("../CoreRoad/VisualKit")
 
 [node name="MapBanner" type="Label3D" parent="MapDressing"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, -78)

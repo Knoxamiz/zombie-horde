@@ -232,10 +232,7 @@ func _test_broken_bridge_gap_crossings() -> PackedStringArray:
 	var failures: PackedStringArray = PackedStringArray()
 	var layout: Dictionary = MapKitLayoutPresetsScript.get_preset("broken_bridge")
 	var path_half_width: float = float(layout.get("path_half_width", 4.5))
-	var ratio: float = float(
-		layout.get("gap_crossing_width_ratio", KitMapSurfaceBuilderScript.DEFAULT_GAP_CROSSING_WIDTH_RATIO)
-	)
-	var expected_half: float = KitMapSurfaceBuilderScript.gap_crossing_half_width(path_half_width, ratio)
+	var expected_half: float = KitMapSurfaceBuilderScript.gap_crossing_half_width(path_half_width, 1.0)
 
 	var arena = KitMapArenaScript.new()
 	arena.layout_preset_id = "broken_bridge"
@@ -260,9 +257,9 @@ func _test_broken_bridge_gap_crossings() -> PackedStringArray:
 			if box == null:
 				continue
 			var actual_half: float = box.size.x * 0.5
-			if actual_half > expected_half + 0.05:
+			if actual_half + 0.05 < expected_half:
 				failures.append(
-					"Gap crossing too wide: %.2f > allowed %.2f"
+					"Gap crossing too narrow for gameplay: %.2f < required %.2f"
 					% [actual_half, expected_half]
 				)
 
@@ -277,6 +274,12 @@ func _test_broken_bridge_gap_crossings() -> PackedStringArray:
 				plank_count += 1
 		if plank_count != 3:
 			failures.append("Broken Bridge should show 3 gap crossing planks, got %d" % plank_count)
+
+	if surfaces != null:
+		for child in surfaces.get_children():
+			if child is StaticBody3D and child.collision_layer == 0:
+				failures.append("Broken Bridge KitSurfaces gameplay collision was stripped")
+				break
 
 	arena.queue_free()
 	return failures

@@ -25,6 +25,11 @@ const CORE_TESTS: Array[Dictionary] = [
 
 const MAP_TESTS: Array[Dictionary] = [
 	{"name": "map_selection_test", "script": "map_selection_test.gd", "args": []},
+	{
+		"name": "broken_bridge_pass_completion_test",
+		"script": "broken_bridge_pass_completion_test.gd",
+		"args": [],
+	},
 	{"name": "ai_map_pipeline_test", "script": "ai_map_pipeline_test.gd", "args": []},
 	{
 		"name": "multi_layer_surface_collision_test",

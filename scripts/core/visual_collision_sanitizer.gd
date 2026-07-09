@@ -1,6 +1,8 @@
 class_name VisualCollisionSanitizer
 extends Node
 
+const MAP_WALK_SURFACES_GROUP := "map_walk_surfaces"
+
 @export var root_path: NodePath = ^".."
 @export var sanitize_on_ready: bool = true
 @export var disable_area_colliders: bool = false
@@ -34,7 +36,9 @@ static func sanitize_subtree(root: Node) -> void:
 func _sanitize_node(node: Node) -> void:
 	if node == self:
 		return
-	if node.name == "Collision":
+	if node.name == "Collision" or node.name == "KitSurfaces":
+		return
+	if node.is_in_group(MAP_WALK_SURFACES_GROUP):
 		return
 
 	var collision_object: CollisionObject3D = node as CollisionObject3D
