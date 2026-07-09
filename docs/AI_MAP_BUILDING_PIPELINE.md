@@ -18,16 +18,6 @@ MapAssetLibrary  →  approved reusable parts (visual + metadata)
 MapSegmentDefinition  →  segment grammar (length, assets, difficulty)
 AIMapBlueprint  →  map_id + segment_sequence + flags
 AIMapBlueprintBuilder  →  VisualLayer + GameplayLayer prototype scene
-AIMapBlueprintValidator  →  blueprint + scene contract checks
-RaceMapDefinition  →  spawn/goal/OOB/camera values (from builder preview)
-MapCertification  →  required before MapCatalog playable promotion
-```
-
-```
-MapAssetLibrary  →  approved reusable parts (visual + metadata)
-MapSegmentDefinition  →  segment grammar (length, assets, difficulty)
-AIMapBlueprint  →  map_id + segment_sequence + flags
-AIMapBlueprintBuilder  →  VisualLayer + GameplayLayer prototype scene
 AIMapRouteLayout  →  shared spawn/goal/OOB Z alignment
 AIMapBlueprintValidator  →  blueprint + scene + geometry contract checks
 AIMapBlueprintExporter  →  RaceMapDefinition .tres (prototype only)
@@ -66,6 +56,9 @@ AIMapBlueprint (validated blueprint_id)
 | `phase2_drop_gap_probe` | `ai_generated_phase2_drop_gap_probe` | Phase 2 probe |
 | `signature_drop_bridge` | `ai_generated_signature_drop_bridge` | Signature prototype #1 |
 | `phase3_moving_hazard_probe` | `ai_generated_phase3_moving_hazard_probe` | Phase 3 moving hazard probe |
+| `multi_layer_fallthrough_probe` | `ai_generated_multi_layer_fallthrough_probe` | Multi-layer surface + fall-through probe |
+
+**Walk surfaces:** Authoritative collision lives in `GameplayLayer/Surfaces` as `MapSurfacePiece` nodes (box slabs + ramp boxes). Visual meshes stay in `VisualLayer` only. Holes are created by omitting surface pieces, not boolean mesh cuts.
 
 The exporter **fails loudly** on unknown `blueprint_id` values — it does not fall back to Phase 1 or City Highway.
 
@@ -135,7 +128,9 @@ start_straight → straight_road_medium → elevated_straight → left_side_drop
 |------------|--------|
 | **No true branch pathfinding** | Phase 4 splits are offset floors + visuals only |
 | **Moving obstacles prototype-safe** | `MapMovingObstacle` blocks kinematically; no live `BounceObstacle` / `GameEvents` hazard wiring yet |
-| **Flat ramp collision** | `height_delta` is visual deck stepping; safe floors stay flat |
+| **Walk surface collision** | `MapSurfacePiece` slabs under `GameplayLayer/Surfaces`; gaps = omitted pieces; ramps use rotated box collision |
+| **Multi-layer fall-through** | `upper_fallthrough_deck` + `lower_recovery_deck` probe proves landable lower deck |
+| **Flat legacy note** | Pre-surface maps used `SafeFloor` plates; all factory builds now use `Surfaces` |
 | **Generated maps not playable** | `enabled=false`, `status=prototype` — not in production dropdown |
 | **Phase 2–4 are advanced** | Phase 2 probe passed; signature Drop Bridge is prototype-only; Phase 3–4 remain advanced |
 

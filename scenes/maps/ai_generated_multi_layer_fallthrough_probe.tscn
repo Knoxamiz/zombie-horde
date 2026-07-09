@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/maps/ai_generated_map_arena.gd" id="1_arena"]
+[ext_resource type="Script" path="res://scripts/core/visual_collision_sanitizer.gd" id="2_sanitizer"]
+
+[node name="RoadArena" type="Node3D"]
+
+[node name="CoreRoad" type="Node3D" parent="."]
+script = ExtResource("1_arena")
+ai_blueprint_id = "multi_layer_fallthrough_probe"
+
+[node name="MapDressing" type="Node3D" parent="."]
+
+[node name="VisualCollisionSanitizer" type="Node" parent="MapDressing"]
+script = ExtResource("2_sanitizer")
+root_path = NodePath("../CoreRoad/MapRoot/VisualLayer")
+
+[node name="PrototypeBanner" type="Label3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, -2)
+text = "AI MULTI-LAYER FALLTHROUGH PROBE"
+font_size = 24
+outline_size = 6
+modulate = Color(0.7, 0.95, 1, 1)

@@ -5,8 +5,9 @@ const EXPECTED_PROTOTYPE_IDS: Array[String] = [
 	"ai_generated_phase1_bridge_ramp_test",
 	"ai_generated_phase2_drop_gap_probe",
 	"ai_generated_signature_drop_bridge",
+	"ai_generated_phase3_moving_hazard_probe",
+	"ai_generated_multi_layer_fallthrough_probe",
 ]
-const REVIEW_MAP_ID := "ai_generated_signature_drop_bridge"
 const PASS := 0
 const FAIL := 1
 
@@ -20,7 +21,8 @@ func _initialize() -> void:
 func _run_all() -> void:
 	print("=== Prototype map review test ===")
 	_test_catalog_lists_ai_generated_prototypes()
-	await _test_drop_bridge_prototype_load()
+	for map_id in EXPECTED_PROTOTYPE_IDS:
+		await _test_prototype_load(map_id)
 	_finish()
 
 
@@ -45,8 +47,8 @@ func _test_catalog_lists_ai_generated_prototypes() -> void:
 			_fail("expected AI-generated prototype missing from catalog: %s" % expected_id)
 
 
-func _test_drop_bridge_prototype_load() -> void:
-	print("-- drop bridge prototype load --")
+func _test_prototype_load(map_id: String) -> void:
+	print("-- prototype load: %s --" % map_id)
 	var packed: PackedScene = load(MAIN_GAME_SCENE)
 	if packed == null:
 		_fail("Could not load main game scene")
@@ -64,27 +66,27 @@ func _test_drop_bridge_prototype_load() -> void:
 		main_game.queue_free()
 		return
 
-	if not map_controller.load_prototype_map_for_test(REVIEW_MAP_ID):
+	if not map_controller.load_prototype_map_for_test(map_id):
 		_fail(
-			"load_prototype_map_for_test failed: %s"
-			% map_controller.get_last_load_failure_reason()
+			"load_prototype_map_for_test failed for %s: %s"
+			% [map_id, map_controller.get_last_load_failure_reason()]
 		)
 		main_game.queue_free()
 		return
 
 	if map_controller.did_last_load_use_fallback():
-		_fail("prototype load used City Highway fallback")
+		_fail("prototype load used City Highway fallback for %s" % map_id)
 
-	if map_controller.get_resolved_map_id() != REVIEW_MAP_ID:
+	if map_controller.get_resolved_map_id() != map_id:
 		_fail(
 			"resolved map id '%s' != '%s'"
-			% [map_controller.get_resolved_map_id(), REVIEW_MAP_ID]
+			% [map_controller.get_resolved_map_id(), map_id]
 		)
 
 	if not map_controller.is_prototype_test_load_active():
-		_fail("prototype test load flag was not set")
+		_fail("prototype test load flag was not set for %s" % map_id)
 
-	var entry: Dictionary = MapCatalog.get_entry_by_id(REVIEW_MAP_ID)
+	var entry: Dictionary = MapCatalog.get_entry_by_id(map_id)
 	if bool(entry.get("enabled", false)):
 		_fail("catalog entry must remain enabled=false after prototype load")
 	if str(entry.get("status", "")) != MapCatalog.STATUS_PROTOTYPE:
@@ -92,11 +94,11 @@ func _test_drop_bridge_prototype_load() -> void:
 
 	var road_arena: Node3D = main_game.get_node_or_null("World/RoadArena") as Node3D
 	if road_arena == null:
-		_fail("World/RoadArena missing after prototype load")
+		_fail("World/RoadArena missing after prototype load for %s" % map_id)
 	elif road_arena.get_node_or_null("CoreRoad/MapRoot") == null:
-		_fail("CoreRoad/MapRoot missing after prototype load")
+		_fail("CoreRoad/MapRoot missing after prototype load for %s" % map_id)
 
-	print("%s prototype review load passed" % REVIEW_MAP_ID)
+	print("%s prototype review load passed" % map_id)
 	main_game.queue_free()
 
 

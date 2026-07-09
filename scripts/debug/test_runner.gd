@@ -28,6 +28,16 @@ const MAP_TESTS: Array[Dictionary] = [
 	{"name": "ai_map_pipeline_test", "script": "ai_map_pipeline_test.gd", "args": []},
 	{"name": "moving_obstacle_reset_test", "script": "moving_obstacle_reset_test.gd", "args": []},
 	{
+		"name": "ai_generated_map_collision_audit_test",
+		"script": "ai_generated_map_collision_audit_test.gd",
+		"args": [],
+	},
+	{
+		"name": "multi_layer_surface_collision_test",
+		"script": "multi_layer_surface_collision_test.gd",
+		"args": [],
+	},
+	{
 		"name": "broken_bridge_real_gameplay_test",
 		"script": "broken_bridge_real_gameplay_test.gd",
 		"args": ["--zombies=5", "--skip-stress"],
@@ -42,6 +52,11 @@ const CERTIFICATION_TESTS: Array[Dictionary] = [
 		"script": "ai_generated_map_certification_test.gd",
 		"args": [],
 	},
+]
+
+const PROOF_TESTS: Array[Dictionary] = [
+	{"name": "flow_state_proof", "script": "flow_state_proof.gd", "args": []},
+	{"name": "prototype_map_review_test", "script": "prototype_map_review_test.gd", "args": []},
 ]
 
 const ALL_EXTRA_TESTS: Array[Dictionary] = [
@@ -71,8 +86,8 @@ func _run_all() -> void:
 	_tier = _parse_tier()
 	_started_msec = Time.get_ticks_msec()
 
-	if not _tier in ["smoke", "core", "map", "certification", "all"]:
-		push_error("Unknown tier '%s'. Use smoke, core, map, certification, or all." % _tier)
+	if not _tier in ["smoke", "core", "map", "certification", "proof", "all"]:
+		push_error("Unknown tier '%s'. Use smoke, core, map, certification, proof, or all." % _tier)
 		_print_summary([], [], [], 0.0)
 		quit(FAIL)
 		return
@@ -118,6 +133,8 @@ func _tests_for_tier(tier: String) -> Array[Dictionary]:
 			return MAP_TESTS.duplicate(true)
 		"certification":
 			return CERTIFICATION_TESTS.duplicate(true)
+		"proof":
+			return PROOF_TESTS.duplicate(true)
 		"all":
 			return _build_all_tests()
 		_:
@@ -143,7 +160,7 @@ func _parse_tier() -> String:
 			return trimmed.substr("--tier=".length()).strip_edges().to_lower()
 		if trimmed == "--tier" or trimmed.begins_with("--tier "):
 			continue
-		if trimmed in ["smoke", "core", "map", "certification", "all"]:
+		if trimmed in ["smoke", "core", "map", "certification", "proof", "all"]:
 			return trimmed
 
 	for index in range(OS.get_cmdline_user_args().size()):

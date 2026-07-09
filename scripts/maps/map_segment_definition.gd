@@ -44,6 +44,8 @@ const TYPE_HAZARD_RECOVERY := "hazard_recovery"
 const TYPE_MOVING_BLOCK_LANE := "moving_block_lane"
 const TYPE_HAZARD_LANE := "hazard_lane"
 const TYPE_FINISH := "finish"
+const TYPE_UPPER_DECK_GAP := "upper_deck_gap"
+const TYPE_LOWER_RECOVERY_DECK := "lower_recovery_deck"
 
 const ALL_TYPES: Array[String] = [
 	TYPE_START,
@@ -89,6 +91,8 @@ const ALL_TYPES: Array[String] = [
 	TYPE_MOVING_BLOCK_LANE,
 	TYPE_HAZARD_LANE,
 	TYPE_FINISH,
+	TYPE_UPPER_DECK_GAP,
+	TYPE_LOWER_RECOVERY_DECK,
 ]
 
 const PHASE4_SEGMENT_IDS: Array[String] = [
@@ -128,6 +132,8 @@ const PHASE2_SEGMENT_IDS: Array[String] = [
 	"cracked_edge_lane",
 	"water_underpass",
 	"recovery_straight_after_gap",
+	"upper_fallthrough_deck",
+	"lower_recovery_deck",
 ]
 
 const PHASE1_SEGMENT_IDS: Array[String] = [
@@ -286,7 +292,16 @@ static func is_fall_risk_segment_type(segment_type: String) -> bool:
 		TYPE_ELEVATED_RAMP_DROP,
 		TYPE_CRACKED_EDGE_LANE,
 		TYPE_SPLIT_GAP_CHOICE,
+		TYPE_UPPER_DECK_GAP,
 	]
+
+
+static func is_multi_layer_segment_type(segment_type: String) -> bool:
+	return segment_type in [TYPE_UPPER_DECK_GAP, TYPE_LOWER_RECOVERY_DECK]
+
+
+static func is_lower_recovery_segment_type(segment_type: String) -> bool:
+	return segment_type == TYPE_LOWER_RECOVERY_DECK
 
 
 static func is_gap_segment_type(segment_type: String) -> bool:
@@ -682,6 +697,74 @@ static func _build_segments() -> Array[Dictionary]:
 			"Full-width safe floor after a gap/drop segment.",
 			0, -999.0, 0.0, 1.0,
 		),
+		_with_surface_fields(
+			_segment(
+				"upper_fallthrough_deck",
+				TYPE_UPPER_DECK_GAP,
+				8.0,
+				10.0,
+				0.0,
+				3,
+				[
+					"phase2_elevated_bridge_deck",
+					"phase2_broken_guardrail",
+					"phase2_warning_stripes",
+				],
+				["phase2_void_floor_visual", "phase2_edge_cone"],
+				10.0,
+				10.0,
+				true,
+				false,
+				1,
+				1,
+				"Upper deck wings with center fall-through hole. No center collision.",
+				2,
+				-999.0,
+				2.0,
+				1.0,
+			),
+			[
+				{"shape": "deck", "width_ratio": 0.32, "x_offset_ratio": -0.34, "layer_index": 0},
+				{"shape": "deck", "width_ratio": 0.32, "x_offset_ratio": 0.34, "layer_index": 0},
+			],
+		),
+		_with_surface_fields(
+			_segment(
+				"lower_recovery_deck",
+				TYPE_LOWER_RECOVERY_DECK,
+				8.0,
+				10.0,
+				0.0,
+				2,
+				[
+					"phase2_elevated_bridge_deck",
+					"phase2_safe_floor_plate",
+					"phase2_warning_stripes",
+				],
+				["phase2_void_floor_visual"],
+				10.0,
+				10.0,
+				false,
+				false,
+				0,
+				1,
+				"Lower recovery deck for multi-layer fall-through landing.",
+				0,
+				-7.0,
+				1.5,
+				1.0,
+			),
+			[
+				{
+					"shape": "deck",
+					"width_ratio": 1.0,
+					"layer_index": 1,
+					"deck_y_offset": -3.5,
+					"role": "recovery",
+				},
+			],
+			-3.5,
+		),
 		# --- Phase 3 moving obstacle segment templates ---
 		_moving_segment(
 			"moving_block_lane", TYPE_MOVING_BLOCK_LANE, 8.0, 10.0, 0.0, 3,
@@ -1022,6 +1105,8 @@ static func _segment(
 		"recommended_camera_padding": recommended_camera_padding,
 		"safe_floor_width_ratio": safe_floor_width_ratio,
 		"notes": notes,
+		"surface_pieces": [],
+		"lower_deck_y_offset": -3.5,
 	}
 
 
@@ -1079,6 +1164,16 @@ static func _moving_segment(
 	segment["recommended_spacing"] = recommended_spacing
 	segment["fallback_safe_lane"] = fallback_safe_lane
 	segment["fallback_safe_lane_width"] = fallback_safe_lane_width
+	return segment
+
+
+static func _with_surface_fields(
+	segment: Dictionary,
+	surface_pieces: Array,
+	lower_deck_y_offset: float = -3.5
+) -> Dictionary:
+	segment["surface_pieces"] = surface_pieces
+	segment["lower_deck_y_offset"] = lower_deck_y_offset
 	return segment
 
 

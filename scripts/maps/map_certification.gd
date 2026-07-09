@@ -109,11 +109,15 @@ static func certify_scene_contract(map: Node3D, map_id: String) -> Array[String]
 			failures.append("[%s] blueprint map missing GameplayLayer" % map_id)
 		if visual_layer != null and visual_layer.get_child_count() <= 0:
 			failures.append("[%s] blueprint VisualLayer has no children" % map_id)
-		var safe_floor: Node = gameplay_layer.get_node_or_null("SafeFloor") if gameplay_layer != null else null
-		if safe_floor == null:
-			failures.append("[%s] blueprint map missing GameplayLayer/SafeFloor" % map_id)
-		elif safe_floor.get_child_count() <= 0:
-			failures.append("[%s] blueprint SafeFloor has no collision plates" % map_id)
+		var surfaces: Node = null
+		if gameplay_layer != null:
+			surfaces = gameplay_layer.get_node_or_null("Surfaces")
+			if surfaces == null:
+				surfaces = gameplay_layer.get_node_or_null("SafeFloor")
+		if surfaces == null:
+			failures.append("[%s] blueprint map missing GameplayLayer/Surfaces" % map_id)
+		elif surfaces.get_child_count() <= 0:
+			failures.append("[%s] blueprint Surfaces has no walk collision pieces" % map_id)
 
 	return failures
 

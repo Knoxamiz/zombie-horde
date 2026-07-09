@@ -127,6 +127,17 @@ const ENTRIES: Array[Dictionary] = [
 		"ai_generated": true,
 		"ai_blueprint_id": "phase3_moving_hazard_probe",
 	},
+	{
+		"id": "ai_generated_multi_layer_fallthrough_probe",
+		"display_name": "AI Multi-Layer Fallthrough PROBE",
+		"resource_path": "res://resources/maps/ai_generated_multi_layer_fallthrough_probe.tres",
+		"scene_path": "res://scenes/maps/ai_generated_multi_layer_fallthrough_probe.tscn",
+		"enabled": false,
+		"status": STATUS_PROTOTYPE,
+		"legacy_index": 12,
+		"ai_generated": true,
+		"ai_blueprint_id": "multi_layer_fallthrough_probe",
+	},
 ]
 
 

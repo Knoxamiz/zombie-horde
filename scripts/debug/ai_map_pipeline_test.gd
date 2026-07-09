@@ -28,6 +28,9 @@ const Phase3MovingObstacleTestBlueprint := preload(
 const Phase3MovingHazardProbeBlueprint := preload(
 	"res://scripts/maps/blueprints/phase3_moving_hazard_probe.gd"
 )
+const MultiLayerFallthroughProbeBlueprint := preload(
+	"res://scripts/maps/blueprints/multi_layer_fallthrough_probe.gd"
+)
 const Phase4SplitLaneTestBlueprint := preload(
 	"res://scripts/maps/blueprints/phase4_split_lane_test.gd"
 )
@@ -60,6 +63,7 @@ func _run_all() -> void:
 	_test_signature_drop_bridge_blueprint_validates()
 	_test_phase3_blueprint_validates()
 	_test_phase3_moving_hazard_probe_validates()
+	_test_multi_layer_fallthrough_probe_validates()
 	_test_drop_and_play_obstacle_assets()
 	_test_phase4_blueprint_validates()
 	_test_invalid_segment_fails()
@@ -92,6 +96,7 @@ func _run_all() -> void:
 	_test_generated_signature_drop_bridge_contract()
 	_test_generated_phase3_contract()
 	_test_generated_phase3_moving_hazard_probe_contract()
+	_test_generated_multi_layer_fallthrough_probe_contract()
 	_test_generated_phase4_contract()
 	MapAssetLibrary.print_audit_report()
 
@@ -244,6 +249,15 @@ func _test_phase3_moving_hazard_probe_validates() -> void:
 	AIMapBlueprintValidator.print_validation_report(result)
 	if not bool(result.get("ok", false)):
 		_fail("phase3_moving_hazard_probe blueprint should validate")
+
+
+func _test_multi_layer_fallthrough_probe_validates() -> void:
+	print("-- multi-layer fallthrough probe blueprint --")
+	var blueprint = MultiLayerFallthroughProbeBlueprint.create()
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	AIMapBlueprintValidator.print_validation_report(result)
+	if not bool(result.get("ok", false)):
+		_fail("multi_layer_fallthrough_probe blueprint should validate")
 
 
 func _test_drop_and_play_obstacle_assets() -> void:
@@ -619,6 +633,14 @@ func _test_generated_phase3_contract() -> void:
 func _test_generated_phase3_moving_hazard_probe_contract() -> void:
 	print("-- generated phase3 moving hazard probe contract --")
 	_validate_generated_prototype(Phase3MovingHazardProbeBlueprint.create(), "phase3_probe")
+
+
+func _test_generated_multi_layer_fallthrough_probe_contract() -> void:
+	print("-- generated multi-layer fallthrough probe contract --")
+	_validate_generated_prototype(
+		MultiLayerFallthroughProbeBlueprint.create(),
+		"multi_layer_probe",
+	)
 
 
 func _test_generated_phase4_contract() -> void:

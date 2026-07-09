@@ -6,3 +6,4 @@
 secrets/
 resources/config/*local*.tres
 resources/config/*secret*.tres
+artifacts/flow_state_proof_latest.txt

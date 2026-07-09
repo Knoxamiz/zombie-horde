@@ -24,6 +24,13 @@ func sanitize() -> void:
 	if root != null:
 		_sanitize_node(root)
 
+
+static func sanitize_subtree(root: Node) -> void:
+	if root == null:
+		return
+	var sanitizer := VisualCollisionSanitizer.new()
+	sanitizer._sanitize_node(root)
+
 func _sanitize_node(node: Node) -> void:
 	if node == self:
 		return

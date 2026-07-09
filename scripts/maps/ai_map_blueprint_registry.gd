@@ -13,6 +13,9 @@ const SignatureDropBridgeBlueprint := preload(
 const Phase3MovingHazardProbeBlueprint := preload(
 	"res://scripts/maps/blueprints/phase3_moving_hazard_probe.gd"
 )
+const MultiLayerFallthroughProbeBlueprint := preload(
+	"res://scripts/maps/blueprints/multi_layer_fallthrough_probe.gd"
+)
 
 const PROTOTYPE_ENTRIES: Array[Dictionary] = [
 	{
@@ -38,6 +41,12 @@ const PROTOTYPE_ENTRIES: Array[Dictionary] = [
 		"generated_map_id": "ai_generated_phase3_moving_hazard_probe",
 		"scene_path": "res://scenes/maps/ai_generated_phase3_moving_hazard_probe.tscn",
 		"definition_path": "res://resources/maps/ai_generated_phase3_moving_hazard_probe.tres",
+	},
+	{
+		"blueprint_id": "multi_layer_fallthrough_probe",
+		"generated_map_id": "ai_generated_multi_layer_fallthrough_probe",
+		"scene_path": "res://scenes/maps/ai_generated_multi_layer_fallthrough_probe.tscn",
+		"definition_path": "res://resources/maps/ai_generated_multi_layer_fallthrough_probe.tres",
 	},
 ]
 
@@ -87,6 +96,8 @@ static func resolve_blueprint(blueprint_id: String):
 			return SignatureDropBridgeBlueprint.create()
 		"phase3_moving_hazard_probe":
 			return Phase3MovingHazardProbeBlueprint.create()
+		"multi_layer_fallthrough_probe":
+			return MultiLayerFallthroughProbeBlueprint.create()
 		_:
 			return null
 

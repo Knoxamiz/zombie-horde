@@ -3,6 +3,7 @@ extends CanvasLayer
 
 const PANEL_WIDTH := 360.0
 const REFRESH_INTERVAL_SEC := 0.25
+const AIMapCollisionAudit := preload("res://scripts/maps/ai_map_collision_audit.gd")
 
 @export var round_manager_path: NodePath
 @export var debug_join_source_path: NodePath
@@ -44,6 +45,8 @@ var _prototype_list_label: Label
 var _selected_prototype_map_id: String = ""
 
 const SIGNATURE_DROP_BRIDGE_MAP_ID := "ai_generated_signature_drop_bridge"
+const PHASE3_MOVING_HAZARD_PROBE_MAP_ID := "ai_generated_phase3_moving_hazard_probe"
+const MULTI_LAYER_FALLTHROUGH_PROBE_MAP_ID := "ai_generated_multi_layer_fallthrough_probe"
 
 
 func _enter_tree() -> void:
@@ -185,6 +188,8 @@ func _build_ui() -> void:
 	_prototype_review_status_label = _add_readout(body, "Prototype load: idle")
 	_add_button(body, "Load Phase 1 Bridge/Ramp Prototype", _on_load_phase1_prototype_pressed)
 	_add_button(body, "Load Phase 2 Drop/Gap Probe", _on_load_phase2_probe_pressed)
+	_add_button(body, "Load Phase 3 Moving Hazard Probe", _on_load_phase3_probe_pressed)
+	_add_button(body, "Load Multi-Layer Fallthrough PROBE", _on_load_multi_layer_probe_pressed)
 	_add_button(body, "Load The Drop Bridge Prototype", _on_load_drop_bridge_prototype_pressed)
 	_add_button_row(body, [
 		["Load Drop Bridge + Queue 20", _on_load_drop_bridge_queue_twenty_pressed],
@@ -412,6 +417,14 @@ func _on_load_phase2_probe_pressed() -> void:
 	_load_prototype_for_review("ai_generated_phase2_drop_gap_probe")
 
 
+func _on_load_phase3_probe_pressed() -> void:
+	_load_prototype_for_review(PHASE3_MOVING_HAZARD_PROBE_MAP_ID)
+
+
+func _on_load_multi_layer_probe_pressed() -> void:
+	_load_prototype_for_review(MULTI_LAYER_FALLTHROUGH_PROBE_MAP_ID)
+
+
 func _on_load_drop_bridge_prototype_pressed() -> void:
 	_load_prototype_for_review(SIGNATURE_DROP_BRIDGE_MAP_ID)
 
@@ -483,8 +496,18 @@ func _load_prototype_for_review(map_id: String) -> bool:
 		"DevControlPanel: prototype review load succeeded for '%s' (resolved=%s)"
 		% [map_id, _race_map_controller.get_resolved_map_id()]
 	)
+	_print_loaded_map_collision_audit(map_id)
 	_refresh_display()
 	return true
+
+
+func _print_loaded_map_collision_audit(map_id: String) -> void:
+	if _race_world == null:
+		return
+	var map_root: Node3D = _race_world.get_node_or_null("RoadArena/CoreRoad/MapRoot") as Node3D
+	if map_root == null:
+		return
+	AIMapCollisionAudit.print_collision_audit(map_root, map_id)
 
 
 func _prepare_for_prototype_map_load() -> String:
@@ -831,8 +854,10 @@ func _refresh_prototype_review_status() -> void:
 	var catalog_note: String = _prototype_catalog_guard_text(selected_id)
 
 	_prototype_review_status_label.text = (
-		"%s\nActive map id: %s\nSelected prototype id: %s\nLoad status: %s\n"
-		+ "Last failure: %s\nFallback used: %s\n%s"
+		(
+			"%s\nActive map id: %s\nSelected prototype id: %s\nLoad status: %s\n"
+			+ "Last failure: %s\nFallback used: %s\n%s"
+		)
 		% [
 			reminder,
 			active_map_id if not active_map_id.is_empty() else "unknown",
