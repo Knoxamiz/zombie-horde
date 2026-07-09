@@ -25,6 +25,7 @@ const CORE_TESTS: Array[Dictionary] = [
 
 const MAP_TESTS: Array[Dictionary] = [
 	{"name": "map_selection_test", "script": "map_selection_test.gd", "args": []},
+	{"name": "ai_map_pipeline_test", "script": "ai_map_pipeline_test.gd", "args": []},
 	{
 		"name": "broken_bridge_real_gameplay_test",
 		"script": "broken_bridge_real_gameplay_test.gd",
@@ -35,6 +36,11 @@ const MAP_TESTS: Array[Dictionary] = [
 const CERTIFICATION_TESTS: Array[Dictionary] = [
 	{"name": "map_selection_test", "script": "map_selection_test.gd", "args": []},
 	{"name": "map_certification_test", "script": "map_certification_test.gd", "args": []},
+	{
+		"name": "ai_generated_map_certification_test",
+		"script": "ai_generated_map_certification_test.gd",
+		"args": [],
+	},
 ]
 
 const ALL_EXTRA_TESTS: Array[Dictionary] = [

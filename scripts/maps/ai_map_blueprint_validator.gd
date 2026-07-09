@@ -3,6 +3,7 @@ extends RefCounted
 
 const MapAssetLibraryScript := preload("res://scripts/maps/map_asset_library.gd")
 const MapSegmentDefinitionScript := preload("res://scripts/maps/map_segment_definition.gd")
+const AIMapRouteLayoutScript := preload("res://scripts/maps/ai_map_route_layout.gd")
 
 const VOID_KILL_SCRIPT_PATH := "res://scripts/maps/bridge_void_kill_zone.gd"
 
@@ -44,6 +45,7 @@ static func validate_blueprint(blueprint) -> Dictionary:
 	_validate_rail_barrier_match(blueprint, result)
 	_validate_route_length(blueprint, result)
 	_validate_definition_preview(blueprint, result)
+	_validate_route_layout_alignment(blueprint, result)
 
 	if blueprint.authoring_status == "playable":
 		_add_error(
@@ -84,6 +86,8 @@ static func validate_generated_scene(
 
 	if definition != null:
 		_validate_definition_values(definition, blueprint, result)
+		_validate_route_layout_alignment(blueprint, result, definition)
+		_validate_generated_geometry_alignment(root, blueprint, definition, result)
 		_validate_elevated_camera_framing(definition, blueprint, result)
 		var camera_view: Dictionary = RaceMapController.compute_race_camera_view_for_definition(definition)
 		if camera_view.get("position", Vector3.ZERO) == Vector3.ZERO:
@@ -275,6 +279,93 @@ static func _validate_route_length(blueprint, result: Dictionary) -> void:
 static func _validate_definition_preview(blueprint, result: Dictionary) -> void:
 	var definition: RaceMapDefinition = blueprint.to_race_map_definition()
 	_validate_definition_values(definition, blueprint, result)
+
+
+static func _validate_route_layout_alignment(
+	blueprint,
+	result: Dictionary,
+	definition: RaceMapDefinition = null
+) -> void:
+	if definition == null:
+		definition = blueprint.to_race_map_definition()
+	for error in AIMapRouteLayoutScript.definition_matches_layout(definition, blueprint):
+		_add_error(result, error)
+
+
+static func _validate_generated_geometry_alignment(
+	root: Node3D,
+	blueprint,
+	definition: RaceMapDefinition,
+	result: Dictionary
+) -> void:
+	if root == null or definition == null:
+		return
+
+	var layout: Dictionary = AIMapRouteLayoutScript.compute_layout(blueprint)
+	var floor_bounds: Dictionary = AIMapRouteLayoutScript.collect_safe_floor_z_bounds(root)
+	if int(floor_bounds.get("count", 0)) <= 0:
+		_add_error(result, "Generated safe floor has no collision plates with measurable bounds.")
+		return
+
+	var route_min_z: float = float(layout.get("route_min_z", 0.0))
+	var route_max_z: float = float(layout.get("route_max_z", 0.0))
+	var floor_min_z: float = float(floor_bounds.get("min_z", 0.0))
+	var floor_max_z: float = float(floor_bounds.get("max_z", 0.0))
+	if floor_min_z > route_min_z + 0.5:
+		_add_error(
+			result,
+			"Safe floor min Z %.2f starts after route origin %.2f."
+			% [floor_min_z, route_min_z]
+		)
+	if floor_max_z < route_max_z - 0.5:
+		_add_error(
+			result,
+			"Safe floor max Z %.2f ends before route terminus %.2f."
+			% [floor_max_z, route_max_z]
+		)
+
+	var spawn_marker: Node3D = _find_named_node(root, "SpawnMarker") as Node3D
+	var goal_marker: Node3D = _find_named_node(root, "GoalMarker") as Node3D
+	if spawn_marker == null:
+		_add_error(result, "SpawnMarker is missing from generated scene.")
+	if goal_marker == null:
+		_add_error(result, "GoalMarker is missing from generated scene.")
+	if spawn_marker != null:
+		var start_length: float = _first_segment_length(blueprint)
+		var expected_spawn_center_z: float = start_length * 0.5
+		if absf(spawn_marker.position.z - expected_spawn_center_z) > 0.25:
+			_add_error(
+				result,
+				"SpawnMarker Z %.2f does not align with start segment center %.2f."
+				% [spawn_marker.position.z, expected_spawn_center_z]
+			)
+	if goal_marker != null:
+		var expected_goal_center_z: float = float(layout.get("goal_z", 0.0))
+		if absf(goal_marker.position.z - expected_goal_center_z) > 0.25:
+			_add_error(
+				result,
+				"GoalMarker Z %.2f does not align with layout goal Z %.2f."
+				% [goal_marker.position.z, expected_goal_center_z]
+			)
+
+
+static func _first_segment_length(blueprint) -> float:
+	if blueprint.segment_sequence.is_empty():
+		return 8.0
+	var first_segment: Dictionary = MapSegmentDefinitionScript.get_segment(
+		str(blueprint.segment_sequence[0])
+	)
+	return float(first_segment.get("length", 8.0))
+
+
+static func _find_named_node(node: Node, node_name: String) -> Node:
+	if node.name == node_name:
+		return node
+	for child in node.get_children():
+		var found: Node = _find_named_node(child, node_name)
+		if found != null:
+			return found
+	return null
 
 
 static func _validate_definition_values(

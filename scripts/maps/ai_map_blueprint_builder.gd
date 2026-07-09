@@ -4,10 +4,9 @@ extends RefCounted
 const MapAssetLibraryScript := preload("res://scripts/maps/map_asset_library.gd")
 const MapSegmentDefinitionScript := preload("res://scripts/maps/map_segment_definition.gd")
 const AIMapBlueprintValidatorScript := preload("res://scripts/maps/ai_map_blueprint_validator.gd")
+const AIMapRouteLayoutScript := preload("res://scripts/maps/ai_map_route_layout.gd")
 
-const ZOMBIE_SPAWN_CLEARANCE: float = 0.8
 const FLOOR_THICKNESS: float = 0.12
-const SPAWN_BACK_OFFSET: float = 4.0
 
 var _blueprint
 var _map_root: Node3D
@@ -36,6 +35,7 @@ func build_prototype(parent: Node3D, blueprint) -> Node3D:
 	_route_deck_y = blueprint.deck_y
 	_route_cursor_z = 0.0
 	_built_length = 0.0
+	var layout: Dictionary = AIMapRouteLayoutScript.compute_layout(blueprint)
 
 	_map_root = Node3D.new()
 	_map_root.name = "MapRoot"
@@ -70,20 +70,22 @@ func build_prototype(parent: Node3D, blueprint) -> Node3D:
 			obstacles_bucket
 		)
 
-	_spawn_z = _route_cursor_z - _built_length - SPAWN_BACK_OFFSET
-	_goal_z = _route_cursor_z - float(
-		MapSegmentDefinitionScript.get_segment(blueprint.segment_sequence.back()).get("length", 8.0)
-	) * 0.5
+	_spawn_z = float(layout.get("spawn_z", 0.0))
+	_goal_z = float(layout.get("goal_z", 0.0))
 
+	var definition: RaceMapDefinition = build_race_map_definition(blueprint)
 	var scene_validation: Dictionary = AIMapBlueprintValidatorScript.validate_generated_scene(
-		_map_root, blueprint, build_race_map_definition(blueprint)
+		_map_root, blueprint, definition
 	)
 	if not bool(scene_validation.get("ok", false)):
-		push_warning(
-			"AIMapBlueprintBuilder: generated scene validation warnings/errors for '%s'"
+		push_error(
+			"AIMapBlueprintBuilder: generated scene validation failed for '%s'"
 			% blueprint.map_id
 		)
 		AIMapBlueprintValidatorScript.print_validation_report(scene_validation)
+		_map_root.queue_free()
+		_map_root = null
+		return null
 
 	return _map_root
 

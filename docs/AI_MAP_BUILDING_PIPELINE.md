@@ -23,9 +23,66 @@ RaceMapDefinition  →  spawn/goal/OOB/camera values (from builder preview)
 MapCertification  →  required before MapCatalog playable promotion
 ```
 
+```
+MapAssetLibrary  →  approved reusable parts (visual + metadata)
+MapSegmentDefinition  →  segment grammar (length, assets, difficulty)
+AIMapBlueprint  →  map_id + segment_sequence + flags
+AIMapBlueprintBuilder  →  VisualLayer + GameplayLayer prototype scene
+AIMapRouteLayout  →  shared spawn/goal/OOB Z alignment
+AIMapBlueprintValidator  →  blueprint + scene + geometry contract checks
+AIMapBlueprintExporter  →  RaceMapDefinition .tres (prototype only)
+AIGeneratedMapArena  →  RoadArena/CoreRoad runtime build wrapper
+RaceMapController.load_prototype_map_for_test  →  prototype load path
+MapCertification / ai_generated_map_certification_test  →  pass/fail gate
+```
+
 **Finish authority:** `World/StreamerBase` (`StreamerBaseGoal`) only.  
 **Fall/OOB authority:** `Zombie._check_out_of_bounds()` + `RaceMapDefinition` / `ZombieConfig`.  
 **Never:** `GoalCatch`, authoritative `bridge_void_kill_zone`, scene `Camera3D.current`.
+
+---
+
+## Minimum map factory loop (closed)
+
+Prototype maps now follow this loop:
+
+```
+AIMapBlueprint (phase1_bridge_ramp_test)
+  → AIMapBlueprintBuilder.build_prototype()
+  → AIMapBlueprintExporter.export_phase1_bridge_ramp_prototype()
+  → resources/maps/ai_generated_phase1_bridge_ramp_test.tres
+  → scenes/maps/ai_generated_phase1_bridge_ramp_test.tscn
+  → MapCatalog id: ai_generated_phase1_bridge_ramp_test (prototype only)
+  → RaceMapController.load_prototype_map_for_test()
+  → ai_generated_map_certification_test.gd
+```
+
+**Canonical first example:** `phase1_bridge_ramp_test` → exported as `ai_generated_phase1_bridge_ramp_test`.
+
+Commands:
+
+```bash
+# Regenerate exported RaceMapDefinition from blueprint grammar
+godot --headless --path . -s res://scripts/debug/export_ai_generated_prototype.gd
+
+# Pipeline unit tests (layout alignment + negative cases)
+godot --headless --path . -s res://scripts/debug/ai_map_pipeline_test.gd
+
+# Generated prototype certification (prototype loader + mini race)
+godot --headless --path . -s res://scripts/debug/ai_generated_map_certification_test.gd
+```
+
+### Current limitations (prototype-only)
+
+| Limitation | Status |
+|------------|--------|
+| **No true branch pathfinding** | Phase 4 splits are offset floors + visuals only |
+| **Moving obstacles prototype-safe** | `MapMovingObstacle` blocks kinematically; no live `BounceObstacle` / `GameEvents` hazard wiring yet |
+| **Flat ramp collision** | `height_delta` is visual deck stepping; safe floors stay flat |
+| **Generated maps not playable** | `enabled=false`, `status=prototype` — not in production dropdown |
+| **Phase 2–4 are advanced** | Start with Phase 1 segments; add fall/obstacle/split packs only after export loop passes |
+
+Phase 2–4 packs remain available in grammar/tests but are **advanced/later** for new AI-authored maps. Use Phase 1 for first prototypes.
 
 ---
 
@@ -441,17 +498,23 @@ Rules:
 
 ---
 
-## Blueprint example
+## Canonical blueprint example (start here)
 
-`example_bridge_segments_test` (non-playable, not in map dropdown):
+**Phase 1 generated prototype** — `phase1_bridge_ramp_test` (exported as `ai_generated_phase1_bridge_ramp_test`):
 
 ```gdscript
-var blueprint := ExampleBridgeSegmentsTestBlueprint.create()
-# segment_sequence:
-# seg_start_8 → seg_straight_8 → seg_gap_8 → seg_straight_8 → seg_finish_8
+var blueprint := Phase1BridgeRampTestBlueprint.create()
+# start_straight → straight_road_medium → ramp_up → bridge_straight
+# → small_gap → straight_road_short → ramp_down → finish_straight
 ```
 
-Factory: `scripts/maps/blueprints/example_bridge_segments_test.gd`
+Factories:
+
+- Blueprint grammar: `scripts/maps/blueprints/phase1_bridge_ramp_test.gd`
+- Export: `scripts/maps/ai_map_blueprint_exporter.gd`
+- Catalog id: `ai_generated_phase1_bridge_ramp_test` (prototype/test only)
+
+Legacy `example_bridge_segments_test` (`seg_*` ids) is deprecated for new AI work — use Phase 1 ids only.
 
 ---
 

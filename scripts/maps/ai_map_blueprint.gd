@@ -2,6 +2,7 @@ class_name AIMapBlueprint
 extends Resource
 
 const MapSegmentDefinitionScript := preload("res://scripts/maps/map_segment_definition.gd")
+const AIMapRouteLayoutScript := preload("res://scripts/maps/ai_map_route_layout.gd")
 
 const STATUS_PROTOTYPE := "prototype"
 const STATUS_TEST := "test"
@@ -126,40 +127,9 @@ func is_prototype_only() -> bool:
 
 func to_race_map_definition() -> RaceMapDefinition:
 	var definition := RaceMapDefinition.new()
-	var total_length: float = get_total_route_length()
-	var half_route: float = total_length * 0.5
-	var spawn_z: float = -half_route - 4.0
-	var goal_z: float = half_route
-	var spawn_y: float = deck_y + 0.8
-
-	definition.display_name = display_name
-	definition.premium_only = true
-	definition.deck_y = deck_y
-	definition.spawn_origin = Vector3(0.0, spawn_y, spawn_z)
-	definition.spawn_area_size = Vector2(route_half_width * 2.0, 4.0)
-	definition.goal_position = Vector3(0.0, spawn_y, goal_z)
-	definition.base_position = Vector3(0.0, deck_y, goal_z)
-	definition.minigun_position = Vector3(0.0, deck_y, goal_z - 4.0)
-	definition.lane_half_width = lane_half_width
-	var route_max_half: float = get_route_max_half_width()
-	definition.out_of_bounds_half_width = maxf(
-		lane_half_width + 6.0,
-		maxf(route_max_half + 2.0, route_half_width + 2.0)
-	)
-	definition.out_of_bounds_min_z = spawn_z - 8.0
-	definition.out_of_bounds_max_z = goal_z + 8.0
-	definition.out_of_bounds_min_y = get_recommended_oob_min_y()
-	definition.hazard_placement_half_width = lane_half_width
-	definition.hazard_placement_min_z = spawn_z + 4.0
-	definition.hazard_placement_max_z = goal_z - 4.0
-	definition.obstacle_half_width = lane_half_width
-	definition.obstacle_min_z = spawn_z + 4.0
-	definition.obstacle_max_z = goal_z - 4.0
-	definition.obstacle_lane_count = 1
-	definition.powerup_placement_half_width = lane_half_width - 0.5
-	definition.powerup_placement_min_z = spawn_z + 8.0
-	definition.powerup_placement_max_z = goal_z - 4.0
-	definition.defender_placement_half_width = lane_half_width - 0.5
-	definition.defender_placement_min_z = spawn_z + 8.0
-	definition.defender_placement_max_z = goal_z - 4.0
+	AIMapRouteLayoutScript.apply_to_definition(definition, self)
 	return definition
+
+
+func get_route_layout() -> Dictionary:
+	return AIMapRouteLayoutScript.compute_layout(self)
