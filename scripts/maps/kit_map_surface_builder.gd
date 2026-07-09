@@ -79,7 +79,7 @@ static func get_lowest_top_y(surface_pieces: Array, fallback: float = 0.0) -> fl
 		if shape == "ramp":
 			var start_y: float = float(spec.get("start_y", 0.0))
 			var height_delta: float = float(spec.get("height_delta", 0.0))
-			lowest = minf(lowest, start_y, start_y + height_delta)
+			lowest = minf(lowest, minf(start_y, start_y + height_delta))
 		else:
 			lowest = minf(lowest, float(spec.get("top_y", 0.0)))
 	return lowest if lowest < INF else fallback

@@ -10,10 +10,18 @@ const SURFACE_BUILDER := preload("res://scripts/maps/kit_map_surface_builder.gd"
 @export var layout_preset_id: String = "broken_bridge"
 
 var _kit: RaceMapKit
+var _built: bool = false
 
 
 func _ready() -> void:
+	ensure_built()
+
+
+func ensure_built() -> void:
+	if _built:
+		return
 	_build_from_preset(layout_preset_id)
+	_built = true
 
 
 func _build_from_preset(preset_id: String) -> void:
@@ -52,9 +60,19 @@ func _build_from_preset(preset_id: String) -> void:
 			_:
 				_kit.build_continuous_play_surface(road_width, spawn_z, goal_z)
 
-	_kit.compose_map(segments, gaps)
 	if uses_surface_pieces:
 		_kit.build_ramp_visuals(SURFACE_BUILDER.collect_ramp_visual_specs(surface_pieces), road_width)
+	_kit.compose_map(segments, gaps)
+	_kit.build_route_context(
+		spawn_z,
+		goal_z,
+		path_half_width,
+		segments,
+		gaps,
+		void_width,
+		track_length,
+		surface_pieces if uses_surface_pieces else []
+	)
 	_kit.build_markers(visual_width, spawn_z, goal_z, start_gate_z, finish_gate_z)
 	print(
 		"KitMapArena: built preset '%s' (%d segments, %d gaps, elevation=%s)"

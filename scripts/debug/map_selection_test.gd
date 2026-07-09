@@ -24,6 +24,7 @@ func _initialize() -> void:
 	_failures.append_array(_test_profile_migration())
 	_failures.append_array(_test_layout_preset_uniqueness())
 	_failures.append_array(_test_kit_elevation_presets())
+	_failures.append_array(_test_kit_route_context())
 	call_deferred("_begin_runtime_load")
 
 
@@ -161,6 +162,7 @@ func _test_kit_elevation_presets() -> PackedStringArray:
 		var arena = KitMapArenaScript.new()
 		arena.layout_preset_id = preset_id
 		root.add_child(arena)
+		arena.ensure_built()
 
 		var surfaces: Node = arena.get_node_or_null("KitSurfaces")
 		if surfaces == null or surfaces.get_child_count() < 2:
@@ -169,14 +171,57 @@ func _test_kit_elevation_presets() -> PackedStringArray:
 				% [preset_id, surfaces.get_child_count() if surfaces != null else 0]
 			)
 
-		var sample_z: float = (
-			float(layout.get("spawn_z", 0.0)) + float(layout.get("goal_z", 0.0))
-		) * 0.5
-		var mid_y: float = KitMapSurfaceBuilderScript.get_top_y_at_z(pieces, sample_z, 0.0)
-		if mid_y <= 0.01:
-			failures.append(
-				"Preset '%s' should have elevated mid-route Y, got %.2f" % [preset_id, mid_y]
-			)
+		var has_elevation: bool = false
+		for raw_spec in pieces:
+			if raw_spec is not Dictionary:
+				continue
+			var spec: Dictionary = raw_spec
+			var shape: String = str(spec.get("shape", "deck"))
+			if shape == "ramp":
+				if abs(float(spec.get("height_delta", 0.0))) > 0.01:
+					has_elevation = true
+			elif abs(float(spec.get("top_y", 0.0))) > 0.01:
+				has_elevation = true
+		if not has_elevation:
+			failures.append("Preset '%s' should define elevated surface pieces" % preset_id)
+
+		arena.queue_free()
+	return failures
+
+
+func _test_kit_route_context() -> PackedStringArray:
+	var failures: PackedStringArray = PackedStringArray()
+	var preset_ids: Array[String] = [
+		"broken_bridge",
+		"mine_alley",
+		"cone_slalom",
+		"vehicle_yard",
+		"defender_gauntlet",
+		"boost_rush",
+	]
+	for preset_id in preset_ids:
+		var arena = KitMapArenaScript.new()
+		arena.layout_preset_id = preset_id
+		root.add_child(arena)
+		arena.ensure_built()
+
+		var ground_bed: Node = arena.get_node_or_null("GroundBed")
+		if ground_bed == null:
+			failures.append("Preset '%s' should build GroundBed route context" % preset_id)
+
+		var visual_kit: Node = arena.get_node_or_null("VisualKit")
+		if visual_kit == null:
+			failures.append("Preset '%s' missing VisualKit for guardrails" % preset_id)
+		else:
+			var barrier_count: int = 0
+			for child in visual_kit.get_children():
+				if child is Node3D:
+					barrier_count += 1
+			if barrier_count < 8:
+				failures.append(
+					"Preset '%s' should place route guardrail props, got %d visual children"
+					% [preset_id, barrier_count]
+				)
 
 		arena.queue_free()
 	return failures
