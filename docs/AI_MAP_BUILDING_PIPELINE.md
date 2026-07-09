@@ -126,7 +126,7 @@ start_straight → straight_road_medium → elevated_straight → left_side_drop
 
 **Why not playable yet:** Requires human/editor review, visual polish, and full `map_certification_test` promotion gate before `MapCatalog` `enabled=true`.
 
-**Before promotion:** Pass certification on production path, art direction pass, performance check with 20–50 zombies, and explicit human sign-off per [MAP_CERTIFICATION.md](MAP_CERTIFICATION.md).
+**Before promotion:** Pass certification on production path, art direction pass, performance check with 20–50 zombies, explicit human sign-off per [MAP_CERTIFICATION.md](MAP_CERTIFICATION.md), and visual review via F3 **Prototype Map Review** (see [DEV_TOOLS_OVERVIEW.md](DEV_TOOLS_OVERVIEW.md)).
 
 ### Current limitations (prototype-only)
 
