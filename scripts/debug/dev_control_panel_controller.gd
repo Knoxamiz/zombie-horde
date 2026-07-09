@@ -39,6 +39,9 @@ var _flow_markers_toggle: CheckButton
 var _stress_status_label: Label
 var _blueprint_debug_toggle: CheckButton
 var _hint_label: Label
+var _dev_map_status_label: Label
+
+const FALLTHROUGH_LOWER_DECK_TEST_MAP_ID := "ai_generated_fallthrough_lower_deck_test"
 
 
 func _enter_tree() -> void:
@@ -143,6 +146,7 @@ func _build_ui() -> void:
 			+ "Map Info: active map id in Self Check and Active Config Inspector.\n"
 			+ "Active Config Inspector: read-only runtime map and race settings.\n"
 			+ "Fake Viewer Simulator: add fake stream viewers without Twitch.\n"
+			+ "Dev Map Tests: load collision proof maps (not in streamer menu).\n"
 			+ "Zombie Flow Analyzer: shows where zombies spawn, finish, fall, die, or get stuck.\n"
 			+ "Performance Profiler: measures FPS with 20/100/250/500 zombies."
 		)
@@ -166,6 +170,15 @@ func _build_ui() -> void:
 		["+20 NPCs", _on_add_twenty_npcs_pressed],
 	])
 	_clear_queue_button = _add_button(body, "Clear Queued NPCs", _on_clear_queue_pressed)
+
+	_add_section(body, "Dev Map Tests")
+	_add_hint(
+		body,
+		"Collision proof maps only. Not playable in streamer settings — F3 load for manual testing."
+	)
+	_dev_map_status_label = _add_readout(body, "Dev map load: idle")
+	_add_button(body, "Load Fallthrough Lower Deck TEST", _on_load_fallthrough_lower_deck_pressed)
+	_add_button(body, "Load Fallthrough + Queue 20", _on_load_fallthrough_queue_twenty_pressed)
 
 	_add_section(body, "Fake Viewer Simulator")
 	_add_hint(body, "Stream-style joins via DebugJoinSource. Dev/debug only.")
@@ -379,6 +392,62 @@ func _on_clear_queue_pressed() -> void:
 	if _round_manager != null:
 		_round_manager.debug_clear_pending_participants()
 	_refresh_display()
+
+
+func _on_load_fallthrough_lower_deck_pressed() -> void:
+	_load_dev_test_map(FALLTHROUGH_LOWER_DECK_TEST_MAP_ID)
+
+
+func _on_load_fallthrough_queue_twenty_pressed() -> void:
+	if _load_dev_test_map(FALLTHROUGH_LOWER_DECK_TEST_MAP_ID):
+		_run_simulator_batch(20)
+
+
+func _load_dev_test_map(map_id: String) -> bool:
+	if not OS.is_debug_build():
+		push_error("Dev map tests are only available in debug/editor builds")
+		_refresh_display()
+		return false
+	if _race_map_controller == null:
+		push_error("Dev map test: RaceMapController missing")
+		_refresh_display()
+		return false
+
+	if _round_manager != null:
+		var state: int = _round_manager.state
+		if state in [RoundManager.RoundState.RUNNING, RoundManager.RoundState.COUNTDOWN, RoundManager.RoundState.ENDED]:
+			if _fake_viewer_simulator != null:
+				_fake_viewer_simulator.stop_simulation()
+			_round_manager.reset_round()
+
+	var catalog_entry: Dictionary = MapCatalog.get_entry_by_id(map_id)
+	if catalog_entry.is_empty() or not MapCatalog.is_prototype_testable(catalog_entry):
+		push_error("Dev map test: '%s' is not a prototype-testable catalog entry" % map_id)
+		_refresh_display()
+		return false
+
+	if not _race_map_controller.load_prototype_map_for_test(map_id):
+		push_error(
+			"DEV MAP LOAD FAILED [%s]: %s"
+			% [map_id, _race_map_controller.get_last_load_failure_reason()]
+		)
+		_refresh_display()
+		return false
+	if _race_map_controller.did_last_load_use_fallback():
+		push_error("DEV MAP LOAD FAILED [%s]: City Highway fallback was used" % map_id)
+		_refresh_display()
+		return false
+	if _race_map_controller.get_resolved_map_id() != map_id:
+		push_error(
+			"DEV MAP LOAD FAILED [%s]: resolved '%s'"
+			% [map_id, _race_map_controller.get_resolved_map_id()]
+		)
+		_refresh_display()
+		return false
+
+	print("DevControlPanel: dev map load succeeded for '%s'" % map_id)
+	_refresh_display()
+	return true
 
 
 func _ensure_fake_viewer_simulator() -> void:
@@ -615,6 +684,7 @@ func _get_blueprint_arena() -> BlueprintMapArena:
 func _refresh_display() -> void:
 	_refresh_race_state()
 	_refresh_npc_counts()
+	_refresh_dev_map_status()
 	_refresh_simulator_status()
 	_refresh_config_inspector()
 	_refresh_flow_analyzer_status()
@@ -663,6 +733,34 @@ func _refresh_npc_counts() -> void:
 	_npc_counts_label.text = (
 		"Queued: %d | Racing: %d | Alive: %d | Finished: %d | Dead: %d | Total: %d"
 		% [queued, racing, living, finished, dead, total]
+	)
+
+
+func _refresh_dev_map_status() -> void:
+	if _dev_map_status_label == null:
+		return
+	if not OS.is_debug_build():
+		_dev_map_status_label.text = "Dev map load: unavailable (release build)"
+		return
+	if _race_map_controller == null:
+		_dev_map_status_label.text = "Dev map load: RaceMapController missing"
+		return
+
+	var active_id: String = _race_map_controller.get_resolved_map_id()
+	var is_dev_map: bool = active_id == FALLTHROUGH_LOWER_DECK_TEST_MAP_ID
+	var load_status: String = "idle"
+	if _race_map_controller.is_prototype_test_load_active():
+		load_status = "loaded" if is_dev_map else "other prototype"
+	elif not _race_map_controller.get_last_load_failure_reason().is_empty():
+		load_status = "failed"
+
+	_dev_map_status_label.text = (
+		"Active map: %s | Dev test status: %s | Failure: %s"
+		% [
+			active_id if not active_id.is_empty() else "unknown",
+			load_status,
+			_race_map_controller.get_last_load_failure_reason(),
+		]
 	)
 
 

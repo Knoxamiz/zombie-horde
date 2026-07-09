@@ -19,6 +19,17 @@ const ENTRIES: Array[Dictionary] = [
 		"status": STATUS_PLAYABLE,
 		"legacy_index": 0,
 	},
+	{
+		"id": "ai_generated_fallthrough_lower_deck_test",
+		"display_name": "Fallthrough Lower Deck TEST",
+		"resource_path": "res://resources/maps/ai_generated_fallthrough_lower_deck_test.tres",
+		"scene_path": "res://scenes/maps/ai_generated_fallthrough_lower_deck_test.tscn",
+		"enabled": false,
+		"status": STATUS_PROTOTYPE,
+		"legacy_index": 8,
+		"ai_generated": true,
+		"ai_blueprint_id": "fallthrough_lower_deck_test",
+	},
 ]
 
 
