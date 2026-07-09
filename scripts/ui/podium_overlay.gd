@@ -77,9 +77,12 @@ func _refresh(
 
 	var elapsed_seconds: float = float(stats.get("elapsed_seconds", 0.0))
 	if base_won:
-		_subtitle_label.text = "Top 3 closest zombies  |  %s" % _format_finish_time(elapsed_seconds)
+		_subtitle_label.text = "No zombie reached the base in time  |  %s" % _format_finish_time(elapsed_seconds)
 	else:
-		_subtitle_label.text = "%s takes the base  |  %s" % [winner_name, _format_finish_time(elapsed_seconds)]
+		_subtitle_label.text = "%s reached the streamer base!  |  %s" % [
+			winner_name,
+			_format_finish_time(elapsed_seconds),
+		]
 
 	var podium_entries: Array[Dictionary] = PodiumResultsBuilder.build_top_three(
 		winner_name,
@@ -88,6 +91,7 @@ func _refresh(
 		zombie_manager
 	)
 	var display_order: Array[Dictionary] = PodiumResultsBuilder.get_podium_display_order(podium_entries)
+	_return_button.text = "Return to Lobby — Next Race"
 	_empty_label.visible = display_order.is_empty()
 
 	for entry in display_order:

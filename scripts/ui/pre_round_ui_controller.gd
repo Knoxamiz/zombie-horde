@@ -186,7 +186,7 @@ func _on_participant_registered(join_info: ParticipantJoinInfo, _queued_count: i
 	if clean_name.is_empty():
 		return
 
-	_join_feed_lines.append("%s joins the horde.%s" % [clean_name, join_info.get_join_feed_suffix()])
+	_join_feed_lines.append("%s joined the queue.%s" % [clean_name, join_info.get_join_feed_suffix()])
 	while _join_feed_lines.size() > MAX_JOIN_FEED_LINES:
 		_join_feed_lines.remove_at(0)
 	_refresh_labels()
@@ -298,8 +298,8 @@ func _format_board_row(rank: int, display_name: String, value_text: String) -> S
 
 func _format_queue_summary() -> String:
 	if _queued_names.is_empty():
-		return "JOINING"
-	return "JOINING · %d in cage" % _queued_names.size()
+		return "QUEUE: waiting for viewers"
+	return "QUEUE: %d viewers ready — press Start Race" % _queued_names.size()
 
 
 func _should_show_chat_status(chat_text: String) -> bool:
@@ -353,9 +353,9 @@ func _refresh_ready_button() -> void:
 	var can_ready: bool = _state_text == "Joining" and not _queued_names.is_empty()
 	_ready_button.disabled = not can_ready
 	if _queued_names.is_empty():
-		_ready_button.text = "Ready"
+		_ready_button.text = "Waiting for viewers"
 	else:
-		_ready_button.text = "Ready (%d)" % _queued_names.size()
+		_ready_button.text = "Start Race (%d)" % _queued_names.size()
 	if _main_menu_button != null:
 		_main_menu_button.disabled = _state_text != "Joining"
 
