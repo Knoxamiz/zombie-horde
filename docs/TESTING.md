@@ -18,6 +18,7 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 | **core** | `--tier=core` | Deeper contract + lifecycle regression |
 | **map** | `--tier=map` | Map catalog + lightweight Broken Bridge gameplay |
 | **certification** | `--tier=certification` | Map catalog + strict per-map certification gate |
+| **proof** | `--tier=proof` | Tangible flow-state scorecard + all 4 AI prototype loads |
 | **all** | `--tier=all` | Broader stable debug suite |
 
 ### smoke (target under 60 seconds)
@@ -59,6 +60,25 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 **Required before merge:** yes for map certification / map controller PRs. See [MAP_CERTIFICATION.md](MAP_CERTIFICATION.md).
 
 **Not in smoke:** certification stays on its own tier to keep smoke under 60 seconds.
+
+### proof (~1–2 minutes)
+
+Tangible scorecard for the AI map factory — run after map work when you need visible PASS/FAIL proof:
+
+```bash
+godot --headless --path . -s res://scripts/debug/flow_state_proof.gd
+# or
+godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=proof
+```
+
+Writes `artifacts/flow_state_proof_latest.txt` with branch, commit, and per-check results.
+
+- `flow_state_proof.gd` — registry/catalog, export files, build+collision, runtime load all 4 AI prototypes
+- `prototype_map_review_test.gd` — F3-style `load_prototype_map_for_test()` for all 4 prototypes
+
+**When to run:** after any AI map factory change; share the report file as build proof.
+
+**Required before merge:** recommended for AI map PRs.
 
 ### all (~12–18 minutes)
 
