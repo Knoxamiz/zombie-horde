@@ -22,8 +22,14 @@ func _ready() -> void:
 	hide_podium(true)
 
 
-func show_podium(winner_name: String, base_won: bool, stats: Dictionary, zombie_manager: ZombieManager = null) -> void:
-	_refresh(winner_name, base_won, stats, zombie_manager)
+func show_podium(
+	winner_name: String,
+	base_won: bool,
+	stats: Dictionary,
+	zombie_manager: ZombieManager = null,
+	timed_out: bool = false
+) -> void:
+	_refresh(winner_name, base_won, stats, zombie_manager, timed_out)
 
 	visible = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -65,18 +71,26 @@ func _refresh(
 	winner_name: String,
 	base_won: bool,
 	stats: Dictionary,
-	zombie_manager: ZombieManager
+	zombie_manager: ZombieManager,
+	timed_out: bool = false
 ) -> void:
 	for child in _podium_row.get_children():
 		child.queue_free()
 
 	var accent_color: Color = Color(0.54, 1.0, 0.28, 1.0) if base_won else Color(1.0, 0.62, 0.12, 1.0)
 	_accent_bar.color = accent_color
-	_title_label.text = "BASE HOLDS!" if base_won else "ZOMBIE WINS!"
+	if timed_out:
+		_title_label.text = StreamerFeedbackMessages.format_time_limit_podium_title(base_won)
+	else:
+		_title_label.text = "BASE HOLDS!" if base_won else "ZOMBIE WINS!"
 	_title_label.add_theme_color_override("font_color", accent_color)
 
 	var elapsed_seconds: float = float(stats.get("elapsed_seconds", 0.0))
-	if base_won:
+	if timed_out and base_won:
+		_subtitle_label.text = "No zombie reached the goal  |  %s" % _format_finish_time(elapsed_seconds)
+	elif timed_out:
+		_subtitle_label.text = "%s led on progress  |  %s" % [winner_name, _format_finish_time(elapsed_seconds)]
+	elif base_won:
 		_subtitle_label.text = "No zombie reached the base in time  |  %s" % _format_finish_time(elapsed_seconds)
 	else:
 		_subtitle_label.text = "%s reached the streamer base!  |  %s" % [

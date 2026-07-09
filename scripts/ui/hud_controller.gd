@@ -64,6 +64,7 @@ var _queued_names: PackedStringArray = PackedStringArray()
 var _feed_lines: Array[String] = []
 var _last_stats: Dictionary = {}
 var _round_number: int = 0
+var _auto_reset_seconds_remaining: int = 0
 var _layout_profile
 var _layout_editor
 var _layout_edit_active: bool = false
@@ -125,6 +126,9 @@ func _ready() -> void:
 	GameEvents.round_stats_changed.connect(_on_round_stats_changed)
 	GameEvents.participant_registered.connect(_on_participant_registered)
 	GameEvents.participant_queue_changed.connect(_on_participant_queue_changed)
+	GameEvents.join_rejected.connect(_on_join_rejected)
+	GameEvents.join_accepted_late.connect(_on_join_accepted_late)
+	GameEvents.post_round_auto_reset_tick.connect(_on_post_round_auto_reset_tick)
 	GameEvents.zombie_count_changed.connect(_on_zombie_count_changed)
 	GameEvents.zombie_died.connect(_on_zombie_died)
 	GameEvents.zombie_status_changed.connect(_on_zombie_status_changed)
@@ -368,6 +372,7 @@ func _on_round_started(round_number: int) -> void:
 
 func _on_round_reset() -> void:
 	_round_number = 0
+	_auto_reset_seconds_remaining = 0
 	_queued_count = 0
 	_queued_names = PackedStringArray()
 	_feed_lines.clear()
@@ -389,20 +394,47 @@ func _on_round_reset() -> void:
 func _on_round_ended(winner_name: String, base_won: bool) -> void:
 	_last_winner_name = winner_name
 	_last_base_won = base_won
-	if base_won:
+	var timed_out: bool = _round_manager != null and _round_manager.is_race_timed_out()
+	if timed_out:
+		_record_feed(StreamerFeedbackMessages.format_time_limit_feed(winner_name, base_won))
+		if base_won:
+			_winner_text = "Winner: Streamer Base (time limit)"
+		else:
+			_winner_text = "Winner: %s (time limit)" % winner_name
+	elif base_won:
 		_winner_text = "Winner: Streamer Base"
 		_record_feed("RACE OVER — Base holds! No zombie reached the streamer base.")
 	else:
 		_winner_text = "Winner: %s" % winner_name
 		_record_feed("RACE OVER — %s reached the streamer base!" % winner_name)
-	_show_result_panel(winner_name, base_won)
+	_show_result_panel(winner_name, base_won, timed_out)
 	_refresh_static_labels()
 
 func _on_participant_registered(join_info: ParticipantJoinInfo, queued_count: int) -> void:
 	_queued_count = queued_count
+	if _state_text == "Countdown":
+		return
 	var display_name: String = join_info.display_name.strip_edges() if join_info != null else ""
-	if not display_name.is_empty() and _state_text in ["Joining", "Countdown"]:
+	if not display_name.is_empty() and _state_text == "Joining":
 		_record_feed("+ %s joined queue (%d waiting)" % [display_name, queued_count])
+	_refresh_static_labels()
+
+
+func _on_join_rejected(display_name: String, reason: String) -> void:
+	_record_feed(StreamerFeedbackMessages.format_join_rejected(display_name, reason))
+
+
+func _on_join_accepted_late(display_name: String) -> void:
+	_record_feed(StreamerFeedbackMessages.format_join_accepted_late(display_name))
+
+
+func _on_post_round_auto_reset_tick(seconds_remaining: int) -> void:
+	_auto_reset_seconds_remaining = max(seconds_remaining, 0)
+	if _auto_reset_seconds_remaining > 0:
+		_command_text = StreamerFeedbackMessages.format_auto_reset_command(_auto_reset_seconds_remaining)
+		if _command_label != null:
+			_command_label.text = _command_text
+		_refresh_world_command_board()
 	_refresh_static_labels()
 
 func _on_participant_queue_changed(display_names: PackedStringArray) -> void:
@@ -430,7 +462,7 @@ func _on_zombie_status_changed(display_name: String, status: String) -> void:
 		_record_feed("%s WINS THE RACE!" % display_name)
 		return
 	if status == "Winner (time limit)":
-		_record_feed("%s wins on time!" % display_name)
+		_record_feed("TIME LIMIT — %s led on progress!" % display_name)
 		return
 	if status == "DNF (time limit)":
 		_record_feed("%s did not finish in time" % display_name)
@@ -496,7 +528,13 @@ func _refresh_static_labels() -> void:
 			"Countdown":
 				_state_label.text = "Round starting... | Queued: %d" % _queued_count
 			"Ended":
-				_state_label.text = "Race over | Queued: %d" % _queued_count
+				if _auto_reset_seconds_remaining > 0:
+					_state_label.text = (
+						"Race over | Auto-reset in %ds | Queued: %d"
+						% [_auto_reset_seconds_remaining, _queued_count]
+					)
+				else:
+					_state_label.text = "Race over | Queued: %d" % _queued_count
 			_:
 				_state_label.text = "State: %s | Queued: %d" % [_state_text, _queued_count]
 	if _count_label != null:
@@ -557,11 +595,11 @@ func _format_roster_text() -> String:
 		lines.append(feed_line)
 	return _join_strings(lines, "\n")
 
-func _show_result_panel(winner_name: String, base_won: bool) -> void:
+func _show_result_panel(winner_name: String, base_won: bool, timed_out: bool = false) -> void:
 	_results_showing = true
 	_podium_showing = true
 	_refresh_world_results()
-	_set_podium_visible(true)
+	_set_podium_visible(true, timed_out)
 
 func _on_podium_continue_requested() -> void:
 	_podium_showing = false
@@ -573,17 +611,14 @@ func _on_podium_continue_requested() -> void:
 func _refresh_post_round_recovery_hint() -> void:
 	if _round_manager == null or _round_manager.state != RoundManager.RoundState.ENDED:
 		return
-	var auto_reset_seconds: float = 45.0
-	if _round_manager.round_config != null:
-		auto_reset_seconds = max(_round_manager.round_config.post_round_auto_reset_seconds, 0.0)
-	if auto_reset_seconds > 0.0:
-		_command_text = (
-			"Next race: Return to Lobby or press R — then queue viewers "
-			+ "(auto-reset in %ds)."
-			% int(round(auto_reset_seconds))
+	if _auto_reset_seconds_remaining > 0:
+		_command_text = StreamerFeedbackMessages.format_auto_reset_command(_auto_reset_seconds_remaining)
+	elif _round_manager.round_config != null and _round_manager.round_config.post_round_auto_reset_seconds > 0.0:
+		_command_text = StreamerFeedbackMessages.format_auto_reset_command(
+			int(round(_round_manager.round_config.post_round_auto_reset_seconds))
 		)
 	else:
-		_command_text = "Next race: Return to Lobby or press R, then queue viewers to join."
+		_command_text = "Next race: Return to Lobby or press R, then queue viewers."
 	if _command_label != null:
 		_command_label.text = _command_text
 	_refresh_world_command_board()
@@ -680,11 +715,11 @@ func _set_world_results_visible(should_show: bool) -> void:
 			_results_overlay.hide_results()
 
 
-func _set_podium_visible(should_show: bool) -> void:
+func _set_podium_visible(should_show: bool, timed_out: bool = false) -> void:
 	if _podium_overlay == null:
 		return
 	if should_show:
-		_podium_overlay.show_podium(_last_winner_name, _last_base_won, _last_stats, _zombie_manager)
+		_podium_overlay.show_podium(_last_winner_name, _last_base_won, _last_stats, _zombie_manager, timed_out)
 	else:
 		_podium_overlay.hide_podium()
 
