@@ -2,6 +2,7 @@ class_name HudController
 extends CanvasLayer
 
 signal layout_edit_finished(save_changes: bool)
+signal main_menu_requested()
 
 const STANDINGS_REFRESH_SECONDS: float = 0.25
 const STANDINGS_MAX_RESULTS: int = 10
@@ -94,6 +95,8 @@ var _hud_visible_before_layout_edit: bool = false
 @onready var _start_button: Button = get_node("Root/ControlPanel/Margin/HBox/StartButton") as Button
 @onready var _reset_button: Button = get_node("Root/ControlPanel/Margin/HBox/ResetButton") as Button
 @onready var _join_button: Button = get_node("Root/ControlPanel/Margin/HBox/JoinButton") as Button
+@onready var _hold_reset_button: HoldToConfirmButton = get_node("Root/HoldResetButton") as HoldToConfirmButton
+@onready var _main_menu_button: Button = get_node("Root/MainMenuButton") as Button
 
 func _ready() -> void:
 	_round_manager = get_node_or_null(round_manager_path) as RoundManager
@@ -148,6 +151,10 @@ func _ready() -> void:
 	_start_button.pressed.connect(_on_start_pressed)
 	_reset_button.pressed.connect(_on_reset_pressed)
 	_join_button.pressed.connect(_on_join_pressed)
+	if _hold_reset_button != null:
+		_hold_reset_button.hold_confirmed.connect(_on_hold_reset_confirmed)
+	if _main_menu_button != null:
+		_main_menu_button.pressed.connect(_on_main_menu_pressed)
 
 	if _round_manager != null:
 		_queued_count = _round_manager.get_pending_count()
@@ -222,6 +229,7 @@ func begin_layout_edit() -> void:
 		_podium_overlay.hide_podium(true)
 	if _results_overlay != null:
 		_results_overlay.hide_results(true)
+	_set_race_control_buttons_visible(false)
 	if _root != null:
 		_root.visible = true
 		_root.move_to_front()
@@ -256,6 +264,7 @@ func end_layout_edit(save_changes: bool) -> void:
 	layer = _hud_layer_before_layout_edit
 	visible = _hud_visible_before_layout_edit
 	_restore_pre_round_ui_after_layout_edit()
+	_set_race_control_buttons_visible(true)
 	_set_world_visible(visible)
 
 func _hide_pre_round_ui_for_layout_edit() -> void:
@@ -334,6 +343,12 @@ func _on_start_pressed() -> void:
 func _on_reset_pressed() -> void:
 	if _round_manager != null:
 		_round_manager.reset_round()
+
+func _on_hold_reset_confirmed() -> void:
+	_on_reset_pressed()
+
+func _on_main_menu_pressed() -> void:
+	main_menu_requested.emit()
 
 func _on_join_pressed() -> void:
 	var debug_source: DebugJoinSource = _get_debug_join_source()
@@ -683,6 +698,12 @@ func _refresh_chat_status_from_source() -> void:
 func _on_world_button_pressed(action_id: StringName) -> void:
 	if action_id == &"reset":
 		_on_results_reset_requested()
+
+func _set_race_control_buttons_visible(should_show: bool) -> void:
+	if _hold_reset_button != null:
+		_hold_reset_button.visible = should_show
+	if _main_menu_button != null:
+		_main_menu_button.visible = should_show
 
 func _set_world_visible(should_show: bool) -> void:
 	if _world_boards_root != null:

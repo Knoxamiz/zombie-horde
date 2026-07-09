@@ -47,7 +47,7 @@ var _defender_manager: Node
 var _race_map_controller: RaceMapController
 var _debug_join_source: DebugJoinSource
 var _spectator_camera: SpectatorCameraController
-var _hud: CanvasLayer
+var _hud: HudController
 var _streamer_menu: CanvasLayer
 var _pre_round_ui: PreRoundUIController
 var _world_environment: WorldEnvironment
@@ -73,7 +73,7 @@ func _initialize_flow() -> void:
 	_race_map_controller = get_node_or_null(race_map_controller_path) as RaceMapController
 	_debug_join_source = get_node_or_null(debug_join_source_path) as DebugJoinSource
 	_spectator_camera = get_node_or_null(spectator_camera_path) as SpectatorCameraController
-	_hud = get_node_or_null(hud_path) as CanvasLayer
+	_hud = get_node_or_null(hud_path) as HudController
 	_streamer_menu = get_node_or_null(streamer_menu_path) as CanvasLayer
 	_pre_round_ui = get_node_or_null(pre_round_ui_path) as PreRoundUIController
 	_world_environment = get_node_or_null(world_environment_path) as WorldEnvironment
@@ -84,6 +84,8 @@ func _initialize_flow() -> void:
 		_pre_round_ui.ready_requested.connect(_on_ready_requested)
 		_pre_round_ui.options_requested.connect(_on_options_requested)
 		_pre_round_ui.main_menu_requested.connect(_on_main_menu_requested)
+	if _hud != null:
+		_hud.main_menu_requested.connect(_on_main_menu_requested)
 	if _race_map_controller != null:
 		_race_map_controller.active_map_changed.connect(_on_active_map_changed)
 
