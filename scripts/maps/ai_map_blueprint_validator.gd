@@ -41,6 +41,7 @@ static func validate_blueprint(blueprint) -> Dictionary:
 	_validate_height_transitions(blueprint, result)
 	_validate_gap_fall_settings(blueprint, result)
 	_validate_phase2_fall_gap_rules(blueprint, result)
+	_validate_multi_layer_surface_rules(blueprint, result)
 	_validate_phase3_moving_obstacle_rules(blueprint, result)
 	_validate_phase4_split_merge_rules(blueprint, result)
 	_validate_rail_barrier_match(blueprint, result)
@@ -74,11 +75,11 @@ static func validate_generated_scene(
 
 	var gameplay_layer: Node = root.get_node_or_null("GameplayLayer")
 	if gameplay_layer != null:
-		if gameplay_layer.get_node_or_null("SafeFloor") == null:
-			_add_error(result, "GameplayLayer/SafeFloor is missing.")
-		var safe_floor: Node = gameplay_layer.get_node_or_null("SafeFloor")
-		if safe_floor != null and safe_floor.get_child_count() <= 0:
-			_add_error(result, "SafeFloor has no collision plates.")
+		var surfaces: Node = gameplay_layer.get_node_or_null("Surfaces")
+		if surfaces == null:
+			_add_error(result, "GameplayLayer/Surfaces is missing.")
+		elif surfaces.get_child_count() <= 0:
+			_add_error(result, "Surfaces has no MapSurfacePiece children.")
 
 	_validate_no_goal_catch(root, result)
 	_validate_no_authoritative_void_kill(root, result)
@@ -310,7 +311,7 @@ static func _validate_generated_geometry_alignment(
 	var layout: Dictionary = AIMapRouteLayoutScript.compute_layout(blueprint)
 	var floor_bounds: Dictionary = AIMapRouteLayoutScript.collect_safe_floor_z_bounds(root)
 	if int(floor_bounds.get("count", 0)) <= 0:
-		_add_error(result, "Generated safe floor has no collision plates with measurable bounds.")
+		_add_error(result, "Generated walk surfaces have no collision pieces with measurable bounds.")
 		return
 
 	var route_min_z: float = float(layout.get("route_min_z", 0.0))
@@ -417,6 +418,30 @@ static func _validate_phase2_fall_gap_rules(blueprint, result: Dictionary) -> vo
 	_validate_elevated_water_clearance(blueprint, result)
 	_validate_side_drop_oob_clearance(blueprint, result)
 	_validate_elevated_camera_requirement(blueprint, result)
+
+
+static func _validate_multi_layer_surface_rules(blueprint, result: Dictionary) -> void:
+	var has_upper: bool = blueprint.segment_sequence.has("upper_fallthrough_deck")
+	var has_lower: bool = blueprint.segment_sequence.has("lower_recovery_deck")
+	if not has_upper and not has_lower:
+		return
+	if has_upper and not has_lower:
+		_add_error(
+			result,
+			"upper_fallthrough_deck requires lower_recovery_deck for landable fall-through.",
+		)
+	if has_lower and not has_upper:
+		_add_warning(result, "lower_recovery_deck without upper_fallthrough_deck is unusual.")
+	if not blueprint.fall_enabled:
+		_add_error(result, "Multi-layer surface maps require fall_enabled=true.")
+	if has_upper and has_lower:
+		var upper_index: int = blueprint.segment_sequence.find("upper_fallthrough_deck")
+		var lower_index: int = blueprint.segment_sequence.find("lower_recovery_deck")
+		if lower_index <= upper_index:
+			_add_error(
+				result,
+				"lower_recovery_deck must come after upper_fallthrough_deck in segment_sequence.",
+			)
 
 
 static func _validate_phase4_split_merge_rules(blueprint, result: Dictionary) -> void:

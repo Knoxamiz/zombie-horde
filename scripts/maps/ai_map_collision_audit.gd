@@ -2,9 +2,10 @@ class_name AIMapCollisionAudit
 extends RefCounted
 
 const MapSegmentDefinitionScript := preload("res://scripts/maps/map_segment_definition.gd")
+const MapSurfacePieceScript := preload("res://scripts/maps/map_surface_piece.gd")
 
 ## Dev/test helpers for AI-generated map gameplay collision.
-## Authoritative walk surfaces must live under GameplayLayer/SafeFloor on layer 1.
+## Authoritative walk surfaces live under GameplayLayer/Surfaces as MapSurfacePiece nodes.
 
 const ZOMBIE_WALK_COLLISION_LAYER: int = 1
 const MAX_CENTER_ROUTE_WALL_HEIGHT: float = 2.5
@@ -14,11 +15,13 @@ const CENTER_ROUTE_X_TOLERANCE: float = 1.25
 const SIGNATURE_DROP_BRIDGE_MAP_ID := "ai_generated_signature_drop_bridge"
 const PHASE2_DROP_GAP_PROBE_MAP_ID := "ai_generated_phase2_drop_gap_probe"
 const PHASE3_MOVING_HAZARD_PROBE_MAP_ID := "ai_generated_phase3_moving_hazard_probe"
+const MULTI_LAYER_FALLTHROUGH_PROBE_MAP_ID := "ai_generated_multi_layer_fallthrough_probe"
 
 const FOCUS_MAP_IDS: Array[String] = [
 	SIGNATURE_DROP_BRIDGE_MAP_ID,
 	PHASE2_DROP_GAP_PROBE_MAP_ID,
 	PHASE3_MOVING_HAZARD_PROBE_MAP_ID,
+	MULTI_LAYER_FALLTHROUGH_PROBE_MAP_ID,
 ]
 
 
@@ -76,21 +79,72 @@ static func validate_generated_collision(
 	if visual_layer == null:
 		errors.append("VisualLayer is missing")
 
-	var safe_floor: Node = gameplay_layer.get_node_or_null("SafeFloor") if gameplay_layer != null else null
-	if safe_floor == null:
-		errors.append("GameplayLayer/SafeFloor is missing")
-	elif safe_floor.get_child_count() <= 0:
-		errors.append("SafeFloor has no collision plates")
+	var surfaces: Node = _get_surface_container(gameplay_layer)
+	if surfaces == null:
+		errors.append("GameplayLayer/Surfaces is missing")
+	elif surfaces.get_child_count() <= 0:
+		errors.append("Surfaces has no MapSurfacePiece children")
 
-	if safe_floor != null:
-		for plate in safe_floor.get_children():
-			errors.append_array(_validate_safe_floor_plate(plate, definition, blueprint))
+	if surfaces != null:
+		for piece in surfaces.get_children():
+			errors.append_array(_validate_surface_piece(piece, definition, blueprint))
 
 	if visual_layer != null:
 		errors.append_array(_validate_visual_layer_has_no_gameplay_collision(visual_layer))
 
 	errors.append_array(_validate_no_suspicious_center_walls(root, blueprint))
+	if blueprint != null and blueprint.segment_sequence.has("upper_fallthrough_deck"):
+		errors.append_array(probe_multi_layer_fallthrough(root, blueprint, definition))
 	return errors
+
+
+static func probe_multi_layer_fallthrough(
+	root: Node3D,
+	blueprint,
+	definition: RaceMapDefinition
+) -> Array[String]:
+	var errors: Array[String] = []
+	if root == null or blueprint == null or definition == null:
+		errors.append("multi-layer probe requires root, blueprint, and definition")
+		return errors
+
+	var upper_z: float = _segment_center_z(blueprint, "upper_fallthrough_deck")
+	if _has_enabled_surface_at_xz(root, 0.0, upper_z, 0.75):
+		errors.append("upper_fallthrough_deck center hole is blocked by collision")
+
+	var lower_z: float = _segment_center_z(blueprint, "lower_recovery_deck")
+	var lower_y: float = float(blueprint.deck_y) - 3.5
+	if not _has_enabled_surface_near(root, Vector3(0.0, lower_y, lower_z)):
+		errors.append("lower_recovery_deck missing enabled surface collision")
+
+	var layer_counts: Dictionary = _count_surface_layers(root)
+	if int(layer_counts.get(0, 0)) < 2:
+		errors.append("expected primary-layer surface pieces for upper deck wings")
+	if int(layer_counts.get(1, 0)) < 1:
+		errors.append("expected lower-layer recovery surface piece")
+	return errors
+
+
+static func _get_surface_container(gameplay_layer: Node) -> Node:
+	if gameplay_layer == null:
+		return null
+	var surfaces: Node = gameplay_layer.get_node_or_null("Surfaces")
+	if surfaces != null:
+		return surfaces
+	return gameplay_layer.get_node_or_null("SafeFloor")
+
+
+static func _count_surface_layers(root: Node3D) -> Dictionary:
+	var counts: Dictionary = {}
+	var surfaces: Node = root.get_node_or_null("GameplayLayer/Surfaces")
+	if surfaces == null:
+		return counts
+	for child in surfaces.get_children():
+		var layer_index: int = 0
+		if child is StaticBody3D and child.get_script() == MapSurfacePieceScript:
+			layer_index = int((child as StaticBody3D).get("surface_layer_index"))
+		counts[layer_index] = int(counts.get(layer_index, 0)) + 1
+	return counts
 
 
 static func probe_signature_drop_bridge(root: Node3D, blueprint, definition: RaceMapDefinition) -> Array[String]:
@@ -182,17 +236,17 @@ static func _collect_collision_entries_recursive(node: Node, entries: Array[Dict
 		_collect_collision_entries_recursive(child, entries)
 
 
-static func _validate_safe_floor_plate(plate: Node, definition: RaceMapDefinition, blueprint) -> Array[String]:
+static func _validate_surface_piece(piece: Node, definition: RaceMapDefinition, blueprint) -> Array[String]:
 	var errors: Array[String] = []
-	if not (plate is StaticBody3D):
-		errors.append("SafeFloor child '%s' must be StaticBody3D" % plate.name)
+	if not (piece is StaticBody3D):
+		errors.append("Surfaces child '%s' must be StaticBody3D" % piece.name)
 		return errors
 
-	var body: StaticBody3D = plate as StaticBody3D
+	var body: StaticBody3D = piece as StaticBody3D
 	if body.collision_layer != ZOMBIE_WALK_COLLISION_LAYER:
 		errors.append(
-			"SafeFloor plate '%s' collision_layer=%d (expected %d)"
-			% [plate.name, body.collision_layer, ZOMBIE_WALK_COLLISION_LAYER]
+			"Surface '%s' collision_layer=%d (expected %d)"
+			% [piece.name, body.collision_layer, ZOMBIE_WALK_COLLISION_LAYER]
 		)
 
 	var shape_node: CollisionShape3D = null
@@ -201,28 +255,45 @@ static func _validate_safe_floor_plate(plate: Node, definition: RaceMapDefinitio
 			shape_node = child as CollisionShape3D
 			break
 	if shape_node == null:
-		errors.append("SafeFloor plate '%s' missing CollisionShape3D" % plate.name)
+		errors.append("Surface '%s' missing CollisionShape3D" % piece.name)
 		return errors
 	if shape_node.disabled:
-		errors.append("SafeFloor plate '%s' CollisionShape3D is disabled" % plate.name)
+		errors.append("Surface '%s' CollisionShape3D is disabled" % piece.name)
 	if shape_node.shape == null:
-		errors.append("SafeFloor plate '%s' has null collision shape" % plate.name)
+		errors.append("Surface '%s' has null collision shape" % piece.name)
 		return errors
+	if not (shape_node.shape is BoxShape3D):
+		errors.append("Surface '%s' must use BoxShape3D collision (got %s)" % [
+			piece.name,
+			shape_node.shape.get_class(),
+		])
 
-	if definition != null:
+	var layer_index: int = 0
+	if piece is StaticBody3D and piece.get_script() == MapSurfacePieceScript:
+		layer_index = int((piece as StaticBody3D).get("surface_layer_index"))
+
+	if definition != null and layer_index == 0:
 		var expected_deck_y: float = _expected_deck_y_at_z(blueprint, body.position.z)
+		if (
+			piece.get_script() == MapSurfacePieceScript
+			and str(piece.get("shape_kind")) == "ramp"
+		):
+			var segment: Dictionary = MapSegmentDefinitionScript.get_segment(
+				str(piece.get("segment_id"))
+			)
+			expected_deck_y += float(segment.get("height_delta", 0.0)) * 0.5
 		var top_y: float = body.position.y + _shape_top_offset_y(shape_node.shape)
 		if absf(top_y - expected_deck_y) > FLOOR_Y_TOLERANCE:
 			errors.append(
-				"SafeFloor plate '%s' top Y %.2f not near deck_y %.2f at z=%.1f"
-				% [plate.name, top_y, expected_deck_y, body.position.z]
+				"Surface '%s' top Y %.2f not near deck_y %.2f at z=%.1f"
+				% [piece.name, top_y, expected_deck_y, body.position.z]
 			)
 
 	var shape_info: Dictionary = _shape_info(shape_node)
 	if str(shape_info.get("type", "")) == "Box":
 		var size: Vector3 = shape_info.get("box_size", Vector3.ZERO)
 		if size.y > 1.0:
-			errors.append("SafeFloor plate '%s' suspicious wall height %.2f" % [plate.name, size.y])
+			errors.append("Surface '%s' suspicious wall height %.2f" % [piece.name, size.y])
 	return errors
 
 
@@ -245,7 +316,7 @@ static func _validate_no_suspicious_center_walls(root: Node3D, blueprint) -> Arr
 	var lane_half: float = blueprint.lane_half_width if blueprint != null else 4.0
 	for entry in collect_collision_entries(root):
 		var path: String = str(entry.get("path", ""))
-		if "/SafeFloor/" in path or "/MovingObstacles/" in path:
+		if "/Surfaces/" in path or "/SafeFloor/" in path or "/MovingObstacles/" in path:
 			continue
 		if bool(entry.get("disabled", true)):
 			continue
@@ -267,13 +338,17 @@ static func _validate_no_suspicious_center_walls(root: Node3D, blueprint) -> Arr
 
 
 static func _has_enabled_floor_near(root: Node3D, sample: Vector3) -> bool:
-	var safe_floor: Node = root.get_node_or_null("GameplayLayer/SafeFloor")
-	if safe_floor == null:
+	return _has_enabled_surface_near(root, sample)
+
+
+static func _has_enabled_surface_near(root: Node3D, sample: Vector3) -> bool:
+	var surfaces: Node = _get_surface_container(root.get_node_or_null("GameplayLayer"))
+	if surfaces == null:
 		return false
-	for plate in safe_floor.get_children():
-		if not (plate is StaticBody3D):
+	for piece in surfaces.get_children():
+		if not (piece is StaticBody3D):
 			continue
-		var body: StaticBody3D = plate as StaticBody3D
+		var body: StaticBody3D = piece as StaticBody3D
 		if body.collision_layer != ZOMBIE_WALK_COLLISION_LAYER:
 			continue
 		for child in body.get_children():
@@ -302,13 +377,13 @@ static func _has_enabled_floor_blocking_x(
 	center_z: float,
 	allowed_half_width: float
 ) -> bool:
-	var safe_floor: Node = root.get_node_or_null("GameplayLayer/SafeFloor")
-	if safe_floor == null:
+	var surfaces: Node = _get_surface_container(root.get_node_or_null("GameplayLayer"))
+	if surfaces == null:
 		return false
-	for plate in safe_floor.get_children():
-		if not (plate is StaticBody3D):
+	for piece in surfaces.get_children():
+		if not (piece is StaticBody3D):
 			continue
-		var body: StaticBody3D = plate as StaticBody3D
+		var body: StaticBody3D = piece as StaticBody3D
 		for child in body.get_children():
 			if not (child is CollisionShape3D):
 				continue
@@ -320,6 +395,38 @@ static func _has_enabled_floor_blocking_x(
 				continue
 			var plate_half_x: float = half.x
 			if plate_half_x > allowed_half_width + 0.1:
+				return true
+	return false
+
+
+static func _has_enabled_surface_at_xz(
+	root: Node3D,
+	sample_x: float,
+	sample_z: float,
+	xy_tolerance: float
+) -> bool:
+	var surfaces: Node = _get_surface_container(root.get_node_or_null("GameplayLayer"))
+	if surfaces == null:
+		return false
+	for piece in surfaces.get_children():
+		if not (piece is StaticBody3D):
+			continue
+		var body: StaticBody3D = piece as StaticBody3D
+		if body.collision_layer != ZOMBIE_WALK_COLLISION_LAYER:
+			continue
+		for child in body.get_children():
+			if not (child is CollisionShape3D):
+				continue
+			var shape_node: CollisionShape3D = child as CollisionShape3D
+			if shape_node.disabled or shape_node.shape == null:
+				continue
+			var half: Vector3 = _shape_half_extents(shape_node.shape)
+			if absf(body.position.z - sample_z) > half.z + 0.1:
+				continue
+			if (
+				sample_x >= body.position.x - half.x - xy_tolerance
+				and sample_x <= body.position.x + half.x + xy_tolerance
+			):
 				return true
 	return false
 
@@ -338,7 +445,7 @@ static func _segment_center_z(blueprint, segment_id: String) -> float:
 static func _layer_bucket_name(node: Node) -> String:
 	var current: Node = node
 	while current != null:
-		if current.name in ["GameplayLayer", "VisualLayer", "SafeFloor", "MovingObstacles"]:
+		if current.name in ["GameplayLayer", "VisualLayer", "Surfaces", "SafeFloor", "MovingObstacles"]:
 			return current.name
 		current = current.get_parent()
 	return "unknown"

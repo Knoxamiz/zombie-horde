@@ -33,6 +33,11 @@ const MAP_TESTS: Array[Dictionary] = [
 		"args": [],
 	},
 	{
+		"name": "multi_layer_surface_collision_test",
+		"script": "multi_layer_surface_collision_test.gd",
+		"args": [],
+	},
+	{
 		"name": "broken_bridge_real_gameplay_test",
 		"script": "broken_bridge_real_gameplay_test.gd",
 		"args": ["--zombies=5", "--skip-stress"],

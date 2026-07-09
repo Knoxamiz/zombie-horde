@@ -5,8 +5,8 @@ const MapAssetLibraryScript := preload("res://scripts/maps/map_asset_library.gd"
 const MapSegmentDefinitionScript := preload("res://scripts/maps/map_segment_definition.gd")
 const AIMapBlueprintValidatorScript := preload("res://scripts/maps/ai_map_blueprint_validator.gd")
 const AIMapRouteLayoutScript := preload("res://scripts/maps/ai_map_route_layout.gd")
-
-const FLOOR_THICKNESS: float = 0.12
+const MapSurfaceFactoryScript := preload("res://scripts/maps/map_surface_factory.gd")
+const MapSurfacePieceScript := preload("res://scripts/maps/map_surface_piece.gd")
 
 var _blueprint
 var _map_root: Node3D
@@ -48,7 +48,7 @@ func build_prototype(parent: Node3D, blueprint) -> Node3D:
 	var rails_bucket := _make_child("Rails", _visual_layer)
 	var props_bucket := _make_child("Props", _visual_layer)
 	var water_bucket := _make_child("Water", _visual_layer)
-	var safe_floor := _make_child("SafeFloor", _gameplay_layer)
+	var surfaces_bucket := _make_child("Surfaces", _gameplay_layer)
 	var obstacles_bucket := _make_child("MovingObstacles", _gameplay_layer)
 	var spawn_zone := _make_child("SpawnZone", _gameplay_layer)
 	var goal_zone := _make_child("GoalZone", _gameplay_layer)
@@ -64,7 +64,7 @@ func build_prototype(parent: Node3D, blueprint) -> Node3D:
 			rails_bucket,
 			props_bucket,
 			water_bucket,
-			safe_floor,
+			surfaces_bucket,
 			spawn_zone,
 			goal_zone,
 			obstacles_bucket
@@ -72,7 +72,7 @@ func build_prototype(parent: Node3D, blueprint) -> Node3D:
 
 	_spawn_z = float(layout.get("spawn_z", 0.0))
 	_goal_z = float(layout.get("goal_z", 0.0))
-	_place_spawn_approach_floor(safe_floor, layout, blueprint.deck_y, blueprint.route_half_width * 2.0)
+	_place_spawn_approach_surfaces(surfaces_bucket, layout, blueprint.deck_y, blueprint.route_half_width * 2.0)
 
 	var definition: RaceMapDefinition = build_race_map_definition(blueprint)
 	var scene_validation: Dictionary = AIMapBlueprintValidatorScript.validate_generated_scene(
@@ -111,7 +111,7 @@ func _assemble_segment(
 	rails_bucket: Node3D,
 	props_bucket: Node3D,
 	water_bucket: Node3D,
-	safe_floor: Node3D,
+	surfaces_bucket: Node3D,
 	spawn_zone: Node3D,
 	goal_zone: Node3D,
 	obstacles_bucket: Node3D
@@ -125,26 +125,31 @@ func _assemble_segment(
 	var center_z: float = _route_cursor_z + segment_length * 0.5
 	var height_delta: float = float(segment.get("height_delta", 0.0))
 	var deck_y_at_segment: float = _route_deck_y
+	var segment_id: String = str(segment.get("segment_id", ""))
+	var visual_deck_y: float = deck_y_at_segment
+	if segment_type == MapSegmentDefinitionScript.TYPE_LOWER_RECOVERY_DECK:
+		visual_deck_y += float(segment.get("lower_deck_y_offset", -3.5))
 
-	_place_required_assets(segment, road_bucket, rails_bucket, props_bucket, center_z, deck_y_at_segment)
+	_place_required_assets(segment, road_bucket, rails_bucket, props_bucket, center_z, visual_deck_y)
 	_place_optional_visuals(
 		segment,
 		props_bucket,
 		rails_bucket,
 		water_bucket,
 		center_z,
-		deck_y_at_segment,
+		visual_deck_y,
 		segment_width,
 		segment_length
 	)
-	_place_safe_floor_for_segment(
+	_place_surface_pieces_for_segment(
 		segment,
 		segment_type,
 		segment_width,
 		segment_length,
 		center_z,
 		deck_y_at_segment,
-		safe_floor
+		segment_id,
+		surfaces_bucket
 	)
 
 	match segment_type:
@@ -152,7 +157,7 @@ func _assemble_segment(
 			_place_marker(spawn_zone, "SpawnMarker", segment_width, segment_length, center_z, deck_y_at_segment, true)
 		MapSegmentDefinitionScript.TYPE_FINISH:
 			_place_marker(goal_zone, "GoalMarker", segment_width, segment_length, center_z, deck_y_at_segment, false)
-		MapSegmentDefinitionScript.TYPE_GAP, MapSegmentDefinitionScript.TYPE_DROP, MapSegmentDefinitionScript.TYPE_SIDE_DROP, MapSegmentDefinitionScript.TYPE_SMALL_CENTER_GAP, MapSegmentDefinitionScript.TYPE_LEFT_SIDE_DROP, MapSegmentDefinitionScript.TYPE_RIGHT_SIDE_DROP, MapSegmentDefinitionScript.TYPE_DOUBLE_SIDE_DROP, MapSegmentDefinitionScript.TYPE_BROKEN_BRIDGE_GAP, MapSegmentDefinitionScript.TYPE_ELEVATED_RAMP_DROP, MapSegmentDefinitionScript.TYPE_CRACKED_EDGE_LANE, MapSegmentDefinitionScript.TYPE_MOVING_PLATFORM_GAP:
+		MapSegmentDefinitionScript.TYPE_GAP, MapSegmentDefinitionScript.TYPE_DROP, MapSegmentDefinitionScript.TYPE_SIDE_DROP, MapSegmentDefinitionScript.TYPE_SMALL_CENTER_GAP, MapSegmentDefinitionScript.TYPE_LEFT_SIDE_DROP, MapSegmentDefinitionScript.TYPE_RIGHT_SIDE_DROP, MapSegmentDefinitionScript.TYPE_DOUBLE_SIDE_DROP, MapSegmentDefinitionScript.TYPE_BROKEN_BRIDGE_GAP, MapSegmentDefinitionScript.TYPE_ELEVATED_RAMP_DROP, MapSegmentDefinitionScript.TYPE_CRACKED_EDGE_LANE, MapSegmentDefinitionScript.TYPE_MOVING_PLATFORM_GAP, MapSegmentDefinitionScript.TYPE_UPPER_DECK_GAP:
 			if _blueprint.water_enabled:
 				_place_segment_water(water_bucket, segment_width + 8.0, segment_length + 2.0, center_z)
 
@@ -165,6 +170,38 @@ func _assemble_segment(
 	_route_deck_y += height_delta
 	_route_cursor_z += segment_length
 	_built_length += segment_length
+
+
+func _place_surface_pieces_for_segment(
+	segment: Dictionary,
+	segment_type: String,
+	segment_width: float,
+	segment_length: float,
+	center_z: float,
+	deck_y: float,
+	segment_id: String,
+	surfaces_bucket: Node3D
+) -> void:
+	var specs: Array[Dictionary] = MapSurfaceFactoryScript.build_specs_for_segment(
+		segment,
+		segment_type,
+		segment_width,
+		segment_length,
+		_blueprint.route_half_width,
+	)
+	for spec in specs:
+		if segment_type in [MapSegmentDefinitionScript.TYPE_RAMP_UP, MapSegmentDefinitionScript.TYPE_RAMP_DOWN]:
+			spec = spec.duplicate(true)
+			spec["height_delta"] = float(segment.get("height_delta", 0.0))
+		var piece: StaticBody3D = MapSurfaceFactoryScript.build_piece(
+			spec,
+			segment_width,
+			segment_length,
+			deck_y,
+			center_z,
+			segment_id,
+		)
+		surfaces_bucket.add_child(piece)
 
 
 func _place_required_assets(
@@ -251,60 +288,6 @@ func _place_optional_visuals(
 		parent_bucket.add_child(instance)
 
 
-func _place_safe_floor_for_segment(
-	segment: Dictionary,
-	segment_type: String,
-	segment_width: float,
-	segment_length: float,
-	center_z: float,
-	deck_y: float,
-	safe_floor: Node3D
-) -> void:
-	var floor_width: float = segment_width
-	var ratio: float = float(segment.get("safe_floor_width_ratio", 1.0))
-	floor_width = segment_width * ratio
-	var branch_widths: Array = segment.get("branch_widths", [])
-	var branch_offsets: Array = segment.get("branch_offsets", [])
-	if not branch_widths.is_empty():
-		for index in range(branch_widths.size()):
-			var branch_width: float = float(branch_widths[index]) * ratio
-			var branch_offset_x: float = (
-				float(branch_offsets[index]) if index < branch_offsets.size() else 0.0
-			)
-			_add_safe_floor_plate(
-				safe_floor,
-				Vector3(branch_offset_x, deck_y - FLOOR_THICKNESS * 0.5, center_z),
-				Vector3(branch_width, FLOOR_THICKNESS, segment_length)
-			)
-		return
-	if segment_type in [
-		MapSegmentDefinitionScript.TYPE_GAP,
-		MapSegmentDefinitionScript.TYPE_SMALL_CENTER_GAP,
-		MapSegmentDefinitionScript.TYPE_BROKEN_BRIDGE_GAP,
-		MapSegmentDefinitionScript.TYPE_NARROW_BRIDGE,
-		MapSegmentDefinitionScript.TYPE_NARROW_NO_RAILS_BRIDGE,
-		MapSegmentDefinitionScript.TYPE_SIDE_DROP,
-		MapSegmentDefinitionScript.TYPE_LEFT_SIDE_DROP,
-		MapSegmentDefinitionScript.TYPE_RIGHT_SIDE_DROP,
-		MapSegmentDefinitionScript.TYPE_DOUBLE_SIDE_DROP,
-		MapSegmentDefinitionScript.TYPE_CRACKED_EDGE_LANE,
-		MapSegmentDefinitionScript.TYPE_MOVING_PLATFORM_GAP,
-	]:
-		floor_width = min(floor_width, _blueprint.route_half_width * 2.0 - 2.0)
-	if segment_type == MapSegmentDefinitionScript.TYPE_RECOVERY:
-		floor_width = segment_width
-	var floor_offset_x: float = 0.0
-	if segment_type == MapSegmentDefinitionScript.TYPE_LEFT_SIDE_DROP:
-		floor_offset_x = segment_width * 0.15
-	elif segment_type == MapSegmentDefinitionScript.TYPE_RIGHT_SIDE_DROP:
-		floor_offset_x = -segment_width * 0.15
-	_add_safe_floor_plate(
-		safe_floor,
-		Vector3(floor_offset_x, deck_y - FLOOR_THICKNESS * 0.5, center_z),
-		Vector3(floor_width, FLOOR_THICKNESS, segment_length)
-	)
-
-
 func _place_moving_obstacles_for_segment(
 	segment: Dictionary,
 	center_z: float,
@@ -387,27 +370,8 @@ func _place_segment_water(parent: Node3D, width: float, length: float, center_z:
 	parent.add_child(water)
 
 
-func _add_safe_floor_plate(parent: Node3D, position: Vector3, size: Vector3) -> StaticBody3D:
-	var body := StaticBody3D.new()
-	body.name = "SafeFloorPlate"
-	body.position = position
-	body.collision_layer = 1
-	body.collision_mask = 0
-	var shape := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = Vector3(
-		maxf(size.x, 0.5),
-		maxf(size.y, 0.08),
-		maxf(size.z, 0.5),
-	)
-	shape.shape = box
-	body.add_child(shape)
-	parent.add_child(body)
-	return body
-
-
-func _place_spawn_approach_floor(
-	safe_floor: Node3D,
+func _place_spawn_approach_surfaces(
+	surfaces_bucket: Node3D,
 	layout: Dictionary,
 	deck_y: float,
 	spawn_width: float
@@ -417,11 +381,15 @@ func _place_spawn_approach_floor(
 		return
 	var approach_length: float = -spawn_z
 	var center_z: float = spawn_z + approach_length * 0.5
-	_add_safe_floor_plate(
-		safe_floor,
-		Vector3(0.0, deck_y - FLOOR_THICKNESS * 0.5, center_z),
-		Vector3(spawn_width, FLOOR_THICKNESS, approach_length)
+	var piece: StaticBody3D = MapSurfacePieceScript.create_deck(
+		Vector3(spawn_width, MapSurfacePieceScript.MIN_THICKNESS, approach_length),
+		deck_y,
+		0,
+		"spawn_approach",
 	)
+	piece.position.z = center_z
+	piece.segment_id = "spawn_approach"
+	surfaces_bucket.add_child(piece)
 
 
 func _make_child(child_name: String, parent: Node3D) -> Node3D:

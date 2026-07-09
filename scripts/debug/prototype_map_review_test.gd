@@ -6,6 +6,7 @@ const EXPECTED_PROTOTYPE_IDS: Array[String] = [
 	"ai_generated_phase2_drop_gap_probe",
 	"ai_generated_signature_drop_bridge",
 	"ai_generated_phase3_moving_hazard_probe",
+	"ai_generated_multi_layer_fallthrough_probe",
 ]
 const PASS := 0
 const FAIL := 1

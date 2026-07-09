@@ -46,6 +46,7 @@ var _selected_prototype_map_id: String = ""
 
 const SIGNATURE_DROP_BRIDGE_MAP_ID := "ai_generated_signature_drop_bridge"
 const PHASE3_MOVING_HAZARD_PROBE_MAP_ID := "ai_generated_phase3_moving_hazard_probe"
+const MULTI_LAYER_FALLTHROUGH_PROBE_MAP_ID := "ai_generated_multi_layer_fallthrough_probe"
 
 
 func _enter_tree() -> void:
@@ -188,6 +189,7 @@ func _build_ui() -> void:
 	_add_button(body, "Load Phase 1 Bridge/Ramp Prototype", _on_load_phase1_prototype_pressed)
 	_add_button(body, "Load Phase 2 Drop/Gap Probe", _on_load_phase2_probe_pressed)
 	_add_button(body, "Load Phase 3 Moving Hazard Probe", _on_load_phase3_probe_pressed)
+	_add_button(body, "Load Multi-Layer Fallthrough PROBE", _on_load_multi_layer_probe_pressed)
 	_add_button(body, "Load The Drop Bridge Prototype", _on_load_drop_bridge_prototype_pressed)
 	_add_button_row(body, [
 		["Load Drop Bridge + Queue 20", _on_load_drop_bridge_queue_twenty_pressed],
@@ -417,6 +419,10 @@ func _on_load_phase2_probe_pressed() -> void:
 
 func _on_load_phase3_probe_pressed() -> void:
 	_load_prototype_for_review(PHASE3_MOVING_HAZARD_PROBE_MAP_ID)
+
+
+func _on_load_multi_layer_probe_pressed() -> void:
+	_load_prototype_for_review(MULTI_LAYER_FALLTHROUGH_PROBE_MAP_ID)
 
 
 func _on_load_drop_bridge_prototype_pressed() -> void:

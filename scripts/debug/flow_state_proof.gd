@@ -33,6 +33,9 @@ func _run_all() -> void:
 	await _check_registry_and_catalog()
 	await _check_export_files_on_disk()
 	await _check_blueprint_build_and_collision()
+	for child in root.get_children():
+		child.queue_free()
+	await create_timer(0.2).timeout
 	await _check_runtime_prototype_loads()
 	_check_playable_map_gate()
 	_check_f3_phase3_button()
@@ -79,7 +82,7 @@ func _check_registry_and_catalog() -> void:
 
 	_record(
 		"Registry/catalog alignment",
-		aligned and registry_ids.size() == 4,
+		aligned and registry_ids.size() == 5,
 		"%d registry ids, %d catalog prototypes" % [registry_ids.size(), catalog_ids.size()]
 	)
 
@@ -150,6 +153,7 @@ func _check_blueprint_build_and_collision() -> void:
 		if not collision_errors.is_empty():
 			failed_maps.append("%s (%d collision errors)" % [map_id, collision_errors.size()])
 		host.queue_free()
+		await create_timer(0.05).timeout
 
 	_record(
 		"Blueprint build + collision",
@@ -170,6 +174,7 @@ func _check_runtime_prototype_loads() -> void:
 		var ok: bool = await _load_and_verify_prototype(packed, map_id)
 		if not ok:
 			failed_maps.append(map_id)
+		await create_timer(0.15).timeout
 
 	_record(
 		"Runtime prototype loads",
@@ -191,6 +196,10 @@ func _load_and_verify_prototype(packed: PackedScene, map_id: String) -> bool:
 		return false
 
 	if not map_controller.load_prototype_map_for_test(map_id):
+		push_error(
+			"flow proof load failed for %s: %s"
+			% [map_id, map_controller.get_last_load_failure_reason()]
+		)
 		main_game.queue_free()
 		return false
 	if map_controller.did_last_load_use_fallback():
@@ -214,7 +223,12 @@ func _load_and_verify_prototype(packed: PackedScene, map_id: String) -> bool:
 		main_game.queue_free()
 		return false
 
-	var active_floor_shapes: int = _count_active_walk_collision_shapes(gameplay_layer)
+	var surfaces: Node = gameplay_layer.get_node_or_null("Surfaces")
+	if surfaces == null:
+		main_game.queue_free()
+		return false
+
+	var active_floor_shapes: int = _count_active_walk_collision_shapes(surfaces)
 	if active_floor_shapes < 1:
 		main_game.queue_free()
 		return false

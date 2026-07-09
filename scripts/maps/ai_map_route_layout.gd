@@ -170,11 +170,13 @@ static func collect_safe_floor_z_bounds(root: Node3D) -> Dictionary:
 	if root == null:
 		return bounds
 
-	var safe_floor: Node = root.get_node_or_null("GameplayLayer/SafeFloor")
-	if safe_floor == null:
+	var surfaces: Node = root.get_node_or_null("GameplayLayer/Surfaces")
+	if surfaces == null:
+		surfaces = root.get_node_or_null("GameplayLayer/SafeFloor")
+	if surfaces == null:
 		return bounds
 
-	for child in safe_floor.get_children():
+	for child in surfaces.get_children():
 		if child is Node3D:
 			_accumulate_plate_bounds(child as Node3D, bounds)
 	return bounds
