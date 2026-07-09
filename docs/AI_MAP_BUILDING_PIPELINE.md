@@ -44,33 +44,67 @@ MapCertification / ai_generated_map_certification_test  →  pass/fail gate
 
 ## Minimum map factory loop (closed)
 
-Prototype maps now follow this loop:
+Prototype maps now follow this generalized loop:
 
 ```
-AIMapBlueprint (phase1_bridge_ramp_test)
+AIMapBlueprint (validated blueprint_id)
+  → AIMapBlueprintRegistry.resolve_blueprint(blueprint_id)
   → AIMapBlueprintBuilder.build_prototype()
-  → AIMapBlueprintExporter.export_phase1_bridge_ramp_prototype()
-  → resources/maps/ai_generated_phase1_bridge_ramp_test.tres
-  → scenes/maps/ai_generated_phase1_bridge_ramp_test.tscn
-  → MapCatalog id: ai_generated_phase1_bridge_ramp_test (prototype only)
+  → AIMapBlueprintExporter.export_validated_blueprint_prototype(blueprint_id)
+  → resources/maps/ai_generated_<blueprint>.tres
+  → scenes/maps/ai_generated_<blueprint>.tscn
+  → MapCatalog prototype entry (enabled=false)
   → RaceMapController.load_prototype_map_for_test()
   → ai_generated_map_certification_test.gd
 ```
 
-**Canonical first example:** `phase1_bridge_ramp_test` → exported as `ai_generated_phase1_bridge_ramp_test`.
+**Registered prototype exports** (see `AIMapBlueprintRegistry`):
+
+| Blueprint id | Generated map id | Phase |
+|--------------|------------------|-------|
+| `phase1_bridge_ramp_test` | `ai_generated_phase1_bridge_ramp_test` | Phase 1 |
+| `phase2_drop_gap_probe` | `ai_generated_phase2_drop_gap_probe` | Phase 2 probe |
+
+The exporter **fails loudly** on unknown `blueprint_id` values — it does not fall back to Phase 1 or City Highway.
+
+**Warning:** Do not start building the full Drop Bridge signature map until `ai_generated_phase2_drop_gap_probe` passes export + certification. The probe proves drops/gaps/water/OOB alignment before a longer Phase 2 route.
 
 Commands:
 
 ```bash
-# Regenerate exported RaceMapDefinition from blueprint grammar
+# Export all registered AI prototypes
 godot --headless --path . -s res://scripts/debug/export_ai_generated_prototype.gd
+
+# Export one blueprint by id
+godot --headless --path . -s res://scripts/debug/export_ai_generated_prototype.gd -- --blueprint_id=phase2_drop_gap_probe
 
 # Pipeline unit tests (layout alignment + negative cases)
 godot --headless --path . -s res://scripts/debug/ai_map_pipeline_test.gd
 
-# Generated prototype certification (prototype loader + mini race)
+# Generated prototype certification (all registered prototypes, or one map id)
 godot --headless --path . -s res://scripts/debug/ai_generated_map_certification_test.gd
+godot --headless --path . -s res://scripts/debug/ai_generated_map_certification_test.gd -- --map_id=ai_generated_phase2_drop_gap_probe
 ```
+
+### Phase 1 example
+
+`phase1_bridge_ramp_test` → exported as `ai_generated_phase1_bridge_ramp_test`:
+
+```
+start_straight → straight_road_medium → ramp_up → bridge_straight
+→ small_gap → straight_road_short → ramp_down → finish_straight
+```
+
+### Phase 2 probe example
+
+`phase2_drop_gap_probe` → exported as `ai_generated_phase2_drop_gap_probe`:
+
+```
+start_straight → straight_road_medium → elevated_straight → broken_bridge_gap
+→ recovery_straight_after_gap → finish_straight
+```
+
+Purpose: minimal drops/gaps/water/OOB export probe before designing The Drop Bridge.
 
 ### Current limitations (prototype-only)
 
@@ -80,9 +114,9 @@ godot --headless --path . -s res://scripts/debug/ai_generated_map_certification_
 | **Moving obstacles prototype-safe** | `MapMovingObstacle` blocks kinematically; no live `BounceObstacle` / `GameEvents` hazard wiring yet |
 | **Flat ramp collision** | `height_delta` is visual deck stepping; safe floors stay flat |
 | **Generated maps not playable** | `enabled=false`, `status=prototype` — not in production dropdown |
-| **Phase 2–4 are advanced** | Start with Phase 1 segments; add fall/obstacle/split packs only after export loop passes |
+| **Phase 2–4 are advanced** | Phase 2 probe must pass before full Drop Bridge; Phase 3–4 remain advanced |
 
-Phase 2–4 packs remain available in grammar/tests but are **advanced/later** for new AI-authored maps. Use Phase 1 for first prototypes.
+Phase 2–4 packs remain available in grammar/tests. Use Phase 1 for first prototypes; use the Phase 2 probe before longer drop/gap maps.
 
 ---
 
@@ -239,7 +273,20 @@ List: `MapSegmentDefinition.get_phase2_segment_ids()`
 
 Each segment defines: `length`, `width`, `height_delta`, `safe_lane_count`, `allows_fall_edges`, `fall_risk_level`, `required_assets`, `optional_assets`, `recommended_oob_min_y`, `recommended_camera_padding`, `difficulty`, `notes`.
 
-### Phase 2 blueprint example
+### Phase 2 probe blueprint example
+
+`phase2_drop_gap_probe` (non-playable, not in map dropdown) — **export probe only**:
+
+```gdscript
+var blueprint := Phase2DropGapProbeBlueprint.create()
+# start_straight → straight_road_medium → elevated_straight → broken_bridge_gap
+# → recovery_straight_after_gap → finish_straight
+```
+
+Factory: `scripts/maps/blueprints/phase2_drop_gap_probe.gd`  
+Exported as: `ai_generated_phase2_drop_gap_probe`
+
+### Phase 2 blueprint example (grammar test route)
 
 `phase2_drop_gap_test` (non-playable, not in map dropdown):
 
@@ -511,8 +558,9 @@ var blueprint := Phase1BridgeRampTestBlueprint.create()
 Factories:
 
 - Blueprint grammar: `scripts/maps/blueprints/phase1_bridge_ramp_test.gd`
-- Export: `scripts/maps/ai_map_blueprint_exporter.gd`
-- Catalog id: `ai_generated_phase1_bridge_ramp_test` (prototype/test only)
+- Registry: `scripts/maps/ai_map_blueprint_registry.gd`
+- Export API: `AIMapBlueprintExporter.export_validated_blueprint_prototype(blueprint_id)`
+- Catalog ids: `ai_generated_phase1_bridge_ramp_test`, `ai_generated_phase2_drop_gap_probe` (prototype/test only)
 
 Legacy `example_bridge_segments_test` (`seg_*` ids) is deprecated for new AI work — use Phase 1 ids only.
 

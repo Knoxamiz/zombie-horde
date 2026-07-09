@@ -94,6 +94,17 @@ const ENTRIES: Array[Dictionary] = [
 		"ai_generated": true,
 		"ai_blueprint_id": "phase1_bridge_ramp_test",
 	},
+	{
+		"id": "ai_generated_phase2_drop_gap_probe",
+		"display_name": "AI Phase 2 Drop Gap PROBE",
+		"resource_path": "res://resources/maps/ai_generated_phase2_drop_gap_probe.tres",
+		"scene_path": "res://scenes/maps/ai_generated_phase2_drop_gap_probe.tscn",
+		"enabled": false,
+		"status": STATUS_PROTOTYPE,
+		"legacy_index": 9,
+		"ai_generated": true,
+		"ai_blueprint_id": "phase2_drop_gap_probe",
+	},
 ]
 
 
