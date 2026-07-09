@@ -12,6 +12,17 @@ const TYPE_DROP := "drop"
 const TYPE_SPLIT_LANE := "split_lane"
 const TYPE_MERGE_LANE := "merge_lane"
 const TYPE_SIDE_DROP := "side_drop"
+const TYPE_SMALL_CENTER_GAP := "small_center_gap"
+const TYPE_LEFT_SIDE_DROP := "left_side_drop"
+const TYPE_RIGHT_SIDE_DROP := "right_side_drop"
+const TYPE_DOUBLE_SIDE_DROP := "double_side_drop"
+const TYPE_NARROW_NO_RAILS_BRIDGE := "narrow_no_rails_bridge"
+const TYPE_BROKEN_BRIDGE_GAP := "broken_bridge_gap"
+const TYPE_ELEVATED := "elevated"
+const TYPE_ELEVATED_RAMP_DROP := "elevated_ramp_drop"
+const TYPE_CRACKED_EDGE_LANE := "cracked_edge_lane"
+const TYPE_WATER_UNDERPASS := "water_underpass"
+const TYPE_RECOVERY := "recovery"
 const TYPE_MOVING_BLOCK_LANE := "moving_block_lane"
 const TYPE_HAZARD_LANE := "hazard_lane"
 const TYPE_FINISH := "finish"
@@ -26,11 +37,36 @@ const ALL_TYPES: Array[String] = [
 	TYPE_GAP,
 	TYPE_DROP,
 	TYPE_SIDE_DROP,
+	TYPE_SMALL_CENTER_GAP,
+	TYPE_LEFT_SIDE_DROP,
+	TYPE_RIGHT_SIDE_DROP,
+	TYPE_DOUBLE_SIDE_DROP,
+	TYPE_NARROW_NO_RAILS_BRIDGE,
+	TYPE_BROKEN_BRIDGE_GAP,
+	TYPE_ELEVATED,
+	TYPE_ELEVATED_RAMP_DROP,
+	TYPE_CRACKED_EDGE_LANE,
+	TYPE_WATER_UNDERPASS,
+	TYPE_RECOVERY,
 	TYPE_SPLIT_LANE,
 	TYPE_MERGE_LANE,
 	TYPE_MOVING_BLOCK_LANE,
 	TYPE_HAZARD_LANE,
 	TYPE_FINISH,
+]
+
+const PHASE2_SEGMENT_IDS: Array[String] = [
+	"small_center_gap",
+	"left_side_drop",
+	"right_side_drop",
+	"double_side_drop",
+	"narrow_no_rails_bridge",
+	"broken_bridge_gap",
+	"elevated_straight",
+	"elevated_ramp_drop",
+	"cracked_edge_lane",
+	"water_underpass",
+	"recovery_straight_after_gap",
 ]
 
 const PHASE1_SEGMENT_IDS: Array[String] = [
@@ -65,6 +101,62 @@ static func validate_phase1_segments() -> Dictionary:
 			result["ok"] = false
 			result["missing"].append(segment_id)
 	return result
+
+
+static func get_phase2_segment_ids() -> Array[String]:
+	return PHASE2_SEGMENT_IDS.duplicate()
+
+
+static func is_phase2_segment(segment_id: String) -> bool:
+	return segment_id in PHASE2_SEGMENT_IDS
+
+
+static func validate_phase2_segments() -> Dictionary:
+	var result: Dictionary = {"ok": true, "missing": []}
+	for segment_id in PHASE2_SEGMENT_IDS:
+		if not has_segment(segment_id):
+			result["ok"] = false
+			result["missing"].append(segment_id)
+	return result
+
+
+static func is_fall_risk_segment_type(segment_type: String) -> bool:
+	return segment_type in [
+		TYPE_GAP,
+		TYPE_DROP,
+		TYPE_SIDE_DROP,
+		TYPE_SMALL_CENTER_GAP,
+		TYPE_LEFT_SIDE_DROP,
+		TYPE_RIGHT_SIDE_DROP,
+		TYPE_DOUBLE_SIDE_DROP,
+		TYPE_BROKEN_BRIDGE_GAP,
+		TYPE_ELEVATED_RAMP_DROP,
+		TYPE_CRACKED_EDGE_LANE,
+	]
+
+
+static func is_gap_segment_type(segment_type: String) -> bool:
+	return segment_type in [
+		TYPE_GAP,
+		TYPE_SMALL_CENTER_GAP,
+		TYPE_BROKEN_BRIDGE_GAP,
+	]
+
+
+static func is_recovery_segment_type(segment_type: String) -> bool:
+	return segment_type == TYPE_RECOVERY
+
+
+static func is_elevated_segment_type(segment_type: String) -> bool:
+	return segment_type in [
+		TYPE_ELEVATED,
+		TYPE_ELEVATED_RAMP_DROP,
+		TYPE_BRIDGE,
+		TYPE_NARROW_BRIDGE,
+		TYPE_NARROW_NO_RAILS_BRIDGE,
+		TYPE_BROKEN_BRIDGE_GAP,
+		TYPE_WATER_UNDERPASS,
+	]
 
 
 static func has_segment(segment_id: String) -> bool:
@@ -155,7 +247,8 @@ static func _build_segments() -> Array[Dictionary]:
 			["gap_void_visual", "drop_lip", "street_crack2"],
 			["water_void_plane"],
 			10.0, 10.0, true, false, 1, 1,
-			"Visual gap with narrow safe plate; fall via OOB min-Y."
+			"Visual gap with narrow safe plate; fall via OOB min-Y.",
+			1, -5.5, 1.0, 0.6,
 		),
 		_segment(
 			"seg_drop_8", TYPE_DROP, 8.0, 10.0, -0.8, 3,
@@ -205,6 +298,14 @@ static func _build_segments() -> Array[Dictionary]:
 			[],
 			10.0, 10.0, false, false, 0, 1,
 			"TEST ONLY — invalid asset id for validator tests."
+		),
+		_segment(
+			"seg_test_oversized_gap", TYPE_BROKEN_BRIDGE_GAP, 8.0, 10.0, 0.0, 4,
+			["phase2_broken_bridge_gap", "phase2_safe_floor_plate"],
+			[],
+			10.0, 10.0, true, false, 2, 1,
+			"TEST ONLY — oversized safe floor ratio for validator tests.",
+			3, -6.5, 3.0, 1.5,
 		),
 		# --- Phase 1 canonical segment templates ---
 		_segment(
@@ -268,7 +369,8 @@ static func _build_segments() -> Array[Dictionary]:
 			["phase1_gap_void", "phase1_drop_lip", "phase1_road_cracked_heavy", "phase1_safe_floor_plate"],
 			["phase1_water_segment"],
 			10.0, 10.0, true, false, 1, 1,
-			"Small gap with narrow safe plate; requires fall_enabled."
+			"Small gap with narrow safe plate; requires fall_enabled.",
+			1, -5.5, 1.0, 0.6,
 		),
 		_segment(
 			"side_drop_edges", TYPE_SIDE_DROP, 8.0, 10.0, 0.0, 3,
@@ -287,7 +389,144 @@ static func _build_segments() -> Array[Dictionary]:
 			["phase1_finish_marker", "phase1_road_straight_8", "phase1_safe_floor_plate"],
 			[],
 			10.0, 10.0, false, false, 0, 1,
-			"Phase 1 finish straight; goal visual only."
+			"Phase 1 finish straight; goal visual only.",
+			0, -999.0, 0.0, 1.0,
+		),
+		# --- Phase 2 drop/fall/gap segment templates ---
+		_segment(
+			"small_center_gap", TYPE_SMALL_CENTER_GAP, 8.0, 10.0, 0.0, 3,
+			[
+				"phase2_broken_bridge_gap",
+				"phase2_gap_edge_left",
+				"phase2_gap_edge_right",
+				"phase2_warning_stripes",
+				"phase2_safe_floor_plate",
+			],
+			["phase2_void_floor_visual", "phase2_edge_cone"],
+			10.0, 10.0, true, false, 1, 1,
+			"Center gap with narrow safe plate; requires recovery segment after.",
+			2, -5.5, 2.0, 0.6,
+		),
+		_segment(
+			"left_side_drop", TYPE_LEFT_SIDE_DROP, 8.0, 10.0, 0.0, 3,
+			[
+				"phase2_side_fall_opening",
+				"phase2_cracked_road_edge",
+				"phase2_safe_floor_plate",
+			],
+			["phase2_void_floor_visual", "phase2_broken_guardrail", "phase2_edge_cone"],
+			10.0, 6.0, true, false, 1, 1,
+			"Left side fall opening; right lane remains safe.",
+			2, -5.5, 1.5, 0.55,
+		),
+		_segment(
+			"right_side_drop", TYPE_RIGHT_SIDE_DROP, 8.0, 10.0, 0.0, 3,
+			[
+				"phase2_side_fall_opening",
+				"phase2_cracked_road_edge",
+				"phase2_safe_floor_plate",
+			],
+			["phase2_void_floor_visual", "phase2_broken_guardrail", "phase2_edge_cone"],
+			6.0, 10.0, true, false, 1, 1,
+			"Right side fall opening; left lane remains safe.",
+			2, -5.5, 1.5, 0.55,
+		),
+		_segment(
+			"double_side_drop", TYPE_DOUBLE_SIDE_DROP, 8.0, 10.0, 0.0, 4,
+			[
+				"phase2_side_fall_opening",
+				"phase2_cracked_road_edge",
+				"phase2_warning_stripes",
+				"phase2_safe_floor_plate",
+			],
+			["phase2_void_floor_visual", "phase2_missing_rail_section", "phase2_edge_light"],
+			6.0, 6.0, true, false, 2, 1,
+			"Both sides open; narrow center safe lane only.",
+			3, -6.0, 2.5, 0.45,
+		),
+		_segment(
+			"narrow_no_rails_bridge", TYPE_NARROW_NO_RAILS_BRIDGE, 8.0, 6.0, 0.0, 3,
+			[
+				"phase2_elevated_bridge_deck",
+				"phase2_safe_floor_plate",
+				"phase2_missing_rail_section",
+			],
+			["phase2_support_pillar", "phase2_void_floor_visual"],
+			6.0, 6.0, true, false, 0, 1,
+			"Narrow elevated bridge without guardrails.",
+			2, -5.5, 2.0, 0.7,
+		),
+		_segment(
+			"broken_bridge_gap", TYPE_BROKEN_BRIDGE_GAP, 8.0, 10.0, 0.0, 4,
+			[
+				"phase2_broken_bridge_gap",
+				"phase2_broken_guardrail",
+				"phase2_warning_stripes",
+				"phase2_safe_floor_plate",
+			],
+			["phase2_void_floor_visual", "phase2_lower_river_catch", "phase2_deco_debris"],
+			10.0, 10.0, true, false, 2, 1,
+			"Broken bridge center gap; very narrow safe plate; recovery required after.",
+			3, -6.5, 3.0, 0.4,
+		),
+		_segment(
+			"elevated_straight", TYPE_ELEVATED, 8.0, 10.0, 0.0, 2,
+			[
+				"phase2_elevated_bridge_deck",
+				"phase2_safe_floor_plate",
+				"phase2_broken_guardrail",
+			],
+			["phase2_support_pillar", "phase2_water_river_plane"],
+			10.0, 10.0, true, false, 0, 1,
+			"Elevated straight deck above water/void.",
+			1, -5.0, 2.0, 1.0,
+		),
+		_segment(
+			"elevated_ramp_drop", TYPE_ELEVATED_RAMP_DROP, 8.0, 10.0, -0.8, 3,
+			[
+				"phase2_drop_off_section",
+				"phase2_elevated_bridge_deck",
+				"phase2_safe_floor_plate",
+			],
+			["phase2_warning_stripes", "phase2_lower_river_catch"],
+			10.0, 10.0, true, false, 1, 1,
+			"Ramp down from elevated deck; fall via OOB min-Y.",
+			2, -6.0, 2.5, 0.85,
+		),
+		_segment(
+			"cracked_edge_lane", TYPE_CRACKED_EDGE_LANE, 8.0, 10.0, 0.0, 2,
+			[
+				"phase2_cracked_road_edge",
+				"phase2_warning_stripes",
+				"phase2_safe_floor_plate",
+			],
+			["phase2_edge_cone", "phase2_deco_debris"],
+			10.0, 8.0, true, false, 1, 1,
+			"Cracked edge lane with warning paint; side fall risk.",
+			1, -5.0, 1.0, 0.75,
+		),
+		_segment(
+			"water_underpass", TYPE_WATER_UNDERPASS, 8.0, 10.0, 0.0, 2,
+			[
+				"phase2_elevated_bridge_deck",
+				"phase2_safe_floor_plate",
+				"phase2_water_river_plane",
+			],
+			["phase2_support_pillar", "phase2_lower_river_catch"],
+			10.0, 10.0, true, false, 0, 1,
+			"Elevated deck over river visual; deck_y must exceed void_y.",
+			1, -5.0, 2.0, 1.0,
+		),
+		_segment(
+			"recovery_straight_after_gap", TYPE_RECOVERY, 8.0, 10.0, 0.0, 1,
+			[
+				"phase1_road_straight_8",
+				"phase2_safe_floor_plate",
+			],
+			["phase2_warning_stripes", "phase2_edge_cone"],
+			10.0, 10.0, false, false, 0, 1,
+			"Full-width safe floor after a gap/drop segment.",
+			0, -999.0, 0.0, 1.0,
 		),
 	]
 
@@ -307,7 +546,11 @@ static func _segment(
 	allows_moving_obstacles: bool,
 	hazard_slots: int,
 	safe_lane_count: int,
-	notes: String
+	notes: String = "",
+	fall_risk_level: int = 0,
+	recommended_oob_min_y: float = -999.0,
+	recommended_camera_padding: float = 0.0,
+	safe_floor_width_ratio: float = 1.0,
 ) -> Dictionary:
 	return {
 		"segment_id": segment_id,
@@ -324,5 +567,9 @@ static func _segment(
 		"allows_moving_obstacles": allows_moving_obstacles,
 		"hazard_slots": hazard_slots,
 		"safe_lane_count": safe_lane_count,
+		"fall_risk_level": fall_risk_level,
+		"recommended_oob_min_y": recommended_oob_min_y,
+		"recommended_camera_padding": recommended_camera_padding,
+		"safe_floor_width_ratio": safe_floor_width_ratio,
 		"notes": notes,
 	}

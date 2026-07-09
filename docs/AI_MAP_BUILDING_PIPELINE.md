@@ -141,6 +141,102 @@ Factory: `scripts/maps/blueprints/phase1_bridge_ramp_test.gd`
 
 ---
 
+## Phase 2 asset pack (drops, falls, gaps, water/void)
+
+**Scope:** vertical danger — gaps, side drops, elevated paths, water/void visuals. No moving obstacles.
+
+### Phase 2 asset categories
+
+| Category | Phase 2 ids (examples) |
+|----------|------------------------|
+| `gap` | `phase2_gap_edge_left`, `phase2_gap_edge_right`, `phase2_broken_bridge_gap` |
+| `drop` | `phase2_drop_off_section`, `phase2_side_fall_opening`, `phase2_cracked_road_edge` |
+| `bridge` | `phase2_elevated_bridge_deck`, `phase2_safe_floor_plate` |
+| `water` | `phase2_water_river_plane`, `phase2_void_floor_visual`, `phase2_lower_river_catch` |
+| `hazard` | `phase2_warning_stripes` |
+| `rail` | `phase2_broken_guardrail`, `phase2_missing_rail_section` |
+| `support` | `phase2_support_pillar` |
+| `decoration` | `phase2_deco_debris`, `phase2_edge_cone`, `phase2_edge_light` |
+
+List: `MapAssetLibrary.get_phase2_asset_ids()`
+
+Each asset entry includes: `asset_id`, `display_name`, `category`, `scene_path`, dimensions, offsets, `deck_y_offset`, `fall_enabled`, `collision_mode` (`visual_only` or `gameplay_collision`), `notes`.
+
+### Phase 2 approved segments
+
+| Segment id | Type | Length | fall_risk |
+|------------|------|--------|-----------|
+| `small_center_gap` | small_center_gap | 8m | 2 |
+| `left_side_drop` | left_side_drop | 8m | 2 |
+| `right_side_drop` | right_side_drop | 8m | 2 |
+| `double_side_drop` | double_side_drop | 8m | 3 |
+| `narrow_no_rails_bridge` | narrow_no_rails_bridge | 8m | 2 |
+| `broken_bridge_gap` | broken_bridge_gap | 8m | 3 |
+| `elevated_straight` | elevated | 8m | 1 |
+| `elevated_ramp_drop` | elevated_ramp_drop | 8m (−0.8m) | 2 |
+| `cracked_edge_lane` | cracked_edge_lane | 8m | 1 |
+| `water_underpass` | water_underpass | 8m | 1 |
+| `recovery_straight_after_gap` | recovery | 8m | 0 |
+
+List: `MapSegmentDefinition.get_phase2_segment_ids()`
+
+Each segment defines: `length`, `width`, `height_delta`, `safe_lane_count`, `allows_fall_edges`, `fall_risk_level`, `required_assets`, `optional_assets`, `recommended_oob_min_y`, `recommended_camera_padding`, `difficulty`, `notes`.
+
+### Phase 2 blueprint example
+
+`phase2_drop_gap_test` (non-playable, not in map dropdown):
+
+```gdscript
+var blueprint := Phase2DropGapTestBlueprint.create()
+# start_straight → straight_road_medium → elevated_straight → left_side_drop
+# → broken_bridge_gap → recovery_straight_after_gap → double_side_drop → finish_straight
+```
+
+Factory: `scripts/maps/blueprints/phase2_drop_gap_test.gd`
+
+### Rules for elevated maps (Phase 2)
+
+- `deck_y` must be above `water_void_y` (`deck_y - 4.0` when `water_enabled`).
+- `out_of_bounds_min_y` must be below `water_void_y` on elevated routes.
+- Use `elevated_straight` or `water_underpass` for elevated deck sections.
+- `recommended_camera_padding` on segments hints camera framing needs; validator warns if camera is too low.
+- Falls use `Zombie._check_out_of_bounds` only — never authoritative void kill scripts.
+
+### Rules for gaps (Phase 2)
+
+- Gap segments (`small_center_gap`, `broken_bridge_gap`) require `fall_enabled = true`.
+- Every gap must have a **valid safe floor segment before it** (not another gap).
+- Every gap must be followed by `recovery_straight_after_gap` or a full-width safe straight/bridge/finish.
+- `safe_floor_width_ratio` on gap segments must stay ≤ 0.75 — no hidden giant floor beyond visible road.
+- Spawn and finish **cannot** be placed inside gap segments.
+
+### Rules for side drops (Phase 2)
+
+- `left_side_drop`, `right_side_drop`, `double_side_drop` keep a center safe lane.
+- `out_of_bounds_min_y` must be below `deck_y` so zombies at deck height do not die from side falls.
+- Optional visual helpers (`phase2_broken_guardrail`, `phase2_edge_cone`, `phase2_warning_stripes`) are **visual only**.
+
+### Rules for water/void visuals (Phase 2)
+
+- `phase2_water_river_plane`, `phase2_void_floor_visual`, `phase2_lower_river_catch` are **visual only**.
+- Never attach `bridge_void_kill_zone` or monitoring void-kill `Area3D` nodes.
+- Water sits below deck; death happens only when zombie Y drops below `out_of_bounds_min_y`.
+
+### Bad examples AI must avoid
+
+| Bad pattern | Why |
+|-------------|-----|
+| Gap → gap with no recovery between | No safe landing after fall |
+| `broken_bridge_gap` → `finish_straight` (no recovery) | Missing recovery floor |
+| `start_straight` replaced by `broken_bridge_gap` | Spawn inside gap |
+| `finish_straight` replaced by gap segment | Finish inside gap |
+| `fall_enabled = false` with drop/gap segments | No OOB min-Y for falls |
+| `safe_floor_width_ratio > 0.75` on gaps | Hidden floor beyond visible road |
+| `GoalCatch` or void-kill `Area3D` | Competes with protected OOB/finish authority |
+| Promoting `phase2_drop_gap_test` to playable | Requires certification gate |
+
+---
+
 ## Segment grammar (all packs)
 
 Segment types (`MapSegmentDefinition`):
@@ -219,7 +315,7 @@ Factory: `scripts/maps/blueprints/example_bridge_segments_test.gd`
 | Certified | Pass `map_certification_test.gd` | Add to `DEFAULT_CERTIFIED_MAP_IDS` when required |
 | Playable | `MapCatalog` `enabled=true`, `status=playable` | Settings dropdown + production |
 
-`example_bridge_segments_test` and `phase1_bridge_ramp_test` stay at **test/prototype** — do not promote.
+`example_bridge_segments_test` and `phase1_bridge_ramp_test` and `phase2_drop_gap_test` stay at **test/prototype** — do not promote.
 
 ---
 
@@ -227,7 +323,7 @@ Factory: `scripts/maps/blueprints/example_bridge_segments_test.gd`
 
 - Dedicated ramp / bridge deck **GLTF** modules with snap metadata
 - Curved road pieces and multi-lane highway segments
-- Certified moving-obstacle prefabs (Phase 2+)
+- Certified moving-obstacle prefabs (Phase 3+)
 - Automatic `.tscn` + `.tres` export from builder
 - Art-directed themes beyond kit placeholders
 - `RaceMapController` prototype loader integration

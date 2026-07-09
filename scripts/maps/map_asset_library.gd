@@ -42,6 +42,27 @@ const CATEGORY_NAMES: Dictionary = {
 
 const KIT_ENV := "res://assets/third_party/zombie_apocalypse_kit/imported/Environment"
 
+const PHASE2_ASSET_IDS: Array[String] = [
+	"phase2_gap_edge_left",
+	"phase2_gap_edge_right",
+	"phase2_broken_bridge_gap",
+	"phase2_cracked_road_edge",
+	"phase2_drop_off_section",
+	"phase2_elevated_bridge_deck",
+	"phase2_water_river_plane",
+	"phase2_void_floor_visual",
+	"phase2_warning_stripes",
+	"phase2_broken_guardrail",
+	"phase2_missing_rail_section",
+	"phase2_side_fall_opening",
+	"phase2_support_pillar",
+	"phase2_lower_river_catch",
+	"phase2_deco_debris",
+	"phase2_edge_cone",
+	"phase2_edge_light",
+	"phase2_safe_floor_plate",
+]
+
 const PHASE1_ASSET_IDS: Array[String] = [
 	"phase1_road_straight_8",
 	"phase1_road_cracked_light",
@@ -102,6 +123,23 @@ static func is_phase1_asset(asset_id: String) -> bool:
 static func validate_phase1_assets() -> Dictionary:
 	var result: Dictionary = {"ok": true, "missing": []}
 	for asset_id in PHASE1_ASSET_IDS:
+		if not has_asset(asset_id):
+			result["ok"] = false
+			result["missing"].append(asset_id)
+	return result
+
+
+static func get_phase2_asset_ids() -> Array[String]:
+	return PHASE2_ASSET_IDS.duplicate()
+
+
+static func is_phase2_asset(asset_id: String) -> bool:
+	return asset_id in PHASE2_ASSET_IDS
+
+
+static func validate_phase2_assets() -> Dictionary:
+	var result: Dictionary = {"ok": true, "missing": []}
+	for asset_id in PHASE2_ASSET_IDS:
 		if not has_asset(asset_id):
 			result["ok"] = false
 			result["missing"].append(asset_id)
@@ -176,6 +214,7 @@ static func get_audit_report() -> Dictionary:
 			report["missing_categories"].append(category_name)
 
 	report["notes"] = [
+		"Phase 2 pack: %d canonical assets (phase2_* ids)." % PHASE2_ASSET_IDS.size(),
 		"Phase 1 pack: %d canonical assets (phase1_* ids)." % PHASE1_ASSET_IDS.size(),
 		"Road/bridge deck collision is procedural (safe_floor_plate / phase1_safe_floor_plate).",
 		"Dedicated ramp GLTF meshes are missing; phase1_ramp_surface_8 is procedural.",
@@ -531,6 +570,133 @@ static func _build_assets() -> Array[Dictionary]:
 			false, true, false, false,
 			"Phase 1 goal band visual only; finish is StreamerBase."
 		),
+		# --- Phase 2 drop/fall/gap asset pack ---
+		_entry(
+			"phase2_gap_edge_left", "P2 Gap Edge Left", Category.GAP,
+			"%s/Street_Straight_Crack2.gltf" % KIT_ENV,
+			8.0, 2.0, 0.2, Vector3(-3, 0, -4), Vector3(-3, 0, 4), 0.0,
+			false, true, true, false,
+			"Left lip before a center gap; visual only."
+		),
+		_entry(
+			"phase2_gap_edge_right", "P2 Gap Edge Right", Category.GAP,
+			"%s/Street_Straight_Crack2.gltf" % KIT_ENV,
+			8.0, 2.0, 0.2, Vector3(3, 0, -4), Vector3(3, 0, 4), 0.0,
+			false, true, true, false,
+			"Right lip before a center gap; visual only."
+		),
+		_entry(
+			"phase2_broken_bridge_gap", "P2 Broken Bridge Gap", Category.GAP,
+			"",
+			8.0, 10.0, 0.1, Vector3(0, 0, -4), Vector3(0, 0, 4), -0.5,
+			false, true, true, false,
+			"Broken bridge void slot; fall via OOB min-Y only."
+		),
+		_entry(
+			"phase2_cracked_road_edge", "P2 Cracked Road Edge", Category.ROAD,
+			"%s/Street_Straight_Crack1.gltf" % KIT_ENV,
+			8.0, 3.0, 0.2, Vector3(0, 0, -4), Vector3(0, 0, 4), 0.0,
+			false, true, true, false,
+			"Cracked pavement edge lane; visual hazard cue."
+		),
+		_entry(
+			"phase2_drop_off_section", "P2 Drop Off Section", Category.DROP,
+			"%s/Street_Straight_Crack2.gltf" % KIT_ENV,
+			8.0, 8.0, 0.2, Vector3(0, 0, -4), Vector3(0, -0.4, 4), 0.0,
+			false, true, true, false,
+			"Deck lip before a height drop segment."
+		),
+		_entry(
+			"phase2_elevated_bridge_deck", "P2 Elevated Bridge Deck", Category.BRIDGE,
+			"",
+			8.0, 10.0, 0.16, Vector3(0, 0, -4), Vector3(0, 0, 4), 0.0,
+			false, true, true, false,
+			"Elevated bridge deck visual; collision via safe floor plate."
+		),
+		_entry(
+			"phase2_water_river_plane", "P2 Water River Plane", Category.WATER,
+			"",
+			40.0, 0.08, 80.0, Vector3.ZERO, Vector3.ZERO, -4.0,
+			false, true, true, false,
+			"Route-wide river visual below elevated deck; never authoritative kill."
+		),
+		_entry(
+			"phase2_void_floor_visual", "P2 Void Floor Visual", Category.WATER,
+			"",
+			12.0, 0.08, 10.0, Vector3.ZERO, Vector3.ZERO, -3.5,
+			false, true, true, false,
+			"Per-segment void floor under gaps/drops; visual only."
+		),
+		_entry(
+			"phase2_warning_stripes", "P2 Warning Stripes", Category.HAZARD,
+			"res://assets/materials/obstacle_warning.tres",
+			8.0, 8.0, 0.05, Vector3.ZERO, Vector3.ZERO, 0.02,
+			false, true, false, false,
+			"Warning paint before gaps; visual readability helper."
+		),
+		_entry(
+			"phase2_broken_guardrail", "P2 Broken Guardrail", Category.RAIL,
+			"%s/TrafficBarrier_1.gltf" % KIT_ENV,
+			2.5, 0.4, 0.6, Vector3(0, 0, -1.25), Vector3(0, 0, 1.25), 0.0,
+			false, true, true, false,
+			"Broken parapet section; collision sanitized."
+		),
+		_entry(
+			"phase2_missing_rail_section", "P2 Missing Rail Section", Category.RAIL,
+			"",
+			2.5, 0.4, 0.1, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true, true, false,
+			"Empty rail slot marker; signals missing guardrail."
+		),
+		_entry(
+			"phase2_side_fall_opening", "P2 Side Fall Opening", Category.DROP,
+			"%s/Street_Straight_Crack2.gltf" % KIT_ENV,
+			8.0, 3.0, 0.2, Vector3(0, 0, -4), Vector3(0, -0.3, 4), 0.0,
+			false, true, true, false,
+			"Side fall opening lip; center lane remains safe."
+		),
+		_entry(
+			"phase2_support_pillar", "P2 Support Pillar", Category.SUPPORT,
+			"%s/CinderBlock.gltf" % KIT_ENV,
+			1.05, 1.05, 4.0, Vector3.ZERO, Vector3.ZERO, -2.0,
+			false, true, false, false,
+			"Bridge/elevated support column prop."
+		),
+		_entry(
+			"phase2_lower_river_catch", "P2 Lower River Catch", Category.WATER,
+			"",
+			16.0, 0.12, 12.0, Vector3.ZERO, Vector3.ZERO, -5.0,
+			false, true, true, false,
+			"Lower catch basin visual below drops; never authoritative kill."
+		),
+		_entry(
+			"phase2_deco_debris", "P2 Deco Debris", Category.DECORATION,
+			"%s/Pallet_Broken.gltf" % KIT_ENV,
+			1.2, 1.6, 0.4, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true, false, false,
+			"Void-side decorative debris."
+		),
+		_entry(
+			"phase2_edge_cone", "P2 Edge Cone", Category.DECORATION,
+			"%s/TrafficCone_1.gltf" % KIT_ENV,
+			0.6, 0.6, 0.8, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true, false, false,
+			"Edge cone for gap/drop readability."
+		),
+		_entry(
+			"phase2_edge_light", "P2 Edge Light", Category.DECORATION,
+			"%s/StreetLights.gltf" % KIT_ENV,
+			1.0, 1.0, 4.5, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true, false, false,
+			"Edge light prop before dangerous sections."
+		),
+		_entry(
+			"phase2_safe_floor_plate", "P2 Safe Floor Plate", Category.BRIDGE,
+			"",
+			8.0, 10.0, 0.12, Vector3(0, 0, -4), Vector3(0, 0, 4), -0.06,
+			true, false, false, false,
+			"Phase 2 authoritative walk collision plate."
+		),
 	]
 
 
@@ -551,6 +717,7 @@ static func _entry(
 	supports_moving: bool,
 	notes: String
 ) -> Dictionary:
+	var collision_mode: String = "gameplay_collision" if has_collision else "visual_only"
 	return {
 		"asset_id": asset_id,
 		"display_name": display_name,
@@ -564,7 +731,9 @@ static func _entry(
 		"deck_y_offset": deck_y_offset,
 		"has_collision": has_collision,
 		"is_visual_only": is_visual_only,
+		"collision_mode": collision_mode,
 		"supports_falling": supports_falling,
+		"fall_enabled": supports_falling,
 		"supports_moving": supports_moving,
 		"default_scale": 1.0,
 		"default_rotation": Vector3.ZERO,
@@ -633,6 +802,28 @@ static func _instantiate_procedural(entry: Dictionary) -> Node3D:
 			var goal_mat: Material = load("res://assets/materials/goal_zone.tres")
 			if goal_mat != null:
 				node.material_override = goal_mat
+		"phase2_broken_bridge_gap", "phase2_void_floor_visual":
+			mat.albedo_color = Color(0.01, 0.02, 0.05, 0.9)
+			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			node.material_override = mat
+		"phase2_water_river_plane", "phase2_lower_river_catch":
+			mat.albedo_color = Color(0.02, 0.06, 0.1, 0.95)
+			mat.emission_enabled = true
+			mat.emission = Color(0.02, 0.07, 0.12)
+			mat.emission_energy_multiplier = 0.25
+			node.material_override = mat
+		"phase2_warning_stripes":
+			var warn_mat: Material = load("res://assets/materials/obstacle_warning.tres")
+			if warn_mat != null:
+				node.material_override = warn_mat
+		"phase2_elevated_bridge_deck", "phase2_safe_floor_plate":
+			mat.albedo_color = Color(0.24, 0.25, 0.27, 1.0)
+			mat.roughness = 0.9
+			node.material_override = mat
+		"phase2_missing_rail_section":
+			mat.albedo_color = Color(0.35, 0.1, 0.1, 0.6)
+			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			node.material_override = mat
 		_:
 			mat.albedo_color = Color(0.22, 0.23, 0.25, 1.0)
 			mat.roughness = 0.9
