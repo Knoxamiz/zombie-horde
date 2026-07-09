@@ -72,6 +72,7 @@ func build_prototype(parent: Node3D, blueprint) -> Node3D:
 
 	_spawn_z = float(layout.get("spawn_z", 0.0))
 	_goal_z = float(layout.get("goal_z", 0.0))
+	_place_spawn_approach_floor(safe_floor, layout, blueprint.deck_y, blueprint.route_half_width * 2.0)
 
 	var definition: RaceMapDefinition = build_race_map_definition(blueprint)
 	var scene_validation: Dictionary = AIMapBlueprintValidatorScript.validate_generated_scene(
@@ -126,7 +127,16 @@ func _assemble_segment(
 	var deck_y_at_segment: float = _route_deck_y
 
 	_place_required_assets(segment, road_bucket, rails_bucket, props_bucket, center_z, deck_y_at_segment)
-	_place_optional_visuals(segment, props_bucket, rails_bucket, water_bucket, center_z, deck_y_at_segment)
+	_place_optional_visuals(
+		segment,
+		props_bucket,
+		rails_bucket,
+		water_bucket,
+		center_z,
+		deck_y_at_segment,
+		segment_width,
+		segment_length
+	)
 	_place_safe_floor_for_segment(
 		segment,
 		segment_type,
@@ -199,8 +209,11 @@ func _place_optional_visuals(
 	rails_bucket: Node3D,
 	water_bucket: Node3D,
 	center_z: float,
-	deck_y: float
+	deck_y: float,
+	segment_width: float,
+	segment_length: float
 ) -> void:
+	var support_slot: int = 0
 	for asset_id_value in segment.get("optional_assets", []):
 		var asset_id: String = str(asset_id_value)
 		var asset: Dictionary = MapAssetLibraryScript.get_asset(asset_id)
@@ -217,7 +230,24 @@ func _place_optional_visuals(
 		var instance: Node3D = MapAssetLibraryScript.instantiate_visual(asset_id)
 		if instance == null:
 			continue
-		instance.position = Vector3(0.0, deck_y + float(asset.get("deck_y_offset", 0.0)), center_z)
+		var x_offset: float = 0.0
+		if category == MapAssetLibraryScript.Category.SUPPORT:
+			var side_sign: float = 1.0 if support_slot % 2 == 0 else -1.0
+			x_offset = _blueprint.route_half_width * 0.42 * side_sign
+			support_slot += 1
+		if category == MapAssetLibraryScript.Category.WATER:
+			var asset_width: float = maxf(float(asset.get("approximate_width", segment_width)), 0.1)
+			var asset_length: float = maxf(float(asset.get("approximate_length", segment_length)), 0.1)
+			instance.scale = Vector3(
+				segment_width / asset_width,
+				1.0,
+				segment_length / asset_length,
+			)
+		instance.position = Vector3(
+			x_offset,
+			deck_y + float(asset.get("deck_y_offset", 0.0)),
+			center_z,
+		)
 		parent_bucket.add_child(instance)
 
 
@@ -364,26 +394,34 @@ func _add_safe_floor_plate(parent: Node3D, position: Vector3, size: Vector3) -> 
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var shape := CollisionShape3D.new()
-	var half_x: float = size.x * 0.5
-	var half_z: float = size.z * 0.5
-	var top_y: float = maxf(size.y, 0.08) * 0.5
-	var concave := ConcavePolygonShape3D.new()
-	concave.set_faces(
-		PackedVector3Array(
-			[
-				Vector3(-half_x, top_y, -half_z),
-				Vector3(half_x, top_y, -half_z),
-				Vector3(half_x, top_y, half_z),
-				Vector3(-half_x, top_y, -half_z),
-				Vector3(half_x, top_y, half_z),
-				Vector3(-half_x, top_y, half_z),
-			]
-		)
+	var box := BoxShape3D.new()
+	box.size = Vector3(
+		maxf(size.x, 0.5),
+		maxf(size.y, 0.08),
+		maxf(size.z, 0.5),
 	)
-	shape.shape = concave
+	shape.shape = box
 	body.add_child(shape)
 	parent.add_child(body)
 	return body
+
+
+func _place_spawn_approach_floor(
+	safe_floor: Node3D,
+	layout: Dictionary,
+	deck_y: float,
+	spawn_width: float
+) -> void:
+	var spawn_z: float = float(layout.get("spawn_z", -AIMapRouteLayoutScript.SPAWN_BACK_OFFSET))
+	if spawn_z >= -0.01:
+		return
+	var approach_length: float = -spawn_z
+	var center_z: float = spawn_z + approach_length * 0.5
+	_add_safe_floor_plate(
+		safe_floor,
+		Vector3(0.0, deck_y - FLOOR_THICKNESS * 0.5, center_z),
+		Vector3(spawn_width, FLOOR_THICKNESS, approach_length)
+	)
 
 
 func _make_child(child_name: String, parent: Node3D) -> Node3D:

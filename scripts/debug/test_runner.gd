@@ -28,6 +28,11 @@ const MAP_TESTS: Array[Dictionary] = [
 	{"name": "ai_map_pipeline_test", "script": "ai_map_pipeline_test.gd", "args": []},
 	{"name": "moving_obstacle_reset_test", "script": "moving_obstacle_reset_test.gd", "args": []},
 	{
+		"name": "ai_generated_map_collision_audit_test",
+		"script": "ai_generated_map_collision_audit_test.gd",
+		"args": [],
+	},
+	{
 		"name": "broken_bridge_real_gameplay_test",
 		"script": "broken_bridge_real_gameplay_test.gd",
 		"args": ["--zombies=5", "--skip-stress"],

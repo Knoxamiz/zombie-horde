@@ -10,6 +10,7 @@ extends Node
 
 const FINISH_POSITION_TOLERANCE := 1.25
 const SCRIPT_VOID_KILL := preload("res://scripts/maps/bridge_void_kill_zone.gd")
+const AIMapCollisionAuditScript := preload("res://scripts/maps/ai_map_collision_audit.gd")
 
 signal active_map_changed(map_index: int, display_name: String)
 
@@ -414,7 +415,6 @@ func _load_map_definition_for_test(map_id: String, definition: RaceMapDefinition
 	_disable_scene_cameras(new_map)
 	ensure_spectator_camera_active()
 	_ensure_map_scene_built(new_map)
-
 	_apply_map_geometry(definition, new_map)
 	_apply_gameplay_dimensions(definition)
 
@@ -432,6 +432,7 @@ func _load_map_definition_for_test(map_id: String, definition: RaceMapDefinition
 		return _fail_prototype_load("finish contract validation failed for '%s'" % map_id)
 	_log_prototype_dimension_report(definition)
 	active_map_changed.emit(-1, definition.display_name)
+	_ensure_generated_gameplay_collision_enabled(new_map)
 	print("RaceMapController: prototype test load succeeded for '%s'" % map_id)
 	return true
 
@@ -592,6 +593,20 @@ func _ensure_map_scene_built(map: Node3D) -> void:
 	elif _is_ai_generated_map_arena(core_road):
 		if core_road.get_map_root() == null:
 			core_road.build_map()
+
+
+func _ensure_generated_gameplay_collision_enabled(map: Node3D) -> void:
+	if map == null:
+		return
+	var map_root: Node3D = map.get_node_or_null("CoreRoad/MapRoot") as Node3D
+	if map_root == null:
+		return
+	var restored: int = AIMapCollisionAuditScript.ensure_gameplay_collision_enabled(map_root)
+	if restored > 0:
+		print(
+			"RaceMapController: restored %d gameplay collision node(s) for generated map"
+			% restored
+		)
 
 
 func _disable_scene_cameras(map: Node3D) -> void:

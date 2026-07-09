@@ -4,6 +4,7 @@ extends RefCounted
 const MapAssetLibraryScript := preload("res://scripts/maps/map_asset_library.gd")
 const MapSegmentDefinitionScript := preload("res://scripts/maps/map_segment_definition.gd")
 const AIMapRouteLayoutScript := preload("res://scripts/maps/ai_map_route_layout.gd")
+const AIMapCollisionAuditScript := preload("res://scripts/maps/ai_map_collision_audit.gd")
 
 const VOID_KILL_SCRIPT_PATH := "res://scripts/maps/bridge_void_kill_zone.gd"
 
@@ -92,6 +93,7 @@ static func validate_generated_scene(
 		_validate_definition_values(definition, blueprint, result)
 		_validate_route_layout_alignment(blueprint, result, definition)
 		_validate_generated_geometry_alignment(root, blueprint, definition, result)
+		_validate_generated_collision(root, blueprint, definition, result)
 		_validate_elevated_camera_framing(definition, blueprint, result)
 		var camera_view: Dictionary = RaceMapController.compute_race_camera_view_for_definition(definition)
 		if camera_view.get("position", Vector3.ZERO) == Vector3.ZERO:
@@ -985,6 +987,16 @@ static func _validate_elevated_camera_requirement(blueprint, result: Dictionary)
 	var camera_view: Dictionary = RaceMapController.compute_race_camera_view_for_definition(definition)
 	if camera_view.get("position", Vector3.ZERO) == Vector3.ZERO:
 		_add_error(result, "Elevated/drop map requires valid camera framing from RaceMapController.")
+
+
+static func _validate_generated_collision(
+	root: Node3D,
+	blueprint,
+	definition: RaceMapDefinition,
+	result: Dictionary
+) -> void:
+	for error in AIMapCollisionAuditScript.validate_generated_collision(root, blueprint, definition):
+		_add_error(result, error)
 
 
 static func _validate_elevated_camera_framing(

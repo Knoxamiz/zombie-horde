@@ -3,6 +3,7 @@ extends CanvasLayer
 
 const PANEL_WIDTH := 360.0
 const REFRESH_INTERVAL_SEC := 0.25
+const AIMapCollisionAudit := preload("res://scripts/maps/ai_map_collision_audit.gd")
 
 @export var round_manager_path: NodePath
 @export var debug_join_source_path: NodePath
@@ -483,8 +484,18 @@ func _load_prototype_for_review(map_id: String) -> bool:
 		"DevControlPanel: prototype review load succeeded for '%s' (resolved=%s)"
 		% [map_id, _race_map_controller.get_resolved_map_id()]
 	)
+	_print_loaded_map_collision_audit(map_id)
 	_refresh_display()
 	return true
+
+
+func _print_loaded_map_collision_audit(map_id: String) -> void:
+	if _race_world == null:
+		return
+	var map_root: Node3D = _race_world.get_node_or_null("RoadArena/CoreRoad/MapRoot") as Node3D
+	if map_root == null:
+		return
+	AIMapCollisionAudit.print_collision_audit(map_root, map_id)
 
 
 func _prepare_for_prototype_map_load() -> String:

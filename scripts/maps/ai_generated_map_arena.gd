@@ -3,6 +3,8 @@ extends Node3D
 
 const AIMapBlueprintBuilderScript := preload("res://scripts/maps/ai_map_blueprint_builder.gd")
 const AIMapBlueprintRegistryScript := preload("res://scripts/maps/ai_map_blueprint_registry.gd")
+const AIMapCollisionAuditScript := preload("res://scripts/maps/ai_map_collision_audit.gd")
+const VisualCollisionSanitizerScript := preload("res://scripts/core/visual_collision_sanitizer.gd")
 
 @export var ai_blueprint_id: String = "phase1_bridge_ramp_test"
 
@@ -27,8 +29,18 @@ func build_map() -> Node3D:
 		push_error("AIGeneratedMapArena: build_prototype failed for '%s'" % ai_blueprint_id)
 		return null
 
+	_sanitize_visual_layer_collision()
+	AIMapCollisionAuditScript.ensure_gameplay_collision_enabled(_map_root)
 	print("AIGeneratedMapArena: built '%s' (%s)" % [ai_blueprint_id, blueprint.display_name])
 	return _map_root
+
+
+func _sanitize_visual_layer_collision() -> void:
+	if _map_root == null:
+		return
+	var visual_layer: Node = _map_root.get_node_or_null("VisualLayer")
+	if visual_layer != null:
+		VisualCollisionSanitizerScript.sanitize_subtree(visual_layer)
 
 
 func get_map_root() -> Node3D:
