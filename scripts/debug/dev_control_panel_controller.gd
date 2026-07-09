@@ -18,6 +18,7 @@ var _race_world: Node3D
 var _flow_analyzer: ZombieFlowAnalyzer
 var _markers_root: Node3D
 var _fake_viewer_simulator: FakeViewerSimulator
+var _stress_profiler: PerformanceStressProfiler
 
 var _panel_open: bool = false
 var _refresh_elapsed: float = 0.0
@@ -35,6 +36,7 @@ var _simulator_status_label: Label
 var _flow_status_label: Label
 var _flow_toggle: CheckButton
 var _flow_markers_toggle: CheckButton
+var _stress_status_label: Label
 var _blueprint_debug_toggle: CheckButton
 
 
@@ -49,6 +51,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_DISABLED
 	_resolve_nodes()
 	_ensure_fake_viewer_simulator()
+	_ensure_stress_profiler()
 	_build_ui()
 	set_process(false)
 
@@ -183,6 +186,22 @@ func _build_ui() -> void:
 		["Print Last Report", _on_print_flow_report_pressed],
 	])
 	_add_button(body, "Run 20-Viewer Test + Analyze", _on_run_flow_test_pressed)
+
+	_add_section(body, "Performance / Stress Profiler")
+	_add_hint(body, "Dev-only FPS sampling during fake viewer stress runs.")
+	_stress_status_label = _add_readout(body, "Profiler: idle")
+	_add_button_row(body, [
+		["Stress 20", _on_stress_twenty_pressed],
+		["Stress 100", _on_stress_hundred_pressed],
+	])
+	_add_button_row(body, [
+		["Stress 250", _on_stress_two_fifty_pressed],
+		["Stress 500", _on_stress_five_hundred_pressed],
+	])
+	_add_button_row(body, [
+		["Stop Stress Test", _on_stop_stress_pressed],
+		["Print Perf Report", _on_print_stress_report_pressed],
+	])
 
 	_add_section(body, "Debug Toggles")
 	_blueprint_debug_toggle = CheckButton.new()
@@ -411,6 +430,74 @@ func _on_run_flow_test_pressed() -> void:
 	_refresh_display()
 
 
+func _ensure_stress_profiler() -> PerformanceStressProfiler:
+	if _stress_profiler != null and is_instance_valid(_stress_profiler):
+		return _stress_profiler
+
+	_stress_profiler = get_node_or_null("PerformanceStressProfiler") as PerformanceStressProfiler
+	if _stress_profiler == null:
+		_stress_profiler = PerformanceStressProfiler.new()
+		_stress_profiler.name = "PerformanceStressProfiler"
+		add_child(_stress_profiler)
+
+	_ensure_fake_viewer_simulator()
+	_stress_profiler.configure(
+		_round_manager,
+		_zombie_manager,
+		_race_map_controller,
+		_fake_viewer_simulator,
+		_ensure_flow_analyzer(),
+		get_node_or_null("../../Systems/GameFlowController") as GameFlowController
+	)
+	return _stress_profiler
+
+
+func _on_stress_twenty_pressed() -> void:
+	_run_stress_test(20)
+
+
+func _on_stress_hundred_pressed() -> void:
+	_run_stress_test(100)
+
+
+func _on_stress_two_fifty_pressed() -> void:
+	_run_stress_test(250)
+
+
+func _on_stress_five_hundred_pressed() -> void:
+	_run_stress_test(500)
+
+
+func _on_stop_stress_pressed() -> void:
+	var profiler := _ensure_stress_profiler()
+	if profiler != null:
+		profiler.stop_stress_test()
+	_refresh_display()
+
+
+func _on_print_stress_report_pressed() -> void:
+	var profiler := _ensure_stress_profiler()
+	if profiler != null:
+		profiler.print_performance_report()
+	_refresh_display()
+
+
+func _run_stress_test(count: int) -> void:
+	var profiler := _ensure_stress_profiler()
+	if profiler == null or profiler.is_stress_active():
+		return
+	profiler.configure(
+		_round_manager,
+		_zombie_manager,
+		_race_map_controller,
+		_fake_viewer_simulator,
+		_ensure_flow_analyzer(),
+		get_node_or_null("../../Systems/GameFlowController") as GameFlowController
+	)
+	profiler.run_stress_test(count)
+	_refresh_display()
+
+
 func _on_blueprint_debug_toggled(enabled: bool) -> void:
 	_blueprint_debug_visible = enabled
 	var arena := _get_blueprint_arena()
@@ -471,6 +558,7 @@ func _refresh_display() -> void:
 	_refresh_simulator_status()
 	_refresh_config_inspector()
 	_refresh_flow_analyzer_status()
+	_refresh_stress_profiler_status()
 	_refresh_toggle_states()
 
 
@@ -562,6 +650,16 @@ func _refresh_flow_analyzer_status() -> void:
 		"Analyzer: %s | records: %d | markers: %d"
 		% [enabled_text, analyzer.get_record_count(), analyzer.get_marker_count()]
 	)
+
+
+func _refresh_stress_profiler_status() -> void:
+	if _stress_status_label == null:
+		return
+	var profiler := _ensure_stress_profiler()
+	if profiler == null:
+		_stress_status_label.text = "Profiler: unavailable"
+		return
+	_stress_status_label.text = "Profiler: %s" % profiler.get_status_text()
 
 
 func _refresh_toggle_states() -> void:
