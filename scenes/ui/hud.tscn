@@ -1,10 +1,11 @@
-[gd_scene load_steps=10 format=3 uid="uid://klfmkohhxs15"]
+[gd_scene load_steps=11 format=3 uid="uid://klfmkohhxs15"]
 
 [ext_resource type="Script" uid="uid://u81cp382hnt1" path="res://scripts/ui/hud_controller.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/ui/zombie_horde_theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://scenes/ui/round_results_overlay.tscn" id="3_results_overlay"]
 [ext_resource type="PackedScene" path="res://scenes/ui/podium_overlay.tscn" id="4_podium_overlay"]
 [ext_resource type="Script" path="res://scripts/ui/hud_layout_panel.gd" id="5_layout_panel"]
+[ext_resource type="Script" path="res://scripts/ui/hold_to_confirm_button.gd" id="6_hold_button"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_board_header"]
 content_margin_left = 16.0
@@ -445,5 +446,39 @@ layout_mode = 2
 text = "Add NPC"
 
 [node name="PodiumOverlay" parent="Root" instance=ExtResource("4_podium_overlay")]
+
+[node name="HoldResetButton" type="Button" parent="Root"]
+custom_minimum_size = Vector2(160, 46)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = -62.0
+offset_right = 200.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("6_hold_button")
+hold_seconds = 3.0
+text = "Hold Reset"
+
+[node name="MainMenuButton" type="Button" parent="Root"]
+custom_minimum_size = Vector2(200, 46)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -240.0
+offset_top = -62.0
+offset_right = -40.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Return to Main Menu"
 
 [node name="RoundResultsOverlay" parent="Root" instance=ExtResource("3_results_overlay")]
