@@ -42,6 +42,27 @@ const CATEGORY_NAMES: Dictionary = {
 
 const KIT_ENV := "res://assets/third_party/zombie_apocalypse_kit/imported/Environment"
 
+const PHASE3_ASSET_IDS: Array[String] = [
+	"phase3_moving_block_crate",
+	"phase3_moving_block_wide",
+	"phase3_side_pusher",
+	"phase3_pusher_plate",
+	"phase3_crusher_plate",
+	"phase3_crusher_frame",
+	"phase3_rotating_arm",
+	"phase3_sliding_wall",
+	"phase3_timed_gate",
+	"phase3_gate_barrier",
+	"phase3_moving_platform",
+	"phase3_platform_deck",
+	"phase3_lane_blocker",
+	"phase3_blocker_barrier",
+	"phase3_warning_stripes",
+	"phase3_warning_light",
+	"phase3_deco_sparks",
+	"phase3_safe_lane_marker",
+]
+
 const PHASE2_ASSET_IDS: Array[String] = [
 	"phase2_gap_edge_left",
 	"phase2_gap_edge_right",
@@ -146,6 +167,46 @@ static func validate_phase2_assets() -> Dictionary:
 	return result
 
 
+static func get_phase3_asset_ids() -> Array[String]:
+	return PHASE3_ASSET_IDS.duplicate()
+
+
+static func is_phase3_asset(asset_id: String) -> bool:
+	return asset_id in PHASE3_ASSET_IDS
+
+
+static func validate_phase3_assets() -> Dictionary:
+	var result: Dictionary = {"ok": true, "missing": []}
+	for asset_id in PHASE3_ASSET_IDS:
+		if not has_asset(asset_id):
+			result["ok"] = false
+			result["missing"].append(asset_id)
+	return result
+
+
+static func is_moving_obstacle_asset(asset_id: String) -> bool:
+	var entry: Dictionary = get_asset(asset_id)
+	return bool(entry.get("supports_moving", false)) or not str(entry.get("movement_category", "")).is_empty()
+
+
+static func instantiate_moving_obstacle(asset_id: String, cycle_override: float = 0.0) -> Node3D:
+	const MapMovingObstacleScript := preload("res://scripts/maps/obstacles/map_moving_obstacle.gd")
+	var entry: Dictionary = get_asset(asset_id)
+	if entry.is_empty():
+		push_warning("MapAssetLibrary: missing moving asset_id=%s" % asset_id)
+		return null
+	var obstacle = MapMovingObstacleScript.new()
+	obstacle.configure_from_asset(entry, cycle_override)
+	var visual: Node3D = instantiate_visual(asset_id)
+	var collision_size := Vector3(
+		float(entry.get("approximate_width", 2.0)),
+		float(entry.get("approximate_height", 2.0)),
+		float(entry.get("approximate_length", 2.0)),
+	)
+	MapMovingObstacleScript.attach_visual(obstacle, visual, collision_size)
+	return obstacle
+
+
 static func get_all_asset_ids() -> Array[String]:
 	var ids: Array[String] = []
 	for entry in _assets():
@@ -214,6 +275,7 @@ static func get_audit_report() -> Dictionary:
 			report["missing_categories"].append(category_name)
 
 	report["notes"] = [
+		"Phase 3 pack: %d canonical moving obstacle assets (phase3_* ids)." % PHASE3_ASSET_IDS.size(),
 		"Phase 2 pack: %d canonical assets (phase2_* ids)." % PHASE2_ASSET_IDS.size(),
 		"Phase 1 pack: %d canonical assets (phase1_* ids)." % PHASE1_ASSET_IDS.size(),
 		"Road/bridge deck collision is procedural (safe_floor_plate / phase1_safe_floor_plate).",
@@ -697,6 +759,169 @@ static func _build_assets() -> Array[Dictionary]:
 			true, false, false, false,
 			"Phase 2 authoritative walk collision plate."
 		),
+		# --- Phase 3 moving obstacle asset pack ---
+		_moving_entry(
+			"phase3_moving_block_crate", "P3 Moving Block Crate", "moving_obstacle", Category.MOVING_OBSTACLE,
+			"%s/Container_Red.gltf" % KIT_ENV,
+			3.0, 2.4, 2.6, Vector3(0, 0, -1.5), Vector3(0, 0, 1.5), 0.0,
+			true, false,
+			"ping_pong", "x", 2.8, 4.0, 0.0,
+			"kinematic_block", "block",
+			"Lane-moving crate; leaves center safe lane open."
+		),
+		_moving_entry(
+			"phase3_moving_block_wide", "P3 Moving Block Wide", "moving_obstacle", Category.MOVING_OBSTACLE,
+			"%s/Container_Green.gltf" % KIT_ENV,
+			4.0, 3.0, 2.6, Vector3(0, 0, -2), Vector3(0, 0, 2), 0.0,
+			true, false,
+			"ping_pong", "x", 2.2, 5.0, 0.25,
+			"kinematic_block", "block",
+			"Wide moving block for slalom lanes."
+		),
+		_moving_entry(
+			"phase3_side_pusher", "P3 Side Pusher", "pusher", Category.MOVING_OBSTACLE,
+			"%s/PlasticBarrier.gltf" % KIT_ENV,
+			2.0, 0.6, 1.2, Vector3(0, 0, -1), Vector3(0, 0, 1), 0.0,
+			true, false,
+			"ping_pong", "x", 2.0, 3.5, 0.0,
+			"kinematic_push", "push",
+			"Side lane pusher; physics push only, no direct kill."
+		),
+		_moving_entry(
+			"phase3_pusher_plate", "P3 Pusher Plate", "pusher", Category.MOVING_OBSTACLE,
+			"",
+			2.5, 0.4, 1.4, Vector3.ZERO, Vector3.ZERO, 0.0,
+			true, false,
+			"linear", "x", 1.8, 3.0, 0.5,
+			"kinematic_push", "push",
+			"Procedural pusher plate for side_pusher_lane segments."
+		),
+		_moving_entry(
+			"phase3_crusher_plate", "P3 Crusher Plate", "crusher", Category.MOVING_OBSTACLE,
+			"",
+			3.0, 3.0, 0.5, Vector3.ZERO, Vector3.ZERO, 1.2,
+			true, false,
+			"ping_pong", "y", 1.0, 4.5, 0.0,
+			"kinematic_crush", "crush",
+			"Overhead crusher plate; blocks lane briefly, no authoritative kill."
+		),
+		_moving_entry(
+			"phase3_crusher_frame", "P3 Crusher Frame", "crusher", Category.DECORATION,
+			"%s/Pipes.gltf" % KIT_ENV,
+			2.5, 2.5, 2.5, Vector3.ZERO, Vector3.ZERO, 1.5,
+			false, true,
+			"rotation", "z", 0.0, 6.0, 0.0,
+			"visual_only", "none",
+			"Crusher frame visual; collision sanitized."
+		),
+		_moving_entry(
+			"phase3_rotating_arm", "P3 Rotating Arm", "rotating_arm", Category.MOVING_OBSTACLE,
+			"%s/Pipes.gltf" % KIT_ENV,
+			4.0, 0.5, 0.5, Vector3.ZERO, Vector3.ZERO, 1.2,
+			true, false,
+			"rotation", "y", 3.5, 5.0, 0.0,
+			"kinematic_sweep", "block",
+			"Rotating sweep arm over bridge segment."
+		),
+		_moving_entry(
+			"phase3_sliding_wall", "P3 Sliding Wall", "sliding_wall", Category.MOVING_OBSTACLE,
+			"%s/Container_Red.gltf" % KIT_ENV,
+			1.5, 6.0, 2.6, Vector3(0, 0, -3), Vector3(0, 0, 3), 0.0,
+			true, false,
+			"ping_pong", "z", 2.5, 4.0, 0.0,
+			"kinematic_block", "block",
+			"Wall sliding along segment length."
+		),
+		_moving_entry(
+			"phase3_timed_gate", "P3 Timed Gate", "timed_gate", Category.MOVING_OBSTACLE,
+			"%s/TrafficBarrier_1.gltf" % KIT_ENV,
+			2.5, 0.4, 1.0, Vector3(0, 0, -1.25), Vector3(0, 0, 1.25), 0.0,
+			true, false,
+			"ping_pong", "x", 3.2, 6.0, 0.0,
+			"kinematic_gate", "gate",
+			"Timed gate that opens/closes lane; always leaves safe window."
+		),
+		_moving_entry(
+			"phase3_gate_barrier", "P3 Gate Barrier", "timed_gate", Category.BARRIER,
+			"%s/TrafficBarrier_2.gltf" % KIT_ENV,
+			2.5, 0.4, 1.0, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true,
+			"ping_pong", "x", 2.5, 6.0, 0.5,
+			"visual_only", "gate",
+			"Gate barrier visual companion."
+		),
+		_moving_entry(
+			"phase3_moving_platform", "P3 Moving Platform", "moving_platform", Category.MOVING_OBSTACLE,
+			"%s/Pallet.gltf" % KIT_ENV,
+			2.0, 2.0, 0.4, Vector3.ZERO, Vector3.ZERO, 0.0,
+			true, false,
+			"ping_pong", "y", 0.6, 5.0, 0.0,
+			"kinematic_platform", "platform",
+			"Vertical moving platform over gap slots."
+		),
+		_moving_entry(
+			"phase3_platform_deck", "P3 Platform Deck", "moving_platform", Category.MOVING_OBSTACLE,
+			"",
+			3.0, 2.5, 0.2, Vector3.ZERO, Vector3.ZERO, 0.0,
+			true, false,
+			"ping_pong", "y", 0.8, 4.5, 0.25,
+			"kinematic_platform", "platform",
+			"Procedural platform deck for moving_platform_gap."
+		),
+		_moving_entry(
+			"phase3_lane_blocker", "P3 Lane Blocker", "blocker", Category.MOVING_OBSTACLE,
+			"%s/CinderBlock.gltf" % KIT_ENV,
+			1.2, 0.8, 0.8, Vector3.ZERO, Vector3.ZERO, 0.0,
+			true, false,
+			"ping_pong", "x", 1.5, 3.5, 0.0,
+			"kinematic_block", "block",
+			"Small timed lane blocker."
+		),
+		_moving_entry(
+			"phase3_blocker_barrier", "P3 Blocker Barrier", "blocker", Category.BARRIER,
+			"%s/PlasticBarrier.gltf" % KIT_ENV,
+			2.0, 0.5, 1.2, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true,
+			"ping_pong", "x", 1.2, 4.0, 0.0,
+			"visual_only", "block",
+			"Blocker visual; collision sanitized."
+		),
+		_moving_entry(
+			"phase3_warning_stripes", "P3 Warning Stripes", "warning_visual", Category.HAZARD,
+			"res://assets/materials/obstacle_warning.tres",
+			8.0, 8.0, 0.05, Vector3.ZERO, Vector3.ZERO, 0.02,
+			false, true,
+			"linear", "x", 0.0, 0.0, 0.0,
+			"visual_only", "none",
+			"Warning paint before moving obstacle sections."
+		),
+		_moving_entry(
+			"phase3_warning_light", "P3 Warning Light", "warning_visual", Category.DECORATION,
+			"%s/StreetLights.gltf" % KIT_ENV,
+			1.0, 1.0, 4.5, Vector3.ZERO, Vector3.ZERO, 0.0,
+			false, true,
+			"linear", "x", 0.0, 0.0, 0.0,
+			"visual_only", "none",
+			"Edge light before obstacle lanes."
+		),
+		_moving_entry(
+			"phase3_deco_sparks", "P3 Deco Sparks", "decoration", Category.DECORATION,
+			"",
+			0.5, 0.5, 0.5, Vector3.ZERO, Vector3.ZERO, 0.5,
+			false, true,
+			"linear", "x", 0.0, 0.0, 0.0,
+			"visual_only", "none",
+			"Obstacle section dressing sparks."
+		),
+		_moving_entry(
+			"phase3_safe_lane_marker", "P3 Safe Lane Marker", "warning_visual", Category.HAZARD,
+			"res://assets/materials/spawn_zone.tres",
+			2.0, 2.0, 0.04, Vector3.ZERO, Vector3.ZERO, 0.03,
+			false, true,
+			"linear", "x", 0.0, 0.0, 0.0,
+			"visual_only", "none",
+			"Marks persistent safe lane through obstacle segment."
+		),
 	]
 
 
@@ -739,6 +964,58 @@ static func _entry(
 		"default_rotation": Vector3.ZERO,
 		"notes": notes,
 	}
+
+
+static func _moving_entry(
+	asset_id: String,
+	display_name: String,
+	movement_category: String,
+	category: int,
+	scene_path: String,
+	length: float,
+	width: float,
+	height: float,
+	entry_offset: Vector3,
+	exit_offset: Vector3,
+	deck_y_offset: float,
+	has_collision: bool,
+	is_visual_only: bool,
+	movement_type: String,
+	movement_axis: String,
+	movement_distance: float,
+	cycle_time: float,
+	phase_offset: float,
+	collision_expectation: String,
+	hazard_behavior: String,
+	notes: String
+) -> Dictionary:
+	var entry: Dictionary = _entry(
+		asset_id,
+		display_name,
+		category,
+		scene_path,
+		length,
+		width,
+		height,
+		entry_offset,
+		exit_offset,
+		deck_y_offset,
+		has_collision,
+		is_visual_only,
+		false,
+		true,
+		notes,
+	)
+	entry["movement_category"] = movement_category
+	entry["movement_type"] = movement_type
+	entry["movement_axis"] = movement_axis
+	entry["movement_distance"] = movement_distance
+	entry["cycle_time"] = cycle_time
+	entry["phase_offset"] = phase_offset
+	entry["pause_at_ends_sec"] = 0.2
+	entry["collision_expectation"] = collision_expectation
+	entry["hazard_behavior"] = hazard_behavior
+	return entry
 
 
 static func _instantiate_procedural(entry: Dictionary) -> Node3D:
@@ -824,6 +1101,25 @@ static func _instantiate_procedural(entry: Dictionary) -> Node3D:
 			mat.albedo_color = Color(0.35, 0.1, 0.1, 0.6)
 			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 			node.material_override = mat
+		"phase3_pusher_plate", "phase3_crusher_plate", "phase3_platform_deck":
+			mat.albedo_color = Color(0.55, 0.35, 0.15, 1.0)
+			mat.metallic = 0.2
+			mat.roughness = 0.85
+			node.material_override = mat
+		"phase3_deco_sparks":
+			mat.albedo_color = Color(1.0, 0.7, 0.2, 1.0)
+			mat.emission_enabled = true
+			mat.emission = Color(1.0, 0.5, 0.1)
+			mat.emission_energy_multiplier = 0.4
+			node.material_override = mat
+		"phase3_warning_stripes":
+			var warn_mat: Material = load("res://assets/materials/obstacle_warning.tres")
+			if warn_mat != null:
+				node.material_override = warn_mat
+		"phase3_safe_lane_marker":
+			var lane_mat: Material = load("res://assets/materials/spawn_zone.tres")
+			if lane_mat != null:
+				node.material_override = lane_mat
 		_:
 			mat.albedo_color = Color(0.22, 0.23, 0.25, 1.0)
 			mat.roughness = 0.9

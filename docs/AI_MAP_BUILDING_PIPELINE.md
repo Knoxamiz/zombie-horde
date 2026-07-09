@@ -237,6 +237,107 @@ Factory: `scripts/maps/blueprints/phase2_drop_gap_test.gd`
 
 ---
 
+## Phase 3 asset pack (moving obstacles)
+
+**Scope:** reusable moving obstacle modules — blocks, pushers, crushers, gates, platforms. No new playable maps.
+
+### Obstacle audit (existing repo)
+
+| Exists | Path / notes |
+|--------|----------------|
+| `BounceObstacle` | `scripts/hazards/bounce_obstacle.gd` — approved hazard path via `GameEvents.obstacle_triggered` |
+| `HazardManager` road obstacles | `scripts/hazards/hazard_manager.gd` — runtime placement, not map-embedded |
+| `MapLabSimMover` | `scripts/maps/map_lab_sim_mover.gd` — MapLab simulation probes only |
+| Kit meshes | `Container_Red`, `Container_Green`, `PlasticBarrier`, `TrafficBarrier_*`, `Pallet`, `Pipes`, `CinderBlock` |
+| `moving_block_slot` | Phase 0 placeholder in `MapAssetLibrary` — superseded by `phase3_*` assets |
+| **Missing** | Dedicated swinging arm GLTF, certified crusher prefab scenes, tween library for map obstacles, production hazard wiring from AI builder |
+
+### Phase 3 moving obstacle assets
+
+List: `MapAssetLibrary.get_phase3_asset_ids()` (18 `phase3_*` ids)
+
+Categories: `moving_obstacle`, `pusher`, `crusher`, `rotating_arm`, `sliding_wall`, `timed_gate`, `moving_platform`, `blocker`, `warning_visual`, `decoration`
+
+Each entry includes: `movement_type`, `movement_axis`, `movement_distance`, `cycle_time`, `phase_offset`, `collision_expectation`, `hazard_behavior`, `collision_mode`, `notes`.
+
+### Movement controller
+
+`scripts/maps/obstacles/map_moving_obstacle.gd` (`MapMovingObstacle` extends `AnimatableBody3D`):
+
+- Supports `linear`, `ping_pong`, `rotation`
+- Configurable axis, distance, cycle time, phase offset, pause at ends
+- `reset_obstacle()` / `pause_obstacle()` for clean prototype resets
+- **Kinematic collision only** — does not kill zombies or edit `zombie.gd`
+- Damage/knockback must use existing paths (e.g. `BounceObstacle` + `GameEvents`)
+
+### Phase 3 approved segments
+
+| Segment id | Type |
+|------------|------|
+| `moving_block_lane` | moving_block_lane |
+| `side_pusher_lane` | side_pusher_lane |
+| `crusher_corridor` | crusher_corridor |
+| `rotating_arm_bridge` | rotating_arm_bridge |
+| `timed_gate_straight` | timed_gate_straight |
+| `sliding_wall_lane` | sliding_wall_lane |
+| `moving_platform_gap` | moving_platform_gap |
+| `obstacle_slalom` | obstacle_slalom |
+| `hazard_recovery_straight` | hazard_recovery |
+
+List: `MapSegmentDefinition.get_phase3_segment_ids()`
+
+### Phase 3 blueprint example
+
+`phase3_moving_obstacle_test` (non-playable, not in map dropdown):
+
+```gdscript
+var blueprint := Phase3MovingObstacleTestBlueprint.create()
+# start_straight → straight_road_medium → moving_block_lane → recovery_straight_after_gap
+# → side_pusher_lane → timed_gate_straight → finish_straight
+```
+
+Factory: `scripts/maps/blueprints/phase3_moving_obstacle_test.gd`
+
+### How AI should request a moving obstacle map
+
+1. Pick segments from Phase 3 approved list; include Phase 1/2 straights/recovery as needed.
+2. Set `moving_obstacles_enabled = true` and optional `obstacle_cycle_time` (1.5–12.0s).
+3. Ensure each obstacle segment keeps `fallback_safe_lane = true` and `safe_lane_count >= 1`.
+4. Follow obstacle segment with `hazard_recovery_straight` or `recovery_straight_after_gap` when needed.
+5. Validate + build prototype only — do not add to `MapCatalog`.
+
+### Allowed movement patterns
+
+| Pattern | Use |
+|---------|-----|
+| `ping_pong` + `x` | Lane blockers, gates, pushers |
+| `ping_pong` + `z` | Sliding walls along segment |
+| `ping_pong` + `y` | Crushers, moving platforms |
+| `rotation` + `y` | Rotating arms |
+| `linear` | One-shot pushers (short travel) |
+
+### Safe-lane rules
+
+- Every moving obstacle segment must leave at least one passable route (`fallback_safe_lane_width >= 1.5m`).
+- `cycle_time` must be 1.5–12.0 seconds so zombies can time crossings.
+- `movement_distance` must stay inside segment bounds (≤ 45% of segment width/length on axis).
+- `moving_platform_gap` requires recovery floor after (like gap segments).
+- Crushers/pushers cannot be spawn or finish segments.
+
+### Banned obstacle patterns
+
+| Banned | Why |
+|--------|-----|
+| `fallback_safe_lane = false` | Blocks all lanes forever |
+| `obstacle_cycle_time < 1.5` or `> 12` | Unfair or untestable timing |
+| Obstacle `Area3D` void kill | Competes with OOB authority |
+| `GoalCatch` on obstacle nodes | Competes with finish authority |
+| `Camera3D.current` on obstacle scripts | Hijacks spectator camera |
+| Direct `zombie.gd` edits for obstacle motion | Protected system |
+| Authoritative kill in `MapMovingObstacle` | Must use existing hazard events |
+
+---
+
 ## Segment grammar (all packs)
 
 Segment types (`MapSegmentDefinition`):
@@ -315,7 +416,7 @@ Factory: `scripts/maps/blueprints/example_bridge_segments_test.gd`
 | Certified | Pass `map_certification_test.gd` | Add to `DEFAULT_CERTIFIED_MAP_IDS` when required |
 | Playable | `MapCatalog` `enabled=true`, `status=playable` | Settings dropdown + production |
 
-`example_bridge_segments_test` and `phase1_bridge_ramp_test` and `phase2_drop_gap_test` stay at **test/prototype** — do not promote.
+`example_bridge_segments_test` and `phase1_bridge_ramp_test` and `phase2_drop_gap_test` and `phase3_moving_obstacle_test` stay at **test/prototype** — do not promote.
 
 ---
 
@@ -323,7 +424,7 @@ Factory: `scripts/maps/blueprints/example_bridge_segments_test.gd`
 
 - Dedicated ramp / bridge deck **GLTF** modules with snap metadata
 - Curved road pieces and multi-lane highway segments
-- Certified moving-obstacle prefabs (Phase 3+)
+- Split lanes / merge lanes / curved highway segments
 - Automatic `.tscn` + `.tres` export from builder
 - Art-directed themes beyond kit placeholders
 - `RaceMapController` prototype loader integration

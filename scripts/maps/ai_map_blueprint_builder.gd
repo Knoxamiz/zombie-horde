@@ -49,6 +49,7 @@ func build_prototype(parent: Node3D, blueprint) -> Node3D:
 	var props_bucket := _make_child("Props", _visual_layer)
 	var water_bucket := _make_child("Water", _visual_layer)
 	var safe_floor := _make_child("SafeFloor", _gameplay_layer)
+	var obstacles_bucket := _make_child("MovingObstacles", _gameplay_layer)
 	var spawn_zone := _make_child("SpawnZone", _gameplay_layer)
 	var goal_zone := _make_child("GoalZone", _gameplay_layer)
 
@@ -65,7 +66,8 @@ func build_prototype(parent: Node3D, blueprint) -> Node3D:
 			water_bucket,
 			safe_floor,
 			spawn_zone,
-			goal_zone
+			goal_zone,
+			obstacles_bucket
 		)
 
 	_spawn_z = _route_cursor_z - _built_length - SPAWN_BACK_OFFSET
@@ -108,7 +110,8 @@ func _assemble_segment(
 	water_bucket: Node3D,
 	safe_floor: Node3D,
 	spawn_zone: Node3D,
-	goal_zone: Node3D
+	goal_zone: Node3D,
+	obstacles_bucket: Node3D
 ) -> void:
 	if segment.is_empty():
 		return
@@ -137,9 +140,15 @@ func _assemble_segment(
 			_place_marker(spawn_zone, "SpawnMarker", segment_width, segment_length, center_z, deck_y_at_segment, true)
 		MapSegmentDefinitionScript.TYPE_FINISH:
 			_place_marker(goal_zone, "GoalMarker", segment_width, segment_length, center_z, deck_y_at_segment, false)
-		MapSegmentDefinitionScript.TYPE_GAP, MapSegmentDefinitionScript.TYPE_DROP, MapSegmentDefinitionScript.TYPE_SIDE_DROP, MapSegmentDefinitionScript.TYPE_SMALL_CENTER_GAP, MapSegmentDefinitionScript.TYPE_LEFT_SIDE_DROP, MapSegmentDefinitionScript.TYPE_RIGHT_SIDE_DROP, MapSegmentDefinitionScript.TYPE_DOUBLE_SIDE_DROP, MapSegmentDefinitionScript.TYPE_BROKEN_BRIDGE_GAP, MapSegmentDefinitionScript.TYPE_ELEVATED_RAMP_DROP, MapSegmentDefinitionScript.TYPE_CRACKED_EDGE_LANE:
+		MapSegmentDefinitionScript.TYPE_GAP, MapSegmentDefinitionScript.TYPE_DROP, MapSegmentDefinitionScript.TYPE_SIDE_DROP, MapSegmentDefinitionScript.TYPE_SMALL_CENTER_GAP, MapSegmentDefinitionScript.TYPE_LEFT_SIDE_DROP, MapSegmentDefinitionScript.TYPE_RIGHT_SIDE_DROP, MapSegmentDefinitionScript.TYPE_DOUBLE_SIDE_DROP, MapSegmentDefinitionScript.TYPE_BROKEN_BRIDGE_GAP, MapSegmentDefinitionScript.TYPE_ELEVATED_RAMP_DROP, MapSegmentDefinitionScript.TYPE_CRACKED_EDGE_LANE, MapSegmentDefinitionScript.TYPE_MOVING_PLATFORM_GAP:
 			if _blueprint.water_enabled:
 				_place_segment_water(water_bucket, segment_width + 8.0, segment_length + 2.0, center_z)
+
+	if (
+		_blueprint.moving_obstacles_enabled
+		and MapSegmentDefinitionScript.is_moving_obstacle_segment_type(segment_type)
+	):
+		_place_moving_obstacles_for_segment(segment, center_z, deck_y_at_segment, obstacles_bucket)
 
 	_route_deck_y += height_delta
 	_route_cursor_z += segment_length
@@ -158,6 +167,8 @@ func _place_required_assets(
 	for asset_id_value in required_assets:
 		var asset_id: String = str(asset_id_value)
 		if asset_id == "safe_floor_plate" or asset_id == "phase1_safe_floor_plate" or asset_id == "phase2_safe_floor_plate":
+			continue
+		if MapAssetLibraryScript.is_moving_obstacle_asset(asset_id):
 			continue
 		var asset: Dictionary = MapAssetLibraryScript.get_asset(asset_id)
 		if asset.is_empty():
@@ -231,6 +242,7 @@ func _place_safe_floor_for_segment(
 		MapSegmentDefinitionScript.TYPE_RIGHT_SIDE_DROP,
 		MapSegmentDefinitionScript.TYPE_DOUBLE_SIDE_DROP,
 		MapSegmentDefinitionScript.TYPE_CRACKED_EDGE_LANE,
+		MapSegmentDefinitionScript.TYPE_MOVING_PLATFORM_GAP,
 	]:
 		floor_width = min(floor_width, _blueprint.route_half_width * 2.0 - 2.0)
 	if segment_type == MapSegmentDefinitionScript.TYPE_RECOVERY:
@@ -245,6 +257,41 @@ func _place_safe_floor_for_segment(
 		Vector3(floor_offset_x, deck_y - FLOOR_THICKNESS * 0.5, center_z),
 		Vector3(floor_width, FLOOR_THICKNESS, segment_length)
 	)
+
+
+func _place_moving_obstacles_for_segment(
+	segment: Dictionary,
+	center_z: float,
+	deck_y: float,
+	obstacles_bucket: Node3D
+) -> void:
+	var cycle_time: float = _blueprint.get_effective_cycle_time(segment)
+	var spacing: float = float(segment.get("recommended_spacing", 3.0))
+	var slot_index: int = 0
+	var segment_type: String = str(segment.get("type", ""))
+	for asset_id_value in segment.get("required_assets", []):
+		var asset_id: String = str(asset_id_value)
+		if not MapAssetLibraryScript.is_moving_obstacle_asset(asset_id):
+			continue
+		var asset: Dictionary = MapAssetLibraryScript.get_asset(asset_id)
+		if bool(asset.get("is_visual_only", false)) and not bool(asset.get("has_collision", false)):
+			continue
+		var obstacle = MapAssetLibraryScript.instantiate_moving_obstacle(asset_id, cycle_time)
+		if obstacle == null:
+			continue
+		var x_offset: float = 0.0
+		if segment_type == MapSegmentDefinitionScript.TYPE_SIDE_PUSHER_LANE:
+			x_offset = _blueprint.route_half_width * 0.55
+		elif segment_type == MapSegmentDefinitionScript.TYPE_OBSTACLE_SLALOM:
+			x_offset = spacing * (0.5 if slot_index % 2 == 0 else -0.5)
+		obstacle.position = Vector3(
+			x_offset,
+			deck_y + float(asset.get("deck_y_offset", 0.0)),
+			center_z,
+		)
+		obstacle.phase_offset = float(asset.get("phase_offset", 0.0)) + float(slot_index) * 0.35
+		obstacles_bucket.add_child(obstacle)
+		slot_index += 1
 
 
 func _place_marker(
