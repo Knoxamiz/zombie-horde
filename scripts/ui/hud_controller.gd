@@ -409,6 +409,16 @@ func _on_round_reset() -> void:
 func _on_round_ended(winner_name: String, base_won: bool) -> void:
 	_last_winner_name = winner_name
 	_last_base_won = base_won
+	if _round_manager != null and _round_manager.is_auto_repeat_enabled():
+		_results_showing = false
+		_podium_showing = false
+		if _podium_overlay != null:
+			_podium_overlay.hide_podium(true)
+		if _results_overlay != null:
+			_results_overlay.hide_results(true)
+		_set_world_results_visible(false)
+		_refresh_static_labels()
+		return
 	var timed_out: bool = _round_manager != null and _round_manager.is_race_timed_out()
 	if timed_out:
 		_record_feed(StreamerFeedbackMessages.format_time_limit_feed(winner_name, base_won))

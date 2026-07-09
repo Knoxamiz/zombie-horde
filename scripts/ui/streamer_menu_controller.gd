@@ -90,6 +90,7 @@ var _status_text: String = "Settings loaded"
 @onready var _tower_gun_option: OptionButton = get_node("Root/MenuPanel/Margin/VBox/TowerGunRow/TowerGunOption") as OptionButton
 @onready var _tower_weapon_row: HBoxContainer = get_node("Root/MenuPanel/Margin/VBox/TowerWeaponRow") as HBoxContainer
 var _tower_weapon_check: CheckBox
+var _auto_repeat_toggle: ToggleControl
 var _premium_controls: VBoxContainer
 var _mine_spin: SliderControl
 var _street_prop_spin: SliderControl
@@ -247,6 +248,10 @@ func _build_control_room_streamer_modal() -> void:
 	var gameplay_group: VBoxContainer = _settings_modal.add_group("Gameplay", 1)
 	_map_option = _make_modal_option()
 	_map_row = _settings_modal.add_row(gameplay_group, "Level", _map_option)
+	_auto_repeat_toggle = ToggleControl.new()
+	_auto_repeat_toggle.text = "AUTO REPEAT"
+	_settings_modal.add_row(gameplay_group, "Auto Repeat", _auto_repeat_toggle)
+	_auto_repeat_toggle.toggled.connect(_on_auto_repeat_toggled)
 	_balance_value_label = Label.new()
 	ControlRoomTheme.apply_label(_balance_value_label, 19, ControlRoomTheme.COLOR_GREEN)
 	_balance_detail_label = Label.new()
@@ -454,6 +459,8 @@ func _refresh_controls() -> void:
 	_select_map_option_by_settings_index(_profile.get_selected_settings_map_index())
 	_tower_gun_option.select(_clamped_option_index(_tower_gun_option, _profile.tower_gun))
 	_tower_weapon_check.button_pressed = _profile.show_tower_weapons
+	if _auto_repeat_toggle != null and _round_manager != null:
+		_auto_repeat_toggle.set_pressed_no_signal(_round_manager.is_auto_repeat_enabled())
 	_mine_spin.value = _profile.premium_mine_count
 	_street_prop_spin.value = _profile.premium_obstacle_count
 	_boost_pad_spin.value = _profile.premium_boost_pad_count
@@ -508,6 +515,14 @@ func _on_map_selected(option_index: int) -> void:
 	_apply_profile_to_game(true)
 	_refresh_controls()
 	_save_profile("Saved map: %s" % _get_selected_map_name())
+
+
+func _on_auto_repeat_toggled(enabled: bool) -> void:
+	if _is_refreshing:
+		return
+	if _round_manager != null:
+		_round_manager.set_auto_repeat_enabled(enabled)
+	_set_status("Auto repeat %s" % ("on" if enabled else "off"))
 
 func _on_preset_button_pressed(slot_index: int) -> void:
 	if _is_refreshing:
@@ -903,9 +918,10 @@ func _format_world_settings_body() -> String:
 		_profile.premium_sewer_hole_count,
 		_profile.premium_defender_count
 	]
-	return "Edition  %s\nMap  %s\nPreset  %d\nBalance  %s\nLighting  %s  Backdrop  %s\nStreamer  %s  Avatar  %s\n%s\n%s\nStatus  %s" % [
+	return "Edition  %s\nMap  %s\nAuto Repeat  %s\nPreset  %d\nBalance  %s\nLighting  %s  Backdrop  %s\nStreamer  %s  Avatar  %s\n%s\n%s\nStatus  %s" % [
 		edition_text,
 		map_text,
+		"on" if _round_manager != null and _round_manager.is_auto_repeat_enabled() else "off",
 		_active_preset_slot + 1,
 		balance_text,
 		time_text,

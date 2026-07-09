@@ -36,6 +36,10 @@ var _minigun: BaseMinigun
 var _base_goal: StreamerBaseGoal
 var _round_token: int = 0
 var _post_round_reset_token: int = 0
+var _auto_repeat_token: int = 0
+var _auto_repeat_enabled: bool = false
+
+const AUTO_REPEAT_DELAY_SEC: float = 1.5
 var _round_started_msec: int = 0
 var _race_winner_name: String = ""
 var _next_finish_place: int = 1
@@ -136,6 +140,7 @@ func start_round() -> void:
 
 func reset_round() -> void:
 	_round_token += 1
+	_auto_repeat_token += 1
 	_cancel_post_round_auto_reset()
 	set_process(false)
 	state = RoundState.IDLE
@@ -221,6 +226,16 @@ func get_pending_count() -> int:
 
 func get_state_text() -> String:
 	return _state_to_text(state)
+
+
+func set_auto_repeat_enabled(enabled: bool) -> void:
+	_auto_repeat_enabled = enabled
+	if not enabled:
+		_auto_repeat_token += 1
+
+
+func is_auto_repeat_enabled() -> bool:
+	return _auto_repeat_enabled
 
 func get_pending_names() -> PackedStringArray:
 	var names: PackedStringArray = PackedStringArray()
@@ -308,8 +323,21 @@ func _end_round(winner_name: String, base_won: bool) -> void:
 	GameEvents.round_countdown_changed.emit(0)
 	GameEvents.round_ended.emit(winner_name, base_won)
 	_publish_state()
-	_emit_post_round_recovery_hint()
-	_schedule_post_round_auto_reset()
+
+	var roster_snapshot: Array[Dictionary] = []
+	if _auto_repeat_enabled and _zombie_manager != null:
+		roster_snapshot = _zombie_manager.capture_roster_snapshot()
+
+	if _auto_repeat_enabled and not roster_snapshot.is_empty():
+		_cancel_post_round_auto_reset()
+		GameEvents.command_text_changed.emit(
+			"Auto repeat on — restarting with %d NPCs in %.0fs"
+			% [roster_snapshot.size(), AUTO_REPEAT_DELAY_SEC]
+		)
+		_schedule_auto_repeat(roster_snapshot)
+	else:
+		_emit_post_round_recovery_hint()
+		_schedule_post_round_auto_reset()
 
 func _process(_delta: float) -> void:
 	if state != RoundState.RUNNING:
@@ -389,6 +417,48 @@ func _run_post_round_auto_reset(token: int, auto_reset_seconds: float) -> void:
 func _cancel_post_round_auto_reset() -> void:
 	_post_round_reset_token += 1
 	GameEvents.post_round_auto_reset_tick.emit(0)
+
+
+func queue_roster_snapshot(roster: Array[Dictionary]) -> void:
+	if state != RoundState.IDLE:
+		return
+
+	for entry in roster:
+		if entry is not Dictionary:
+			continue
+		var display_name: String = str(entry.get("display_name", "")).strip_edges()
+		if display_name.is_empty():
+			continue
+		if _has_participant_name(display_name):
+			continue
+
+		var join_info: ParticipantJoinInfo = entry.get("join_info") as ParticipantJoinInfo
+		if join_info == null:
+			join_info = ParticipantJoinInfo.for_name(display_name)
+		pending_participants.append(display_name)
+		_pending_join_info[display_name.to_lower()] = join_info
+
+	_publish_queue()
+
+
+func _schedule_auto_repeat(roster: Array[Dictionary]) -> void:
+	_auto_repeat_token += 1
+	var token: int = _auto_repeat_token
+	_run_auto_repeat_sequence(token, roster.duplicate(true))
+
+
+func _run_auto_repeat_sequence(token: int, roster: Array[Dictionary]) -> void:
+	await get_tree().create_timer(AUTO_REPEAT_DELAY_SEC).timeout
+	if token != _auto_repeat_token or state != RoundState.ENDED or not _auto_repeat_enabled:
+		return
+	if roster.is_empty():
+		return
+
+	reset_round()
+	queue_roster_snapshot(roster)
+	if pending_participants.is_empty():
+		return
+	start_round()
 
 func _emit_post_round_recovery_hint() -> void:
 	GameEvents.command_text_changed.emit(
