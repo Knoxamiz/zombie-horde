@@ -44,12 +44,6 @@
 [ext_resource type="Resource" path="res://resources/config/feature_access_config.tres" id="42_feature_config"]
 [ext_resource type="Script" uid="uid://d024e6ourlubf" path="res://scripts/maps/race_map_controller.gd" id="43_map_controller"]
 [ext_resource type="Resource" path="res://resources/maps/quarantine_boulevard.tres" id="44_map_quarantine"]
-[ext_resource type="Resource" path="res://resources/maps/long_road.tres" id="45_map_long_road"]
-[ext_resource type="Resource" path="res://resources/maps/broken_bridge.tres" id="46_map_broken_bridge"]
-[ext_resource type="Resource" path="res://resources/maps/industrial_yard.tres" id="47_map_industrial"]
-[ext_resource type="Resource" path="res://resources/maps/suburban_evac_route.tres" id="48_map_suburban"]
-[ext_resource type="Resource" path="res://resources/maps/tunnel_checkpoint.tres" id="49_map_tunnel"]
-[ext_resource type="Resource" path="res://resources/maps/rooftop_causeway.tres" id="50_map_rooftop"]
 [ext_resource type="Script" path="res://scripts/ui/world_text_board.gd" id="51_world_board"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_menu_3d_button.tscn" id="52_3d_button"]
 [ext_resource type="PackedScene" path="res://scenes/debug/dev_control_panel.tscn" id="53_dev_panel"]
@@ -100,12 +94,6 @@ powerup_config = ExtResource("10_powerup_config")
 human_defender_config = ExtResource("35_defender_config")
 spectator_camera_path = NodePath("../../SpectatorCamera")
 map_0_definition = ExtResource("44_map_quarantine")
-map_1_definition = ExtResource("45_map_long_road")
-map_2_definition = ExtResource("46_map_broken_bridge")
-map_3_definition = ExtResource("47_map_industrial")
-map_4_definition = ExtResource("48_map_suburban")
-map_5_definition = ExtResource("49_map_tunnel")
-map_6_definition = ExtResource("50_map_rooftop")
 
 [node name="LeaderboardStore" type="Node" parent="Systems"]
 script = ExtResource("38_leaderboard_store")

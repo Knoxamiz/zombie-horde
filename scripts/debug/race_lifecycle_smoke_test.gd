@@ -2,7 +2,6 @@ extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const CITY_HIGHWAY_MAP_ID := MapCatalog.DEFAULT_MAP_ID
-const BROKEN_BRIDGE_MAP_ID := "broken_bridge_candidate"
 const ZOMBIE_COUNT := 3
 const FINISH_ZOMBIE_COUNT := 1
 const PASS := 0
@@ -19,8 +18,6 @@ func _run_all() -> void:
 	print("=== Race lifecycle smoke test ===")
 	await _run_map_finish_scenario(CITY_HIGHWAY_MAP_ID, false)
 	await _run_map_timeout_scenario(CITY_HIGHWAY_MAP_ID, false)
-	await _run_map_finish_scenario(BROKEN_BRIDGE_MAP_ID, true)
-	await _run_map_timeout_scenario(BROKEN_BRIDGE_MAP_ID, true)
 
 	if _failures.is_empty():
 		print("SUITE RESULT: PASSED")

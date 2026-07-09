@@ -2,7 +2,6 @@ extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const CITY_HIGHWAY_MAP_ID := MapCatalog.DEFAULT_MAP_ID
-const BROKEN_BRIDGE_MAP_ID := "broken_bridge_candidate"
 const PASS := 0
 const FAIL := 1
 
@@ -16,10 +15,8 @@ func _initialize() -> void:
 
 func _run_all() -> void:
 	print("=== Void / OOB authority test ===")
-	await _test_broken_bridge_deck_safety()
-	await _test_broken_bridge_fall_death()
 	await _test_city_highway_lateral_oob()
-	await _test_map_void_zones_non_authoritative(BROKEN_BRIDGE_MAP_ID, true)
+	await _test_map_void_zones_non_authoritative(CITY_HIGHWAY_MAP_ID, false)
 
 	if _failures.is_empty():
 		print("SUITE RESULT: PASSED")
@@ -29,115 +26,6 @@ func _run_all() -> void:
 			push_error(failure)
 		print("SUITE RESULT: FAILED")
 		_finish(FAIL)
-
-
-func _test_broken_bridge_deck_safety() -> void:
-	print("-- Broken Bridge deck safety probe --")
-	var ctx: Dictionary = await _boot_map(BROKEN_BRIDGE_MAP_ID, true)
-	if ctx.is_empty():
-		return
-
-	var zombie_manager: ZombieManager = ctx.zombie_manager
-	var round_manager: RoundManager = ctx.round_manager
-	var debug_join: DebugJoinSource = ctx.debug_join
-	var main_game: Node = ctx.main_game
-
-	debug_join.request_random_join()
-	await create_timer(0.2).timeout
-	round_manager.start_round()
-	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 12.0):
-		_fail("deck safety: never entered RUNNING")
-		main_game.queue_free()
-		return
-
-	var zombies: Array[Zombie] = zombie_manager.get_living_zombies()
-	if zombies.is_empty():
-		_fail("deck safety: no zombie spawned")
-		main_game.queue_free()
-		return
-
-	var zombie: Zombie = zombies[0]
-	if not zombie.died.is_connected(_on_probe_zombie_died):
-		zombie.died.connect(_on_probe_zombie_died)
-
-	var deck_probe := Vector3(0.0, BrokenBridgeTestLayout.ZOMBIE_SPAWN_Y, -10.0)
-	zombie.global_position = deck_probe
-	zombie.velocity = Vector3.ZERO
-
-	_disable_combat(ctx.main_game)
-
-	await create_timer(4.0).timeout
-
-	if not zombie.is_alive():
-		_fail("deck safety: zombie died on bridge deck (cause=%s)" % _death_cause)
-	elif zombie.global_position.y < BrokenBridgeTestLayout.BRIDGE_DECK_Y - 1.0:
-		_fail(
-			"deck safety: zombie fell through deck (y=%.2f)"
-			% zombie.global_position.y
-		)
-	else:
-		print("deck safety probe passed")
-
-	main_game.queue_free()
-
-
-func _test_broken_bridge_fall_death() -> void:
-	print("-- Broken Bridge fall death probe --")
-	_death_cause = ""
-	var ctx: Dictionary = await _boot_map(BROKEN_BRIDGE_MAP_ID, true)
-	if ctx.is_empty():
-		return
-
-	var zombie_manager: ZombieManager = ctx.zombie_manager
-	var round_manager: RoundManager = ctx.round_manager
-	var debug_join: DebugJoinSource = ctx.debug_join
-	var main_game: Node = ctx.main_game
-
-	debug_join.request_random_join()
-	await create_timer(0.2).timeout
-	round_manager.start_round()
-	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 12.0):
-		_fail("fall death: never entered RUNNING")
-		main_game.queue_free()
-		return
-
-	var zombies: Array[Zombie] = zombie_manager.get_living_zombies()
-	if zombies.is_empty():
-		_fail("fall death: no zombie spawned")
-		main_game.queue_free()
-		return
-
-	var zombie: Zombie = zombies[0]
-	if not zombie.died.is_connected(_on_probe_zombie_died):
-		zombie.died.connect(_on_probe_zombie_died)
-
-	var start_y: float = BrokenBridgeTestLayout.ZOMBIE_SPAWN_Y
-	zombie.global_position = Vector3(7.5, start_y, 0.0)
-	zombie.velocity = Vector3.ZERO
-
-	var saw_fall: bool = false
-	var elapsed: float = 0.0
-	while elapsed < 12.0 and zombie.is_alive():
-		if zombie.global_position.y < BrokenBridgeTestLayout.BRIDGE_DECK_Y - 0.5:
-			saw_fall = true
-		await create_timer(0.1).timeout
-		elapsed += 0.1
-
-	if zombie.is_alive():
-		_fail("fall death: zombie did not die after leaving bridge deck")
-		main_game.queue_free()
-		return
-	if not saw_fall:
-		_fail("fall death: zombie died without visibly falling below deck")
-		main_game.queue_free()
-		return
-	if _death_cause != "fell":
-		_fail("fall death: expected cause 'fell', got '%s'" % _death_cause)
-		main_game.queue_free()
-		return
-
-	print("fall death probe passed")
-	main_game.queue_free()
 
 
 func _test_city_highway_lateral_oob() -> void:

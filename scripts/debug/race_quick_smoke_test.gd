@@ -2,7 +2,6 @@ extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const CITY_HIGHWAY_MAP_ID := MapCatalog.DEFAULT_MAP_ID
-const BROKEN_BRIDGE_MAP_ID := "broken_bridge_candidate"
 const JOIN_COUNT := 2
 const PASS := 0
 const FAIL := 1
@@ -19,7 +18,6 @@ func _run_all() -> void:
 	_started_msec = Time.get_ticks_msec()
 	print("=== Race quick smoke test ===")
 	await _run_quick_map_scenario(CITY_HIGHWAY_MAP_ID, false)
-	await _run_quick_map_scenario(BROKEN_BRIDGE_MAP_ID, true)
 
 	var elapsed_sec: float = float(Time.get_ticks_msec() - _started_msec) / 1000.0
 	if _failures.is_empty():

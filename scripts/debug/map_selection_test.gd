@@ -29,9 +29,9 @@ func _test_catalog_resolution() -> PackedStringArray:
 	var failures: PackedStringArray = PackedStringArray()
 	var settings_entries: Array[Dictionary] = MapCatalog.get_selectable_entries_for_settings()
 
-	if settings_entries.size() != 2:
+	if settings_entries.size() != 1:
 		failures.append(
-			"Expected 2 settings maps, got %d" % settings_entries.size()
+			"Expected 1 settings map, got %d" % settings_entries.size()
 		)
 		return failures
 
@@ -40,19 +40,12 @@ func _test_catalog_resolution() -> PackedStringArray:
 			"Settings index 0 should be quarantine_boulevard, got %s"
 			% settings_entries[0].get("id", "")
 		)
-	if str(settings_entries[1].get("id", "")) != "broken_bridge_candidate":
-		failures.append(
-			"Settings index 1 should be broken_bridge_candidate, got %s"
-			% settings_entries[1].get("id", "")
-		)
 
 	if MapCatalog.get_settings_map_id(0) != "quarantine_boulevard":
 		failures.append("Settings map id 0 mismatch")
-	if MapCatalog.get_settings_map_id(1) != "broken_bridge_candidate":
-		failures.append("Settings map id 1 mismatch")
 
-	if MapCatalog.resolve_settings_index("", 7) != 1:
-		failures.append("Legacy index 7 should migrate to settings index 1")
+	if MapCatalog.resolve_settings_index("", 7) != 0:
+		failures.append("Legacy index 7 should migrate to settings index 0")
 
 	if MapCatalog.get_playable_count() != 1:
 		failures.append("Expected exactly one playable map, got %d" % MapCatalog.get_playable_count())
@@ -67,20 +60,20 @@ func _test_profile_migration() -> PackedStringArray:
 	profile.selected_map_id = ""
 	profile.sanitize_map_selection()
 
-	if profile.get_selected_map_id() != "broken_bridge_candidate":
+	if profile.get_selected_map_id() != "quarantine_boulevard":
 		failures.append(
 			"Profile migration from legacy index 7 failed: id=%s"
 			% profile.get_selected_map_id()
 		)
-	if profile.get_selected_settings_map_index() != 1:
+	if profile.get_selected_settings_map_index() != 0:
 		failures.append(
-			"Profile migration should use settings index 1, got %d"
+			"Profile migration should use settings index 0, got %d"
 			% profile.get_selected_settings_map_index()
 		)
 
-	profile.set_selected_settings_map_index(1)
-	if profile.selected_map_id != "broken_bridge_candidate":
-		failures.append("set_selected_settings_map_index(1) should sync map id")
+	profile.set_selected_settings_map_index(0)
+	if profile.selected_map_id != "quarantine_boulevard":
+		failures.append("set_selected_settings_map_index(0) should sync map id")
 
 	return failures
 
@@ -112,45 +105,31 @@ func _test_runtime_load_verify() -> PackedStringArray:
 		return failures
 
 	var profile: StreamerSettingsProfile = StreamerSettingsProfile.new()
-	profile.set_selected_settings_map_index(1)
+	profile.set_selected_settings_map_index(0)
 	var loaded: bool = map_controller.apply_profile(profile)
 	if not loaded:
-		failures.append("apply_profile returned false for settings index 1")
+		failures.append("apply_profile returned false for settings index 0")
 
-	if map_controller.active_map_id != "broken_bridge_candidate":
+	if map_controller.active_map_id != "quarantine_boulevard":
 		failures.append(
-			"Expected active_map_id broken_bridge_candidate, got %s"
+			"Expected active_map_id quarantine_boulevard, got %s"
 			% map_controller.active_map_id
 		)
-	if map_controller.active_settings_map_index != 1:
+	if map_controller.active_settings_map_index != 0:
 		failures.append(
-			"Expected active_settings_map_index 1, got %d"
+			"Expected active_settings_map_index 0, got %d"
 			% map_controller.active_settings_map_index
 		)
 
 	var road_arena: Node = _main_game.get_node_or_null("World/RoadArena")
 	if road_arena == null:
-		failures.append("RoadArena missing after loading broken_bridge_candidate")
-	else:
-		var map_root: Node = road_arena.get_node_or_null("CoreRoad/MapRoot")
-		if map_root == null:
-			failures.append("CoreRoad/MapRoot missing after loading broken_bridge_candidate")
-		var visual_layer: Node = road_arena.get_node_or_null("CoreRoad/MapRoot/VisualLayer")
-		if visual_layer == null or visual_layer.get_child_count() <= 0:
-			failures.append("Broken bridge visual layer missing or empty")
+		failures.append("RoadArena missing after loading City Highway")
 
 	var viewport_camera: Camera3D = _main_game.get_viewport().get_camera_3d()
 	if viewport_camera != null:
 		var camera_path: String = str(viewport_camera.get_path())
 		if "SpectatorCamera" not in camera_path:
-			failures.append("Spectator camera is not active after broken bridge load: %s" % camera_path)
-
-	profile.set_selected_settings_map_index(0)
-	map_controller.apply_profile(profile)
-	if map_controller.active_map_id != "quarantine_boulevard":
-		failures.append(
-			"Expected active_map_id quarantine_boulevard, got %s" % map_controller.active_map_id
-		)
+			failures.append("Spectator camera is not active after City Highway load: %s" % camera_path)
 
 	_main_game.queue_free()
 	return failures
