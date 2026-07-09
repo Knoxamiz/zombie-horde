@@ -18,16 +18,6 @@ MapAssetLibrary  →  approved reusable parts (visual + metadata)
 MapSegmentDefinition  →  segment grammar (length, assets, difficulty)
 AIMapBlueprint  →  map_id + segment_sequence + flags
 AIMapBlueprintBuilder  →  VisualLayer + GameplayLayer prototype scene
-AIMapBlueprintValidator  →  blueprint + scene contract checks
-RaceMapDefinition  →  spawn/goal/OOB/camera values (from builder preview)
-MapCertification  →  required before MapCatalog playable promotion
-```
-
-```
-MapAssetLibrary  →  approved reusable parts (visual + metadata)
-MapSegmentDefinition  →  segment grammar (length, assets, difficulty)
-AIMapBlueprint  →  map_id + segment_sequence + flags
-AIMapBlueprintBuilder  →  VisualLayer + GameplayLayer prototype scene
 AIMapRouteLayout  →  shared spawn/goal/OOB Z alignment
 AIMapBlueprintValidator  →  blueprint + scene + geometry contract checks
 AIMapBlueprintExporter  →  RaceMapDefinition .tres (prototype only)

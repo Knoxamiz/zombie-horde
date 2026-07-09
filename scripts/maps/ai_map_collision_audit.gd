@@ -32,8 +32,10 @@ static func print_collision_audit(root: Node3D, map_label: String = "") -> void:
 	for entry in collect_collision_entries(root):
 		count += 1
 		print(
-			"- %s | layer_bucket=%s | pos=%s | scale=%s | shape=%s | size=%s | "
-			+ "collision_layer=%s collision_mask=%s disabled=%s"
+			(
+				"- %s | layer_bucket=%s | pos=%s | scale=%s | shape=%s | size=%s | "
+				+ "collision_layer=%s collision_mask=%s disabled=%s"
+			)
 			% [
 				str(entry.get("path", "")),
 				str(entry.get("layer_bucket", "")),
