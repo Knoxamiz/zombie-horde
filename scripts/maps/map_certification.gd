@@ -126,7 +126,11 @@ static func _is_generated_map_arena(core_road: Node) -> bool:
 		return true
 	if core_road == null or core_road.get_script() == null:
 		return false
-	return str(core_road.get_script().resource_path) == "res://scripts/maps/ai_generated_map_arena.gd"
+	var script_path: String = str(core_road.get_script().resource_path)
+	return script_path in [
+		"res://scripts/maps/ai_generated_map_arena.gd",
+		"res://scripts/maps/fallthrough_lower_deck_arena.gd",
+	]
 
 
 static func certify_finish_authority(

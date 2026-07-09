@@ -172,10 +172,7 @@ func _build_ui() -> void:
 	_clear_queue_button = _add_button(body, "Clear Queued NPCs", _on_clear_queue_pressed)
 
 	_add_section(body, "Dev Map Tests")
-	_add_hint(
-		body,
-		"Collision proof maps only. Not playable in streamer settings — F3 load for manual testing."
-	)
+	_add_hint(body, "Fallthrough Lower Deck is in Streamer Settings → Map. Use these for quick reload.")
 	_dev_map_status_label = _add_readout(body, "Dev map load: idle")
 	_add_button(body, "Load Fallthrough Lower Deck TEST", _on_load_fallthrough_lower_deck_pressed)
 	_add_button(body, "Load Fallthrough + Queue 20", _on_load_fallthrough_queue_twenty_pressed)

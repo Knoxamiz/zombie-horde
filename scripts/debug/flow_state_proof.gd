@@ -10,6 +10,7 @@ const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const OUTPUT_PATH := "res://artifacts/flow_state_proof_latest.txt"
 const CITY_HIGHWAY_MAP_ID := MapCatalog.DEFAULT_MAP_ID
 const FALLTHROUGH_TEST_MAP_ID := "ai_generated_fallthrough_lower_deck_test"
+const FallthroughArenaScript := preload("res://scripts/maps/fallthrough_lower_deck_arena.gd")
 
 const Builder := preload("res://scripts/maps/ai_map_blueprint_builder.gd")
 const Registry := preload("res://scripts/maps/ai_map_blueprint_registry.gd")
@@ -67,14 +68,18 @@ func _record_manual(check_name: String, detail: String) -> void:
 
 func _check_catalog_single_map() -> void:
 	var selectable: Array[Dictionary] = MapCatalog.get_selectable_entries_for_settings()
-	var highway_only_selectable: bool = (
-		selectable.size() == 1
-		and str(selectable[0].get("id", "")) == CITY_HIGHWAY_MAP_ID
-	)
+	var has_highway: bool = false
+	var has_fallthrough: bool = false
+	for entry in selectable:
+		var map_id: String = str(entry.get("id", ""))
+		if map_id == CITY_HIGHWAY_MAP_ID:
+			has_highway = true
+		if map_id == FALLTHROUGH_TEST_MAP_ID:
+			has_fallthrough = true
 	_record(
 		"Streamer map gate",
-		highway_only_selectable,
-		"%d selectable maps (expected 1: City Highway)" % selectable.size()
+		selectable.size() == 2 and has_highway and has_fallthrough,
+		"%d selectable maps (expected City Highway + Fallthrough Lower Deck)" % selectable.size()
 	)
 
 
@@ -137,8 +142,8 @@ func _check_playable_map_gate() -> void:
 	var playable_count: int = MapCatalog.get_playable_count()
 	_record(
 		"Playable map gate",
-		playable_count == 1,
-		"%d playable maps (expected 1: City Highway)" % playable_count
+		playable_count == 2,
+		"%d playable maps (expected City Highway + Fallthrough Lower Deck)" % playable_count
 	)
 
 
@@ -171,14 +176,15 @@ func _check_fallthrough_lower_deck_build() -> void:
 
 	var host := Node3D.new()
 	root.add_child(host)
-	var builder := Builder.new()
-	var map_root: Node3D = builder.build_prototype(host, blueprint)
+	var arena = FallthroughArenaScript.new()
+	host.add_child(arena)
+	var map_root: Node3D = arena.build_map()
 	if map_root == null:
-		_record("Fallthrough lower deck build", false, "build_prototype failed")
+		_record("Fallthrough lower deck build", false, "hand-authored arena build_map failed")
 		host.queue_free()
 		return
 
-	var definition: RaceMapDefinition = builder.build_race_map_definition(blueprint)
+	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(FALLTHROUGH_TEST_MAP_ID)
 	var collision_errors: Array[String] = Audit.validate_generated_collision(
 		map_root, blueprint, definition
 	)
@@ -201,11 +207,11 @@ func _print_honesty_section() -> void:
 	_line("MANUAL ONLY (automation cannot prove these):")
 	_record_manual("Visual quality / art pass", "Run editor, load City Highway, inspect track and scenery")
 	_record_manual("Zombie walk feel on floors", "Queue 20 NPCs on fallthrough test, watch hole → lower deck landing")
-	_record_manual("Fallthrough lower deck feel", "F3 → Load Fallthrough Lower Deck TEST → queue NPCs at hole")
+	_record_manual("Fallthrough lower deck feel", "F3 → Load Fallthrough Lower Deck TEST → queue 20 NPCs at center hole")
 	_record_manual("Stream/OBS HUD layout", "Not covered by headless proof")
 	_line("")
 	_line("NEXT MAP WORK:")
-	_line("  Polish fallthrough test visuals after collision/fall feel is confirmed in F3.")
+	_line("  Confirm fallthrough test visuals and NPC hole → lower deck landing in F3.")
 	_line("")
 	_line("RE-RUN THIS PROOF:")
 	_line("  godot --headless --path . -s res://scripts/debug/flow_state_proof.gd")
