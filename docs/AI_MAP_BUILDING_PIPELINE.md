@@ -64,10 +64,11 @@ AIMapBlueprint (validated blueprint_id)
 |--------------|------------------|-------|
 | `phase1_bridge_ramp_test` | `ai_generated_phase1_bridge_ramp_test` | Phase 1 |
 | `phase2_drop_gap_probe` | `ai_generated_phase2_drop_gap_probe` | Phase 2 probe |
+| `signature_drop_bridge` | `ai_generated_signature_drop_bridge` | Signature prototype #1 |
 
 The exporter **fails loudly** on unknown `blueprint_id` values — it does not fall back to Phase 1 or City Highway.
 
-**Warning:** Do not start building the full Drop Bridge signature map until `ai_generated_phase2_drop_gap_probe` passes export + certification. The probe proves drops/gaps/water/OOB alignment before a longer Phase 2 route.
+**Warning:** The Phase 2 probe (`ai_generated_phase2_drop_gap_probe`) proved drops/gaps/water/OOB export before building the signature Drop Bridge prototype.
 
 Commands:
 
@@ -106,6 +107,27 @@ start_straight → straight_road_medium → elevated_straight → broken_bridge_
 
 Purpose: minimal drops/gaps/water/OOB export probe before designing The Drop Bridge.
 
+### Signature prototype: The Drop Bridge
+
+`signature_drop_bridge` → exported as `ai_generated_signature_drop_bridge`:
+
+```
+start_straight → straight_road_medium → elevated_straight → left_side_drop
+→ narrow_no_rails_bridge → broken_bridge_gap → recovery_straight_after_gap
+→ double_side_drop → finish_straight
+```
+
+**What it proves:** First signature streamer-engagement prototype — medium-length elevated bridge with obvious side falls, narrow no-rails section, center gap, recovery floor, and streamer-base finish. Uses only Phase 1/2 segments on the generalized AI map factory path.
+
+**Known limitations:**
+- Flat/elevated deck only — no real ramp uphill/downhill physics (safe floors stay flat)
+- Kit visuals only — no art theme or polish pass
+- Prototype loader only — not in production map dropdown
+
+**Why not playable yet:** Requires human/editor review, visual polish, and full `map_certification_test` promotion gate before `MapCatalog` `enabled=true`.
+
+**Before promotion:** Pass certification on production path, art direction pass, performance check with 20–50 zombies, and explicit human sign-off per [MAP_CERTIFICATION.md](MAP_CERTIFICATION.md).
+
 ### Current limitations (prototype-only)
 
 | Limitation | Status |
@@ -114,9 +136,9 @@ Purpose: minimal drops/gaps/water/OOB export probe before designing The Drop Bri
 | **Moving obstacles prototype-safe** | `MapMovingObstacle` blocks kinematically; no live `BounceObstacle` / `GameEvents` hazard wiring yet |
 | **Flat ramp collision** | `height_delta` is visual deck stepping; safe floors stay flat |
 | **Generated maps not playable** | `enabled=false`, `status=prototype` — not in production dropdown |
-| **Phase 2–4 are advanced** | Phase 2 probe must pass before full Drop Bridge; Phase 3–4 remain advanced |
+| **Phase 2–4 are advanced** | Phase 2 probe passed; signature Drop Bridge is prototype-only; Phase 3–4 remain advanced |
 
-Phase 2–4 packs remain available in grammar/tests. Use Phase 1 for first prototypes; use the Phase 2 probe before longer drop/gap maps.
+Phase 2–4 packs remain available in grammar/tests. Signature Drop Bridge is the first engagement prototype on the factory path.
 
 ---
 

@@ -17,6 +17,9 @@ const Phase2DropGapTestBlueprint := preload(
 const Phase2DropGapProbeBlueprint := preload(
 	"res://scripts/maps/blueprints/phase2_drop_gap_probe.gd"
 )
+const SignatureDropBridgeBlueprint := preload(
+	"res://scripts/maps/blueprints/signature_drop_bridge.gd"
+)
 const AIMapBlueprintExporter := preload("res://scripts/maps/ai_map_blueprint_exporter.gd")
 const AIMapBlueprintRegistry := preload("res://scripts/maps/ai_map_blueprint_registry.gd")
 const Phase3MovingObstacleTestBlueprint := preload(
@@ -51,6 +54,7 @@ func _run_all() -> void:
 	_test_phase1_blueprint_validates()
 	_test_phase2_blueprint_validates()
 	_test_phase2_probe_blueprint_validates()
+	_test_signature_drop_bridge_blueprint_validates()
 	_test_phase3_blueprint_validates()
 	_test_phase4_blueprint_validates()
 	_test_invalid_segment_fails()
@@ -72,6 +76,7 @@ func _run_all() -> void:
 	_test_split_route_oob_width_fails()
 	_test_route_layout_alignment()
 	_test_phase2_probe_route_layout_alignment()
+	_test_signature_drop_bridge_route_layout_alignment()
 	_test_exporter_unknown_blueprint_fails()
 	_test_exporter_registered_prototypes()
 	_test_misaligned_definition_span_fails()
@@ -79,6 +84,7 @@ func _run_all() -> void:
 	_test_generated_phase1_contract()
 	_test_generated_phase2_contract()
 	_test_generated_phase2_probe_contract()
+	_test_generated_signature_drop_bridge_contract()
 	_test_generated_phase3_contract()
 	_test_generated_phase4_contract()
 	MapAssetLibrary.print_audit_report()
@@ -205,6 +211,15 @@ func _test_phase2_probe_blueprint_validates() -> void:
 	AIMapBlueprintValidator.print_validation_report(result)
 	if not bool(result.get("ok", false)):
 		_fail("phase2_drop_gap_probe blueprint should validate")
+
+
+func _test_signature_drop_bridge_blueprint_validates() -> void:
+	print("-- signature drop bridge blueprint --")
+	var blueprint = SignatureDropBridgeBlueprint.create()
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	AIMapBlueprintValidator.print_validation_report(result)
+	if not bool(result.get("ok", false)):
+		_fail("signature_drop_bridge blueprint should validate")
 
 
 func _test_phase3_blueprint_validates() -> void:
@@ -471,6 +486,26 @@ func _test_phase2_probe_route_layout_alignment() -> void:
 		_fail("phase2 probe definition layout mismatch: %s" % str(errors))
 
 
+func _test_signature_drop_bridge_route_layout_alignment() -> void:
+	print("-- signature drop bridge route layout --")
+	var blueprint = SignatureDropBridgeBlueprint.create()
+	var layout: Dictionary = AIMapRouteLayout.compute_layout(blueprint)
+	if absf(float(layout.get("spawn_z", 0.0)) + 4.0) > 0.01:
+		_fail("signature drop bridge spawn_z should be -4")
+	if absf(float(layout.get("goal_z", 0.0)) - 76.0) > 0.01:
+		_fail("signature drop bridge goal_z expected 76, got %s" % str(layout.get("goal_z", 0.0)))
+	if absf(blueprint.get_total_route_length() - 80.0) > 0.01:
+		_fail("signature drop bridge route length expected 80m")
+	if blueprint.deck_y <= blueprint.get_water_void_y():
+		_fail("signature drop bridge deck_y must be above water_void_y")
+	var definition: RaceMapDefinition = blueprint.to_race_map_definition()
+	if definition.out_of_bounds_min_y >= blueprint.get_water_void_y():
+		_fail("signature drop bridge out_of_bounds_min_y must be below water_void_y")
+	var errors: Array = AIMapRouteLayout.definition_matches_layout(definition, blueprint)
+	if not errors.is_empty():
+		_fail("signature drop bridge definition layout mismatch: %s" % str(errors))
+
+
 func _test_exporter_unknown_blueprint_fails() -> void:
 	print("-- exporter unknown blueprint --")
 	var result: Dictionary = AIMapBlueprintExporter.export_validated_blueprint_prototype(
@@ -537,6 +572,11 @@ func _test_generated_phase2_contract() -> void:
 func _test_generated_phase2_probe_contract() -> void:
 	print("-- generated phase2 probe contract --")
 	_validate_generated_prototype(Phase2DropGapProbeBlueprint.create(), "phase2_probe")
+
+
+func _test_generated_signature_drop_bridge_contract() -> void:
+	print("-- generated signature drop bridge contract --")
+	_validate_generated_prototype(SignatureDropBridgeBlueprint.create(), "signature_drop_bridge")
 
 
 func _test_generated_phase3_contract() -> void:
