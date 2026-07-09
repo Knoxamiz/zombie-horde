@@ -19,6 +19,7 @@ const STATUS_PLAYABLE := "playable"
 @export var water_enabled: bool = false
 @export var fall_enabled: bool = false
 @export var moving_obstacles_enabled: bool = false
+@export var obstacle_cycle_time: float = 0.0
 @export var route_half_width: float = 5.0
 @export var lane_half_width: float = 5.0
 @export var authoring_status: String = STATUS_PROTOTYPE
@@ -72,6 +73,22 @@ func has_elevated_or_drop_segments() -> bool:
 
 func get_water_void_y() -> float:
 	return deck_y - 4.0
+
+
+func has_moving_obstacle_segments() -> bool:
+	for segment_id in segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		if segment.is_empty():
+			continue
+		if MapSegmentDefinitionScript.is_moving_obstacle_segment_type(str(segment.get("type", ""))):
+			return true
+	return false
+
+
+func get_effective_cycle_time(segment: Dictionary) -> float:
+	if obstacle_cycle_time > 0.0:
+		return obstacle_cycle_time
+	return float(segment.get("recommended_cycle_time", 4.0))
 
 
 func get_segment_types() -> Array[String]:

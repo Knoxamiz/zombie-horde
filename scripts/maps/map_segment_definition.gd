@@ -23,6 +23,14 @@ const TYPE_ELEVATED_RAMP_DROP := "elevated_ramp_drop"
 const TYPE_CRACKED_EDGE_LANE := "cracked_edge_lane"
 const TYPE_WATER_UNDERPASS := "water_underpass"
 const TYPE_RECOVERY := "recovery"
+const TYPE_SIDE_PUSHER_LANE := "side_pusher_lane"
+const TYPE_CRUSHER_CORRIDOR := "crusher_corridor"
+const TYPE_ROTATING_ARM_BRIDGE := "rotating_arm_bridge"
+const TYPE_TIMED_GATE_STRAIGHT := "timed_gate_straight"
+const TYPE_SLIDING_WALL_LANE := "sliding_wall_lane"
+const TYPE_MOVING_PLATFORM_GAP := "moving_platform_gap"
+const TYPE_OBSTACLE_SLALOM := "obstacle_slalom"
+const TYPE_HAZARD_RECOVERY := "hazard_recovery"
 const TYPE_MOVING_BLOCK_LANE := "moving_block_lane"
 const TYPE_HAZARD_LANE := "hazard_lane"
 const TYPE_FINISH := "finish"
@@ -48,11 +56,31 @@ const ALL_TYPES: Array[String] = [
 	TYPE_CRACKED_EDGE_LANE,
 	TYPE_WATER_UNDERPASS,
 	TYPE_RECOVERY,
+	TYPE_SIDE_PUSHER_LANE,
+	TYPE_CRUSHER_CORRIDOR,
+	TYPE_ROTATING_ARM_BRIDGE,
+	TYPE_TIMED_GATE_STRAIGHT,
+	TYPE_SLIDING_WALL_LANE,
+	TYPE_MOVING_PLATFORM_GAP,
+	TYPE_OBSTACLE_SLALOM,
+	TYPE_HAZARD_RECOVERY,
 	TYPE_SPLIT_LANE,
 	TYPE_MERGE_LANE,
 	TYPE_MOVING_BLOCK_LANE,
 	TYPE_HAZARD_LANE,
 	TYPE_FINISH,
+]
+
+const PHASE3_SEGMENT_IDS: Array[String] = [
+	"moving_block_lane",
+	"side_pusher_lane",
+	"crusher_corridor",
+	"rotating_arm_bridge",
+	"timed_gate_straight",
+	"sliding_wall_lane",
+	"moving_platform_gap",
+	"obstacle_slalom",
+	"hazard_recovery_straight",
 ]
 
 const PHASE2_SEGMENT_IDS: Array[String] = [
@@ -118,6 +146,40 @@ static func validate_phase2_segments() -> Dictionary:
 			result["ok"] = false
 			result["missing"].append(segment_id)
 	return result
+
+
+static func get_phase3_segment_ids() -> Array[String]:
+	return PHASE3_SEGMENT_IDS.duplicate()
+
+
+static func is_phase3_segment(segment_id: String) -> bool:
+	return segment_id in PHASE3_SEGMENT_IDS
+
+
+static func validate_phase3_segments() -> Dictionary:
+	var result: Dictionary = {"ok": true, "missing": []}
+	for segment_id in PHASE3_SEGMENT_IDS:
+		if not has_segment(segment_id):
+			result["ok"] = false
+			result["missing"].append(segment_id)
+	return result
+
+
+static func is_moving_obstacle_segment_type(segment_type: String) -> bool:
+	return segment_type in [
+		TYPE_MOVING_BLOCK_LANE,
+		TYPE_SIDE_PUSHER_LANE,
+		TYPE_CRUSHER_CORRIDOR,
+		TYPE_ROTATING_ARM_BRIDGE,
+		TYPE_TIMED_GATE_STRAIGHT,
+		TYPE_SLIDING_WALL_LANE,
+		TYPE_MOVING_PLATFORM_GAP,
+		TYPE_OBSTACLE_SLALOM,
+	]
+
+
+static func is_platform_gap_segment_type(segment_type: String) -> bool:
+	return segment_type == TYPE_MOVING_PLATFORM_GAP
 
 
 static func is_fall_risk_segment_type(segment_type: String) -> bool:
@@ -528,6 +590,146 @@ static func _build_segments() -> Array[Dictionary]:
 			"Full-width safe floor after a gap/drop segment.",
 			0, -999.0, 0.0, 1.0,
 		),
+		# --- Phase 3 moving obstacle segment templates ---
+		_moving_segment(
+			"moving_block_lane", TYPE_MOVING_BLOCK_LANE, 8.0, 10.0, 0.0, 3,
+			[
+				"phase1_road_straight_8",
+				"phase2_safe_floor_plate",
+				"phase3_moving_block_crate",
+				"phase3_warning_stripes",
+			],
+			["phase3_safe_lane_marker", "phase3_warning_light"],
+			10.0, 10.0, false, true, 1, 1,
+			"Center lane moving block; safe edges remain.",
+			0, -999.0, 0.0, 1.0,
+			1, "x", 4.0, 3.5, true, 2.5,
+		),
+		_moving_segment(
+			"side_pusher_lane", TYPE_SIDE_PUSHER_LANE, 8.0, 10.0, 0.0, 3,
+			[
+				"phase1_road_straight_8",
+				"phase2_safe_floor_plate",
+				"phase3_side_pusher",
+				"phase3_pusher_plate",
+				"phase3_warning_stripes",
+			],
+			["phase3_safe_lane_marker"],
+			10.0, 8.0, false, true, 1, 1,
+			"Side pusher with center safe lane.",
+			0, -999.0, 0.0, 1.0,
+			1, "x", 3.5, 3.5, true, 2.5,
+		),
+		_moving_segment(
+			"crusher_corridor", TYPE_CRUSHER_CORRIDOR, 8.0, 10.0, 0.0, 4,
+			[
+				"phase1_road_straight_8",
+				"phase2_safe_floor_plate",
+				"phase3_crusher_plate",
+				"phase3_crusher_frame",
+				"phase3_warning_stripes",
+			],
+			["phase3_warning_light"],
+			10.0, 10.0, false, true, 1, 1,
+			"Overhead crusher with timed safe windows.",
+			0, -999.0, 0.0, 1.0,
+			1, "y", 4.5, 4.5, true, 2.5,
+		),
+		_moving_segment(
+			"rotating_arm_bridge", TYPE_ROTATING_ARM_BRIDGE, 8.0, 10.0, 0.0, 4,
+			[
+				"phase2_elevated_bridge_deck",
+				"phase2_safe_floor_plate",
+				"phase3_rotating_arm",
+				"phase3_warning_stripes",
+			],
+			["phase2_support_pillar", "phase3_safe_lane_marker"],
+			10.0, 10.0, false, true, 1, 1,
+			"Rotating arm over bridge deck; center safe timing.",
+			0, -999.0, 0.0, 1.0,
+			1, "y", 5.0, 5.0, true, 2.5,
+		),
+		_moving_segment(
+			"timed_gate_straight", TYPE_TIMED_GATE_STRAIGHT, 8.0, 10.0, 0.0, 3,
+			[
+				"phase1_road_straight_8",
+				"phase2_safe_floor_plate",
+				"phase3_timed_gate",
+				"phase3_gate_barrier",
+				"phase3_warning_stripes",
+			],
+			["phase3_safe_lane_marker", "phase3_warning_light"],
+			10.0, 10.0, false, true, 1, 1,
+			"Timed gate opening/closing; always leaves pass window.",
+			0, -999.0, 0.0, 1.0,
+			1, "x", 6.0, 6.0, true, 2.5,
+		),
+		_moving_segment(
+			"sliding_wall_lane", TYPE_SLIDING_WALL_LANE, 8.0, 10.0, 0.0, 3,
+			[
+				"phase1_road_straight_8",
+				"phase2_safe_floor_plate",
+				"phase3_sliding_wall",
+				"phase3_warning_stripes",
+			],
+			["phase3_deco_sparks"],
+			10.0, 8.0, false, true, 1, 1,
+			"Sliding wall along Z with side safe lane.",
+			0, -999.0, 0.0, 1.0,
+			1, "z", 4.0, 4.0, true, 2.5,
+		),
+		_moving_segment(
+			"moving_platform_gap", TYPE_MOVING_PLATFORM_GAP, 8.0, 10.0, 0.0, 4,
+			[
+				"phase2_broken_bridge_gap",
+				"phase3_moving_platform",
+				"phase3_platform_deck",
+				"phase3_warning_stripes",
+				"phase2_safe_floor_plate",
+			],
+			["phase2_void_floor_visual", "phase3_safe_lane_marker"],
+			10.0, 10.0, true, true, 1, 1,
+			"Moving platform over gap; recovery required after.",
+			2, -5.5, 1.5, 0.55,
+			1, "y", 5.0, 5.0, true, 2.0,
+		),
+		_moving_segment(
+			"obstacle_slalom", TYPE_OBSTACLE_SLALOM, 8.0, 10.0, 0.0, 3,
+			[
+				"phase1_road_straight_8",
+				"phase2_safe_floor_plate",
+				"phase3_moving_block_wide",
+				"phase3_lane_blocker",
+				"phase3_warning_stripes",
+			],
+			["phase3_deco_sparks", "phase3_safe_lane_marker"],
+			10.0, 10.0, false, true, 2, 1,
+			"Two obstacle slots with slalom safe lane.",
+			0, -999.0, 0.0, 1.0,
+			2, "x", 4.0, 3.0, true, 2.5,
+		),
+		_moving_segment(
+			"seg_test_blocks_all_lanes", TYPE_MOVING_BLOCK_LANE, 8.0, 10.0, 0.0, 4,
+			["phase1_road_straight_8", "phase2_safe_floor_plate", "phase3_moving_block_crate"],
+			[],
+			10.0, 10.0, false, true, 1, 1,
+			"TEST ONLY — obstacle blocks all lanes.",
+			0, -999.0, 0.0, 1.0,
+			1, "x", 4.0, 3.5, false, 0.5,
+		),
+		_moving_segment(
+			"hazard_recovery_straight", TYPE_HAZARD_RECOVERY, 8.0, 10.0, 0.0, 1,
+			[
+				"phase1_road_straight_8",
+				"phase2_safe_floor_plate",
+				"phase3_safe_lane_marker",
+			],
+			["phase3_warning_stripes"],
+			10.0, 10.0, false, false, 0, 1,
+			"Full-width safe straight after obstacle section.",
+			0, -999.0, 0.0, 1.0,
+			0, "x", 0.0, 0.0, true, 3.0,
+		),
 	]
 
 
@@ -573,3 +775,60 @@ static func _segment(
 		"safe_floor_width_ratio": safe_floor_width_ratio,
 		"notes": notes,
 	}
+
+
+static func _moving_segment(
+	segment_id: String,
+	segment_type: String,
+	length: float,
+	width: float,
+	height_delta: float,
+	difficulty: int,
+	required_assets: Array,
+	optional_assets: Array,
+	entry_width: float,
+	exit_width: float,
+	allows_fall_edges: bool,
+	allows_moving_obstacles: bool,
+	hazard_slots: int,
+	safe_lane_count: int,
+	notes: String = "",
+	fall_risk_level: int = 0,
+	recommended_oob_min_y: float = -999.0,
+	recommended_camera_padding: float = 0.0,
+	safe_floor_width_ratio: float = 1.0,
+	obstacle_slots: int = 1,
+	movement_axis: String = "x",
+	recommended_cycle_time: float = 4.0,
+	recommended_spacing: float = 3.0,
+	fallback_safe_lane: bool = true,
+	fallback_safe_lane_width: float = 2.5,
+) -> Dictionary:
+	var segment: Dictionary = _segment(
+		segment_id,
+		segment_type,
+		length,
+		width,
+		height_delta,
+		difficulty,
+		required_assets,
+		optional_assets,
+		entry_width,
+		exit_width,
+		allows_fall_edges,
+		allows_moving_obstacles,
+		hazard_slots,
+		safe_lane_count,
+		notes,
+		fall_risk_level,
+		recommended_oob_min_y,
+		recommended_camera_padding,
+		safe_floor_width_ratio,
+	)
+	segment["obstacle_slots"] = obstacle_slots
+	segment["movement_axis"] = movement_axis
+	segment["recommended_cycle_time"] = recommended_cycle_time
+	segment["recommended_spacing"] = recommended_spacing
+	segment["fallback_safe_lane"] = fallback_safe_lane
+	segment["fallback_safe_lane_width"] = fallback_safe_lane_width
+	return segment

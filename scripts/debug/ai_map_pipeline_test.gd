@@ -13,6 +13,9 @@ const Phase1BridgeRampTestBlueprint := preload(
 const Phase2DropGapTestBlueprint := preload(
 	"res://scripts/maps/blueprints/phase2_drop_gap_test.gd"
 )
+const Phase3MovingObstacleTestBlueprint := preload(
+	"res://scripts/maps/blueprints/phase3_moving_obstacle_test.gd"
+)
 
 const PASS := 0
 const FAIL := 1
@@ -31,9 +34,12 @@ func _run_all() -> void:
 	_test_phase1_segments_validate()
 	_test_phase2_assets_validate()
 	_test_phase2_segments_validate()
+	_test_phase3_assets_validate()
+	_test_phase3_segments_validate()
 	_test_example_blueprint_validates()
 	_test_phase1_blueprint_validates()
 	_test_phase2_blueprint_validates()
+	_test_phase3_blueprint_validates()
 	_test_invalid_segment_fails()
 	_test_invalid_asset_id_fails()
 	_test_invalid_segment_order_fails()
@@ -43,9 +49,13 @@ func _run_all() -> void:
 	_test_spawn_inside_gap_fails()
 	_test_finish_inside_gap_fails()
 	_test_hidden_floor_width_fails()
+	_test_invalid_obstacle_cycle_time_fails()
+	_test_obstacle_blocks_all_lanes_fails()
+	_test_moving_platform_without_recovery_fails()
 	_test_generated_example_contract()
 	_test_generated_phase1_contract()
 	_test_generated_phase2_contract()
+	_test_generated_phase3_contract()
 	MapAssetLibrary.print_audit_report()
 
 	if _failures.is_empty():
@@ -70,6 +80,8 @@ func _test_asset_registry_loads() -> void:
 		_fail("phase1_road_straight_8 missing from library")
 	if not MapAssetLibrary.has_asset("phase2_warning_stripes"):
 		_fail("phase2_warning_stripes missing from library")
+	if not MapAssetLibrary.has_asset("phase3_moving_block_crate"):
+		_fail("phase3_moving_block_crate missing from library")
 	var segments: Array = MapSegmentDefinition.get_all_segment_ids()
 	if segments.is_empty():
 		_fail("MapSegmentDefinition returned no segments")
@@ -104,6 +116,20 @@ func _test_phase2_segments_validate() -> void:
 		_fail("Phase 2 segments missing: %s" % str(result.get("missing", [])))
 
 
+func _test_phase3_assets_validate() -> void:
+	print("-- phase3 assets --")
+	var result: Dictionary = MapAssetLibrary.validate_phase3_assets()
+	if not bool(result.get("ok", false)):
+		_fail("Phase 3 assets missing: %s" % str(result.get("missing", [])))
+
+
+func _test_phase3_segments_validate() -> void:
+	print("-- phase3 segments --")
+	var result: Dictionary = MapSegmentDefinition.validate_phase3_segments()
+	if not bool(result.get("ok", false)):
+		_fail("Phase 3 segments missing: %s" % str(result.get("missing", [])))
+
+
 func _test_example_blueprint_validates() -> void:
 	print("-- example blueprint --")
 	var blueprint = ExampleBridgeSegmentsTestBlueprint.create()
@@ -129,6 +155,15 @@ func _test_phase2_blueprint_validates() -> void:
 	AIMapBlueprintValidator.print_validation_report(result)
 	if not bool(result.get("ok", false)):
 		_fail("phase2_drop_gap_test blueprint should validate")
+
+
+func _test_phase3_blueprint_validates() -> void:
+	print("-- phase3 blueprint --")
+	var blueprint = Phase3MovingObstacleTestBlueprint.create()
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	AIMapBlueprintValidator.print_validation_report(result)
+	if not bool(result.get("ok", false)):
+		_fail("phase3_moving_obstacle_test blueprint should validate")
 
 
 func _test_invalid_segment_fails() -> void:
@@ -232,6 +267,45 @@ func _test_hidden_floor_width_fails() -> void:
 		_fail("oversized hidden floor on gap segment should fail validation")
 
 
+func _test_invalid_obstacle_cycle_time_fails() -> void:
+	print("-- invalid obstacle cycle time --")
+	var blueprint = Phase3MovingObstacleTestBlueprint.create()
+	blueprint.obstacle_cycle_time = 0.5
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	if bool(result.get("ok", false)):
+		_fail("obstacle cycle_time below minimum should fail validation")
+
+
+func _test_obstacle_blocks_all_lanes_fails() -> void:
+	print("-- obstacle blocks all lanes --")
+	var blueprint = Phase3MovingObstacleTestBlueprint.create()
+	blueprint.segment_sequence = [
+		"start_straight",
+		"straight_road_short",
+		"seg_test_blocks_all_lanes",
+		"hazard_recovery_straight",
+		"finish_straight",
+	]
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	if bool(result.get("ok", false)):
+		_fail("obstacle that blocks all lanes should fail validation")
+
+
+func _test_moving_platform_without_recovery_fails() -> void:
+	print("-- moving platform without recovery --")
+	var blueprint = Phase3MovingObstacleTestBlueprint.create()
+	blueprint.fall_enabled = true
+	blueprint.segment_sequence = [
+		"start_straight",
+		"straight_road_short",
+		"moving_platform_gap",
+		"finish_straight",
+	]
+	var result: Dictionary = AIMapBlueprintValidator.validate_blueprint(blueprint)
+	if bool(result.get("ok", false)):
+		_fail("moving platform gap without recovery floor should fail validation")
+
+
 func _test_generated_example_contract() -> void:
 	print("-- generated example contract --")
 	_validate_generated_prototype(ExampleBridgeSegmentsTestBlueprint.create(), "example")
@@ -245,6 +319,11 @@ func _test_generated_phase1_contract() -> void:
 func _test_generated_phase2_contract() -> void:
 	print("-- generated phase2 contract --")
 	_validate_generated_prototype(Phase2DropGapTestBlueprint.create(), "phase2")
+
+
+func _test_generated_phase3_contract() -> void:
+	print("-- generated phase3 contract --")
+	_validate_generated_prototype(Phase3MovingObstacleTestBlueprint.create(), "phase3")
 
 
 func _validate_generated_prototype(blueprint, label: String) -> void:

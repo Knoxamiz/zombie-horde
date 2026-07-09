@@ -6,6 +6,9 @@ const MapSegmentDefinitionScript := preload("res://scripts/maps/map_segment_defi
 
 const VOID_KILL_SCRIPT_PATH := "res://scripts/maps/bridge_void_kill_zone.gd"
 
+const MIN_OBSTACLE_CYCLE_TIME: float = 1.5
+const MAX_OBSTACLE_CYCLE_TIME: float = 12.0
+
 
 static func validate_blueprint(blueprint) -> Dictionary:
 	var result: Dictionary = _empty_result()
@@ -36,6 +39,7 @@ static func validate_blueprint(blueprint) -> Dictionary:
 	_validate_height_transitions(blueprint, result)
 	_validate_gap_fall_settings(blueprint, result)
 	_validate_phase2_fall_gap_rules(blueprint, result)
+	_validate_phase3_moving_obstacle_rules(blueprint, result)
 	_validate_rail_barrier_match(blueprint, result)
 	_validate_route_length(blueprint, result)
 	_validate_definition_preview(blueprint, result)
@@ -75,6 +79,7 @@ static func validate_generated_scene(
 	_validate_no_goal_catch(root, result)
 	_validate_no_authoritative_void_kill(root, result)
 	_validate_no_scene_cameras(root, result)
+	_validate_no_obstacle_finish_hijack(root, result)
 
 	if definition != null:
 		_validate_definition_values(definition, blueprint, result)
@@ -305,6 +310,168 @@ static func _validate_phase2_fall_gap_rules(blueprint, result: Dictionary) -> vo
 	_validate_elevated_water_clearance(blueprint, result)
 	_validate_side_drop_oob_clearance(blueprint, result)
 	_validate_elevated_camera_requirement(blueprint, result)
+
+
+static func _validate_phase3_moving_obstacle_rules(blueprint, result: Dictionary) -> void:
+	var has_moving_segments: bool = blueprint.has_moving_obstacle_segments()
+	if not has_moving_segments:
+		return
+	if not blueprint.moving_obstacles_enabled:
+		_add_error(
+			result,
+			"Blueprint contains moving obstacle segments but moving_obstacles_enabled is false."
+		)
+
+	_validate_moving_obstacle_spawn_finish_placement(blueprint, result)
+	_validate_moving_obstacle_safe_lanes(blueprint, result)
+	_validate_moving_obstacle_cycle_times(blueprint, result)
+	_validate_moving_obstacle_movement_bounds(blueprint, result)
+	_validate_moving_platform_recovery(blueprint, result)
+
+
+static func _validate_moving_obstacle_spawn_finish_placement(blueprint, result: Dictionary) -> void:
+	if blueprint.segment_sequence.is_empty():
+		return
+	var first_id: String = str(blueprint.segment_sequence[0])
+	var last_id: String = str(blueprint.segment_sequence.back())
+	var blocked_types: Array[String] = [
+		MapSegmentDefinitionScript.TYPE_CRUSHER_CORRIDOR,
+		MapSegmentDefinitionScript.TYPE_SIDE_PUSHER_LANE,
+	]
+	for segment_id in [first_id, last_id]:
+		var segment_type: String = str(MapSegmentDefinitionScript.get_segment(segment_id).get("type", ""))
+		if segment_type in blocked_types:
+			_add_error(
+				result,
+				"Crusher/pusher segment '%s' cannot be used as spawn or finish segment." % segment_id
+			)
+
+
+static func _validate_moving_obstacle_safe_lanes(blueprint, result: Dictionary) -> void:
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		var segment_type: String = str(segment.get("type", ""))
+		if not MapSegmentDefinitionScript.is_moving_obstacle_segment_type(segment_type):
+			continue
+		var safe_lane_count: int = int(segment.get("safe_lane_count", 0))
+		var fallback_safe_lane: bool = bool(segment.get("fallback_safe_lane", false))
+		if safe_lane_count < 1:
+			_add_error(
+				result,
+				"Moving obstacle segment '%s' must keep at least one safe_lane_count." % segment_id
+			)
+		if not fallback_safe_lane:
+			_add_error(
+				result,
+				"Moving obstacle segment '%s' must set fallback_safe_lane=true." % segment_id
+			)
+		var safe_lane_width: float = float(segment.get("fallback_safe_lane_width", 0.0))
+		if safe_lane_width < 1.5:
+			_add_error(
+				result,
+				"Moving obstacle segment '%s' fallback_safe_lane_width too narrow." % segment_id
+			)
+		var max_block_distance: float = _get_segment_max_movement_distance(segment)
+		var available_half: float = blueprint.route_half_width - safe_lane_width * 0.5
+		if max_block_distance >= available_half * 2.0:
+			_add_error(
+				result,
+				"Moving obstacle segment '%s' movement blocks all lanes permanently." % segment_id
+			)
+
+
+static func _validate_moving_obstacle_cycle_times(blueprint, result: Dictionary) -> void:
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		if not MapSegmentDefinitionScript.is_moving_obstacle_segment_type(str(segment.get("type", ""))):
+			continue
+		var cycle_time: float = blueprint.get_effective_cycle_time(segment)
+		if cycle_time < MIN_OBSTACLE_CYCLE_TIME or cycle_time > MAX_OBSTACLE_CYCLE_TIME:
+			_add_error(
+				result,
+				"Moving obstacle segment '%s' cycle_time %.2f outside allowed range [%.1f, %.1f]."
+				% [segment_id, cycle_time, MIN_OBSTACLE_CYCLE_TIME, MAX_OBSTACLE_CYCLE_TIME]
+			)
+
+
+static func _validate_moving_obstacle_movement_bounds(blueprint, result: Dictionary) -> void:
+	for segment_id in blueprint.segment_sequence:
+		var segment: Dictionary = MapSegmentDefinitionScript.get_segment(segment_id)
+		if not MapSegmentDefinitionScript.is_moving_obstacle_segment_type(str(segment.get("type", ""))):
+			continue
+		var segment_length: float = float(segment.get("length", 8.0))
+		var segment_width: float = float(segment.get("width", 10.0))
+		var movement_axis: String = str(segment.get("movement_axis", "x"))
+		for asset_id_value in segment.get("required_assets", []):
+			var asset_id: String = str(asset_id_value)
+			if not MapAssetLibraryScript.is_moving_obstacle_asset(asset_id):
+				continue
+			var asset: Dictionary = MapAssetLibraryScript.get_asset(asset_id)
+			var distance: float = float(asset.get("movement_distance", 0.0))
+			var axis: String = str(asset.get("movement_axis", movement_axis))
+			if axis == "x" and distance > segment_width * 0.45:
+				_add_error(
+					result,
+					"Asset '%s' movement_distance %.2f exceeds segment '%s' width bounds."
+					% [asset_id, distance, segment_id]
+				)
+			if axis == "z" and distance > segment_length * 0.45:
+				_add_error(
+					result,
+					"Asset '%s' movement_distance %.2f exceeds segment '%s' length bounds."
+					% [asset_id, distance, segment_id]
+				)
+
+
+static func _validate_moving_platform_recovery(blueprint, result: Dictionary) -> void:
+	var sequence: Array = blueprint.segment_sequence
+	for index in range(sequence.size()):
+		var segment_id: String = str(sequence[index])
+		var segment_type: String = str(MapSegmentDefinitionScript.get_segment(segment_id).get("type", ""))
+		if not MapSegmentDefinitionScript.is_platform_gap_segment_type(segment_type):
+			continue
+		if index + 1 >= sequence.size():
+			_add_error(
+				result,
+				"Moving platform gap '%s' must be followed by recovery safe floor." % segment_id
+			)
+			continue
+		var next_type: String = str(MapSegmentDefinitionScript.get_segment(str(sequence[index + 1])).get("type", ""))
+		if next_type not in [
+			MapSegmentDefinitionScript.TYPE_RECOVERY,
+			MapSegmentDefinitionScript.TYPE_HAZARD_RECOVERY,
+			MapSegmentDefinitionScript.TYPE_STRAIGHT,
+		]:
+			_add_error(
+				result,
+				"Moving platform gap '%s' must be followed by hazard_recovery_straight or safe straight (not finish)."
+				% segment_id
+			)
+
+
+static func _get_segment_max_movement_distance(segment: Dictionary) -> float:
+	var max_distance: float = 0.0
+	for asset_id_value in segment.get("required_assets", []):
+		var asset_id: String = str(asset_id_value)
+		if not MapAssetLibraryScript.is_moving_obstacle_asset(asset_id):
+			continue
+		var asset: Dictionary = MapAssetLibraryScript.get_asset(asset_id)
+		max_distance = maxf(max_distance, float(asset.get("movement_distance", 0.0)))
+	return max_distance
+
+
+static func _validate_no_obstacle_finish_hijack(root: Node, result: Dictionary) -> void:
+	_find_goal_catch_nodes(root, result)
+	_find_obstacle_camera_hijack(root, result)
+
+
+static func _find_obstacle_camera_hijack(node: Node, result: Dictionary) -> void:
+	if node is Camera3D:
+		var camera: Camera3D = node as Camera3D
+		if "obstacle" in camera.name.to_lower() and camera.current:
+			_add_error(result, "Obstacle script must not hijack current camera: %s" % camera.get_path())
+	for child in node.get_children():
+		_find_obstacle_camera_hijack(child, result)
 
 
 static func _validate_spawn_finish_not_in_fall_segments(blueprint, result: Dictionary) -> void:
