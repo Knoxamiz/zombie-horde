@@ -15,7 +15,8 @@ const ACTION_BINDINGS: Dictionary = {
 	"round_reset": [KEY_R],
 	"debug_join": [KEY_J],
 	"dev_panel": [KEY_F3],
-	"dev_annotation_paint": [KEY_P]
+	"dev_annotation_paint": [KEY_P],
+	"round_pause": [KEY_BACKSPACE]
 }
 
 func _ready() -> void:

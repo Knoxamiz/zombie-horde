@@ -6,7 +6,8 @@
 script = ExtResource("1_round")
 min_participants_to_start = 1
 max_pending_participants = 128
-countdown_seconds = 5
+countdown_seconds = 0
+require_manual_launch = true
 max_race_duration_seconds = 180.0
 post_round_auto_reset_seconds = 45.0
 command_text = "Type !brains to join."

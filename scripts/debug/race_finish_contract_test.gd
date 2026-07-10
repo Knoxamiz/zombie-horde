@@ -242,8 +242,8 @@ func _configure_test_round(
 	map_controller: RaceMapController,
 	main_game: Node
 ) -> void:
+	round_manager.configure_immediate_launch_for_tests()
 	if round_manager.round_config != null:
-		round_manager.round_config.countdown_seconds = 1
 		round_manager.round_config.max_race_duration_seconds = 180.0
 		round_manager.round_config.post_round_auto_reset_seconds = 0.0
 	if map_controller.human_defender_config != null:

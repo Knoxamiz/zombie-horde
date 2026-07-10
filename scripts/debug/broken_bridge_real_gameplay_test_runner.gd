@@ -48,9 +48,7 @@ func _start_prototype_race() -> void:
 		push_error("BrokenBridgeGameplayTestRunner: failed to load '%s'" % prototype_map_id)
 		return
 
-	if round_manager.round_config != null:
-		round_manager.round_config.countdown_seconds = 2
-	if map_controller.human_defender_config != null:
+	round_manager.configure_immediate_launch_for_tests()
 		map_controller.human_defender_config.defender_count = 0
 
 	var world: Node3D = _main_game.get_node_or_null("World") as Node3D

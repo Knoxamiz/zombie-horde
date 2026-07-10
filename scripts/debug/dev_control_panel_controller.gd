@@ -394,7 +394,11 @@ func _on_close_pressed() -> void:
 
 
 func _on_start_race_pressed() -> void:
-	if _round_manager != null:
+	if _round_manager == null:
+		return
+	if _round_manager.state == RoundManager.RoundState.COUNTDOWN:
+		_round_manager.launch_round()
+	else:
 		_round_manager.start_round()
 	_refresh_display()
 
@@ -468,7 +472,12 @@ func _load_dev_test_map(map_id: String) -> bool:
 
 	if _round_manager != null:
 		var state: int = _round_manager.state
-		if state in [RoundManager.RoundState.RUNNING, RoundManager.RoundState.COUNTDOWN, RoundManager.RoundState.ENDED]:
+		if state in [
+			RoundManager.RoundState.RUNNING,
+			RoundManager.RoundState.COUNTDOWN,
+			RoundManager.RoundState.PAUSED,
+			RoundManager.RoundState.ENDED,
+		]:
 			if _fake_viewer_simulator != null:
 				_fake_viewer_simulator.stop_simulation()
 			_round_manager.reset_round()

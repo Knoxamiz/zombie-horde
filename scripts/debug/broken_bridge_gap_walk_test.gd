@@ -84,10 +84,7 @@ func _run() -> void:
 	) as GameFlowController
 	if flow != null:
 		flow.show_race()
-	if round_manager.round_config != null:
-		round_manager.round_config.countdown_seconds = 0
-
-	await _probe_gap_position(
+	round_manager.configure_immediate_launch_for_tests()
 		round_manager,
 		zombie_manager,
 		debug_join,

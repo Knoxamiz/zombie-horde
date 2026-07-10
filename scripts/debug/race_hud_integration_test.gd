@@ -48,12 +48,13 @@ func _run_test() -> void:
 		debug_join.call("request_random_join")
 	await create_timer(0.2).timeout
 
+	round_manager.call("configure_immediate_launch_for_tests")
 	round_manager.call("start_round")
 	await create_timer(0.3).timeout
 
 	var state_text: String = str(round_manager.call("get_state_text"))
-	if state_text not in ["Countdown", "Running"]:
-		_fail(_failures, "Expected Countdown or Running after start_round, got: %s" % state_text)
+	if state_text != "Running":
+		_fail(_failures, "Expected Running after start_round, got: %s" % state_text)
 
 	var living_count: int = int(zombie_manager.call("get_living_count"))
 	var total_count: int = int(zombie_manager.call("get_total_count"))
