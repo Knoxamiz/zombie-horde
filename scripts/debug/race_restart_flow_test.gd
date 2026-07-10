@@ -40,8 +40,8 @@ func _run() -> void:
 
 	if game_flow != null:
 		game_flow.show_race()
+	round_manager.configure_immediate_launch_for_tests()
 	if round_manager.round_config != null:
-		round_manager.round_config.countdown_seconds = 0
 		round_manager.round_config.post_round_auto_reset_seconds = 0.0
 
 	for _i in range(8):

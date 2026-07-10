@@ -118,12 +118,6 @@ func _run_single_scenario(zombie_count: int) -> void:
 
 	var monitor := _ZombieRunMonitor.new()
 	round_manager.start_round()
-	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.COUNTDOWN, 8.0):
-		metrics.passed = false
-		_print_scenario_report(metrics, "round never entered COUNTDOWN")
-		main_game.queue_free()
-		return
-
 	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 12.0):
 		metrics.passed = false
 		_print_scenario_report(metrics, "round never entered RUNNING")
@@ -201,8 +195,8 @@ func _run_oob_probe() -> void:
 		return
 
 	round_manager.start_round()
-	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.COUNTDOWN, 8.0):
-		_fail("OOB probe: round did not enter COUNTDOWN")
+	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 12.0):
+		_fail("OOB probe: round did not enter RUNNING")
 		main_game.queue_free()
 		return
 	await create_timer(0.25).timeout
@@ -273,8 +267,8 @@ func _run_void_hazard_probe() -> void:
 		return
 
 	round_manager.start_round()
-	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.COUNTDOWN, 8.0):
-		_fail("Void hazard probe: round did not enter COUNTDOWN")
+	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 12.0):
+		_fail("Void hazard probe: round did not enter RUNNING")
 		main_game.queue_free()
 		return
 	await create_timer(0.25).timeout
@@ -366,8 +360,7 @@ func _configure_test_round(
 	map_controller: RaceMapController,
 	main_game: Node
 ) -> void:
-	if round_manager.round_config != null:
-		round_manager.round_config.countdown_seconds = 1
+	round_manager.configure_immediate_launch_for_tests()
 	if map_controller.human_defender_config != null:
 		map_controller.human_defender_config.defender_count = 0
 	if map_controller.hazard_config != null:

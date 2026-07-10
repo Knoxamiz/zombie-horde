@@ -93,6 +93,7 @@ var _hud_visible_before_layout_edit: bool = false
 @onready var _podium_overlay: PodiumOverlay = get_node("Root/PodiumOverlay") as PodiumOverlay
 @onready var _results_overlay: RoundResultsOverlay = get_node("Root/RoundResultsOverlay") as RoundResultsOverlay
 @onready var _start_button: Button = get_node("Root/ControlPanel/Margin/HBox/StartButton") as Button
+@onready var _pause_button: Button = get_node("Root/ControlPanel/Margin/HBox/PauseButton") as Button
 @onready var _reset_button: Button = get_node("Root/ControlPanel/Margin/HBox/ResetButton") as Button
 @onready var _join_button: Button = get_node("Root/ControlPanel/Margin/HBox/JoinButton") as Button
 @onready var _hold_reset_button: HoldToConfirmButton = get_node("Root/HoldResetButton") as HoldToConfirmButton
@@ -151,6 +152,8 @@ func _ready() -> void:
 		_world_results_reset_button.pressed.connect(_on_world_button_pressed)
 
 	_start_button.pressed.connect(_on_start_pressed)
+	if _pause_button != null:
+		_pause_button.pressed.connect(_on_pause_pressed)
 	_reset_button.pressed.connect(_on_reset_pressed)
 	_join_button.pressed.connect(_on_join_pressed)
 	if _hold_reset_button != null:
@@ -172,6 +175,7 @@ func _ready() -> void:
 	_refresh_static_labels()
 	_refresh_roster()
 	_refresh_world_command_board()
+	_refresh_control_buttons()
 	_setup_layout_editor()
 	_apply_saved_layout()
 	_set_world_visible(visible)
@@ -343,8 +347,16 @@ func _on_start_pressed() -> void:
 		return
 	if _round_manager.state == RoundManager.RoundState.ENDED:
 		_on_restart_same_race_requested()
+	elif _round_manager.state == RoundManager.RoundState.COUNTDOWN:
+		_round_manager.launch_round()
 	else:
 		_round_manager.start_round()
+
+
+func _on_pause_pressed() -> void:
+	if _round_manager != null:
+		_round_manager.toggle_pause()
+	_refresh_control_buttons()
 
 func _on_reset_pressed() -> void:
 	if _round_manager != null:
@@ -370,6 +382,7 @@ func _on_round_state_changed(state_text: String) -> void:
 	_state_text = state_text
 	_standings_refresh_timer = 0.0
 	_refresh_static_labels()
+	_refresh_control_buttons()
 	_refresh_world_leaders_board()
 
 func _on_round_started(round_number: int) -> void:
@@ -443,7 +456,7 @@ func _on_round_ended(winner_name: String, base_won: bool) -> void:
 
 func _on_participant_registered(join_info: ParticipantJoinInfo, queued_count: int) -> void:
 	_queued_count = queued_count
-	if _state_text == "Countdown":
+	if _state_text in ["Ready", "Countdown"]:
 		return
 	var display_name: String = join_info.display_name.strip_edges() if join_info != null else ""
 	if not display_name.is_empty() and _state_text == "Joining":
@@ -522,15 +535,9 @@ func _on_chat_connection_status_changed(status_text: String, detail_text: String
 		_chat_status_label.text = _chat_status_text
 	_refresh_static_labels()
 
-func _on_round_countdown_changed(seconds_remaining: int) -> void:
-	if _countdown_panel == null or _countdown_label == null:
-		return
-
-	_countdown_panel.visible = seconds_remaining > 0
-	if seconds_remaining > 0:
-		_countdown_label.text = str(seconds_remaining)
-		if seconds_remaining == 1:
-			_record_feed("Get ready...")
+func _on_round_countdown_changed(_seconds_remaining: int) -> void:
+	if _countdown_panel != null:
+		_countdown_panel.visible = false
 	if _world_countdown_board != null:
 		_world_countdown_board.set_board_visible(false)
 
@@ -571,8 +578,12 @@ func _refresh_static_labels() -> void:
 					_state_label.text = "Round %d | LIVE | Queued: %d" % [_round_number, _queued_count]
 				else:
 					_state_label.text = "Round LIVE | Queued: %d" % _queued_count
+			"Ready":
+				_state_label.text = "Race staged — press Go | Queued: %d" % _queued_count
+			"Paused":
+				_state_label.text = "Race paused | Queued: %d" % _queued_count
 			"Countdown":
-				_state_label.text = "Round starting... | Queued: %d" % _queued_count
+				_state_label.text = "Race staged — press Go | Queued: %d" % _queued_count
 			"Ended":
 				if _auto_reset_seconds_remaining > 0:
 					_state_label.text = (
@@ -589,6 +600,36 @@ func _refresh_static_labels() -> void:
 		_winner_label.text = _winner_text
 	if _world_status_board != null:
 		_world_status_board.set_board_text("RACE STATUS", _format_world_status_body())
+	_refresh_control_buttons()
+
+
+func _refresh_control_buttons() -> void:
+	if _round_manager == null:
+		return
+	if _start_button != null:
+		match _round_manager.state:
+			RoundManager.RoundState.COUNTDOWN:
+				_start_button.text = "Go"
+				_start_button.disabled = false
+			RoundManager.RoundState.RUNNING:
+				_start_button.text = "Start"
+				_start_button.disabled = true
+			RoundManager.RoundState.PAUSED:
+				_start_button.text = "Start"
+				_start_button.disabled = true
+			RoundManager.RoundState.ENDED:
+				_start_button.text = "Restart"
+				_start_button.disabled = not _round_manager.can_restart_same_race()
+			_:
+				_start_button.text = "Start"
+				_start_button.disabled = _round_manager.get_pending_count() <= 0
+	if _pause_button != null:
+		var can_pause: bool = (
+			_round_manager.state == RoundManager.RoundState.RUNNING
+			or _round_manager.state == RoundManager.RoundState.PAUSED
+		)
+		_pause_button.disabled = not can_pause
+		_pause_button.text = "Resume" if _round_manager.state == RoundManager.RoundState.PAUSED else "Pause"
 
 func _refresh_roster() -> void:
 	if _queue_label != null:
@@ -623,7 +664,7 @@ func _refresh_leaderboard() -> void:
 
 func _format_queue_text() -> String:
 	if _queued_names.is_empty():
-		if _state_text in ["Running", "Countdown", "Ended"]:
+		if _state_text in ["Running", "Ready", "Countdown", "Paused", "Ended"]:
 			return "Queue: joins reopen after reset"
 		return "Queue: waiting for !brains"
 
@@ -824,7 +865,7 @@ func _format_live_standings_body() -> String:
 	return _join_strings(lines, "\n")
 
 func _is_race_live() -> bool:
-	return _state_text in ["Countdown", "Running", "Ended"]
+	return _state_text in ["Ready", "Countdown", "Running", "Paused", "Ended"]
 
 func _refresh_world_command_board() -> void:
 	if _world_command_board != null:

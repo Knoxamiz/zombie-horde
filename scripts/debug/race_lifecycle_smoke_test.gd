@@ -195,8 +195,8 @@ func _configure_test_round(
 	max_race_seconds: float,
 	auto_reset_seconds: float
 ) -> void:
+	round_manager.configure_immediate_launch_for_tests()
 	if round_manager.round_config != null:
-		round_manager.round_config.countdown_seconds = 1
 		round_manager.round_config.max_race_duration_seconds = max_race_seconds
 		round_manager.round_config.post_round_auto_reset_seconds = auto_reset_seconds
 	if map_controller.human_defender_config != null:

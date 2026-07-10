@@ -190,9 +190,7 @@ func _configure_test_round(
 	map_controller: RaceMapController,
 	main_game: Node
 ) -> void:
-	if round_manager.round_config != null:
-		round_manager.round_config.countdown_seconds = 1
-	if map_controller.human_defender_config != null:
+	round_manager.configure_immediate_launch_for_tests()
 		map_controller.human_defender_config.defender_count = 0
 	if map_controller.hazard_config != null:
 		map_controller.hazard_config.mine_count = 0

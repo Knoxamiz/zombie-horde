@@ -136,7 +136,7 @@ func _on_round_state_changed(state_text: String) -> void:
 				show_intro()
 			else:
 				show_lobby()
-		"Countdown", "Running", "Ended":
+		"Ready", "Running", "Paused", "Ended":
 			show_race()
 
 func _on_round_reset() -> void:

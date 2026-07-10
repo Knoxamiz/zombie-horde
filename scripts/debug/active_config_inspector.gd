@@ -146,6 +146,7 @@ static func _build_round_lines(round_manager: RoundManager) -> PackedStringArray
 
 	var config: RoundConfig = round_manager.round_config
 	lines.append("countdown_seconds: %d" % config.countdown_seconds)
+	lines.append("require_manual_launch: %s" % config.require_manual_launch)
 	lines.append("max_race_duration_seconds: %.1f" % config.max_race_duration_seconds)
 	lines.append("post_round_auto_reset_seconds: %.1f" % config.post_round_auto_reset_seconds)
 	lines.append("min_participants_to_start: %d" % config.min_participants_to_start)

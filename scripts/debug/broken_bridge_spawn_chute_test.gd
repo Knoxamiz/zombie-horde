@@ -63,8 +63,7 @@ func _run() -> void:
 	) as GameFlowController
 	if flow != null:
 		flow.show_race()
-	if round_manager.round_config != null:
-		round_manager.round_config.countdown_seconds = 0
+	round_manager.configure_immediate_launch_for_tests()
 	if map_controller.human_defender_config != null:
 		map_controller.human_defender_config.defender_count = 0
 

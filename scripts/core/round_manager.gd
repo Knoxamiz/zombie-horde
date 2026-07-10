@@ -5,6 +5,7 @@ enum RoundState {
 	IDLE,
 	COUNTDOWN,
 	RUNNING,
+	PAUSED,
 	ENDED
 }
 
@@ -45,6 +46,8 @@ var _round_started_msec: int = 0
 var _race_winner_name: String = ""
 var _next_finish_place: int = 1
 var _race_timed_out: bool = false
+var _pause_started_msec: int = 0
+var _total_paused_msec: int = 0
 
 func _ready() -> void:
 	_join_source = get_node_or_null(join_source_path) as JoinSource
@@ -78,8 +81,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("round_start"):
 		if state == RoundState.ENDED:
 			restart_same_race()
+		elif state == RoundState.COUNTDOWN:
+			launch_round()
 		else:
 			start_round()
+	elif event.is_action_pressed("round_pause"):
+		toggle_pause()
 	elif event.is_action_pressed("round_reset"):
 		reset_round()
 	elif event.is_action_pressed("debug_join"):
@@ -140,7 +147,27 @@ func start_round() -> void:
 	_publish_stats()
 
 	_publish_state()
-	_run_countdown(_round_token)
+	if _should_auto_launch():
+		_launch_round()
+	else:
+		GameEvents.command_text_changed.emit("Race staged — press Go or Enter when ready.")
+
+func launch_round() -> void:
+	if state != RoundState.COUNTDOWN:
+		return
+	_launch_round()
+
+
+func toggle_pause() -> void:
+	if state == RoundState.RUNNING:
+		_pause_race()
+	elif state == RoundState.PAUSED:
+		_resume_race()
+
+
+func is_race_paused() -> bool:
+	return state == RoundState.PAUSED
+
 
 func reset_round(return_to_lobby: bool = true) -> void:
 	_round_token += 1
@@ -155,6 +182,8 @@ func reset_round(return_to_lobby: bool = true) -> void:
 	_race_winner_name = ""
 	_next_finish_place = 1
 	_race_timed_out = false
+	_pause_started_msec = 0
+	_total_paused_msec = 0
 
 	if _zombie_manager != null:
 		_zombie_manager.set_round_active(false)
@@ -515,6 +544,13 @@ func is_race_timed_out() -> bool:
 	return _race_timed_out
 
 
+func configure_immediate_launch_for_tests() -> void:
+	if round_config == null:
+		return
+	round_config.require_manual_launch = false
+	round_config.countdown_seconds = 0
+
+
 func debug_force_end_round() -> void:
 	if not OS.is_debug_build():
 		return
@@ -541,9 +577,11 @@ func _state_to_text(value: RoundState) -> String:
 		RoundState.IDLE:
 			return "Joining"
 		RoundState.COUNTDOWN:
-			return "Countdown"
+			return "Ready"
 		RoundState.RUNNING:
 			return "Running"
+		RoundState.PAUSED:
+			return "Paused"
 		RoundState.ENDED:
 			return "Ended"
 	return "Unknown"
@@ -567,23 +605,11 @@ func _has_participant_name(display_name: String) -> bool:
 
 	return _zombie_manager.has_display_name(display_name)
 
-func _run_countdown(token: int) -> void:
-	var remaining: int = _get_countdown_seconds()
-	while remaining > 0:
-		if token != _round_token or state != RoundState.COUNTDOWN:
-			return
-		GameEvents.round_countdown_changed.emit(remaining)
-		await get_tree().create_timer(1.0).timeout
-		remaining -= 1
-
-	if token != _round_token or state != RoundState.COUNTDOWN:
-		return
-
-	_launch_round()
-
 func _launch_round() -> void:
 	state = RoundState.RUNNING
 	_round_started_msec = Time.get_ticks_msec()
+	_pause_started_msec = 0
+	_total_paused_msec = 0
 	_race_winner_name = ""
 	_next_finish_place = 1
 	_race_timed_out = false
@@ -659,10 +685,49 @@ func _publish_stats() -> void:
 		living_count = _zombie_manager.get_living_count()
 	GameEvents.round_stats_changed.emit(_stats.to_dictionary(living_count))
 
-func _get_countdown_seconds() -> int:
-	if round_config != null:
-		return round_config.countdown_seconds
-	return 5
+func _should_auto_launch() -> bool:
+	if round_config == null:
+		return false
+	if round_config.require_manual_launch:
+		return false
+	return round_config.countdown_seconds <= 0
+
+
+func _pause_race() -> void:
+	if state != RoundState.RUNNING:
+		return
+
+	state = RoundState.PAUSED
+	_pause_started_msec = Time.get_ticks_msec()
+	set_process(false)
+	if _zombie_manager != null:
+		_zombie_manager.set_round_active(false)
+	if _minigun != null:
+		_minigun.set_round_active(false)
+	if _defender_manager != null:
+		_defender_manager.set_round_active(false)
+	GameEvents.command_text_changed.emit("Race paused.")
+	_publish_state()
+
+
+func _resume_race() -> void:
+	if state != RoundState.PAUSED:
+		return
+
+	if _pause_started_msec > 0:
+		_total_paused_msec += Time.get_ticks_msec() - _pause_started_msec
+		_pause_started_msec = 0
+
+	state = RoundState.RUNNING
+	set_process(_get_max_race_duration_seconds() > 0.0)
+	if _zombie_manager != null:
+		_zombie_manager.set_round_active(true)
+	if _minigun != null:
+		_minigun.set_round_active(true)
+	if _defender_manager != null:
+		_defender_manager.set_round_active(true)
+	GameEvents.command_text_changed.emit("Race resumed.")
+	_publish_state()
 
 func _get_max_race_duration_seconds() -> float:
 	if round_config != null:
@@ -677,7 +742,10 @@ func _get_post_round_auto_reset_seconds() -> float:
 func _get_round_elapsed_seconds() -> float:
 	if _round_started_msec <= 0:
 		return 0.0
-	return float(Time.get_ticks_msec() - _round_started_msec) / 1000.0
+	var paused_msec: int = _total_paused_msec
+	if state == RoundState.PAUSED and _pause_started_msec > 0:
+		paused_msec += Time.get_ticks_msec() - _pause_started_msec
+	return float(Time.get_ticks_msec() - _round_started_msec - paused_msec) / 1000.0
 
 func _format_cause(cause: String) -> String:
 	match cause:

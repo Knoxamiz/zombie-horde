@@ -326,7 +326,7 @@ func _format_board_row(rank: int, display_name: String, value_text: String) -> S
 func _format_queue_summary() -> String:
 	if _queued_names.is_empty():
 		return "QUEUE: waiting for viewers"
-	return "QUEUE: %d viewers ready — press Start Race" % _queued_names.size()
+	return "QUEUE: %d viewers ready — press Stage Race" % _queued_names.size()
 
 
 func _should_show_chat_status(chat_text: String) -> bool:
@@ -382,7 +382,7 @@ func _refresh_ready_button() -> void:
 	if _queued_names.is_empty():
 		_ready_button.text = "Waiting for viewers"
 	else:
-		_ready_button.text = "Start Race (%d)" % _queued_names.size()
+		_ready_button.text = "Stage Race (%d)" % _queued_names.size()
 	if _main_menu_button != null:
 		_main_menu_button.disabled = _state_text != "Joining"
 	if _auto_repeat_button != null and _round_manager != null:
