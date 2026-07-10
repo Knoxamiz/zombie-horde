@@ -327,8 +327,12 @@ func _on_self_check_pressed() -> void:
 	_refresh_display()
 
 
+func _get_systems_node() -> Node:
+	return get_node_or_null("../Systems")
+
+
 func _get_flow_analyzer_reference() -> ZombieFlowAnalyzer:
-	var systems: Node = get_node_or_null("../../Systems")
+	var systems: Node = _get_systems_node()
 	if systems == null:
 		return null
 	return systems.get_node_or_null("ZombieFlowAnalyzer") as ZombieFlowAnalyzer
@@ -638,7 +642,7 @@ func _ensure_stress_profiler() -> PerformanceStressProfiler:
 		_race_map_controller,
 		_fake_viewer_simulator,
 		_ensure_flow_analyzer(),
-		get_node_or_null("../../Systems/GameFlowController") as GameFlowController
+		get_node_or_null("../Systems/GameFlowController") as GameFlowController
 	)
 	return _stress_profiler
 
@@ -683,7 +687,7 @@ func _run_stress_test(count: int) -> void:
 		_race_map_controller,
 		_fake_viewer_simulator,
 		_ensure_flow_analyzer(),
-		get_node_or_null("../../Systems/GameFlowController") as GameFlowController
+		get_node_or_null("../Systems/GameFlowController") as GameFlowController
 	)
 	profiler.run_stress_test(count)
 	_refresh_display()
@@ -777,7 +781,7 @@ func _ensure_annotation_painter() -> DevAnnotationPainter:
 	if _annotation_painter != null and is_instance_valid(_annotation_painter):
 		return _annotation_painter
 
-	var systems: Node = get_node_or_null("../../Systems")
+	var systems: Node = _get_systems_node()
 	if systems == null:
 		return null
 
@@ -785,15 +789,21 @@ func _ensure_annotation_painter() -> DevAnnotationPainter:
 	if _annotation_painter == null:
 		_annotation_painter = DevAnnotationPainter.new()
 		_annotation_painter.name = "DevAnnotationPainter"
-		_annotation_painter.race_world_path = race_world_path
-		_annotation_painter.race_map_controller_path = race_map_controller_path
-		_annotation_painter.spectator_camera_path = spectator_camera_path
+		_annotation_painter.race_world_path = NodePath("../../World")
+		_annotation_painter.race_map_controller_path = NodePath("../RaceMapController")
+		_annotation_painter.spectator_camera_path = NodePath("../../SpectatorCamera")
 		systems.add_child(_annotation_painter)
+
+	if not is_instance_valid(_annotation_painter):
+		_annotation_painter = null
+		return null
 
 	if not _annotation_painter.paint_mode_changed.is_connected(_on_annotation_paint_mode_changed):
 		_annotation_painter.paint_mode_changed.connect(_on_annotation_paint_mode_changed)
 	if not _annotation_painter.strokes_changed.is_connected(_on_annotation_strokes_changed):
 		_annotation_painter.strokes_changed.connect(_on_annotation_strokes_changed)
+	if _annotation_note_field != null:
+		_annotation_painter.set_note(_annotation_note_field.text)
 	return _annotation_painter
 
 
@@ -838,7 +848,7 @@ func _ensure_flow_analyzer() -> ZombieFlowAnalyzer:
 	if _flow_analyzer != null and is_instance_valid(_flow_analyzer):
 		return _flow_analyzer
 
-	var systems: Node = get_node_or_null("../../Systems")
+	var systems: Node = _get_systems_node()
 	if systems == null:
 		return null
 
