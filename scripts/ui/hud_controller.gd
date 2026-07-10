@@ -142,8 +142,10 @@ func _ready() -> void:
 		_leaderboard_store.leaderboard_changed.connect(_on_leaderboard_changed)
 	if _podium_overlay != null:
 		_podium_overlay.continue_requested.connect(_on_podium_continue_requested)
+		_podium_overlay.restart_requested.connect(_on_restart_same_race_requested)
 		_podium_overlay.reset_requested.connect(_on_results_reset_requested)
 	if _results_overlay != null:
+		_results_overlay.restart_requested.connect(_on_restart_same_race_requested)
 		_results_overlay.reset_requested.connect(_on_results_reset_requested)
 	if _world_results_reset_button != null:
 		_world_results_reset_button.pressed.connect(_on_world_button_pressed)
@@ -337,7 +339,11 @@ func _process(delta: float) -> void:
 	_refresh_world_leaders_board()
 
 func _on_start_pressed() -> void:
-	if _round_manager != null:
+	if _round_manager == null:
+		return
+	if _round_manager.state == RoundManager.RoundState.ENDED:
+		_on_restart_same_race_requested()
+	else:
 		_round_manager.start_round()
 
 func _on_reset_pressed() -> void:
@@ -542,6 +548,21 @@ func _on_results_reset_requested() -> void:
 	if _round_manager != null:
 		_round_manager.reset_round()
 
+
+func _on_restart_same_race_requested() -> void:
+	if _round_manager == null:
+		return
+	if not _round_manager.restart_same_race():
+		return
+	_results_showing = false
+	_podium_showing = false
+	if _podium_overlay != null:
+		_podium_overlay.hide_podium()
+	if _results_overlay != null:
+		_results_overlay.hide_results()
+	_set_world_results_visible(false)
+	_refresh_static_labels()
+
 func _refresh_static_labels() -> void:
 	if _state_label != null:
 		match _state_text:
@@ -643,7 +664,7 @@ func _refresh_post_round_recovery_hint() -> void:
 			int(round(_round_manager.round_config.post_round_auto_reset_seconds))
 		)
 	else:
-		_command_text = "Next race: Return to Lobby or press R, then queue viewers."
+		_command_text = "Next race: Press Enter to restart, or R to return to lobby."
 	if _command_label != null:
 		_command_label.text = _command_text
 	_refresh_world_command_board()

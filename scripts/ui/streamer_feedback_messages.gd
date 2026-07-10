@@ -9,7 +9,7 @@ static func format_join_rejected(display_name: String, reason: String) -> String
 		"race_running":
 			return "Join rejected — race already live."
 		"race_ended":
-			return "Join rejected — race over, reset for next race."
+			return "Join rejected — race over. Press Enter to restart or reset for lobby."
 		"queue_full":
 			return "Queue full — wait for next race."
 		"duplicate_name":
@@ -43,8 +43,8 @@ static func format_time_limit_podium_title(base_won: bool) -> String:
 
 static func format_auto_reset_command(seconds_remaining: int) -> String:
 	if seconds_remaining <= 0:
-		return "Next race: Return to Lobby or press R, then queue viewers."
+		return "Next race: Press Enter to restart, or R to return to lobby."
 	return (
-		"Auto-reset in %ds — Return to Lobby or press R for next race."
+		"Auto-reset in %ds — Press Enter to restart, or R for lobby."
 		% seconds_remaining
 	)

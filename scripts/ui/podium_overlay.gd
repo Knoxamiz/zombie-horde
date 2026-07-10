@@ -2,6 +2,7 @@ class_name PodiumOverlay
 extends Control
 
 signal continue_requested()
+signal restart_requested()
 signal reset_requested()
 
 var _tween: Tween
@@ -13,11 +14,14 @@ var _tween: Tween
 @onready var _podium_row: HBoxContainer = get_node("PodiumCard/Margin/VBox/PodiumRow") as HBoxContainer
 @onready var _empty_label: Label = get_node("PodiumCard/Margin/VBox/EmptyLabel") as Label
 @onready var _stats_button: Button = get_node("PodiumCard/Margin/VBox/ButtonRow/ViewStatsButton") as Button
+@onready var _restart_button: Button = get_node("PodiumCard/Margin/VBox/ButtonRow/RestartRaceButton") as Button
 @onready var _return_button: Button = get_node("PodiumCard/Margin/VBox/ButtonRow/ReturnLobbyButton") as Button
 
 
 func _ready() -> void:
 	_stats_button.pressed.connect(_on_view_stats_pressed)
+	if _restart_button != null:
+		_restart_button.pressed.connect(_on_restart_pressed)
 	_return_button.pressed.connect(_on_return_lobby_pressed)
 	hide_podium(true)
 
@@ -105,7 +109,9 @@ func _refresh(
 		zombie_manager
 	)
 	var display_order: Array[Dictionary] = PodiumResultsBuilder.get_podium_display_order(podium_entries)
-	_return_button.text = "Return to Lobby — Next Race"
+	_return_button.text = "Return to Lobby"
+	if _restart_button != null:
+		_restart_button.text = "Restart Same Race"
 	_empty_label.visible = display_order.is_empty()
 
 	for entry in display_order:
@@ -122,6 +128,10 @@ func _format_finish_time(seconds: float) -> String:
 
 func _on_view_stats_pressed() -> void:
 	continue_requested.emit()
+
+
+func _on_restart_pressed() -> void:
+	restart_requested.emit()
 
 
 func _on_return_lobby_pressed() -> void:
