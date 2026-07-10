@@ -150,6 +150,8 @@ func build_route_context(
 	if not gaps.is_empty() and _style == MapStyle.BROKEN_BRIDGE:
 		build_gap_crossing_visuals(gaps, surface_pieces, path_half_width, gap_crossing_width_ratio)
 		build_gap_void_visuals(gaps, path_half_width, surface_pieces)
+		build_gap_deck_lip_visuals(gaps, path_half_width, surface_pieces)
+		build_gap_edge_shoulder_visuals(gaps, path_half_width, surface_pieces, bed_y + 0.08)
 	if not gaps.is_empty():
 		build_gap_support_piers(gaps, path_half_width, bed_y, surface_pieces)
 	if not surface_pieces.is_empty():
@@ -206,6 +208,61 @@ func build_gap_void_visuals(
 		pit.material_override = mat
 		pit.position = Vector3(0.0, lip_y - pit_depth * 0.5 - 0.08, center_z)
 		_visual_root.add_child(pit)
+
+
+func build_gap_deck_lip_visuals(
+	gaps: Array[Dictionary],
+	path_half_width: float,
+	surface_pieces: Array
+) -> void:
+	## Full-width cracked deck caps at each gap boundary — visual only, no walk collision.
+	var road_width: float = path_half_width * 2.0
+	var lip_depth: float = 0.14
+	for gap_index in range(gaps.size()):
+		var gap: Dictionary = gaps[gap_index]
+		var z0: float = float(gap["z0"])
+		var z1: float = float(gap["z1"])
+		for edge_z in [z0 - TILE_HALF, z1 + TILE_HALF]:
+			var lip_y: float = SURFACE_BUILDER.get_gap_crossing_top_y(
+				surface_pieces, z0, z1, _surface_y_at(edge_z)
+			)
+			var lip := MeshInstance3D.new()
+			lip.name = "GapDeckLip_%d_%s" % [gap_index, "entry" if edge_z < z0 else "exit"]
+			var mesh := BoxMesh.new()
+			mesh.size = Vector3(road_width, lip_depth, TILE_SIZE * 0.92)
+			lip.mesh = mesh
+			lip.material_override = MAT_CONCRETE
+			lip.position = Vector3(0.0, lip_y - lip_depth * 0.5 + 0.02, edge_z)
+			_visual_root.add_child(lip)
+
+
+func build_gap_edge_shoulder_visuals(
+	gaps: Array[Dictionary],
+	path_half_width: float,
+	surface_pieces: Array,
+	shoulder_y: float
+) -> void:
+	## Grey shoulder strips at gap entry/exit only — fills missing slabs without bridging the void.
+	var shoulder_width: float = 3.2
+	var strip_length: float = TILE_SIZE * 0.9
+	for gap in gaps:
+		var z0: float = float(gap["z0"])
+		var z1: float = float(gap["z1"])
+		var lip_y: float = SURFACE_BUILDER.get_gap_crossing_top_y(
+			surface_pieces, z0, z1, _surface_y_at((z0 + z1) * 0.5)
+		)
+		for edge_z in [z0 - TILE_HALF * 0.5, z1 + TILE_HALF * 0.5]:
+			var surface_y: float = maxf(shoulder_y, maxf(lip_y, _surface_y_at(edge_z)) - 0.18)
+			for side in [-1.0, 1.0]:
+				var shoulder := MeshInstance3D.new()
+				shoulder.name = "GapEdgeShoulder"
+				var mesh := BoxMesh.new()
+				mesh.size = Vector3(shoulder_width, 0.1, strip_length)
+				shoulder.mesh = mesh
+				shoulder.material_override = MAT_ARENA_GROUND
+				var x: float = side * (path_half_width + shoulder_width * 0.5 + 0.35)
+				shoulder.position = Vector3(x, surface_y, edge_z)
+				_visual_root.add_child(shoulder)
 
 
 func build_ground_bed(width: float, length: float, y: float = -1.35) -> void:
@@ -629,18 +686,22 @@ func _place_bridge_side_shreds(
 
 
 func _compose_bridge_gap_visuals(gaps: Array[Dictionary]) -> void:
+	var deck_columns: PackedFloat32Array = PackedFloat32Array([-4.0, 0.0, 4.0])
 	for gap_index in range(gaps.size()):
 		var gap: Dictionary = gaps[gap_index]
 		var z0: float = float(gap["z0"])
 		var z1: float = float(gap["z1"])
 		var gap_center: float = (z0 + z1) * 0.5
 
-		# Cracked deck lips on the segment side only — no full-width tiles across the chasm.
-		for edge_z in [z0 - 0.55, z1 + 0.55]:
-			var lip_variant: StreetVariant = (
-				StreetVariant.CRACK1 if _hashf(int(edge_z), 41 + gap_index) > 0.5 else StreetVariant.CRACK2
-			)
-			_place_street_tile(0.0, 0.0, edge_z, lip_variant)
+		# Cracked deck lips on the segment side only — align to the 8m tile grid like long-road gaps.
+		for edge_z in [z0 - TILE_HALF, z1 + TILE_HALF]:
+			for x in deck_columns:
+				var lip_variant: StreetVariant = (
+					StreetVariant.CRACK1
+					if _hashf(int(edge_z + x), 41 + gap_index) > 0.5
+					else StreetVariant.CRACK2
+				)
+				_place_street_tile(x, 0.0, edge_z, lip_variant)
 
 		for guide_z in [z0 + 0.8, gap_center, z1 - 0.8]:
 			var cone_x: float = (
