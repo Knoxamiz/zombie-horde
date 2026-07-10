@@ -56,6 +56,7 @@ const SURFACE_BUILDER := preload("res://scripts/maps/kit_map_surface_builder.gd"
 var _root: Node3D
 var _collision_root: Node3D
 var _visual_root: Node3D
+var _boundary_root: Node3D
 var _style: MapStyle = MapStyle.LONG_ROAD
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _elevation_zones: Array[Dictionary] = []
@@ -69,6 +70,7 @@ func attach(root: Node3D, style: MapStyle, random_seed: int) -> void:
 	_rng.seed = random_seed
 	_collision_root = _make_child("Collision", root)
 	_visual_root = _make_child("VisualKit", root)
+	_boundary_root = _make_child("GameplayBoundaries", root)
 
 
 func set_elevation_zones(zones: Array) -> void:
@@ -121,21 +123,28 @@ func build_environment() -> void:
 func build_route_context(
 	spawn_z: float,
 	goal_z: float,
+	start_gate_z: float,
 	path_half_width: float,
 	segments: Array[Dictionary],
 	gaps: Array[Dictionary],
 	void_width: float,
 	track_length: float,
 	surface_pieces: Array = [],
-	gap_crossing_width_ratio: float = SURFACE_BUILDER.DEFAULT_GAP_CROSSING_WIDTH_RATIO
+	gap_crossing_width_ratio: float = SURFACE_BUILDER.DEFAULT_GAP_CROSSING_WIDTH_RATIO,
+	spawn_chute_half_width: float = -1.0
 ) -> void:
 	var edge_x: float = 5.4 if _style == MapStyle.BROKEN_BRIDGE else 10.5
 	var barrier_spacing: float = 5.0 if _style == MapStyle.BROKEN_BRIDGE else 6.5
 	var lowest_y: float = _lowest_surface_y(surface_pieces)
 	var bed_y: float = minf(lowest_y - 1.35, -1.2)
+	var chute_half_width: float = (
+		spawn_chute_half_width if spawn_chute_half_width > 0.0 else path_half_width + 0.85
+	)
 
 	build_ground_bed(void_width, track_length, bed_y)
-	build_route_shoulders(spawn_z, goal_z, path_half_width, 3.2, bed_y + 0.08)
+	if _style == MapStyle.BROKEN_BRIDGE:
+		build_spawn_lane_bumpers(spawn_z, start_gate_z, chute_half_width)
+	build_route_shoulders(spawn_z, goal_z, path_half_width, 3.2, bed_y + 0.08, gaps)
 	build_continuous_guardrails(spawn_z, goal_z, edge_x, barrier_spacing)
 	build_gap_guardrails(gaps, edge_x)
 	if not gaps.is_empty() and _style == MapStyle.BROKEN_BRIDGE:
@@ -215,25 +224,75 @@ func build_route_shoulders(
 	z_end: float,
 	road_half_width: float,
 	shoulder_width: float,
-	shoulder_y: float
+	shoulder_y: float,
+	gaps: Array[Dictionary] = []
 ) -> void:
 	var strip_length: float = 6.0
 	var z: float = z_start
 	while z < z_end:
 		var center_z: float = min(z + strip_length * 0.5, z_end - strip_length * 0.5)
-		var surface_y: float = _surface_y_at(center_z)
-		var y: float = max(shoulder_y, surface_y - 0.18)
-		for side in [-1.0, 1.0]:
-			var shoulder := MeshInstance3D.new()
-			shoulder.name = "RouteShoulder"
-			var mesh := BoxMesh.new()
-			mesh.size = Vector3(shoulder_width, 0.1, strip_length)
-			shoulder.mesh = mesh
-			shoulder.material_override = MAT_ARENA_GROUND
-			var x: float = side * (road_half_width + shoulder_width * 0.5 + 0.35)
-			shoulder.position = Vector3(x, y, center_z)
-			_visual_root.add_child(shoulder)
+		if not _z_in_gap_ranges(center_z, gaps):
+			var surface_y: float = _surface_y_at(center_z)
+			var y: float = max(shoulder_y, surface_y - 0.18)
+			for side in [-1.0, 1.0]:
+				var shoulder := MeshInstance3D.new()
+				shoulder.name = "RouteShoulder"
+				var mesh := BoxMesh.new()
+				mesh.size = Vector3(shoulder_width, 0.1, strip_length)
+				shoulder.mesh = mesh
+				shoulder.material_override = MAT_ARENA_GROUND
+				var x: float = side * (road_half_width + shoulder_width * 0.5 + 0.35)
+				shoulder.position = Vector3(x, y, center_z)
+				_visual_root.add_child(shoulder)
 		z += strip_length
+
+
+func build_spawn_lane_bumpers(spawn_z: float, start_gate_z: float, chute_half_width: float) -> void:
+	if _boundary_root == null:
+		return
+
+	var z_back: float = spawn_z - 4.0
+	var z_front: float = start_gate_z + 10.0
+	var run_length: float = maxf(z_front - z_back, 4.0)
+	var center_z: float = (z_back + z_front) * 0.5
+	var deck_y: float = _surface_y_at(spawn_z)
+	var wall_height: float = 2.75
+	var wall_thickness: float = 0.6
+	var wall_y: float = deck_y + wall_height * 0.5 - 0.08
+
+	for side in [-1.0, 1.0]:
+		var wall_x: float = side * (chute_half_width + wall_thickness * 0.5)
+		_add_boundary_wall(
+			"SpawnBumperSide",
+			Vector3(wall_thickness, wall_height, run_length),
+			Vector3(wall_x, wall_y, center_z)
+		)
+		var prop_z: float = z_back + 1.5
+		while prop_z < z_front - 1.0:
+			_place_prop(
+				SCENE_PLASTIC_BARRIER,
+				Vector3(wall_x, deck_y, prop_z),
+				1.45,
+				90.0 if side < 0.0 else -90.0
+			)
+			prop_z += 3.25
+
+	_add_boundary_wall(
+		"SpawnBumperBack",
+		Vector3(chute_half_width * 2.0 + wall_thickness * 2.0, wall_height, wall_thickness),
+		Vector3(0.0, wall_y, z_back - wall_thickness * 0.5)
+	)
+	for back_x in [-chute_half_width * 0.55, 0.0, chute_half_width * 0.55]:
+		_place_prop(SCENE_TRAFFIC_BARRIER_1, Vector3(back_x, deck_y, z_back - 0.4), 1.35, 0.0)
+
+
+func _z_in_gap_ranges(z: float, gaps: Array[Dictionary]) -> bool:
+	for gap in gaps:
+		var z0: float = float(gap.get("z0", 0.0))
+		var z1: float = float(gap.get("z1", z0))
+		if z >= z0 - 0.05 and z <= z1 + 0.05:
+			return true
+	return false
 
 
 func build_continuous_guardrails(
@@ -905,6 +964,23 @@ func _place_prop(scene: PackedScene, position: Vector3, scale_value: float, yaw_
 	instance.scale = Vector3.ONE * scale_value
 	instance.rotation_degrees = Vector3(0.0, yaw_degrees, 0.0)
 	_visual_root.add_child(instance)
+
+
+func _add_boundary_wall(wall_name: String, size: Vector3, position: Vector3) -> void:
+	if _boundary_root == null:
+		return
+	var body := StaticBody3D.new()
+	body.name = wall_name
+	body.position = position
+	body.collision_layer = 1
+	body.collision_mask = 0
+	body.add_to_group("map_boundary_walls")
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = size
+	shape.shape = box
+	body.add_child(shape)
+	_boundary_root.add_child(body)
 
 
 func _add_invisible_collision_box(box_name: String, size: Vector3, position: Vector3) -> void:

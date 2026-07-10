@@ -284,6 +284,10 @@ func _test_broken_bridge_gap_crossings() -> PackedStringArray:
 		if plank_count != 3:
 			failures.append("Broken Bridge should show 3 gap crossing planks, got %d" % plank_count)
 
+	var boundaries: Node = arena.get_node_or_null("GameplayBoundaries")
+	if boundaries == null or boundaries.get_child_count() < 3:
+		failures.append("Broken Bridge should build spawn lane bumper walls")
+
 	if surfaces != null:
 		for child in surfaces.get_children():
 			if child is StaticBody3D and child.collision_layer == 0:

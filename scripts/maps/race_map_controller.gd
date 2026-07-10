@@ -596,6 +596,8 @@ func _ensure_map_scene_built(map: Node3D) -> void:
 	elif _is_ai_generated_map_arena(core_road):
 		if core_road.get_map_root() == null:
 			core_road.build_map()
+	elif core_road != null and core_road.has_method("ensure_built"):
+		core_road.call("ensure_built")
 
 
 func _ensure_generated_gameplay_collision_enabled(map: Node3D) -> void:

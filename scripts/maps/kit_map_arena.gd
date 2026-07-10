@@ -74,13 +74,15 @@ func _build_from_preset(preset_id: String) -> void:
 	_kit.build_route_context(
 		spawn_z,
 		goal_z,
+		start_gate_z,
 		path_half_width,
 		segments,
 		gaps,
 		void_width,
 		track_length,
 		surface_pieces if uses_surface_pieces else [],
-		gap_crossing_width_ratio
+		gap_crossing_width_ratio,
+		float(layout.get("spawn_chute_half_width", path_half_width + 0.85))
 	)
 	_kit.build_markers(visual_width, spawn_z, goal_z, start_gate_z, finish_gate_z)
 	var visual_kit: Node = get_node_or_null("VisualKit")
