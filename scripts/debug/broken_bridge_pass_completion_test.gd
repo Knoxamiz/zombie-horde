@@ -7,6 +7,7 @@ extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const MAP_ID := "broken_bridge_pass"
+const GAP_AUDIT := preload("res://scripts/maps/kit_map_gap_audit.gd")
 const ZOMBIE_COUNT := 8
 const PASS := 0
 const FAIL := 1
@@ -148,6 +149,10 @@ func _run() -> void:
 		_fail("No zombies reached goal (max_progress=%.2f)" % max_progress)
 	if max_progress < 0.85 and reached_goal < 1:
 		_fail("Max progress %.2f too low — route may be blocked" % max_progress)
+
+	if not _failures.is_empty():
+		var gap_report: Dictionary = GAP_AUDIT.audit_preset("broken_bridge")
+		print(GAP_AUDIT.format_report(gap_report))
 
 	main_game.queue_free()
 	_finish()

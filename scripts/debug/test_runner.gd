@@ -24,6 +24,7 @@ const CORE_TESTS: Array[Dictionary] = [
 ]
 
 const MAP_TESTS: Array[Dictionary] = [
+	{"name": "kit_map_gap_audit_test", "script": "kit_map_gap_audit_test.gd", "args": []},
 	{"name": "map_selection_test", "script": "map_selection_test.gd", "args": []},
 	{
 		"name": "broken_bridge_pass_completion_test",

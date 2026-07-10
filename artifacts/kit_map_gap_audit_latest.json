@@ -1,0 +1,78 @@
+{
+	"issues": [],
+	"passed": true,
+	"presets": [
+		{
+			"gap_count": 3,
+			"gaps": [
+				{
+					"center_z": -44.0,
+					"collision_half_width": 2.47499990463257,
+					"deck_span_ratio": 0.549999978807237,
+					"expected_visual_half_width": 2.475,
+					"gap_index": 0,
+					"issues": [],
+					"path_half_width": 4.5,
+					"visual_half_width": 2.47499990463257,
+					"visual_ratio": 0.55,
+					"z0": -48.0,
+					"z1": -40.0
+				},
+				{
+					"center_z": -4.0,
+					"collision_half_width": 2.47499990463257,
+					"deck_span_ratio": 0.549999978807237,
+					"expected_visual_half_width": 2.475,
+					"gap_index": 1,
+					"issues": [],
+					"path_half_width": 4.5,
+					"visual_half_width": 2.47499990463257,
+					"visual_ratio": 0.55,
+					"z0": -8.0,
+					"z1": 0.0
+				},
+				{
+					"center_z": 36.0,
+					"collision_half_width": 2.47499990463257,
+					"deck_span_ratio": 0.549999978807237,
+					"expected_visual_half_width": 2.475,
+					"gap_index": 2,
+					"issues": [],
+					"path_half_width": 4.5,
+					"visual_half_width": 2.47499990463257,
+					"visual_ratio": 0.55,
+					"z0": 32.0,
+					"z1": 40.0
+				}
+			],
+			"issues": [],
+			"passed": true,
+			"path_half_width": 4.5,
+			"preset_id": "broken_bridge",
+			"visual_ratio": 0.55
+		},
+		{
+			"gap_count": 1,
+			"gaps": [
+				{
+					"center_z": -8.0,
+					"collision_half_width": 3.82500004768372,
+					"deck_span_ratio": 0.450000005609849,
+					"expected_visual_half_width": 3.825,
+					"gap_index": 0,
+					"issues": [],
+					"path_half_width": 8.5,
+					"visual_half_width": 3.82500004768372,
+					"visual_ratio": 0.45,
+					"z0": -28.0,
+					"z1": 12.0
+				}
+			],
+			"issues": [],
+			"passed": true,
+			"path_half_width": 8.5,
+			"preset_id": "vehicle_yard",
+			"visual_ratio": 0.45
+		}
+	]
+}

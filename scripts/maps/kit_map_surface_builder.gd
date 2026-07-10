@@ -145,9 +145,12 @@ static func build_gap_crossings(
 	path_half_width: float,
 	surface_pieces: Array,
 	visual_width_ratio: float = DEFAULT_GAP_CROSSING_WIDTH_RATIO,
-	collision_width_ratio: float = 1.0
+	collision_width_ratio: float = -1.0
 ) -> void:
-	var crossing_half_width: float = gap_crossing_half_width(path_half_width, collision_width_ratio)
+	var resolved_collision_ratio: float = (
+		visual_width_ratio if collision_width_ratio < 0.0 else collision_width_ratio
+	)
+	var crossing_half_width: float = gap_crossing_half_width(path_half_width, resolved_collision_ratio)
 	for raw_gap in gaps:
 		if raw_gap is not Dictionary:
 			continue
