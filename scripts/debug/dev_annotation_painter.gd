@@ -28,10 +28,11 @@ const SPRAY_LABELS: Dictionary = {
 	SprayColor.SHOULD_WALK: "should_walk",
 }
 
-const STAMP_RADIUS: float = 0.24
-const STAMP_HEIGHT: float = 0.07
-const MIN_STAMP_DISTANCE_SQ: float = 0.035
-const RAY_LENGTH: float = 800.0
+const STAMP_RADIUS: float = 0.42
+const STAMP_HEIGHT: float = 0.09
+const MIN_STAMP_DISTANCE_SQ: float = 0.02
+const RAY_LENGTH: float = 1200.0
+const ALL_COLLISION_MASK: int = 0x7FFFFFFF
 
 @export var race_world_path: NodePath
 @export var race_map_controller_path: NodePath
@@ -51,6 +52,8 @@ var _current_stroke: Dictionary = {}
 var _is_spraying: bool = false
 var _last_stamp_position: Vector3 = Vector3(INF, INF, INF)
 var _panel_blocks_input: bool = false
+var _last_spray_miss_reason: String = ""
+var _last_spray_hit_source: String = ""
 
 
 func _enter_tree() -> void:
@@ -92,9 +95,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-func _input(event: InputEvent) -> void:
+func process_paint_input(event: InputEvent) -> bool:
 	if not _paint_mode_enabled or _panel_blocks_input:
-		return
+		return false
 
 	var mouse_button: InputEventMouseButton = event as InputEventMouseButton
 	if mouse_button != null and mouse_button.button_index == MOUSE_BUTTON_LEFT:
@@ -103,13 +106,14 @@ func _input(event: InputEvent) -> void:
 			_try_spray_at_screen_position(mouse_button.position)
 		else:
 			_end_stroke()
-		get_viewport().set_input_as_handled()
-		return
+		return true
 
 	var mouse_motion: InputEventMouseMotion = event as InputEventMouseMotion
 	if mouse_motion != null and _is_spraying and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_try_spray_at_screen_position(mouse_motion.position)
-		get_viewport().set_input_as_handled()
+		return true
+
+	return false
 
 
 func set_panel_blocks_input(blocked: bool) -> void:
@@ -124,6 +128,9 @@ func set_paint_mode_enabled(enabled: bool) -> void:
 	if _paint_mode_enabled == enabled:
 		return
 	_paint_mode_enabled = enabled
+	if not enabled:
+		_last_spray_miss_reason = ""
+		_last_spray_hit_source = ""
 	if _spectator_camera == null:
 		_spectator_camera = get_node_or_null(spectator_camera_path) as SpectatorCameraController
 	if _spectator_camera != null:
@@ -174,8 +181,18 @@ func get_stroke_count() -> int:
 
 
 func get_status_text() -> String:
-	var mode_text: String = "ON" if _paint_mode_enabled else "off"
-	return "Paint: %s | strokes: %d | stamps: %d" % [mode_text, get_stroke_count(), get_stamp_count()]
+	if not _paint_mode_enabled:
+		return "Paint: off | strokes: %d | stamps: %d" % [get_stroke_count(), get_stamp_count()]
+
+	var hint: String = "left-drag on map"
+	if _panel_blocks_input:
+		hint = "close F3 panel first"
+	elif not _last_spray_miss_reason.is_empty() and get_stamp_count() == 0:
+		hint = _last_spray_miss_reason
+	elif not _last_spray_hit_source.is_empty():
+		hint = "hit: %s" % _last_spray_hit_source
+
+	return "Paint: ON | %s | strokes: %d | stamps: %d" % [hint, get_stroke_count(), get_stamp_count()]
 
 
 func clear_all_paint() -> void:
@@ -263,6 +280,8 @@ func _try_spray_at_screen_position(screen_position: Vector2) -> void:
 		return
 
 	var world_position: Vector3 = hit["position"]
+	_last_spray_hit_source = str(hit.get("source", "physics"))
+	_last_spray_miss_reason = ""
 	if _last_stamp_position.distance_squared_to(world_position) < MIN_STAMP_DISTANCE_SQ:
 		return
 
@@ -281,21 +300,109 @@ func _try_spray_at_screen_position(screen_position: Vector2) -> void:
 func _raycast_from_screen(screen_position: Vector2) -> Dictionary:
 	var camera: Camera3D = _get_active_camera()
 	if camera == null:
+		_last_spray_miss_reason = "no active camera"
 		return {}
 
-	var from: Vector3 = camera.project_ray_origin(screen_position)
-	var to: Vector3 = from + camera.project_ray_normal(screen_position) * RAY_LENGTH
+	var ray_origin: Vector3 = camera.project_ray_origin(screen_position)
+	var ray_direction: Vector3 = camera.project_ray_normal(screen_position)
+	if ray_direction.length_squared() < 0.0001:
+		_last_spray_miss_reason = "invalid camera ray"
+		return {}
+
 	var world: World3D = camera.get_world_3d()
-	if world == null:
-		return {}
+	if world != null:
+		var query := PhysicsRayQueryParameters3D.create(
+			ray_origin,
+			ray_origin + ray_direction * RAY_LENGTH
+		)
+		query.collide_with_areas = true
+		query.collide_with_bodies = true
+		query.collision_mask = ALL_COLLISION_MASK
+		var physics_hit: Dictionary = world.direct_space_state.intersect_ray(query)
+		if not physics_hit.is_empty():
+			physics_hit["source"] = "physics"
+			return physics_hit
 
-	var query := PhysicsRayQueryParameters3D.create(from, to)
-	query.collide_with_areas = true
-	query.collide_with_bodies = true
-	var hit: Dictionary = world.direct_space_state.intersect_ray(query)
-	if hit.is_empty():
-		return {}
-	return hit
+	var plane_hit: Variant = _raycast_fallback_planes(ray_origin, ray_direction)
+	if plane_hit is Vector3:
+		return {
+			"position": plane_hit,
+			"normal": Vector3.UP,
+			"source": "deck_plane",
+		}
+
+	_last_spray_miss_reason = "aim at road or gap (no surface hit)"
+	return {}
+
+
+static func intersect_ray_with_plane_y(
+	ray_origin: Vector3,
+	ray_direction: Vector3,
+	plane_y: float
+) -> Variant:
+	if absf(ray_direction.y) < 0.0001:
+		return null
+	var distance: float = (plane_y - ray_origin.y) / ray_direction.y
+	if distance < 0.0 or distance > RAY_LENGTH:
+		return null
+	return ray_origin + ray_direction * distance
+
+
+func _raycast_fallback_planes(ray_origin: Vector3, ray_direction: Vector3) -> Variant:
+	var plane_heights: Array[float] = _resolve_fallback_plane_heights()
+	for plane_y: float in plane_heights:
+		var hit_position: Variant = intersect_ray_with_plane_y(ray_origin, ray_direction, plane_y)
+		if hit_position is not Vector3:
+			continue
+		if _is_position_within_map_bounds(hit_position as Vector3):
+			return hit_position
+	return null
+
+
+func _resolve_fallback_plane_heights() -> Array[float]:
+	var heights: Array[float] = []
+	_add_unique_height(heights, 0.0)
+	_add_unique_height(heights, 0.8)
+
+	if _race_map_controller == null:
+		_race_map_controller = get_node_or_null(race_map_controller_path) as RaceMapController
+	if _race_map_controller == null:
+		return heights
+
+	var definition: RaceMapDefinition = _race_map_controller.get_active_map_definition()
+	if definition == null:
+		return heights
+
+	if definition.deck_y > 0.0:
+		_add_unique_height(heights, definition.deck_y)
+	_add_unique_height(heights, definition.spawn_origin.y)
+	_add_unique_height(heights, definition.goal_position.y)
+	_add_unique_height(heights, definition.resolve_hazard_surface_y())
+	return heights
+
+
+func _is_position_within_map_bounds(world_position: Vector3) -> bool:
+	if _race_map_controller == null:
+		return true
+
+	var definition: RaceMapDefinition = _race_map_controller.get_active_map_definition()
+	if definition == null:
+		return true
+
+	var half_width: float = maxf(definition.out_of_bounds_half_width, definition.lane_half_width + 4.0)
+	if absf(world_position.x) > half_width + 2.0:
+		return false
+
+	var min_z: float = definition.out_of_bounds_min_z - 2.0
+	var max_z: float = definition.out_of_bounds_max_z + 2.0
+	return world_position.z >= min_z and world_position.z <= max_z
+
+
+static func _add_unique_height(heights: Array[float], value: float) -> void:
+	for existing: float in heights:
+		if is_equal_approx(existing, value):
+			return
+	heights.append(value)
 
 
 func _get_active_camera() -> Camera3D:
@@ -327,8 +434,12 @@ func _add_stamp(world_position: Vector3, surface_normal: Vector3) -> void:
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = SPRAY_COLORS[_spray_color]
+	material.emission_enabled = true
+	material.emission = SPRAY_COLORS[_spray_color]
+	material.emission_energy_multiplier = 1.35
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.no_depth_test = true
 	stamp.material_override = material
 
 	var up: Vector3 = surface_normal.normalized()

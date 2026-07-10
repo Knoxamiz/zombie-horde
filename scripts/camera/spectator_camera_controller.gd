@@ -206,6 +206,13 @@ func _handle_annotation_paint_input(event: InputEvent) -> void:
 		_pitch_degrees = clamp(_pitch_degrees, min_pitch_degrees, max_pitch_degrees)
 		_apply_rotation()
 		get_viewport().set_input_as_handled()
+		return
+
+	for node in get_tree().get_nodes_in_group(DevAnnotationPainter.GROUP_NAME):
+		var painter: DevAnnotationPainter = node as DevAnnotationPainter
+		if painter != null and painter.process_paint_input(event):
+			get_viewport().set_input_as_handled()
+			return
 
 func set_director_enabled(enabled: bool) -> void:
 	_set_director_enabled(enabled)
@@ -233,7 +240,7 @@ func _on_camera_shake_requested(strength: float, duration: float) -> void:
 	_shake_timer = max(_shake_timer, duration)
 
 func _on_round_started(_round_number: int) -> void:
-	if auto_director_on_round_start:
+	if auto_director_on_round_start and not _annotation_paint_active:
 		_set_director_enabled(true)
 
 func _on_round_ended(_winner_name: String, _base_won: bool) -> void:
