@@ -48,7 +48,7 @@ Choose one:
 ### 6. Open agent task with template
 
 ```
-Map: broken_bridge_candidate
+Map: broken_bridge_pass
 Bug: zombies walk on black gap void (should fall)
 Spray: artifacts/dev_annotation_latest.json attached
 Expected: fall through void outside crossing width

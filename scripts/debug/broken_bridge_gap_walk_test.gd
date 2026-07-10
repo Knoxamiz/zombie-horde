@@ -7,6 +7,7 @@ extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
 const MAP_ID := "broken_bridge_pass"
+const BOOT := preload("res://scripts/debug/headless_race_test_boot.gd")
 const PRESETS := preload("res://scripts/maps/map_kit_layout_presets.gd")
 const SURFACE_BUILDER := preload("res://scripts/maps/kit_map_surface_builder.gd")
 const PASS := 0
@@ -37,7 +38,7 @@ func _run() -> void:
 		float(layout.get("gap_crossing_width_ratio", 0.55))
 	)
 
-	var packed: PackedScene = load(MAIN_GAME_SCENE)
+	var packed: PackedScene = BOOT.load_main_game_scene()
 	if packed == null:
 		_fail("Could not load main game scene")
 		_finish()
@@ -47,19 +48,12 @@ func _run() -> void:
 	root.add_child(main_game)
 	await create_timer(0.6).timeout
 
-	var map_controller: RaceMapController = main_game.get_node_or_null(
-		"Systems/RaceMapController"
-	) as RaceMapController
-	var round_manager: RoundManager = main_game.get_node_or_null(
-		"Systems/RoundManager"
-	) as RoundManager
-	var zombie_manager: ZombieManager = main_game.get_node_or_null(
-		"Systems/ZombieManager"
-	) as ZombieManager
+	var systems: Dictionary = BOOT.get_race_systems(main_game)
+	var map_controller: RaceMapController = systems.get("map_controller")
+	var round_manager: RoundManager = systems.get("round_manager")
+	var zombie_manager: ZombieManager = systems.get("zombie_manager")
 	var zombie_config: ZombieConfig = map_controller.zombie_config if map_controller != null else null
-	var debug_join: DebugJoinSource = main_game.get_node_or_null(
-		"Systems/DebugJoinSource"
-	) as DebugJoinSource
+	var debug_join: DebugJoinSource = systems.get("debug_join")
 	if map_controller == null or round_manager == null or zombie_manager == null or zombie_config == null or debug_join == null:
 		_fail("Missing race systems")
 		main_game.queue_free()
@@ -68,6 +62,8 @@ func _run() -> void:
 
 	map_controller.set_active_map_by_id(MAP_ID)
 	await create_timer(0.2).timeout
+	BOOT.activate_race_phase(main_game)
+	BOOT.configure_standard_test_round(round_manager, map_controller)
 
 	if zombie_config.gap_void_zones.is_empty():
 		_fail("Broken Bridge should configure gap_void_zones on zombie_config")
@@ -79,12 +75,11 @@ func _run() -> void:
 		layout.get("surface_pieces", []), float(gap["z0"]), float(gap["z1"]), 0.0
 	)
 
-	var flow: GameFlowController = main_game.get_node_or_null(
-		"Systems/GameFlowController"
-	) as GameFlowController
+	var flow: GameFlowController = systems.get("game_flow")
 	if flow != null:
 		flow.show_race()
 	round_manager.configure_immediate_launch_for_tests()
+	await _probe_gap_position(
 		round_manager,
 		zombie_manager,
 		debug_join,
@@ -117,8 +112,10 @@ func _probe_gap_position(
 	round_manager.reset_round(false)
 	zombie_manager.clear_all_zombies()
 	debug_join.request_random_join()
-	await create_timer(0.1).timeout
+	await create_timer(0.15).timeout
 	round_manager.start_round()
+	if round_manager.state == RoundManager.RoundState.COUNTDOWN:
+		round_manager.launch_round()
 	if not await _wait_for_state(round_manager, RoundManager.RoundState.RUNNING, 10.0):
 		_fail("%s: round did not start" % label)
 		return

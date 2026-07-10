@@ -1,7 +1,7 @@
 extends Node
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
-const DEFAULT_PROTOTYPE_MAP_ID := "broken_bridge_candidate"
+const DEFAULT_PROTOTYPE_MAP_ID := "broken_bridge_pass"
 
 @export var prototype_map_id: String = DEFAULT_PROTOTYPE_MAP_ID
 @export var auto_load_on_ready: bool = true

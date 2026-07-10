@@ -9,8 +9,8 @@ _Settling Broken Bridge gap behavior and dev tooling (spray paint + CI)._
 
 ## Map / area
 
-<!-- e.g. broken_bridge_candidate, long_road, lobby -->
-`broken_bridge_candidate`
+<!-- e.g. broken_bridge_pass, quarantine_boulevard, lobby -->
+`broken_bridge_pass`
 
 ## Evidence
 

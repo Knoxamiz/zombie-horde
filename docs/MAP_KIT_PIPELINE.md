@@ -211,32 +211,21 @@ These remain for future re-enable but are **not** in the playable roster:
 
 Re-enable by setting `enabled: true` and `status: "playable"` in `MapCatalog` after validation.
 
-## Broken Bridge Candidate
+## Broken Bridge (playable)
 
-**Scene:** `scenes/maps/broken_bridge_candidate.tscn`  
-**Resource:** `resources/maps/broken_bridge_candidate.tres`  
-**Builder:** `scripts/maps/blueprint_map_arena.gd`
+**Scene:** `scenes/maps/broken_bridge_pass.tscn`  
+**Resource:** `resources/maps/broken_bridge_pass.tres`  
+**Map ID:** `broken_bridge_pass` — playable in Streamer Settings and map catalog.
 
-Blueprint-kit candidate built from `bridge_lab_test`. Registered in `MapCatalog` as `prototype` / `enabled: false` — not in Streamer Settings.
+Kit-built signature map with 3 gaps, narrow `gap_crossing` collision, and zombie-side `gap_void_zones` authority.
 
-Open directly in Godot or run the scene (F6) to test without Map Lab UI.
-
-### Prototype load test (dev only)
+### Load test (dev only)
 
 Headless CI:
 
 ```bash
 godot --headless --path . -s res://scripts/debug/prototype_map_load_test.gd
 ```
-
-In-editor visual inspection:
-
-1. Open `scenes/debug/prototype_map_load_test.tscn`
-2. Press F6
-3. Main game loads with `broken_bridge_candidate` through `RaceMapController.load_prototype_map_for_test()`
-4. Press Esc to restore the saved playable map
-
-This path does not modify Streamer Settings or saved map selection.
 
 ### Real gameplay test (dev only)
 
@@ -256,11 +245,4 @@ godot --headless --path . -s res://scripts/debug/broken_bridge_real_gameplay_tes
 godot --headless --path . -s res://scripts/debug/broken_bridge_real_gameplay_test.gd -- --skip-stress
 ```
 
-In-editor visual inspection:
-
-1. Open `scenes/debug/broken_bridge_real_gameplay_test.tscn`
-2. Press F6
-3. Main game loads `broken_bridge_candidate`, starts a real race with 5 zombies
-4. Press Esc to restore the saved playable map
-
-The headless test also verifies OOB bounds, bridge void kill zones, camera framing, HUD wiring, and City Highway restore.
+The headless test verifies OOB bounds, gap void behavior, camera framing, and catalog integrity on `broken_bridge_pass`.

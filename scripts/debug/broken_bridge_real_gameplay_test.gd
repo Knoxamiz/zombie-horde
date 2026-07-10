@@ -1,7 +1,7 @@
 extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
-const MAP_ID := "broken_bridge_candidate"
+const MAP_ID := "broken_bridge_pass"
 const _BRIDGE_LAYOUT := preload("res://scripts/maps/blueprints/broken_bridge_test_layout.gd")
 const PASS := 0
 const FAIL := 1
@@ -661,10 +661,8 @@ func _verify_catalog_unchanged() -> void:
 	if MapCatalog.get_playable_count() != 8:
 		_fail("Playable map count changed after gameplay tests (expected 8)")
 	var entry: Dictionary = MapCatalog.get_entry_by_id(MAP_ID)
-	if bool(entry.get("enabled", true)):
-		_fail("broken_bridge_candidate became enabled")
-	if str(entry.get("status", "")) != MapCatalog.STATUS_PROTOTYPE:
-		_fail("broken_bridge_candidate status changed")
+	if not MapCatalog.is_entry_playable(entry):
+		_fail("%s should remain playable after gameplay tests" % MAP_ID)
 
 
 func _parse_zombie_counts() -> Array[int]:

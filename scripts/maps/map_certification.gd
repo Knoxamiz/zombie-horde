@@ -5,6 +5,7 @@ const FINISH_POSITION_TOLERANCE := RaceMapController.FINISH_POSITION_TOLERANCE
 
 const DEFAULT_CERTIFIED_MAP_IDS: Array[String] = [
 	MapCatalog.DEFAULT_MAP_ID,
+	"broken_bridge_pass",
 ]
 
 
