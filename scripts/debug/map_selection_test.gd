@@ -278,11 +278,39 @@ func _test_broken_bridge_gap_crossings() -> PackedStringArray:
 	var visual_kit: Node = arena.get_node_or_null("VisualKit")
 	if visual_kit != null:
 		var plank_count: int = 0
+		var route_shoulder_count: int = 0
+		var gap_shoulder_count: int = 0
+		var gap_z_ranges: Array = layout.get("gaps", [])
 		for child in visual_kit.get_children():
-			if str(child.name).begins_with("GapCrossingPlank"):
-				plank_count += 1
+			if not str(child.name).begins_with("GapCrossingPlank"):
+				continue
+			plank_count += 1
+		for child in visual_kit.get_children():
+			var child_name: String = str(child.name)
+			if not (child_name.begins_with("RouteShoulder") or child_name.begins_with("GapEdgeShoulder")):
+				continue
+			if child_name.begins_with("RouteShoulder"):
+				route_shoulder_count += 1
+			var shoulder_z: float = (child as Node3D).position.z
+			for raw_gap in gap_z_ranges:
+				if raw_gap is Dictionary:
+					var z0: float = float(raw_gap.get("z0", 0.0))
+					var z1: float = float(raw_gap.get("z1", z0))
+					if shoulder_z >= z0 - 0.1 and shoulder_z <= z1 + 0.1:
+						gap_shoulder_count += 1
+						break
 		if plank_count != 3:
 			failures.append("Broken Bridge should show 3 gap crossing planks, got %d" % plank_count)
+		if route_shoulder_count < 40:
+			failures.append(
+				"Broken Bridge should build route shoulders along the track (got %d)"
+				% route_shoulder_count
+			)
+		if gap_shoulder_count < 3:
+			failures.append(
+				"Broken Bridge gaps should keep grey route shoulders (got %d in gap ranges, need >= 3)"
+				% gap_shoulder_count
+			)
 
 	var boundaries: Node = arena.get_node_or_null("GameplayBoundaries")
 	if boundaries == null or boundaries.get_child_count() < 3:
