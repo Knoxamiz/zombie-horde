@@ -45,6 +45,11 @@ bash scripts/debug/run_tests.sh core
 bash scripts/debug/run_tests.sh map
 bash scripts/debug/run_tests.sh certification
 
+# Unified Godot CLI (import, snapshot, tests)
+bash scripts/debug/run_godot.sh import
+bash scripts/debug/run_godot.sh snapshot   # → artifacts/godot_project_snapshot.json
+bash scripts/debug/run_godot.sh test smoke
+
 # Direct
 godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 ```
@@ -61,6 +66,20 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 **Always run smoke before opening a PR.** Run core (or map/certification per guardrails) for gameplay-adjacent changes.
 
 CI runs smoke on every PR and core on `main` push + nightly schedule.
+
+### Godot dev stack
+
+Full guide: [docs/GODOT_DEV_STACK.md](docs/GODOT_DEV_STACK.md)
+
+| Tool | Purpose |
+|------|---------|
+| `scripts/debug/run_godot.sh` | Headless import, snapshot, test tiers |
+| `addons/agent_context_exporter` | Editor: Project → Tools → Export AI Project Snapshot |
+| `artifacts/godot_project_snapshot.json` | Machine-readable project index for agents |
+| `.env.godot` | Engine version pin |
+| `docs/GODOT_PHYSICS_LAYERS.md` | Layer/mask reference |
+
+Cloud agents: run `bash scripts/debug/run_godot.sh snapshot` at session start to refresh the snapshot.
 
 ## Architecture anchors (do not bypass)
 

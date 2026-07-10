@@ -15,6 +15,24 @@ run/main_scene="res://scenes/main_menu/main_menu.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://assets/icon.svg"
 
+[debug]
+
+gdscript/warnings/untyped_declaration=1
+gdscript/warnings/inferred_declaration=1
+gdscript/warnings/unsafe_property_access=1
+
+[layer_names]
+
+3d_physics/layer_1="walk_surfaces"
+3d_physics/layer_3="zombies"
+3d_physics/layer_4="hazards"
+3d_physics/layer_5="pickups"
+3d_physics/layer_6="streamer_base"
+
+[physics]
+
+3d/physics_engine="DEFAULT"
+
 [autoload]
 
 GameEvents="*res://scripts/core/game_events.gd"
@@ -29,3 +47,7 @@ window/size/viewport_width=1600
 window/size/viewport_height=900
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/agent_context_exporter/plugin.cfg")

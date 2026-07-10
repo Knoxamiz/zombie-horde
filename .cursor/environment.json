@@ -1,4 +1,4 @@
 {
-  "install": "bash .cursor/install-godot.sh && godot --headless --path . --import --quit",
+  "install": "bash .cursor/install-godot.sh && bash scripts/debug/run_godot.sh import && bash scripts/debug/run_godot.sh snapshot",
   "start": "export PATH=\"${HOME}/.local/bin:${PATH}\""
 }

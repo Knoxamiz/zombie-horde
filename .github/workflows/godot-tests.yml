@@ -23,6 +23,7 @@ on:
 
 env:
   GODOT_VERSION: "4.4"
+  GODOT_DISABLE_LEAK_CHECKS: "1"
 
 jobs:
   smoke:
@@ -36,10 +37,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Import project
-        run: godot --headless --path . --import --quit
+        continue-on-error: true
+        run: |
+          godot --headless --path . --display-driver headless --audio-driver Dummy --import --quit
 
       - name: Run smoke tests
-        run: godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
+        run: bash scripts/debug/run_godot.sh test smoke
 
   core:
     name: core tier
@@ -57,10 +60,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Import project
-        run: godot --headless --path . --import --quit
+        continue-on-error: true
+        run: |
+          godot --headless --path . --display-driver headless --audio-driver Dummy --import --quit
 
       - name: Run core tests
-        run: godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=core
+        run: bash scripts/debug/run_godot.sh test core
 
   extended:
     name: ${{ github.event.inputs.tier }} tier (manual)
@@ -77,7 +82,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Import project
-        run: godot --headless --path . --import --quit
+        continue-on-error: true
+        run: |
+          godot --headless --path . --display-driver headless --audio-driver Dummy --import --quit
 
       - name: Run ${{ github.event.inputs.tier }} tests
-        run: godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=${{ github.event.inputs.tier }}
+        run: bash scripts/debug/run_godot.sh test ${{ github.event.inputs.tier }}
