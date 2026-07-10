@@ -40,6 +40,7 @@ var _auto_repeat_token: int = 0
 var _auto_repeat_enabled: bool = false
 
 const AUTO_REPEAT_DELAY_SEC: float = 1.5
+const RESTART_SAME_RACE_DELAY_SEC: float = 0.35
 var _round_started_msec: int = 0
 var _race_winner_name: String = ""
 var _next_finish_place: int = 1
@@ -75,7 +76,10 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("round_start"):
-		start_round()
+		if state == RoundState.ENDED:
+			restart_same_race()
+		else:
+			start_round()
 	elif event.is_action_pressed("round_reset"):
 		reset_round()
 	elif event.is_action_pressed("debug_join"):
@@ -87,7 +91,7 @@ func start_round() -> void:
 	if state == RoundState.COUNTDOWN or state == RoundState.RUNNING:
 		return
 	if state == RoundState.ENDED:
-		_emit_post_round_recovery_hint()
+		restart_same_race()
 		return
 	if _zombie_manager == null:
 		return
@@ -138,7 +142,7 @@ func start_round() -> void:
 	_publish_state()
 	_run_countdown(_round_token)
 
-func reset_round() -> void:
+func reset_round(return_to_lobby: bool = true) -> void:
 	_round_token += 1
 	_auto_repeat_token += 1
 	_cancel_post_round_auto_reset()
@@ -167,8 +171,9 @@ func reset_round() -> void:
 	if _base_goal != null:
 		_base_goal.set_goal_enabled(false)
 
-	GameEvents.round_reset.emit()
 	GameEvents.round_countdown_changed.emit(0)
+	if return_to_lobby:
+		GameEvents.round_reset.emit()
 	_publish_queue()
 	_publish_stats()
 	_publish_state()
@@ -419,6 +424,24 @@ func _cancel_post_round_auto_reset() -> void:
 	GameEvents.post_round_auto_reset_tick.emit(0)
 
 
+func restart_same_race() -> bool:
+	if state != RoundState.ENDED or _zombie_manager == null:
+		return false
+
+	var roster_snapshot: Array[Dictionary] = _zombie_manager.capture_roster_snapshot()
+	if roster_snapshot.is_empty():
+		_emit_post_round_recovery_hint()
+		return false
+
+	_cancel_post_round_auto_reset()
+	_schedule_same_race_restart(roster_snapshot)
+	return true
+
+
+func can_restart_same_race() -> bool:
+	return state == RoundState.ENDED and _zombie_manager != null and _zombie_manager.get_total_count() > 0
+
+
 func queue_roster_snapshot(roster: Array[Dictionary]) -> void:
 	if state != RoundState.IDLE:
 		return
@@ -441,6 +464,29 @@ func queue_roster_snapshot(roster: Array[Dictionary]) -> void:
 	_publish_queue()
 
 
+func _schedule_same_race_restart(roster: Array[Dictionary]) -> void:
+	_auto_repeat_token += 1
+	var token: int = _auto_repeat_token
+	GameEvents.command_text_changed.emit(
+		"Restarting same race with %d racers..." % roster.size()
+	)
+	_run_same_race_restart_sequence(token, roster.duplicate(true))
+
+
+func _run_same_race_restart_sequence(token: int, roster: Array[Dictionary]) -> void:
+	await get_tree().create_timer(RESTART_SAME_RACE_DELAY_SEC).timeout
+	if token != _auto_repeat_token or state != RoundState.ENDED:
+		return
+	if roster.is_empty():
+		return
+
+	reset_round(false)
+	queue_roster_snapshot(roster)
+	if pending_participants.is_empty():
+		return
+	start_round()
+
+
 func _schedule_auto_repeat(roster: Array[Dictionary]) -> void:
 	_auto_repeat_token += 1
 	var token: int = _auto_repeat_token
@@ -454,7 +500,7 @@ func _run_auto_repeat_sequence(token: int, roster: Array[Dictionary]) -> void:
 	if roster.is_empty():
 		return
 
-	reset_round()
+	reset_round(false)
 	queue_roster_snapshot(roster)
 	if pending_participants.is_empty():
 		return
@@ -462,7 +508,7 @@ func _run_auto_repeat_sequence(token: int, roster: Array[Dictionary]) -> void:
 
 func _emit_post_round_recovery_hint() -> void:
 	GameEvents.command_text_changed.emit(
-		"Race over! Return to Lobby or press R, then queue viewers for the next race."
+		"Race over! Press Enter to restart same race, or R to return to lobby."
 	)
 
 func is_race_timed_out() -> bool:

@@ -1,6 +1,7 @@
 class_name RoundResultsOverlay
 extends Control
 
+signal restart_requested()
 signal reset_requested()
 
 var _current_winner_name: String = ""
@@ -15,9 +16,12 @@ var _tween: Tween
 @onready var _summary_label: Label = get_node("ResultCard/Margin/VBox/SummaryLabel") as Label
 @onready var _runner_ups_label: Label = get_node("ResultCard/Margin/VBox/Columns/RunnerUpsPanel/Margin/RunnerUpsLabel") as Label
 @onready var _stats_label: Label = get_node("ResultCard/Margin/VBox/Columns/StatsPanel/Margin/StatsLabel") as Label
+@onready var _restart_button: Button = get_node("ResultCard/Margin/VBox/ButtonRow/RestartRaceButton") as Button
 @onready var _return_button: Button = get_node("ResultCard/Margin/VBox/ButtonRow/ReturnLobbyButton") as Button
 
 func _ready() -> void:
+	if _restart_button != null:
+		_restart_button.pressed.connect(_on_restart_pressed)
 	_return_button.pressed.connect(_on_return_lobby_pressed)
 	hide_results(true)
 
@@ -171,6 +175,10 @@ func _join_strings(values: Array[String], separator: String) -> String:
 			result += separator
 		result += values[index]
 	return result
+
+func _on_restart_pressed() -> void:
+	restart_requested.emit()
+
 
 func _on_return_lobby_pressed() -> void:
 	reset_requested.emit()

@@ -169,13 +169,22 @@ layout_mode = 2
 theme_override_constants/separation = 16
 alignment = 1
 
-[node name="ViewStatsButton" type="Button" parent="PodiumCard/Margin/VBox/ButtonRow"]
-custom_minimum_size = Vector2(220, 52)
+[node name="RestartRaceButton" type="Button" parent="PodiumCard/Margin/VBox/ButtonRow"]
+custom_minimum_size = Vector2(240, 52)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.98, 0.9, 0.72, 1)
 theme_override_font_sizes/font_size = 20
 theme_override_styles/hover = SubResource("StyleBox_button_primary_hover")
 theme_override_styles/normal = SubResource("StyleBox_button_primary")
+text = "RESTART SAME RACE"
+
+[node name="ViewStatsButton" type="Button" parent="PodiumCard/Margin/VBox/ButtonRow"]
+custom_minimum_size = Vector2(220, 52)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.9, 0.72, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/hover = SubResource("StyleBox_button_secondary_hover")
+theme_override_styles/normal = SubResource("StyleBox_button_secondary")
 text = "VIEW STATS"
 
 [node name="ReturnLobbyButton" type="Button" parent="PodiumCard/Margin/VBox/ButtonRow"]

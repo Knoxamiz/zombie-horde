@@ -18,6 +18,7 @@ const SMOKE_TESTS: Array[Dictionary] = [
 
 const CORE_TESTS: Array[Dictionary] = [
 	{"name": "race_lifecycle_smoke_test", "script": "race_lifecycle_smoke_test.gd", "args": []},
+	{"name": "race_restart_flow_test", "script": "race_restart_flow_test.gd", "args": []},
 	{"name": "race_finish_contract_test", "script": "race_finish_contract_test.gd", "args": []},
 	{"name": "void_oob_authority_test", "script": "void_oob_authority_test.gd", "args": []},
 	{"name": "map_selection_test", "script": "map_selection_test.gd", "args": []},

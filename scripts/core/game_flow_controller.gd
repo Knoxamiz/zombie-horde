@@ -106,6 +106,10 @@ func show_lobby() -> void:
 func show_race() -> void:
 	_transition_to_phase("race")
 
+
+func get_current_phase() -> String:
+	return _current_phase
+
 func _on_ready_requested() -> void:
 	if _round_manager != null:
 		_round_manager.start_round()
