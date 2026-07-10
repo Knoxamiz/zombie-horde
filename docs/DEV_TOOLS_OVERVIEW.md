@@ -7,6 +7,8 @@ Related docs:
 - [TESTING.md](TESTING.md) — automated headless test tiers
 - [AI_DEVELOPMENT_GUARDRAILS.md](AI_DEVELOPMENT_GUARDRAILS.md) — what not to change casually
 - [PROTECTED_SYSTEMS.md](PROTECTED_SYSTEMS.md) — race/finish/OOB authority
+- [BUG_REPORT_WORKFLOW.md](BUG_REPORT_WORKFLOW.md) — spray paint bug reports for agents
+- [AI_DEV_SETUP.md](AI_DEV_SETUP.md) — cloud agent + CI setup
 
 ---
 

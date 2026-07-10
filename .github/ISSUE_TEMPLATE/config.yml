@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+contact_links:
+  - name: AI Dev Setup Guide
+    url: https://github.com/Knoxamiz/zombie-horde/blob/main/docs/AI_DEV_SETUP.md
+  - name: Bug Report Workflow (Spray Paint)
+    url: https://github.com/Knoxamiz/zombie-horde/blob/main/docs/BUG_REPORT_WORKFLOW.md

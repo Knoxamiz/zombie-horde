@@ -34,7 +34,7 @@ godot --headless --path . -s res://scripts/debug/map_certification_test.gd
 
 # Single map
 godot --headless --path . -s res://scripts/debug/map_certification_test.gd -- --map_id=quarantine_boulevard
-godot --headless --path . -s res://scripts/debug/map_certification_test.gd -- --map_id=broken_bridge_candidate
+godot --headless --path . -s res://scripts/debug/map_certification_test.gd -- --map_id=broken_bridge_pass
 
 # Certification tier (map selection + full certification)
 godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=certification

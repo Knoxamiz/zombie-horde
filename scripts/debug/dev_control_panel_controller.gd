@@ -399,7 +399,7 @@ func _build_spray_paint_card(parent: Control) -> void:
 
 	var steps := Label.new()
 	steps.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	steps.text = "1. Stage race  2. Free cam  3. P to paint  4. Left-drag  5. Export"
+	steps.text = "1. Stage race  2. Enable free cam  3. P (panel auto-closes)  4. Left-drag  5. Export"
 	THEME.apply_label(steps, FONT_SMALL, THEME.COLOR_MUTED)
 	card.add_child(steps)
 
@@ -938,6 +938,8 @@ func _on_annotation_paint_toggled(enabled: bool) -> void:
 	var painter := _ensure_annotation_painter()
 	if painter == null:
 		return
+	if enabled and _panel_open:
+		_close_panel()
 	painter.set_paint_mode_enabled(enabled)
 	_refresh_annotation_status()
 
@@ -1021,6 +1023,8 @@ func _ensure_annotation_painter() -> DevAnnotationPainter:
 
 func _on_annotation_paint_mode_changed(enabled: bool) -> void:
 	_annotation_paint_enabled = enabled
+	if enabled and _panel_open:
+		_close_panel()
 	if _annotation_paint_toggle != null:
 		_annotation_paint_toggle.set_block_signals(true)
 		_annotation_paint_toggle.button_pressed = enabled

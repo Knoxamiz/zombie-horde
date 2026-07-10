@@ -1,0 +1,32 @@
+name: General bug
+description: Non-map bug (UI, race flow, zombies, dev tools)
+title: "[bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+
+  - type: input
+    id: tests
+    attributes:
+      label: Headless test to run
+      placeholder: bash scripts/debug/run_tests.sh smoke

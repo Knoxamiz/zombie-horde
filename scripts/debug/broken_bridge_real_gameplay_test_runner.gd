@@ -1,7 +1,7 @@
 extends Node
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
-const MAP_ID := "broken_bridge_candidate"
+const MAP_ID := "broken_bridge_pass"
 
 @export var prototype_map_id: String = MAP_ID
 @export var zombie_count: int = 5

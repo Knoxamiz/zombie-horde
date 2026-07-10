@@ -7,6 +7,10 @@ See also: [PROTECTED_SYSTEMS.md](PROTECTED_SYSTEMS.md), [AI_DEVELOPMENT_GUARDRAI
 ## Quick start
 
 ```bash
+# Wrapper (finds godot, imports on first run — local + cloud agents)
+bash scripts/debug/run_tests.sh smoke
+
+# Direct
 godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 ```
 

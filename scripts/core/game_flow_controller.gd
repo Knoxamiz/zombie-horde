@@ -132,6 +132,9 @@ func _on_main_menu_requested() -> void:
 func _on_round_state_changed(state_text: String) -> void:
 	match state_text:
 		"Joining":
+			# Same-race restart briefly returns to IDLE/Joining before relaunching.
+			if _current_phase == "race":
+				return
 			if _intro_active:
 				show_intro()
 			else:

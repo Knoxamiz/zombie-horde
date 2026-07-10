@@ -1,0 +1,16 @@
+---
+description: Cloud agent bootstrap — Godot, tests, and session focus
+alwaysApply: true
+---
+
+# Cloud agent bootstrap
+
+On every cloud agent run:
+
+1. Read [AGENTS.md](../../AGENTS.md) and [CURRENT_FOCUS.md](../../CURRENT_FOCUS.md)
+2. Ensure Godot: `bash .cursor/install-godot.sh` if `godot` is missing
+3. Run `bash scripts/debug/run_tests.sh smoke` before and after gameplay changes
+4. For visual/map bugs: check for `artifacts/dev_annotation_latest.json` in the issue or repo
+5. End with the task report format in AGENTS.md
+
+Full setup: [docs/AI_DEV_SETUP.md](../../docs/AI_DEV_SETUP.md)

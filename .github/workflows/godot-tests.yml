@@ -1,0 +1,90 @@
+name: Godot Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # Nightly core regression (UTC 06:00)
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: Test tier to run
+        required: true
+        default: smoke
+        type: choice
+        options:
+          - smoke
+          - core
+          - map
+          - certification
+
+env:
+  GODOT_VERSION: "4.4"
+  GODOT_DISABLE_LEAK_CHECKS: "1"
+
+jobs:
+  smoke:
+    name: smoke tier
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.4
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Import project
+        continue-on-error: true
+        run: |
+          godot --headless --path . --display-driver headless --audio-driver Dummy --import --quit
+
+      - name: Run smoke tests
+        run: bash scripts/debug/run_godot.sh test smoke
+
+  core:
+    name: core tier
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.4
+    timeout-minutes: 30
+    needs: smoke
+    if: >-
+      github.event_name == 'schedule'
+      || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+      || (github.event_name == 'workflow_dispatch' && github.event.inputs.tier == 'core')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Import project
+        continue-on-error: true
+        run: |
+          godot --headless --path . --display-driver headless --audio-driver Dummy --import --quit
+
+      - name: Run core tests
+        run: bash scripts/debug/run_godot.sh test core
+
+  extended:
+    name: ${{ github.event.inputs.tier }} tier (manual)
+    runs-on: ubuntu-24.04
+    container:
+      image: barichello/godot-ci:4.4
+    timeout-minutes: 45
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      && github.event.inputs.tier != 'smoke'
+      && github.event.inputs.tier != 'core'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Import project
+        continue-on-error: true
+        run: |
+          godot --headless --path . --display-driver headless --audio-driver Dummy --import --quit
+
+      - name: Run ${{ github.event.inputs.tier }} tests
+        run: bash scripts/debug/run_godot.sh test ${{ github.event.inputs.tier }}
