@@ -206,7 +206,7 @@ func build_gap_void_visuals(
 		mat.albedo_color = void_color
 		mat.roughness = 0.95
 		pit.material_override = mat
-		pit.position = Vector3(0.0, lip_y - pit_depth * 0.5 - 0.08, center_z)
+		pit.position = Vector3(0.0, lip_y - pit_depth * 0.5 - 0.65, center_z)
 		_visual_root.add_child(pit)
 
 
@@ -255,7 +255,7 @@ func build_gap_edge_shoulder_visuals(
 			var surface_y: float = maxf(shoulder_y, maxf(lip_y, _surface_y_at(edge_z)) - 0.18)
 			for side in [-1.0, 1.0]:
 				var shoulder := MeshInstance3D.new()
-				shoulder.name = "GapEdgeShoulder"
+				shoulder.name = "GapEdgeShoulder_%d_%s" % [int(edge_z * 10.0), "L" if side < 0.0 else "R"]
 				var mesh := BoxMesh.new()
 				mesh.size = Vector3(shoulder_width, 0.1, strip_length)
 				shoulder.mesh = mesh
@@ -288,19 +288,18 @@ func build_route_shoulders(
 	var z: float = z_start
 	while z < z_end:
 		var center_z: float = min(z + strip_length * 0.5, z_end - strip_length * 0.5)
-		if not _z_in_gap_ranges(center_z, gaps):
-			var surface_y: float = _surface_y_at(center_z)
-			var y: float = max(shoulder_y, surface_y - 0.18)
-			for side in [-1.0, 1.0]:
-				var shoulder := MeshInstance3D.new()
-				shoulder.name = "RouteShoulder"
-				var mesh := BoxMesh.new()
-				mesh.size = Vector3(shoulder_width, 0.1, strip_length)
-				shoulder.mesh = mesh
-				shoulder.material_override = MAT_ARENA_GROUND
-				var x: float = side * (road_half_width + shoulder_width * 0.5 + 0.35)
-				shoulder.position = Vector3(x, y, center_z)
-				_visual_root.add_child(shoulder)
+		var surface_y: float = _surface_y_at(center_z)
+		var y: float = max(shoulder_y, surface_y - 0.18)
+		for side in [-1.0, 1.0]:
+			var shoulder := MeshInstance3D.new()
+			shoulder.name = "RouteShoulder_%d_%s" % [int(center_z * 10.0), "L" if side < 0.0 else "R"]
+			var mesh := BoxMesh.new()
+			mesh.size = Vector3(shoulder_width, 0.1, strip_length)
+			shoulder.mesh = mesh
+			shoulder.material_override = MAT_ARENA_GROUND
+			var x: float = side * (road_half_width + shoulder_width * 0.5 + 0.35)
+			shoulder.position = Vector3(x, y, center_z)
+			_visual_root.add_child(shoulder)
 		z += strip_length
 
 
@@ -702,6 +701,16 @@ func _compose_bridge_gap_visuals(gaps: Array[Dictionary]) -> void:
 					else StreetVariant.CRACK2
 				)
 				_place_street_tile(x, 0.0, edge_z, lip_variant)
+
+		# Full gap interior deck tiles — visual only on sides; center matches narrow walk plank.
+		for x in deck_columns:
+			var is_center: bool = abs(x) < 0.1
+			var interior_variant: StreetVariant = (
+				StreetVariant.STRAIGHT
+				if is_center
+				else StreetVariant.CRACK2 if _hashf(int(gap_center + x), 47 + gap_index) > 0.35 else StreetVariant.CRACK1
+			)
+			_place_street_tile(x, 0.0, gap_center, interior_variant)
 
 		for guide_z in [z0 + 0.8, gap_center, z1 - 0.8]:
 			var cone_x: float = (
