@@ -9,6 +9,7 @@ const REFRESH_INTERVAL_SEC := 0.25
 @export var zombie_manager_path: NodePath
 @export var race_map_controller_path: NodePath
 @export var race_world_path: NodePath
+@export var spectator_camera_path: NodePath
 
 var _round_manager: RoundManager
 var _debug_join_source: DebugJoinSource
@@ -19,12 +20,15 @@ var _flow_analyzer: ZombieFlowAnalyzer
 var _markers_root: Node3D
 var _fake_viewer_simulator: FakeViewerSimulator
 var _stress_profiler: PerformanceStressProfiler
+var _annotation_painter: DevAnnotationPainter
 
 var _panel_open: bool = false
 var _refresh_elapsed: float = 0.0
 var _flow_analyzer_enabled: bool = false
 var _flow_markers_visible: bool = true
 var _blueprint_debug_visible: bool = false
+var _annotation_paint_enabled: bool = false
+var _annotation_marks_visible: bool = true
 
 var _root: PanelContainer
 var _state_label: Label
@@ -39,7 +43,13 @@ var _flow_markers_toggle: CheckButton
 var _stress_status_label: Label
 var _blueprint_debug_toggle: CheckButton
 var _hint_label: Label
+var _paint_hint_label: Label
 var _dev_map_status_label: Label
+var _annotation_status_label: Label
+var _annotation_paint_toggle: CheckButton
+var _annotation_marks_toggle: CheckButton
+var _annotation_note_field: LineEdit
+var _annotation_color_buttons: Dictionary = {}
 
 const FALLTHROUGH_LOWER_DECK_TEST_MAP_ID := "ai_generated_fallthrough_lower_deck_test"
 
@@ -58,6 +68,7 @@ func _ready() -> void:
 	_ensure_stress_profiler()
 	_build_ui()
 	_build_hint_overlay()
+	_ensure_annotation_painter()
 	set_process(false)
 
 
@@ -96,6 +107,8 @@ func _open_panel() -> void:
 	_root.visible = true
 	if _hint_label != null:
 		_hint_label.visible = false
+	if _annotation_painter != null:
+		_annotation_painter.set_panel_blocks_input(true)
 	set_process(true)
 	_refresh_display()
 
@@ -105,6 +118,8 @@ func _close_panel() -> void:
 	_root.visible = false
 	if _hint_label != null:
 		_hint_label.visible = true
+	if _annotation_painter != null:
+		_annotation_painter.set_panel_blocks_input(false)
 	set_process(false)
 
 
@@ -216,6 +231,35 @@ func _build_ui() -> void:
 	])
 	_add_button(body, "Run 20-Viewer Test + Analyze", _on_run_flow_test_pressed)
 
+	_add_section(body, "Map Annotation Spray")
+	_add_hint(
+		body,
+		(
+			"Mark bugs in-world with spray paint. Enable Race Free Cam first.\n"
+			+ "P = toggle paint mode. Left-drag = spray. Right-drag = look. Esc = exit paint.\n"
+			+ "Export writes artifacts/dev_annotation_latest.json + .png for agent review."
+		)
+	)
+	_annotation_status_label = _add_readout(body, "Paint: off")
+	_annotation_paint_toggle = CheckButton.new()
+	_annotation_paint_toggle.text = "Annotation Paint Mode (P)"
+	_annotation_paint_toggle.toggled.connect(_on_annotation_paint_toggled)
+	body.add_child(_annotation_paint_toggle)
+	_annotation_marks_toggle = CheckButton.new()
+	_annotation_marks_toggle.text = "Show Spray Marks"
+	_annotation_marks_toggle.button_pressed = true
+	_annotation_marks_toggle.toggled.connect(_on_annotation_marks_toggled)
+	body.add_child(_annotation_marks_toggle)
+	_add_annotation_color_row(body)
+	_annotation_note_field = LineEdit.new()
+	_annotation_note_field.placeholder_text = "Note for agent (optional)"
+	_annotation_note_field.text_changed.connect(_on_annotation_note_changed)
+	body.add_child(_annotation_note_field)
+	_add_button_row(body, [
+		["Export Report", _on_export_annotation_pressed],
+		["Clear Paint", _on_clear_annotation_pressed],
+	])
+
 	_add_section(body, "Performance / Stress Profiler")
 	_add_hint(body, "Dev-only FPS sampling during fake viewer stress runs.")
 	_stress_status_label = _add_readout(body, "Profiler: idle")
@@ -246,16 +290,28 @@ func _build_ui() -> void:
 func _build_hint_overlay() -> void:
 	_hint_label = Label.new()
 	_hint_label.name = "DevToolsHint"
-	_hint_label.text = "Dev Tools: Press F3"
+	_hint_label.text = "Dev Tools: F3 | Spray Paint: P"
 	_hint_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hint_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_hint_label.offset_left = -220.0
+	_hint_label.offset_left = -280.0
 	_hint_label.offset_top = -36.0
 	_hint_label.offset_right = -12.0
 	_hint_label.offset_bottom = -12.0
 	_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_hint_label.modulate = Color(0.82, 0.86, 0.92, 0.88)
 	add_child(_hint_label)
+
+	_paint_hint_label = Label.new()
+	_paint_hint_label.name = "PaintModeHint"
+	_paint_hint_label.text = "SPRAY PAINT: left-drag mark | right-drag look | P or Esc exit"
+	_paint_hint_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_paint_hint_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_paint_hint_label.offset_top = 8.0
+	_paint_hint_label.offset_bottom = 32.0
+	_paint_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_paint_hint_label.modulate = Color(1.0, 0.45, 0.55, 0.95)
+	_paint_hint_label.visible = false
+	add_child(_paint_hint_label)
 
 
 func _on_self_check_pressed() -> void:
@@ -633,6 +689,142 @@ func _on_blueprint_debug_toggled(enabled: bool) -> void:
 	arena.build_map()
 
 
+func _add_annotation_color_row(parent: Control) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	var specs: Array = [
+		["Bug", DevAnnotationPainter.SprayColor.BUG],
+		["Visual", DevAnnotationPainter.SprayColor.VISUAL],
+		["Walk", DevAnnotationPainter.SprayColor.SHOULD_WALK],
+	]
+	for spec in specs:
+		var button := Button.new()
+		button.text = str(spec[0])
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var color: DevAnnotationPainter.SprayColor = spec[1]
+		button.pressed.connect(_on_annotation_color_pressed.bind(color))
+		row.add_child(button)
+		_annotation_color_buttons[color] = button
+	parent.add_child(row)
+	_set_annotation_color_button_states()
+
+
+func _on_annotation_paint_toggled(enabled: bool) -> void:
+	var painter := _ensure_annotation_painter()
+	if painter == null:
+		return
+	painter.set_paint_mode_enabled(enabled)
+	_refresh_annotation_status()
+
+
+func _on_annotation_marks_toggled(visible: bool) -> void:
+	_annotation_marks_visible = visible
+	var painter := _ensure_annotation_painter()
+	if painter != null:
+		painter.set_marks_visible(visible)
+	_refresh_annotation_status()
+
+
+func _on_annotation_color_pressed(color: DevAnnotationPainter.SprayColor) -> void:
+	var painter := _ensure_annotation_painter()
+	if painter != null:
+		painter.set_spray_color(color)
+	_set_annotation_color_button_states()
+	_refresh_annotation_status()
+
+
+func _on_annotation_note_changed(new_text: String) -> void:
+	var painter := _ensure_annotation_painter()
+	if painter != null:
+		painter.set_note(new_text)
+
+
+func _on_clear_annotation_pressed() -> void:
+	var painter := _ensure_annotation_painter()
+	if painter == null:
+		return
+	painter.clear_all_paint()
+	_refresh_annotation_status()
+
+
+func _on_export_annotation_pressed() -> void:
+	_export_annotation_report()
+
+
+func _export_annotation_report() -> void:
+	var painter := _ensure_annotation_painter()
+	if painter == null:
+		return
+	var was_panel_open: bool = _panel_open
+	if was_panel_open:
+		_close_panel()
+	await painter.export_report(true)
+	if was_panel_open:
+		_open_panel()
+	_refresh_annotation_status()
+
+
+func _ensure_annotation_painter() -> DevAnnotationPainter:
+	if _annotation_painter != null and is_instance_valid(_annotation_painter):
+		return _annotation_painter
+
+	var systems: Node = get_node_or_null("../../Systems")
+	if systems == null:
+		return null
+
+	_annotation_painter = systems.get_node_or_null("DevAnnotationPainter") as DevAnnotationPainter
+	if _annotation_painter == null:
+		_annotation_painter = DevAnnotationPainter.new()
+		_annotation_painter.name = "DevAnnotationPainter"
+		_annotation_painter.race_world_path = race_world_path
+		_annotation_painter.race_map_controller_path = race_map_controller_path
+		_annotation_painter.spectator_camera_path = spectator_camera_path
+		systems.add_child(_annotation_painter)
+
+	if not _annotation_painter.paint_mode_changed.is_connected(_on_annotation_paint_mode_changed):
+		_annotation_painter.paint_mode_changed.connect(_on_annotation_paint_mode_changed)
+	if not _annotation_painter.strokes_changed.is_connected(_on_annotation_strokes_changed):
+		_annotation_painter.strokes_changed.connect(_on_annotation_strokes_changed)
+	return _annotation_painter
+
+
+func _on_annotation_paint_mode_changed(enabled: bool) -> void:
+	_annotation_paint_enabled = enabled
+	if _annotation_paint_toggle != null:
+		_annotation_paint_toggle.set_block_signals(true)
+		_annotation_paint_toggle.button_pressed = enabled
+		_annotation_paint_toggle.set_block_signals(false)
+	if _paint_hint_label != null:
+		_paint_hint_label.visible = enabled
+	_refresh_annotation_status()
+
+
+func _on_annotation_strokes_changed() -> void:
+	_refresh_annotation_status()
+
+
+func _set_annotation_color_button_states() -> void:
+	var painter := _ensure_annotation_painter()
+	if painter == null:
+		return
+	var active_color: DevAnnotationPainter.SprayColor = painter.get_spray_color()
+	for color in _annotation_color_buttons.keys():
+		var button: Button = _annotation_color_buttons[color]
+		if button == null:
+			continue
+		button.disabled = color == active_color
+
+
+func _refresh_annotation_status() -> void:
+	if _annotation_status_label == null:
+		return
+	var painter := _ensure_annotation_painter()
+	if painter == null:
+		_annotation_status_label.text = "Paint: unavailable"
+		return
+	_annotation_status_label.text = painter.get_status_text()
+
+
 func _ensure_flow_analyzer() -> ZombieFlowAnalyzer:
 	if _flow_analyzer != null and is_instance_valid(_flow_analyzer):
 		return _flow_analyzer
@@ -686,6 +878,7 @@ func _refresh_display() -> void:
 	_refresh_config_inspector()
 	_refresh_flow_analyzer_status()
 	_refresh_stress_profiler_status()
+	_refresh_annotation_status()
 	_refresh_toggle_states()
 
 
@@ -844,3 +1037,20 @@ func _refresh_toggle_states() -> void:
 			_blueprint_debug_toggle.set_block_signals(true)
 			_blueprint_debug_toggle.button_pressed = _blueprint_debug_visible
 			_blueprint_debug_toggle.set_block_signals(false)
+
+	if _annotation_paint_toggle != null or _annotation_marks_toggle != null:
+		var painter := _ensure_annotation_painter()
+		if _annotation_paint_toggle != null:
+			_annotation_paint_toggle.disabled = painter == null
+			if painter != null:
+				_annotation_paint_enabled = painter.is_paint_mode_enabled()
+				_annotation_paint_toggle.set_block_signals(true)
+				_annotation_paint_toggle.button_pressed = _annotation_paint_enabled
+				_annotation_paint_toggle.set_block_signals(false)
+		if _annotation_marks_toggle != null:
+			_annotation_marks_toggle.disabled = painter == null
+			if painter != null:
+				_annotation_marks_visible = painter.are_marks_visible()
+				_annotation_marks_toggle.set_block_signals(true)
+				_annotation_marks_toggle.button_pressed = _annotation_marks_visible
+				_annotation_marks_toggle.set_block_signals(false)

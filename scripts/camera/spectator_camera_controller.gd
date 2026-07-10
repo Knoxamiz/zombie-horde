@@ -32,6 +32,7 @@ var _shake_strength: float = 0.0
 var _camera_rest_position: Vector3 = Vector3.ZERO
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _director_enabled: bool = false
+var _annotation_paint_active: bool = false
 var _zombie_manager: ZombieManager
 
 @onready var _camera: Camera3D = get_node("Camera3D") as Camera3D
@@ -54,6 +55,10 @@ func _ready() -> void:
 		call_deferred("_capture_mouse_after_start")
 
 func _input(event: InputEvent) -> void:
+	if _annotation_paint_active:
+		_handle_annotation_paint_input(event)
+		return
+
 	var key_event: InputEventKey = event as InputEventKey
 	if key_event != null and key_event.pressed and not key_event.echo and key_event.physical_keycode == KEY_ESCAPE:
 		_set_look_enabled(false)
@@ -157,6 +162,50 @@ func set_mouse_capture_allowed(allowed: bool) -> void:
 	if not allowed:
 		_set_director_enabled(false)
 		_set_look_enabled(false)
+
+
+func set_annotation_paint_active(active: bool) -> void:
+	_annotation_paint_active = active
+	if active:
+		_set_director_enabled(false)
+		_set_look_enabled(false)
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	elif recapture_on_click:
+		_set_look_enabled(true)
+
+
+func is_annotation_paint_active() -> bool:
+	return _annotation_paint_active
+
+
+func _handle_annotation_paint_input(event: InputEvent) -> void:
+	var key_event: InputEventKey = event as InputEventKey
+	if key_event != null and key_event.pressed and not key_event.echo and key_event.physical_keycode == KEY_ESCAPE:
+		for node in get_tree().get_nodes_in_group(DevAnnotationPainter.GROUP_NAME):
+			var painter: DevAnnotationPainter = node as DevAnnotationPainter
+			if painter != null:
+				painter.set_paint_mode_enabled(false)
+		get_viewport().set_input_as_handled()
+		return
+
+	var mouse_button: InputEventMouseButton = event as InputEventMouseButton
+	if mouse_button != null and mouse_button.button_index == MOUSE_BUTTON_RIGHT:
+		if mouse_button.pressed:
+			_set_director_enabled(false)
+			_set_look_enabled(true)
+		else:
+			_set_look_enabled(false)
+			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		get_viewport().set_input_as_handled()
+		return
+
+	var mouse_motion: InputEventMouseMotion = event as InputEventMouseMotion
+	if mouse_motion != null and _look_enabled:
+		_yaw_degrees -= mouse_motion.relative.x * mouse_sensitivity
+		_pitch_degrees -= mouse_motion.relative.y * mouse_sensitivity
+		_pitch_degrees = clamp(_pitch_degrees, min_pitch_degrees, max_pitch_degrees)
+		_apply_rotation()
+		get_viewport().set_input_as_handled()
 
 func set_director_enabled(enabled: bool) -> void:
 	_set_director_enabled(enabled)
