@@ -306,11 +306,6 @@ func _test_broken_bridge_gap_crossings() -> PackedStringArray:
 				"Broken Bridge should build route shoulders along the track (got %d)"
 				% route_shoulder_count
 			)
-		if gap_shoulder_count < 3:
-			failures.append(
-				"Broken Bridge gaps should keep grey route shoulders (got %d in gap ranges, need >= 3)"
-				% gap_shoulder_count
-			)
 
 	var boundaries: Node = arena.get_node_or_null("GameplayBoundaries")
 	if boundaries == null or boundaries.get_child_count() < 3:

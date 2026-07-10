@@ -11,6 +11,9 @@ extends Node
 const FINISH_POSITION_TOLERANCE := 1.25
 const SCRIPT_VOID_KILL := preload("res://scripts/maps/bridge_void_kill_zone.gd")
 const AIMapCollisionAuditScript := preload("res://scripts/maps/ai_map_collision_audit.gd")
+const KIT_LAYOUT_PRESETS := preload("res://scripts/maps/map_kit_layout_presets.gd")
+const KIT_SURFACE_BUILDER := preload("res://scripts/maps/kit_map_surface_builder.gd")
+const KIT_ARENA_SCRIPT := preload("res://scripts/maps/kit_map_arena.gd")
 
 signal active_map_changed(map_index: int, display_name: String)
 
@@ -692,6 +695,7 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		zombie_config.out_of_bounds_min_z = definition.out_of_bounds_min_z
 		zombie_config.out_of_bounds_max_z = definition.out_of_bounds_max_z
 		zombie_config.out_of_bounds_min_y = definition.out_of_bounds_min_y
+		_apply_kit_gap_void_zones(_get_current_map())
 
 	if hazard_config != null:
 		hazard_config.placement_half_width = definition.hazard_placement_half_width
@@ -854,3 +858,44 @@ func _strip_void_kill_zones_recursive(node: Node) -> void:
 					(child as CollisionShape3D).disabled = true
 	for child in node.get_children():
 		_strip_void_kill_zones_recursive(child)
+
+
+func _apply_kit_gap_void_zones(map: Node3D) -> void:
+	if zombie_config == null:
+		return
+	zombie_config.gap_void_zones.clear()
+	if map == null:
+		return
+
+	var core_road: Node = map.get_node_or_null("CoreRoad")
+	if core_road == null or core_road.get_script() != KIT_ARENA_SCRIPT:
+		return
+
+	var preset_id: String = str(core_road.get("layout_preset_id"))
+	if preset_id.is_empty():
+		return
+
+	var layout: Dictionary = KIT_LAYOUT_PRESETS.get_preset(preset_id)
+	var gaps: Array = layout.get("gaps", [])
+	if gaps.is_empty():
+		return
+
+	var path_half_width: float = float(layout.get("path_half_width", 4.5))
+	var crossing_ratio: float = float(
+		layout.get("gap_crossing_width_ratio", KIT_SURFACE_BUILDER.DEFAULT_GAP_CROSSING_WIDTH_RATIO)
+	)
+	var crossing_half_width: float = KIT_SURFACE_BUILDER.gap_crossing_half_width(
+		path_half_width, crossing_ratio
+	)
+
+	for raw_gap in gaps:
+		if raw_gap is not Dictionary:
+			continue
+		var gap: Dictionary = raw_gap
+		zombie_config.gap_void_zones.append(
+			{
+				"z0": float(gap.get("z0", 0.0)),
+				"z1": float(gap.get("z1", 0.0)),
+				"crossing_half_width": crossing_half_width,
+			}
+		)

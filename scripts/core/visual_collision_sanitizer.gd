@@ -24,19 +24,20 @@ func sanitize() -> void:
 		root = get_parent()
 
 	if root != null:
-		_sanitize_node(root)
+		_sanitize_node(root, false)
 
 
 static func sanitize_subtree(root: Node) -> void:
 	if root == null:
 		return
 	var sanitizer := VisualCollisionSanitizer.new()
-	sanitizer._sanitize_node(root)
+	sanitizer._sanitize_node(root, false)
 
-func _sanitize_node(node: Node) -> void:
+func _sanitize_node(node: Node, under_kit_surfaces: bool = false) -> void:
 	if node == self:
 		return
-	if node.name == "Collision" or node.name == "KitSurfaces":
+	var next_under_kit_surfaces: bool = under_kit_surfaces or node.name == "KitSurfaces"
+	if node.name == "Collision" and next_under_kit_surfaces:
 		return
 	if node.is_in_group(MAP_WALK_SURFACES_GROUP):
 		return
@@ -47,8 +48,8 @@ func _sanitize_node(node: Node) -> void:
 		collision_object.collision_mask = 0
 
 	var collision_shape: CollisionShape3D = node as CollisionShape3D
-	if collision_shape != null:
+	if collision_shape != null and not (node.name == "Collision" and next_under_kit_surfaces):
 		collision_shape.disabled = true
 
 	for child in node.get_children():
-		_sanitize_node(child)
+		_sanitize_node(child, next_under_kit_surfaces)

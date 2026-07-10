@@ -31,6 +31,8 @@ extends Resource
 @export var out_of_bounds_min_z: float = -48.0
 @export var out_of_bounds_max_z: float = 48.0
 @export var out_of_bounds_min_y: float = -3.0
+## Each entry: { "z0": float, "z1": float, "crossing_half_width": float }
+@export var gap_void_zones: Array[Dictionary] = []
 @export_range(0, 256, 1) var name_label_full_roster_limit: int = 24
 @export var color_variants_enabled: bool = true
 @export var supporter_glow_enabled: bool = true

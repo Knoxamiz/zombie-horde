@@ -476,6 +476,9 @@ func _check_out_of_bounds(active_config: ZombieConfig) -> void:
 		kill("fell")
 		return
 
+	if _check_gap_void(active_config):
+		return
+
 	var is_lateral_out_of_bounds: bool = (
 		abs(global_position.x) > active_config.out_of_bounds_half_width
 		or global_position.z < active_config.out_of_bounds_min_z
@@ -488,6 +491,28 @@ func _check_out_of_bounds(active_config: ZombieConfig) -> void:
 		global_position + Vector3.UP * 1.2, "OUT!", Color(0.7, 0.92, 1.0, 1.0)
 	)
 	kill("out_of_bounds")
+
+func _check_gap_void(active_config: ZombieConfig) -> bool:
+	if active_config.gap_void_zones.is_empty():
+		return false
+
+	for zone_variant in active_config.gap_void_zones:
+		if zone_variant is not Dictionary:
+			continue
+		var zone: Dictionary = zone_variant
+		var z0: float = float(zone.get("z0", 0.0))
+		var z1: float = float(zone.get("z1", z0))
+		if global_position.z < z0 - 0.05 or global_position.z > z1 + 0.05:
+			continue
+		var crossing_half: float = float(zone.get("crossing_half_width", 0.0))
+		if abs(global_position.x) <= crossing_half + 0.12:
+			continue
+		GameEvents.world_feedback_requested.emit(
+			global_position + Vector3.UP * 1.2, "VOID!", Color(0.55, 0.78, 1.0, 1.0)
+		)
+		kill("fell")
+		return true
+	return false
 
 func _update_timers(delta: float) -> void:
 	if _stun_timer > 0.0:
