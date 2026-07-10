@@ -4,10 +4,20 @@ Zombie Horde is a Godot 4.x PC/Steam-targeted 3D horde race game foundation. The
 
 ## Development
 
+**AI + human workflow:** [docs/AI_DEV_SETUP.md](docs/AI_DEV_SETUP.md) · [AGENTS.md](AGENTS.md) · [CURRENT_FOCUS.md](CURRENT_FOCUS.md)
+
 Before making code changes, read [docs/AI_DEVELOPMENT_GUARDRAILS.md](docs/AI_DEVELOPMENT_GUARDRAILS.md) and run the required test tier from [docs/TESTING.md](docs/TESTING.md).
+
+```bash
+# Quick smoke (local or cloud after .cursor/install-godot.sh)
+bash scripts/debug/run_tests.sh smoke
+```
 
 | Doc | Purpose |
 |-----|---------|
+| [AI_DEV_SETUP.md](docs/AI_DEV_SETUP.md) | Cloud agents, CI, spray workflow, session setup |
+| [AGENTS.md](AGENTS.md) | Primary AI playbook |
+| [BUG_REPORT_WORKFLOW.md](docs/BUG_REPORT_WORKFLOW.md) | Spray paint → agent bug reports |
 | [PROTECTED_SYSTEMS.md](docs/PROTECTED_SYSTEMS.md) | Hardened systems and required tests per area |
 | [AI_DEVELOPMENT_GUARDRAILS.md](docs/AI_DEVELOPMENT_GUARDRAILS.md) | Cursor/Codex workflow, test matrix, anti-patterns |
 | [TESTING.md](docs/TESTING.md) | Headless test tiers (`smoke`, `core`, `certification`, `map`) |

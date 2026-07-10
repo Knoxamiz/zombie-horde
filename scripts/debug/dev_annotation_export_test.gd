@@ -20,7 +20,7 @@ func _run() -> void:
 	print("=== Dev annotation export test ===")
 	var painter := PainterScript.new()
 	painter.set_note("gap void looks walkable")
-	painter.set_spray_color(DevAnnotationPainter.SprayColor.BUG)
+	painter.set_spray_color(PainterScript.SprayColor.BUG)
 	painter._strokes = [
 		{
 			"color": "#ff3355",
@@ -45,7 +45,7 @@ func _run() -> void:
 	if not wrote:
 		_fail("could not write dev_annotation_latest.json")
 
-	var read_file := FileAccess.open(DevAnnotationPainter.JSON_PATH, FileAccess.READ)
+	var read_file := FileAccess.open(PainterScript.JSON_PATH, FileAccess.READ)
 	if read_file == null:
 		_fail("could not read written json")
 	else:

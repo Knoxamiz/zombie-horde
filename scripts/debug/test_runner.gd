@@ -14,6 +14,8 @@ const SCRIPT_DIR := "res://scripts/debug/"
 const SMOKE_TESTS: Array[Dictionary] = [
 	{"name": "race_quick_smoke_test", "script": "race_quick_smoke_test.gd", "args": []},
 	{"name": "map_selection_test", "script": "map_selection_test.gd", "args": []},
+	{"name": "dev_annotation_raycast_test", "script": "dev_annotation_raycast_test.gd", "args": []},
+	{"name": "dev_annotation_export_test", "script": "dev_annotation_export_test.gd", "args": []},
 ]
 
 const CORE_TESTS: Array[Dictionary] = [

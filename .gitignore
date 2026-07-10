@@ -6,4 +6,10 @@
 secrets/
 resources/config/*local*.tres
 resources/config/*secret*.tres
+
+# Scratch artifacts (regenerated locally — do not commit)
 artifacts/flow_state_proof_latest.txt
+artifacts/kit_map_gap_audit_latest.json
+
+# Spray reports (dev_annotation_latest.*) are intentionally trackable when
+# attached to issues/PRs. See artifacts/README.md
