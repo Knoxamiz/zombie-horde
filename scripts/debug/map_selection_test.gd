@@ -232,7 +232,11 @@ func _test_broken_bridge_gap_crossings() -> PackedStringArray:
 	var failures: PackedStringArray = PackedStringArray()
 	var layout: Dictionary = MapKitLayoutPresetsScript.get_preset("broken_bridge")
 	var path_half_width: float = float(layout.get("path_half_width", 4.5))
-	var expected_half: float = KitMapSurfaceBuilderScript.gap_crossing_half_width(path_half_width, 1.0)
+	var ratio: float = float(
+		layout.get("gap_crossing_width_ratio", KitMapSurfaceBuilderScript.DEFAULT_GAP_CROSSING_WIDTH_RATIO)
+	)
+	var expected_half: float = KitMapSurfaceBuilderScript.gap_crossing_half_width(path_half_width, ratio)
+	var max_allowed_half: float = path_half_width * 0.65
 
 	var arena = KitMapArenaScript.new()
 	arena.layout_preset_id = "broken_bridge"
@@ -257,10 +261,15 @@ func _test_broken_bridge_gap_crossings() -> PackedStringArray:
 			if box == null:
 				continue
 			var actual_half: float = box.size.x * 0.5
-			if actual_half + 0.05 < expected_half:
+			if abs(actual_half - expected_half) > 0.08:
 				failures.append(
-					"Gap crossing too narrow for gameplay: %.2f < required %.2f"
+					"Gap crossing collision width mismatch: %.2f (expected %.2f)"
 					% [actual_half, expected_half]
+				)
+			if actual_half > max_allowed_half:
+				failures.append(
+					"Gap crossing spans too much of the deck (%.2f > max %.2f) — looks like an invisible bridge"
+					% [actual_half, max_allowed_half]
 				)
 
 	if crossing_count != 3:

@@ -47,7 +47,7 @@ static func _broken_bridge() -> Dictionary:
 			{"z0": -8.0, "z1": 0.0},
 			{"z0": 32.0, "z1": 40.0},
 		],
-		"gap_crossing_width_ratio": 0.45,
+		"gap_crossing_width_ratio": 0.55,
 		"surface_pieces": [
 			{"shape": "deck", "z0": -84.0, "z1": -48.0, "top_y": 0.0, "width": road_width},
 			{"shape": "ramp", "z0": -40.0, "z1": -32.0, "start_y": 0.0, "height_delta": 0.35, "width": road_width},
