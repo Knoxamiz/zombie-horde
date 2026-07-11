@@ -184,9 +184,11 @@ func build_route_context(
 	build_gap_guardrails(gaps, edge_x)
 	if not gaps.is_empty() and _style == MapStyle.BROKEN_BRIDGE:
 		build_gap_crossing_visuals(gaps, surface_pieces, path_half_width, gap_crossing_width_ratio)
-		build_gap_void_visuals(gaps, path_half_width, surface_pieces)
+		build_gap_void_visuals(gaps, path_half_width, surface_pieces, bed_y)
+		build_gap_drop_walls(gaps, path_half_width, surface_pieces)
 		build_gap_deck_lip_visuals(gaps, path_half_width, surface_pieces)
 		build_gap_edge_shoulder_visuals(gaps, path_half_width, surface_pieces, bed_y + 0.08)
+		build_deck_underside_visuals(surface_pieces, path_half_width * 2.0)
 	if not gaps.is_empty():
 		build_gap_support_piers(gaps, path_half_width, bed_y, surface_pieces)
 	if not surface_pieces.is_empty():
@@ -224,6 +226,10 @@ func build_gap_void_visuals(
 	surface_pieces: Array,
 	bed_y: float = -2.2
 ) -> void:
+	if _style == MapStyle.BROKEN_BRIDGE and _water_y > -4.0:
+		_build_elevated_gap_water_views(gaps, path_half_width, surface_pieces)
+		return
+
 	## Side chasm pits only — keep the narrow crossing lane visually open.
 	var void_color := Color(0.04, 0.06, 0.09, 1.0)
 	var crossing_half_width: float = SURFACE_BUILDER.gap_crossing_half_width(
@@ -251,6 +257,111 @@ func build_gap_void_visuals(
 			var x: float = side * (crossing_half_width + side_span)
 			pit.position = Vector3(x, lip_y - pit_depth * 0.5 - 1.05, center_z)
 			_visual_root.add_child(pit)
+
+
+func _build_elevated_gap_water_views(
+	gaps: Array[Dictionary],
+	path_half_width: float,
+	surface_pieces: Array
+) -> void:
+	## Open elevated gaps — water stays visible; no dark pits that hide vertical drop.
+	var crossing_half_width: float = SURFACE_BUILDER.gap_crossing_half_width(
+		path_half_width, _gap_crossing_width_ratio
+	)
+	var water_y: float = _water_y
+	for gap_index in range(gaps.size()):
+		var gap: Dictionary = gaps[gap_index]
+		var z0: float = float(gap["z0"])
+		var z1: float = float(gap["z1"])
+		var length: float = z1 - z0
+		var center_z: float = (z0 + z1) * 0.5
+		var lip_y: float = SURFACE_BUILDER.get_gap_crossing_top_y(
+			surface_pieces, z0, z1, _surface_y_at(center_z)
+		)
+		var drop_height: float = maxf(lip_y - water_y, 1.0)
+		var side_span: float = maxf(path_half_width - crossing_half_width, 0.45)
+		for side in [-1.0, 1.0]:
+			var x: float = side * (crossing_half_width + side_span * 0.5)
+			var basin := MeshInstance3D.new()
+			basin.name = "GapWaterBasin_%d_%s" % [gap_index, "L" if side < 0.0 else "R"]
+			var mesh := BoxMesh.new()
+			mesh.size = Vector3(side_span * 2.0, 0.08, length * 0.94)
+			basin.mesh = mesh
+			var mat := StandardMaterial3D.new()
+			mat.albedo_color = Color(0.05, 0.24, 0.46, 0.92)
+			mat.emission_enabled = true
+			mat.emission = Color(0.03, 0.12, 0.24, 1.0)
+			mat.emission_energy_multiplier = 0.55
+			basin.material_override = mat
+			basin.position = Vector3(x, water_y + 0.02, center_z)
+			_visual_root.add_child(basin)
+
+			var wall := MeshInstance3D.new()
+			wall.name = "GapSideWall_%d_%s" % [gap_index, "L" if side < 0.0 else "R"]
+			var wall_mesh := BoxMesh.new()
+			wall_mesh.size = Vector3(0.28, drop_height, length * 0.96)
+			wall.mesh = wall_mesh
+			wall.material_override = MAT_CONCRETE
+			var inner_x: float = side * crossing_half_width
+			wall.position = Vector3(inner_x + side * 0.14, water_y + drop_height * 0.5, center_z)
+			_visual_root.add_child(wall)
+
+
+func build_gap_drop_walls(
+	gaps: Array[Dictionary],
+	path_half_width: float,
+	surface_pieces: Array
+) -> void:
+	if _style != MapStyle.BROKEN_BRIDGE or _water_y <= -4.0:
+		return
+	var road_width: float = path_half_width * 2.0
+	var water_y: float = _water_y
+	for gap_index in range(gaps.size()):
+		var gap: Dictionary = gaps[gap_index]
+		var z0: float = float(gap["z0"])
+		var z1: float = float(gap["z1"])
+		var center_z: float = (z0 + z1) * 0.5
+		var lip_y: float = SURFACE_BUILDER.get_gap_crossing_top_y(
+			surface_pieces, z0, z1, _surface_y_at(center_z)
+		)
+		var drop_height: float = maxf(lip_y - water_y, 1.0)
+		for edge_z in [z0, z1]:
+			var wall := MeshInstance3D.new()
+			wall.name = "GapDropWall_%d_%s" % [gap_index, "entry" if edge_z <= z0 else "exit"]
+			var mesh := BoxMesh.new()
+			mesh.size = Vector3(road_width, drop_height, 0.42)
+			wall.mesh = mesh
+			wall.material_override = MAT_CONCRETE
+			wall.position = Vector3(0.0, water_y + drop_height * 0.5, edge_z)
+			_visual_root.add_child(wall)
+
+
+func build_deck_underside_visuals(surface_pieces: Array, road_width: float) -> void:
+	if _style != MapStyle.BROKEN_BRIDGE or _water_y <= -4.0:
+		return
+	var thickness: float = 0.55
+	for raw_spec in surface_pieces:
+		if raw_spec is not Dictionary:
+			continue
+		var spec: Dictionary = raw_spec
+		if str(spec.get("shape", "deck")) != "deck":
+			continue
+		var z0: float = float(spec.get("z0", 0.0))
+		var z1: float = float(spec.get("z1", z0))
+		if z1 <= z0:
+			continue
+		var top_y: float = float(spec.get("top_y", 0.0))
+		var length: float = z1 - z0
+		var center_z: float = (z0 + z1) * 0.5
+		var width: float = float(spec.get("width", road_width))
+		var underside := MeshInstance3D.new()
+		underside.name = "DeckUnderside"
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(width, thickness, length * 0.98)
+		underside.mesh = mesh
+		underside.material_override = MAT_CONCRETE
+		underside.position = Vector3(0.0, top_y - thickness * 0.5 - 0.06, center_z)
+		_visual_root.add_child(underside)
 
 
 func build_gap_deck_lip_visuals(
@@ -436,14 +547,16 @@ func build_gap_support_piers(
 		var z1: float = float(gap["z1"])
 		var gap_center: float = (z0 + z1) * 0.5
 		var deck_y: float = SURFACE_BUILDER.get_gap_crossing_top_y(surface_pieces, z0, z1, _surface_y_at(gap_center))
-		var pier_height: float = maxf(deck_y - bed_y - 0.35, 0.8)
-		var pier_center_y: float = bed_y + pier_height * 0.5
+		var pier_base_y: float = _water_y if (_water_y > -4.0) else bed_y
+		var pier_height: float = maxf(deck_y - pier_base_y - 0.25, 1.0)
+		var pier_center_y: float = pier_base_y + pier_height * 0.5
+		var pier_size: float = 1.35 if _water_y > -4.0 else 0.85
 		for pier_z in [z0 + 0.5, gap_center, z1 - 0.5]:
 			for side in [-1.0, 1.0]:
 				var pier := MeshInstance3D.new()
 				pier.name = "GapPier"
 				var mesh := BoxMesh.new()
-				mesh.size = Vector3(0.85, pier_height, 0.85)
+				mesh.size = Vector3(pier_size, pier_height, pier_size)
 				pier.mesh = mesh
 				pier.material_override = MAT_CONCRETE
 				pier.position = Vector3(side * (path_half_width + 0.9), pier_center_y, pier_z)
@@ -468,14 +581,15 @@ func build_elevated_deck_supports(
 		var z1: float = float(spec.get("z1", z0))
 		var center_z: float = (z0 + z1) * 0.5
 		var length: float = z1 - z0
-		var strut_height: float = maxf(top_y - bed_y - 0.2, 0.6)
-		var strut_y: float = bed_y + strut_height * 0.5
+		var strut_height: float = maxf(top_y - (_water_y if _water_y > -4.0 else bed_y) - 0.2, 0.6)
+		var strut_y: float = (_water_y if _water_y > -4.0 else bed_y) + strut_height * 0.5
 		var edge_x: float = road_width * 0.5 + 0.55
+		var strut_width: float = 0.75 if _water_y > -4.0 else 0.55
 		for side in [-1.0, 1.0]:
 			var strut := MeshInstance3D.new()
 			strut.name = "DeckSupport"
 			var mesh := BoxMesh.new()
-			mesh.size = Vector3(0.55, strut_height, minf(length * 0.85, 18.0))
+			mesh.size = Vector3(strut_width, strut_height, minf(length * 0.85, 18.0))
 			strut.mesh = mesh
 			strut.material_override = MAT_CONCRETE
 			strut.position = Vector3(side * edge_x, strut_y, center_z)
@@ -771,8 +885,8 @@ func _compose_bridge_gap_visuals(gaps: Array[Dictionary]) -> void:
 				)
 				_place_street_tile(x, 0.0, edge_z, lip_variant)
 
-		# Narrow crossing visual only — matches gameplay collision span.
-		_place_street_tile(0.0, 0.0, gap_center, StreetVariant.STRAIGHT)
+		# GapCrossingPlank (built in build_route_context) is the only walk visual in the void.
+		# Do not place 8m street tiles here — they read as a full-width invisible bridge.
 
 		for guide_z in [z0 + 0.8, gap_center, z1 - 0.8]:
 			var cone_x: float = (
