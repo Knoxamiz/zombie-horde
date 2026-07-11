@@ -9,6 +9,31 @@ const MapSurfacePieceScript := preload("res://scripts/maps/map_surface_piece.gd"
 const DEFAULT_GAP_CROSSING_WIDTH_RATIO: float = 0.45
 
 
+static func apply_deck_elevation(surface_pieces: Array, elevation: float) -> Array:
+	if elevation <= 0.0:
+		return surface_pieces
+	var lifted: Array = []
+	for raw_spec in surface_pieces:
+		if raw_spec is not Dictionary:
+			lifted.append(raw_spec)
+			continue
+		var spec: Dictionary = (raw_spec as Dictionary).duplicate(true)
+		var shape: String = str(spec.get("shape", "deck"))
+		if shape == "ramp":
+			spec["start_y"] = float(spec.get("start_y", 0.0)) + elevation
+		else:
+			spec["top_y"] = float(spec.get("top_y", 0.0)) + elevation
+		lifted.append(spec)
+	return lifted
+
+
+static func resolve_layout_surface_pieces(layout: Dictionary) -> Array:
+	return apply_deck_elevation(
+		layout.get("surface_pieces", []),
+		float(layout.get("deck_elevation", 0.0))
+	)
+
+
 static func build_surfaces(
 	parent: Node3D,
 	surface_pieces: Array,

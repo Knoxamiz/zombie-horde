@@ -16,7 +16,7 @@ script = ExtResource("2_sanitizer")
 root_path = NodePath("../CoreRoad/VisualKit")
 
 [node name="MapBanner" type="Label3D" parent="MapDressing"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, -78)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10.7, -78)
 text = "GAP JUMPS + RAISED SPANS"
 font_size = 34
 outline_size = 10

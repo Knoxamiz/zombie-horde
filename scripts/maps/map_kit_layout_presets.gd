@@ -25,9 +25,17 @@ static func get_preset(preset_id: String) -> Dictionary:
 
 static func _broken_bridge() -> Dictionary:
 	var road_width: float = 9.0
+	# 20 ft minimum clearance above water (1 ft margin for deck thickness).
+	const FEET_TO_METERS: float = 0.3048
+	const MIN_CLEARANCE_FT: float = 20.0
+	var water_y: float = 0.0
+	var deck_elevation: float = MIN_CLEARANCE_FT * FEET_TO_METERS + 0.35
 	return {
 		"style": RaceMapKit.MapStyle.BROKEN_BRIDGE,
 		"seed": 8802,
+		"deck_elevation": deck_elevation,
+		"water_y": water_y,
+		"bed_y": water_y - 2.75,
 		"path_half_width": 4.5,
 		"visual_width": 8.0,
 		"void_width": 64.0,

@@ -62,6 +62,8 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _elevation_zones: Array[Dictionary] = []
 var _path_half_width: float = 6.0
 var _gap_crossing_width_ratio: float = SURFACE_BUILDER.DEFAULT_GAP_CROSSING_WIDTH_RATIO
+var _water_y: float = -6.0
+var _void_bed_y: float = NAN
 
 
 func attach(root: Node3D, style: MapStyle, random_seed: int) -> void:
@@ -105,6 +107,14 @@ func set_gap_crossing_width_ratio(ratio: float) -> void:
 	_gap_crossing_width_ratio = clampf(ratio, 0.25, 0.75)
 
 
+func set_water_y(y: float) -> void:
+	_water_y = y
+
+
+func set_void_bed_y(y: float) -> void:
+	_void_bed_y = y
+
+
 func build_environment() -> void:
 	var sun := DirectionalLight3D.new()
 	sun.name = "Sun"
@@ -118,6 +128,23 @@ func build_environment() -> void:
 	_add_omni("FinishPoolLight", Vector3(0.0, 5.2, 76.0), Color(1.0, 0.32, 0.12, 1.0), 2.0, 36.0)
 	_add_omni("RoadAmberLightA", Vector3(-14.0, 4.4, -20.0), Color(1.0, 0.64, 0.18, 1.0), 1.45, 24.0)
 	_add_omni("RoadAmberLightB", Vector3(14.0, 4.4, 36.0), Color(1.0, 0.64, 0.18, 1.0), 1.35, 24.0)
+
+
+func _reposition_environment_lights(spawn_z: float, goal_z: float) -> void:
+	if _root == null:
+		return
+	var spawn_light_y: float = _surface_y_at(spawn_z) + 4.8
+	var goal_light_y: float = _surface_y_at(goal_z) + 4.8
+	for child in _root.get_children():
+		match child.name:
+			"StartPoolLight":
+				child.position = Vector3(0.0, spawn_light_y, spawn_z + 4.0)
+			"FinishPoolLight":
+				child.position = Vector3(0.0, goal_light_y, goal_z - 4.0)
+			"RoadAmberLightA":
+				child.position.y = _surface_y_at(-20.0) + 3.8
+			"RoadAmberLightB":
+				child.position.y = _surface_y_at(36.0) + 3.8
 
 
 func build_route_context(
@@ -136,7 +163,15 @@ func build_route_context(
 	var edge_x: float = 5.4 if _style == MapStyle.BROKEN_BRIDGE else 10.5
 	var barrier_spacing: float = 5.0 if _style == MapStyle.BROKEN_BRIDGE else 6.5
 	var lowest_y: float = _lowest_surface_y(surface_pieces)
-	var bed_y: float = minf(lowest_y - 1.35, -1.2)
+	var bed_y: float
+	if not is_nan(_void_bed_y):
+		bed_y = _void_bed_y
+	elif _style == MapStyle.BROKEN_BRIDGE and _water_y > -4.0:
+		bed_y = _water_y - 2.75
+	else:
+		bed_y = lowest_y - 1.35
+		if lowest_y <= 0.5:
+			bed_y = minf(bed_y, -1.2)
 	var chute_half_width: float = (
 		spawn_chute_half_width if spawn_chute_half_width > 0.0 else path_half_width + 0.85
 	)
@@ -156,6 +191,7 @@ func build_route_context(
 		build_gap_support_piers(gaps, path_half_width, bed_y, surface_pieces)
 	if not surface_pieces.is_empty():
 		build_elevated_deck_supports(surface_pieces, path_half_width * 2.0, bed_y)
+	_reposition_environment_lights(spawn_z, goal_z)
 
 
 func build_gap_crossing_visuals(
@@ -453,21 +489,46 @@ func _lowest_surface_y(surface_pieces: Array) -> float:
 
 
 func build_water(width: float, length: float, y: float = -6.0) -> void:
+	_water_y = y
 	var water := MeshInstance3D.new()
 	water.name = "Water"
 	var mesh := BoxMesh.new()
-	mesh.size = Vector3(width + 16.0, 0.06, length + 16.0)
+	var is_bridge_water: bool = _style == MapStyle.BROKEN_BRIDGE and y > -4.0
+	mesh.size = Vector3(width + 16.0, 0.35 if is_bridge_water else 0.06, length + 16.0)
 	water.mesh = mesh
-	water.position = Vector3(0.0, y, 0.0)
+	water.position = Vector3(0.0, y - (0.12 if is_bridge_water else 0.0), 0.0)
 	var water_mat := StandardMaterial3D.new()
-	water_mat.albedo_color = Color(0.02, 0.06, 0.1, 0.95)
-	water_mat.metallic = 0.3
-	water_mat.roughness = 0.2
-	water_mat.emission_enabled = true
-	water_mat.emission = Color(0.02, 0.07, 0.12, 1.0)
-	water_mat.emission_energy_multiplier = 0.28
+	if is_bridge_water:
+		water_mat.albedo_color = Color(0.06, 0.28, 0.52, 0.94)
+		water_mat.emission_enabled = true
+		water_mat.emission = Color(0.04, 0.16, 0.32, 1.0)
+		water_mat.emission_energy_multiplier = 0.85
+		water_mat.metallic = 0.15
+		water_mat.roughness = 0.12
+	else:
+		water_mat.albedo_color = Color(0.02, 0.06, 0.1, 0.95)
+		water_mat.metallic = 0.3
+		water_mat.roughness = 0.2
+		water_mat.emission_enabled = true
+		water_mat.emission = Color(0.02, 0.07, 0.12, 1.0)
+		water_mat.emission_energy_multiplier = 0.28
 	water.material_override = water_mat
 	_root.add_child(water)
+
+	if is_bridge_water:
+		var deep := MeshInstance3D.new()
+		deep.name = "WaterDeep"
+		var deep_mesh := BoxMesh.new()
+		deep_mesh.size = Vector3(width + 20.0, 1.2, length + 20.0)
+		deep.mesh = deep_mesh
+		deep.position = Vector3(0.0, y - 1.35, 0.0)
+		var deep_mat := StandardMaterial3D.new()
+		deep_mat.albedo_color = Color(0.01, 0.05, 0.12, 1.0)
+		deep_mat.emission_enabled = true
+		deep_mat.emission = Color(0.01, 0.04, 0.1, 1.0)
+		deep_mat.emission_energy_multiplier = 0.35
+		deep.material_override = deep_mat
+		_root.add_child(deep)
 
 
 func build_continuous_play_surface(

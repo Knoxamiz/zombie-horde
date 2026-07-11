@@ -71,9 +71,14 @@ func _run() -> void:
 		_finish()
 		return
 
+	var surface_pieces: Array = SURFACE_BUILDER.resolve_layout_surface_pieces(layout)
+	var water_y: float = float(layout.get("water_y", 0.0))
 	var deck_y: float = SURFACE_BUILDER.get_gap_crossing_top_y(
-		layout.get("surface_pieces", []), float(gap["z0"]), float(gap["z1"]), 0.0
+		surface_pieces, float(gap["z0"]), float(gap["z1"]), 0.0
 	)
+	var clearance: float = deck_y - water_y
+	if clearance < 6.0:
+		_fail("deck clearance %.2fm is below 20ft minimum (water_y=%.2f deck_y=%.2f)" % [clearance, water_y, deck_y])
 
 	var flow: GameFlowController = systems.get("game_flow")
 	if flow != null:

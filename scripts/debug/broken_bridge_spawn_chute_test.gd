@@ -72,6 +72,8 @@ func _run() -> void:
 	await create_timer(0.15).timeout
 
 	round_manager.start_round()
+	if round_manager.state == RoundManager.RoundState.COUNTDOWN:
+		round_manager.launch_round()
 	if not await _wait_for_state(round_manager, RoundManager.RoundState.RUNNING, 12.0):
 		_fail("Round never entered RUNNING")
 		main_game.queue_free()
