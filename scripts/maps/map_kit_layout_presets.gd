@@ -55,7 +55,8 @@ static func _broken_bridge() -> Dictionary:
 			{"z0": -8.0, "z1": 0.0},
 			{"z0": 32.0, "z1": 40.0},
 		],
-		"gap_crossing_width_ratio": 0.55,
+		# Narrow plank (~38% of deck). Wider ratios let the full play lane walk across gaps.
+		"gap_crossing_width_ratio": 0.38,
 		"spawn_chute_half_width": 5.0,
 		"surface_pieces": [
 			{"shape": "deck", "z0": -84.0, "z1": -48.0, "top_y": 0.0, "width": road_width},

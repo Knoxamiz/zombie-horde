@@ -885,8 +885,8 @@ func _compose_bridge_gap_visuals(gaps: Array[Dictionary]) -> void:
 				)
 				_place_street_tile(x, 0.0, edge_z, lip_variant)
 
-		# Narrow crossing visual only — matches gameplay collision span.
-		_place_street_tile(0.0, 0.0, gap_center, StreetVariant.STRAIGHT)
+		# GapCrossingPlank (built in build_route_context) is the only walk visual in the void.
+		# Do not place 8m street tiles here — they read as a full-width invisible bridge.
 
 		for guide_z in [z0 + 0.8, gap_center, z1 - 0.8]:
 			var cone_x: float = (

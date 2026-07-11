@@ -33,10 +33,11 @@ func _run() -> void:
 	var gap: Dictionary = gaps[0]
 	var gap_center_z: float = (float(gap["z0"]) + float(gap["z1"])) * 0.5
 	var path_half_width: float = float(layout.get("path_half_width", 4.5))
+	var crossing_ratio: float = float(layout.get("gap_crossing_width_ratio", 0.38))
 	var crossing_half: float = SURFACE_BUILDER.gap_crossing_half_width(
-		path_half_width,
-		float(layout.get("gap_crossing_width_ratio", 0.55))
+		path_half_width, crossing_ratio
 	)
+	var lane_half_width: float = 2.0
 
 	var packed: PackedScene = BOOT.load_main_game_scene()
 	if packed == null:
@@ -100,6 +101,19 @@ func _run() -> void:
 		true,
 		"gap side void"
 	)
+	await _probe_gap_position(
+		round_manager,
+		zombie_manager,
+		debug_join,
+		Vector3(lane_half_width, deck_y + 0.45, gap_center_z),
+		true,
+		"lane edge void"
+	)
+	if lane_half_width <= crossing_half + 0.12:
+		_fail(
+			"lane half-width %.2f must exceed crossing safe zone %.2f or gaps are not hazardous"
+			% [lane_half_width, crossing_half + 0.12]
+		)
 
 	main_game.queue_free()
 	_finish()
