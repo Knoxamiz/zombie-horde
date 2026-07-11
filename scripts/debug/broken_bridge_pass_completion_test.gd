@@ -151,7 +151,7 @@ func _run() -> void:
 		_fail("Max progress %.2f too low — route may be blocked" % max_progress)
 
 	if not _failures.is_empty():
-		var gap_report: Dictionary = GAP_AUDIT.audit_preset("broken_bridge")
+		var gap_report: Dictionary = GAP_AUDIT.audit_preset("broken_bridge_pass")
 		print(GAP_AUDIT.format_report(gap_report))
 
 	main_game.queue_free()

@@ -12,6 +12,7 @@ const FAIL := 1
 const SCRIPT_DIR := "res://scripts/debug/"
 
 const SMOKE_TESTS: Array[Dictionary] = [
+	{"name": "map_naming_audit_test", "script": "map_naming_audit_test.gd", "args": []},
 	{"name": "godot_project_snapshot_test", "script": "godot_project_snapshot_test.gd", "args": []},
 	{"name": "race_quick_smoke_test", "script": "race_quick_smoke_test.gd", "args": []},
 	{"name": "map_selection_test", "script": "map_selection_test.gd", "args": []},

@@ -29,7 +29,7 @@ See also: [PROTECTED_SYSTEMS.md](PROTECTED_SYSTEMS.md), [AI_DEVELOPMENT_GUARDRAI
 ## Commands
 
 ```bash
-# All default certified maps (City Highway + Broken Bridge TEST)
+# All default certified maps (City Highway + Broken Bridge)
 godot --headless --path . -s res://scripts/debug/map_certification_test.gd
 
 # Single map

@@ -6,8 +6,13 @@ extends RefCounted
 
 static func get_preset(preset_id: String) -> Dictionary:
 	match preset_id:
+		"broken_bridge_pass":
+			return _broken_bridge_pass()
 		"broken_bridge":
-			return _broken_bridge()
+			push_warning(
+				"MapKitLayoutPresets: preset 'broken_bridge' is retired; use 'broken_bridge_pass'"
+			)
+			return _broken_bridge_pass()
 		"mine_alley":
 			return _mine_alley()
 		"cone_slalom":
@@ -19,11 +24,11 @@ static func get_preset(preset_id: String) -> Dictionary:
 		"boost_rush":
 			return _boost_rush()
 		_:
-			push_warning("MapKitLayoutPresets: unknown preset '%s', using broken_bridge" % preset_id)
-			return _broken_bridge()
+			push_warning("MapKitLayoutPresets: unknown preset '%s', using broken_bridge_pass" % preset_id)
+			return _broken_bridge_pass()
 
 
-static func _broken_bridge() -> Dictionary:
+static func _broken_bridge_pass() -> Dictionary:
 	var road_width: float = 9.0
 	# 20 ft minimum clearance above water (1 ft margin for deck thickness).
 	const FEET_TO_METERS: float = 0.3048

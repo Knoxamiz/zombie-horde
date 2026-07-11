@@ -15,7 +15,7 @@ body:
     id: map
     attributes:
       label: Map ID
-      placeholder: broken_bridge_candidate
+      placeholder: broken_bridge_pass
     validations:
       required: true
 

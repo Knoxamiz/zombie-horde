@@ -692,12 +692,24 @@ func _load_dev_test_map(map_id: String) -> bool:
 			_round_manager.reset_round()
 
 	var catalog_entry: Dictionary = MapCatalog.get_entry_by_id(map_id)
-	if catalog_entry.is_empty() or not MapCatalog.is_prototype_testable(catalog_entry):
-		push_error("Dev map test: '%s' is not a prototype-testable catalog entry" % map_id)
+	if catalog_entry.is_empty():
+		push_error("Dev map test: unknown map id '%s'" % map_id)
 		_refresh_display()
 		return false
 
-	if not _race_map_controller.load_prototype_map_for_test(map_id):
+	var loaded: bool = false
+	if MapCatalog.is_entry_playable(catalog_entry):
+		loaded = _race_map_controller.set_active_map_by_id(map_id)
+	elif MapCatalog.is_prototype_testable(catalog_entry):
+		loaded = _race_map_controller.load_prototype_map_for_test(map_id)
+	else:
+		push_error(
+			"Dev map test: '%s' is neither playable nor prototype-testable" % map_id
+		)
+		_refresh_display()
+		return false
+
+	if not loaded:
 		push_error(
 			"DEV MAP LOAD FAILED [%s]: %s"
 			% [map_id, _race_map_controller.get_last_load_failure_reason()]

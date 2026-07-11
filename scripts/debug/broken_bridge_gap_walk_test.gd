@@ -23,10 +23,10 @@ func _initialize() -> void:
 
 func _run() -> void:
 	print("=== Broken Bridge gap walk test ===")
-	var layout: Dictionary = PRESETS.get_preset("broken_bridge")
+	var layout: Dictionary = PRESETS.get_preset("broken_bridge_pass")
 	var gaps: Array = layout.get("gaps", [])
 	if gaps.is_empty():
-		_fail("broken_bridge preset should define gaps")
+		_fail("broken_bridge_pass preset should define gaps")
 		_finish()
 		return
 

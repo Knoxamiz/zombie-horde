@@ -20,7 +20,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	print("=== Broken Bridge spawn chute test ===")
-	var layout: Dictionary = PRESETS.get_preset("broken_bridge")
+	var layout: Dictionary = PRESETS.get_preset("broken_bridge_pass")
 	var chute_half_width: float = float(layout.get("spawn_chute_half_width", 5.0))
 
 	var packed: PackedScene = load(MAIN_GAME_SCENE)

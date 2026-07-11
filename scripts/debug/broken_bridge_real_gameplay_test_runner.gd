@@ -1,9 +1,10 @@
 extends Node
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
-const MAP_ID := "broken_bridge_pass"
+const MapNamingScript := preload("res://scripts/maps/map_naming.gd")
+const DEFAULT_MAP_ID := MapNamingScript.SIGNATURE_MAP_ID
 
-@export var prototype_map_id: String = MAP_ID
+@export var map_id: String = DEFAULT_MAP_ID
 @export var zombie_count: int = 5
 @export var auto_start_on_ready: bool = true
 @export var frame_camera: bool = true
@@ -27,10 +28,10 @@ func _run_gameplay_test() -> void:
 	_main_game = packed.instantiate()
 	get_tree().root.add_child(_main_game)
 	await get_tree().create_timer(0.8).timeout
-	await _start_prototype_race()
+	await _start_playable_race()
 
 
-func _start_prototype_race() -> void:
+func _start_playable_race() -> void:
 	var map_controller: RaceMapController = _main_game.get_node_or_null(
 		"Systems/RaceMapController"
 	) as RaceMapController
@@ -44,18 +45,25 @@ func _start_prototype_race() -> void:
 		push_error("BrokenBridgeGameplayTestRunner: missing core systems")
 		return
 
-	if not map_controller.load_prototype_map_for_test(prototype_map_id):
-		push_error("BrokenBridgeGameplayTestRunner: failed to load '%s'" % prototype_map_id)
+	if not map_controller.set_active_map_by_id(map_id):
+		push_error("BrokenBridgeGameplayTestRunner: failed to load '%s'" % map_id)
+		return
+	if map_controller.active_map_id != map_id:
+		push_error(
+			"BrokenBridgeGameplayTestRunner: resolved '%s' instead of '%s'"
+			% [map_controller.active_map_id, map_id]
+		)
 		return
 
 	round_manager.configure_immediate_launch_for_tests()
+	if map_controller.human_defender_config != null:
 		map_controller.human_defender_config.defender_count = 0
 
 	var world: Node3D = _main_game.get_node_or_null("World") as Node3D
 	if world != null:
 		world.visible = true
 
-	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(prototype_map_id)
+	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(map_id)
 	if frame_camera and definition != null:
 		var spectator: SpectatorCameraController = _main_game.get_node_or_null(
 			"SpectatorCamera"
@@ -74,8 +82,8 @@ func _start_prototype_race() -> void:
 			hud.refresh_display()
 
 	print(
-		"Started real gameplay test on '%s' with %d zombies. Press Esc to restore City Highway."
-		% [prototype_map_id, zombie_count]
+		"Started real gameplay test on '%s' with %d zombies. Press Esc to restore %s."
+		% [map_id, zombie_count, MapNamingScript.DEFAULT_MAP_ID]
 	)
 
 
@@ -96,5 +104,6 @@ func _restore_saved_map() -> void:
 		"Systems/RaceMapController"
 	) as RaceMapController
 	if map_controller != null:
-		map_controller.clear_prototype_test_load(true)
-	print("BrokenBridgeGameplayTestRunner: restored saved playable map")
+		map_controller.set_active_map_by_id(MapNamingScript.DEFAULT_MAP_ID)
+	print("BrokenBridgeGameplayTestRunner: restored default map")
+

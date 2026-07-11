@@ -1,9 +1,10 @@
 extends Node
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
-const DEFAULT_PROTOTYPE_MAP_ID := "broken_bridge_pass"
+const MapNamingScript := preload("res://scripts/maps/map_naming.gd")
+const DEFAULT_MAP_ID := MapNamingScript.SIGNATURE_MAP_ID
 
-@export var prototype_map_id: String = DEFAULT_PROTOTYPE_MAP_ID
+@export var map_id: String = DEFAULT_MAP_ID
 @export var auto_load_on_ready: bool = true
 @export var show_race_world: bool = true
 @export var frame_camera: bool = true
@@ -13,31 +14,31 @@ var _main_game: Node
 
 func _ready() -> void:
 	if auto_load_on_ready:
-		call_deferred("_run_prototype_load")
+		call_deferred("_run_map_load")
 
 
-func _run_prototype_load() -> void:
-	print("=== Prototype Map Load Test Runner ===")
-	print("Loading main game and prototype map: %s" % prototype_map_id)
+func _run_map_load() -> void:
+	print("=== Playable map load test runner ===")
+	print("Loading main game and map: %s" % map_id)
 
 	var packed: PackedScene = load(MAIN_GAME_SCENE)
 	if packed == null:
-		push_error("PrototypeMapLoadTestRunner: could not load main game scene")
+		push_error("MapLoadTestRunner: could not load main game scene")
 		return
 
 	_main_game = packed.instantiate()
 	get_tree().root.add_child(_main_game)
 
 	await get_tree().create_timer(0.8).timeout
-	_execute_prototype_load()
+	_execute_map_load()
 
 
-func _execute_prototype_load() -> void:
+func _execute_map_load() -> void:
 	var map_controller: RaceMapController = _main_game.get_node_or_null(
 		"Systems/RaceMapController"
 	) as RaceMapController
 	if map_controller == null:
-		push_error("PrototypeMapLoadTestRunner: RaceMapController missing")
+		push_error("MapLoadTestRunner: RaceMapController missing")
 		return
 
 	if show_race_world:
@@ -45,20 +46,19 @@ func _execute_prototype_load() -> void:
 		if world != null:
 			world.visible = true
 
-	var loaded: bool = map_controller.load_prototype_map_for_test(prototype_map_id)
-	if not loaded:
-		push_error("PrototypeMapLoadTestRunner: failed to load prototype map '%s'" % prototype_map_id)
+	var loaded: bool = map_controller.set_active_map_by_id(map_id)
+	if not loaded or map_controller.active_map_id != map_id:
+		push_error("MapLoadTestRunner: failed to load map '%s'" % map_id)
 		return
 
-	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(prototype_map_id)
+	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(map_id)
 	if frame_camera and definition != null:
 		var spectator: SpectatorCameraController = _main_game.get_node_or_null(
 			"SpectatorCamera"
 		) as SpectatorCameraController
 		map_controller.frame_spectator_camera_for_definition(spectator, definition, true)
 
-	print("Prototype map '%s' is loaded for dev inspection." % prototype_map_id)
-	print("Streamer Settings still only lists playable maps; this load does not save map selection.")
+	print("Map '%s' is loaded for dev inspection." % map_id)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -66,15 +66,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if key_event == null or not key_event.pressed or key_event.echo:
 		return
 	if key_event.keycode == KEY_ESCAPE:
-		_clear_prototype_load()
+		_clear_map_load()
 
 
-func _clear_prototype_load() -> void:
+func _clear_map_load() -> void:
 	if _main_game == null:
 		return
 	var map_controller: RaceMapController = _main_game.get_node_or_null(
 		"Systems/RaceMapController"
 	) as RaceMapController
 	if map_controller != null:
-		map_controller.clear_prototype_test_load(true)
-	print("PrototypeMapLoadTestRunner: restored saved playable map")
+		map_controller.set_active_map_by_id(MapNamingScript.DEFAULT_MAP_ID)
+	print("MapLoadTestRunner: restored default map")
