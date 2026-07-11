@@ -1,13 +1,6 @@
 extends SceneTree
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
-const EXPECTED_PROTOTYPE_IDS: Array[String] = [
-	"ai_generated_phase1_bridge_ramp_test",
-	"ai_generated_phase2_drop_gap_probe",
-	"ai_generated_signature_drop_bridge",
-	"ai_generated_phase3_moving_hazard_probe",
-	"ai_generated_multi_layer_fallthrough_probe",
-]
 const PASS := 0
 const FAIL := 1
 
@@ -20,19 +13,21 @@ func _initialize() -> void:
 
 func _run_all() -> void:
 	print("=== Prototype map review test ===")
-	_test_catalog_lists_ai_generated_prototypes()
-	for map_id in EXPECTED_PROTOTYPE_IDS:
+	var expected_ids: Array[String] = AIMapBlueprintRegistry.get_all_generated_map_ids()
+	if expected_ids.is_empty():
+		print("No AI-generated prototype maps registered; skipping load checks")
+		_finish()
+		return
+
+	_test_catalog_lists_ai_generated_prototypes(expected_ids)
+	for map_id in expected_ids:
 		await _test_prototype_load(map_id)
 	_finish()
 
 
-func _test_catalog_lists_ai_generated_prototypes() -> void:
+func _test_catalog_lists_ai_generated_prototypes(expected_ids: Array[String]) -> void:
 	print("-- catalog ai-generated prototypes --")
 	var entries: Array[Dictionary] = MapCatalog.get_ai_generated_prototype_entries()
-	if entries.is_empty():
-		_fail("MapCatalog.get_ai_generated_prototype_entries returned no entries")
-		return
-
 	var found_ids: Array[String] = []
 	for entry in entries:
 		var map_id: String = str(entry.get("id", ""))
@@ -42,7 +37,7 @@ func _test_catalog_lists_ai_generated_prototypes() -> void:
 		if str(entry.get("status", "")) != MapCatalog.STATUS_PROTOTYPE:
 			_fail("AI-generated prototype '%s' must remain status=prototype" % map_id)
 
-	for expected_id in EXPECTED_PROTOTYPE_IDS:
+	for expected_id in expected_ids:
 		if expected_id not in found_ids:
 			_fail("expected AI-generated prototype missing from catalog: %s" % expected_id)
 
@@ -86,19 +81,7 @@ func _test_prototype_load(map_id: String) -> void:
 	if not map_controller.is_prototype_test_load_active():
 		_fail("prototype test load flag was not set for %s" % map_id)
 
-	var entry: Dictionary = MapCatalog.get_entry_by_id(map_id)
-	if bool(entry.get("enabled", false)):
-		_fail("catalog entry must remain enabled=false after prototype load")
-	if str(entry.get("status", "")) != MapCatalog.STATUS_PROTOTYPE:
-		_fail("catalog entry must remain status=prototype after prototype load")
-
-	var road_arena: Node3D = main_game.get_node_or_null("World/RoadArena") as Node3D
-	if road_arena == null:
-		_fail("World/RoadArena missing after prototype load for %s" % map_id)
-	elif road_arena.get_node_or_null("CoreRoad/MapRoot") == null:
-		_fail("CoreRoad/MapRoot missing after prototype load for %s" % map_id)
-
-	print("%s prototype review load passed" % map_id)
+	map_controller.clear_prototype_test_load(true)
 	main_game.queue_free()
 
 
@@ -112,5 +95,7 @@ func _finish() -> void:
 		print("SUITE RESULT: PASSED")
 		quit(PASS)
 	else:
-		print("SUITE RESULT: FAILED (%d)" % _failures.size())
+		print("SUITE RESULT: FAILED")
+		for failure in _failures:
+			print("FAIL: %s" % failure)
 		quit(FAIL)

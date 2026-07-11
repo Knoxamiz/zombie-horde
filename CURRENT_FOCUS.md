@@ -4,7 +4,7 @@ Update this file at the start of each dev session. Agents read it first.
 
 ## Active goal
 
-Raise Broken Bridge deck, support pillars, and water level for a more dramatic elevated span.
+Map naming audit: IDs, files, folders, and presets must stay aligned (see `docs/MAP_NAMING.md`).
 
 ## Map / area
 

@@ -4,7 +4,7 @@
 
 [node name="BrokenBridgeRealGameplayTest" type="Node"]
 script = ExtResource("1_runner")
-prototype_map_id = "broken_bridge_candidate"
+map_id = "broken_bridge_pass"
 zombie_count = 5
 auto_start_on_ready = true
 frame_camera = true

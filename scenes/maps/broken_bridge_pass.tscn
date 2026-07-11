@@ -7,7 +7,7 @@
 
 [node name="CoreRoad" type="Node3D" parent="."]
 script = ExtResource("1_arena")
-layout_preset_id = "broken_bridge"
+layout_preset_id = "broken_bridge_pass"
 
 [node name="MapDressing" type="Node3D" parent="."]
 

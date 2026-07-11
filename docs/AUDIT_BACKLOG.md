@@ -10,6 +10,8 @@ Follow-up work from the Jul 2026 game audit. Ordered by priority.
 - [x] Rewrite `prototype_map_load_test.gd` for `broken_bridge_pass`
 - [x] Add `broken_bridge_pass` to default certification list
 - [x] Scrub `broken_bridge_candidate` references in focus/docs/tests
+- [x] Add `map_naming.gd` + `map_naming_audit_test.gd` smoke gate
+- [x] Align `broken_bridge_pass` layout preset id with map id
 - [x] Add `headless_race_test_boot.gd` shared helper
 - [x] Wire `prototype_map_load_test` into `all` tier
 

@@ -13,7 +13,7 @@ const PASS := 0
 const FAIL := 1
 
 const GAP_PRESET_IDS: Array[String] = [
-	"broken_bridge",
+	"broken_bridge_pass",
 	"vehicle_yard",
 ]
 

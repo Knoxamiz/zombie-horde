@@ -81,6 +81,17 @@ Full guide: [docs/GODOT_DEV_STACK.md](docs/GODOT_DEV_STACK.md)
 
 Cloud agents: run `bash scripts/debug/run_godot.sh snapshot` at session start to refresh the snapshot.
 
+### Map naming (do not guess)
+
+Read [docs/MAP_NAMING.md](docs/MAP_NAMING.md) before creating or renaming maps.
+
+| Use this ID | Display name | Not this |
+|-------------|--------------|----------|
+| `quarantine_boulevard` | City Highway | `city_highway` |
+| `broken_bridge_pass` | Broken Bridge | `broken_bridge_candidate`, preset `broken_bridge` |
+
+Smoke tier runs `map_naming_audit_test.gd` to catch path/preset drift.
+
 ## Architecture anchors (do not bypass)
 
 | System | Authority |

@@ -31,7 +31,7 @@ func _run_all() -> void:
 	print("=== Broken Bridge real gameplay test suite ===")
 
 	if not MapCatalog.is_entry_playable(MapCatalog.get_entry_by_id(MAP_ID)):
-		_fail("Prototype map '%s' must remain non-playable" % MAP_ID)
+		_fail("Playable map '%s' must be enabled in MapCatalog" % MAP_ID)
 
 	var profile_before: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
 	_saved_map_index = profile_before.selected_map_index if profile_before != null else 0
@@ -93,9 +93,9 @@ func _run_single_scenario(zombie_count: int) -> void:
 		main_game.queue_free()
 		return
 
-	if not map_controller.load_prototype_map_for_test(MAP_ID):
+	if not map_controller.set_active_map_by_id(MAP_ID):
 		metrics.passed = false
-		_print_scenario_report(metrics, "prototype map load failed")
+		_print_scenario_report(metrics, "playable map load failed")
 		main_game.queue_free()
 		return
 

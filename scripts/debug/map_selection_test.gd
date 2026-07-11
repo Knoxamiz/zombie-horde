@@ -117,7 +117,7 @@ func _test_profile_migration() -> PackedStringArray:
 func _test_layout_preset_uniqueness() -> PackedStringArray:
 	var failures: PackedStringArray = PackedStringArray()
 	var preset_ids: Array[String] = [
-		"broken_bridge",
+		"broken_bridge_pass",
 		"mine_alley",
 		"cone_slalom",
 		"vehicle_yard",
@@ -149,7 +149,7 @@ func _test_kit_elevation_presets() -> PackedStringArray:
 		"mine_alley",
 		"cone_slalom",
 		"vehicle_yard",
-		"broken_bridge",
+		"broken_bridge_pass",
 		"defender_gauntlet",
 		"boost_rush",
 	]
@@ -193,7 +193,7 @@ func _test_kit_elevation_presets() -> PackedStringArray:
 func _test_kit_route_context() -> PackedStringArray:
 	var failures: PackedStringArray = PackedStringArray()
 	var preset_ids: Array[String] = [
-		"broken_bridge",
+		"broken_bridge_pass",
 		"mine_alley",
 		"cone_slalom",
 		"vehicle_yard",
@@ -230,7 +230,7 @@ func _test_kit_route_context() -> PackedStringArray:
 
 func _test_broken_bridge_gap_crossings() -> PackedStringArray:
 	var failures: PackedStringArray = PackedStringArray()
-	var layout: Dictionary = MapKitLayoutPresetsScript.get_preset("broken_bridge")
+	var layout: Dictionary = MapKitLayoutPresetsScript.get_preset("broken_bridge_pass")
 	var path_half_width: float = float(layout.get("path_half_width", 4.5))
 	var ratio: float = float(
 		layout.get("gap_crossing_width_ratio", KitMapSurfaceBuilderScript.DEFAULT_GAP_CROSSING_WIDTH_RATIO)
@@ -239,7 +239,7 @@ func _test_broken_bridge_gap_crossings() -> PackedStringArray:
 	var max_allowed_half: float = path_half_width * 0.65
 
 	var arena = KitMapArenaScript.new()
-	arena.layout_preset_id = "broken_bridge"
+	arena.layout_preset_id = "broken_bridge_pass"
 	root.add_child(arena)
 	arena.ensure_built()
 

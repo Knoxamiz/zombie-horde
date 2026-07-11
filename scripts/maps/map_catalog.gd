@@ -1,13 +1,15 @@
 class_name MapCatalog
 extends RefCounted
 
+const MapNamingScript := preload("res://scripts/maps/map_naming.gd")
+
 const STATUS_PLAYABLE := "playable"
 const STATUS_PROTOTYPE := "prototype"
 const STATUS_DISABLED := "disabled"
 const STATUS_LAB_ONLY := "lab_only"
 const STATUS_VALIDATED := "validated"
 
-const DEFAULT_MAP_ID := "quarantine_boulevard"
+const DEFAULT_MAP_ID := MapNamingScript.DEFAULT_MAP_ID
 
 const ENTRIES: Array[Dictionary] = [
 	{
@@ -24,6 +26,7 @@ const ENTRIES: Array[Dictionary] = [
 		"display_name": "Fallthrough Lower Deck",
 		"resource_path": "res://resources/maps/ai_generated_fallthrough_lower_deck_test.tres",
 		"scene_path": "res://scenes/maps/ai_generated_fallthrough_lower_deck_test.tscn",
+		"ai_generated": true,
 		"enabled": true,
 		"status": STATUS_PLAYABLE,
 		"legacy_index": 1,
@@ -33,6 +36,7 @@ const ENTRIES: Array[Dictionary] = [
 		"display_name": "Broken Bridge",
 		"resource_path": "res://resources/maps/broken_bridge_pass.tres",
 		"scene_path": "res://scenes/maps/broken_bridge_pass.tscn",
+		"layout_preset_id": "broken_bridge_pass",
 		"enabled": true,
 		"status": STATUS_PLAYABLE,
 		"legacy_index": 2,
@@ -42,6 +46,7 @@ const ENTRIES: Array[Dictionary] = [
 		"display_name": "Mine Alley",
 		"resource_path": "res://resources/maps/mine_alley.tres",
 		"scene_path": "res://scenes/maps/mine_alley.tscn",
+		"layout_preset_id": "mine_alley",
 		"enabled": true,
 		"status": STATUS_PLAYABLE,
 		"legacy_index": 3,
@@ -51,6 +56,7 @@ const ENTRIES: Array[Dictionary] = [
 		"display_name": "Cone Slalom",
 		"resource_path": "res://resources/maps/cone_slalom.tres",
 		"scene_path": "res://scenes/maps/cone_slalom.tscn",
+		"layout_preset_id": "cone_slalom",
 		"enabled": true,
 		"status": STATUS_PLAYABLE,
 		"legacy_index": 4,
@@ -60,6 +66,7 @@ const ENTRIES: Array[Dictionary] = [
 		"display_name": "Vehicle Yard",
 		"resource_path": "res://resources/maps/vehicle_yard.tres",
 		"scene_path": "res://scenes/maps/vehicle_yard.tscn",
+		"layout_preset_id": "vehicle_yard",
 		"enabled": true,
 		"status": STATUS_PLAYABLE,
 		"legacy_index": 5,
@@ -69,6 +76,7 @@ const ENTRIES: Array[Dictionary] = [
 		"display_name": "Defender Gauntlet",
 		"resource_path": "res://resources/maps/defender_gauntlet.tres",
 		"scene_path": "res://scenes/maps/defender_gauntlet.tscn",
+		"layout_preset_id": "defender_gauntlet",
 		"enabled": true,
 		"status": STATUS_PLAYABLE,
 		"legacy_index": 6,
@@ -78,6 +86,7 @@ const ENTRIES: Array[Dictionary] = [
 		"display_name": "Boost Rush",
 		"resource_path": "res://resources/maps/boost_rush.tres",
 		"scene_path": "res://scenes/maps/boost_rush.tscn",
+		"layout_preset_id": "boost_rush",
 		"enabled": true,
 		"status": STATUS_PLAYABLE,
 		"legacy_index": 7,

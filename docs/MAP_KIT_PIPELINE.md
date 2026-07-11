@@ -24,9 +24,7 @@ Only maps listed in `MapCatalog` with:
 
 appear in Streamer Settings → Level.
 
-Currently only **City Highway** (`quarantine_boulevard`) is playable. Experimental maps remain in the repo but are disabled.
-
-Saved map indices that point to disabled maps fall back to City Highway with a single warning.
+Currently **8 playable maps** are listed in `MapCatalog` (see [MAP_NAMING.md](MAP_NAMING.md)). Saved map indices that point to removed maps fall back to City Highway with a single warning.
 
 ## Asset registry
 

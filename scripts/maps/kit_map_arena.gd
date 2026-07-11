@@ -8,7 +8,7 @@ const PRESETS := preload("res://scripts/maps/map_kit_layout_presets.gd")
 const SURFACE_BUILDER := preload("res://scripts/maps/kit_map_surface_builder.gd")
 const VisualCollisionSanitizerScript := preload("res://scripts/core/visual_collision_sanitizer.gd")
 
-@export var layout_preset_id: String = "broken_bridge"
+@export var layout_preset_id: String = "broken_bridge_pass"
 
 var _kit: RaceMapKit
 var _built: bool = false

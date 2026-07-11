@@ -87,19 +87,13 @@ Debug/editor builds only. **Does not promote maps to playable** and does not cha
 
 ### Listed prototype maps
 
-| Button | Map id |
-|--------|--------|
-| Load Phase 1 Bridge/Ramp Prototype | `ai_generated_phase1_bridge_ramp_test` |
-| Load Phase 2 Drop/Gap Probe | `ai_generated_phase2_drop_gap_probe` |
-| Load The Drop Bridge Prototype | `ai_generated_signature_drop_bridge` |
+Prototype maps come from `AIMapBlueprintRegistry` and must be `status=prototype` in `MapCatalog`.
 
-### Review The Drop Bridge
+| Current generated map id |
+|--------------------------|
+| `ai_generated_fallthrough_lower_deck_test` |
 
-1. **F3** → **Prototype Map Review** → **Load The Drop Bridge Prototype**
-2. Confirm status readout shows `Load status: loaded`, `Fallback used: no`, and `enabled=false status=prototype`
-3. Optional: **Load Drop Bridge + Queue 20** — loads the map and queues 20 fake viewers (does **not** auto-start the race)
-4. Use **Race Controls → Start Race** when ready to judge readability/fun
-5. Use **Reset Race** between review passes
+Use **F3 → Maps → Load Fallthrough Lower Deck** for the current AI prototype, or load playable maps from Streamer Settings.
 
 **Warning:** Prototype review success does **not** mean playable promotion. Maps stay `enabled=false` / `status=prototype` until explicit certification and human sign-off.
 
@@ -148,7 +142,7 @@ DEV TOOLS SELF CHECK
 - ActiveConfigInspector found: yes
 - ZombieFlowAnalyzer available: yes
 - PerformanceStressProfiler available: yes
-- Active map id: city_highway
+- Active map id: quarantine_boulevard
 - Current round state: Idle
 ```
 

@@ -27,7 +27,7 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 
 ### smoke (target under 60 seconds)
 
-- `race_quick_smoke_test.gd` — minimum loop: boot, join, RUNNING, quick finish, reset, rejoin (City Highway + Broken Bridge TEST)
+- `race_quick_smoke_test.gd` — minimum loop: boot, join, RUNNING, quick finish, reset, rejoin (City Highway + Broken Bridge)
 - `map_selection_test.gd` — catalog, profile migration, runtime map load
 
 **When to run:** before and after every automated code change.
@@ -57,7 +57,7 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 ### certification (~2–4 minutes)
 
 - `map_selection_test.gd`
-- `map_certification_test.gd` — City Highway + Broken Bridge TEST (catalog, load, contracts, mini race, reset)
+- `map_certification_test.gd` — default certified maps (`quarantine_boulevard`, `broken_bridge_pass`)
 
 **When to run:** before merging map controller, map catalog, or promoting a map to playable.
 
