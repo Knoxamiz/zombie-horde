@@ -71,8 +71,9 @@ func _run() -> void:
 		_finish()
 		return
 
+	var surface_pieces: Array = SURFACE_BUILDER.resolve_layout_surface_pieces(layout)
 	var deck_y: float = SURFACE_BUILDER.get_gap_crossing_top_y(
-		layout.get("surface_pieces", []), float(gap["z0"]), float(gap["z1"]), 0.0
+		surface_pieces, float(gap["z0"]), float(gap["z1"]), 0.0
 	)
 
 	var flow: GameFlowController = systems.get("game_flow")

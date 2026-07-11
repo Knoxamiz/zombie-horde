@@ -30,7 +30,9 @@ func _build_from_preset(preset_id: String) -> void:
 	var style: RaceMapKit.MapStyle = layout.get("style", RaceMapKit.MapStyle.LONG_ROAD)
 	var segments: Array[Dictionary] = _to_segment_array(layout.get("segments", []))
 	var gaps: Array[Dictionary] = _to_segment_array(layout.get("gaps", []))
-	var surface_pieces: Array = layout.get("surface_pieces", [])
+	var surface_pieces: Array = SURFACE_BUILDER.resolve_layout_surface_pieces(layout)
+	var deck_elevation: float = float(layout.get("deck_elevation", 0.0))
+	var water_y: float = float(layout.get("water_y", -6.0 + deck_elevation))
 	var path_half_width: float = float(layout.get("path_half_width", 6.0))
 	var visual_width: float = float(layout.get("visual_width", 12.0))
 	var void_width: float = float(layout.get("void_width", 64.0))
@@ -51,7 +53,7 @@ func _build_from_preset(preset_id: String) -> void:
 	_kit.set_path_half_width(path_half_width)
 	_kit.set_gap_crossing_width_ratio(gap_crossing_width_ratio)
 	_kit.build_environment()
-	_kit.build_water(void_width, track_length)
+	_kit.build_water(void_width, track_length, water_y)
 
 	if uses_surface_pieces:
 		var surfaces: Node3D = SURFACE_BUILDER.build_surfaces(self, surface_pieces, road_width)

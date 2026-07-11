@@ -25,9 +25,12 @@ static func get_preset(preset_id: String) -> Dictionary:
 
 static func _broken_bridge() -> Dictionary:
 	var road_width: float = 9.0
+	var deck_elevation: float = 2.5
 	return {
 		"style": RaceMapKit.MapStyle.BROKEN_BRIDGE,
 		"seed": 8802,
+		"deck_elevation": deck_elevation,
+		"water_y": -6.0 + deck_elevation,
 		"path_half_width": 4.5,
 		"visual_width": 8.0,
 		"void_width": 64.0,

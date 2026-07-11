@@ -4,8 +4,7 @@ Update this file at the start of each dev session. Agents read it first.
 
 ## Active goal
 
-<!-- One sentence: what are we trying to accomplish right now? -->
-_Settling Broken Bridge gap behavior and dev tooling (spray paint + CI)._
+Raise Broken Bridge deck, support pillars, and water level for a more dramatic elevated span.
 
 ## Map / area
 

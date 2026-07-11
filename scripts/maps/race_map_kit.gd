@@ -136,7 +136,9 @@ func build_route_context(
 	var edge_x: float = 5.4 if _style == MapStyle.BROKEN_BRIDGE else 10.5
 	var barrier_spacing: float = 5.0 if _style == MapStyle.BROKEN_BRIDGE else 6.5
 	var lowest_y: float = _lowest_surface_y(surface_pieces)
-	var bed_y: float = minf(lowest_y - 1.35, -1.2)
+	var bed_y: float = lowest_y - 1.35
+	if lowest_y <= 0.5:
+		bed_y = minf(bed_y, -1.2)
 	var chute_half_width: float = (
 		spawn_chute_half_width if spawn_chute_half_width > 0.0 else path_half_width + 0.85
 	)
