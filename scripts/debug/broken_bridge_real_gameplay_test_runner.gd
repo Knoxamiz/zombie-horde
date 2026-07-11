@@ -106,4 +106,3 @@ func _restore_saved_map() -> void:
 	if map_controller != null:
 		map_controller.set_active_map_by_id(MapNamingScript.DEFAULT_MAP_ID)
 	print("BrokenBridgeGameplayTestRunner: restored default map")
-
