@@ -715,13 +715,16 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		powerup_config.placement_half_width = definition.powerup_placement_half_width
 		powerup_config.placement_min_z = definition.powerup_placement_min_z
 		powerup_config.placement_max_z = definition.powerup_placement_max_z
+		powerup_config.placement_surface_y = definition.resolve_hazard_surface_y()
 
 	if human_defender_config != null:
 		human_defender_config.placement_half_width = definition.defender_placement_half_width
 		human_defender_config.placement_min_z = definition.defender_placement_min_z
 		human_defender_config.placement_max_z = definition.defender_placement_max_z
+		human_defender_config.placement_surface_y = definition.resolve_hazard_surface_y()
 
 	definition.apply_hazard_profile_to(hazard_config, powerup_config, human_defender_config)
+	_apply_kit_surface_placement_zones(definition, _get_current_map())
 
 	if _base_goal != null:
 		_base_goal.global_position = definition.base_position
@@ -909,3 +912,45 @@ func _apply_kit_gap_void_zones(map: Node3D) -> void:
 				"deck_y": deck_y,
 			}
 		)
+
+
+func _apply_kit_surface_placement_zones(definition: RaceMapDefinition, map: Node3D) -> void:
+	_set_surface_placement_zones([])
+	if definition == null or map == null:
+		return
+
+	var core_road: Node = map.get_node_or_null("CoreRoad")
+	if core_road == null or core_road.get_script() != KIT_ARENA_SCRIPT:
+		return
+
+	var preset_id: String = str(core_road.get("layout_preset_id"))
+	if preset_id.is_empty():
+		return
+
+	var layout: Dictionary = KIT_LAYOUT_PRESETS.get_preset(preset_id)
+	var surface_pieces: Array = KIT_SURFACE_BUILDER.resolve_layout_surface_pieces(layout)
+	var zones: Array[Dictionary] = KIT_SURFACE_BUILDER.build_elevation_zones_from_pieces(surface_pieces)
+	var fallback_surface_y: float = KIT_SURFACE_BUILDER.get_lowest_top_y(
+		surface_pieces,
+		definition.resolve_hazard_surface_y()
+	)
+	_set_surface_placement_y(fallback_surface_y)
+	_set_surface_placement_zones(zones)
+
+
+func _set_surface_placement_zones(zones: Array[Dictionary]) -> void:
+	if hazard_config != null:
+		hazard_config.placement_surface_zones = zones.duplicate(true)
+	if powerup_config != null:
+		powerup_config.placement_surface_zones = zones.duplicate(true)
+	if human_defender_config != null:
+		human_defender_config.placement_surface_zones = zones.duplicate(true)
+
+
+func _set_surface_placement_y(surface_y: float) -> void:
+	if hazard_config != null:
+		hazard_config.placement_surface_y = surface_y
+	if powerup_config != null:
+		powerup_config.placement_surface_y = surface_y
+	if human_defender_config != null:
+		human_defender_config.placement_surface_y = surface_y

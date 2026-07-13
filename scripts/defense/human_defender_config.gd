@@ -17,6 +17,8 @@ enum GunType {
 @export var placement_half_width: float = 5.25
 @export var placement_min_z: float = -24.0
 @export var placement_max_z: float = 28.0
+@export var placement_surface_y: float = 0.0
+@export var placement_surface_zones: Array[Dictionary] = []
 @export var position_jitter: float = 0.65
 @export var defender_min_spacing: float = 6.0
 @export var reserved_position_clearance: float = 3.0

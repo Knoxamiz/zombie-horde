@@ -1,6 +1,8 @@
 class_name HazardManager
 extends Node3D
 
+const SURFACE_SPAWN_RESOLVER := preload("res://scripts/maps/surface_spawn_resolver.gd")
+
 @export var hazard_config: HazardConfig
 @export var mine_scene: PackedScene
 @export var sewer_hole_scene: PackedScene
@@ -38,23 +40,39 @@ func setup_round(round_number: int) -> void:
 func clear_hazards() -> void:
 	for mine in _spawned_mines:
 		if is_instance_valid(mine):
-			mine.queue_free()
+			_free_owned_child(mine)
 	for sewer_hole in _spawned_sewer_holes:
 		if is_instance_valid(sewer_hole):
-			sewer_hole.queue_free()
+			_free_owned_child(sewer_hole)
 	for obstacle in _spawned_obstacles:
 		if is_instance_valid(obstacle):
-			obstacle.queue_free()
+			_free_owned_child(obstacle)
 	_spawned_mines.clear()
 	_spawned_sewer_holes.clear()
 	_spawned_obstacles.clear()
 	_reserved_positions.clear()
+	_clear_owned_hazard_children()
 
 func get_reserved_positions() -> Array[Vector3]:
 	var result: Array[Vector3] = []
 	for reserved_position in _reserved_positions:
 		result.append(reserved_position)
 	return result
+
+func _clear_owned_hazard_children() -> void:
+	for child in get_children():
+		var child_name: String = str(child.name)
+		if (
+			child_name.begins_with("Mine_")
+			or child_name.begins_with("SewerHole_")
+			or child_name.begins_with("RoadObstacle_")
+		):
+			_free_owned_child(child)
+
+func _free_owned_child(child: Node) -> void:
+	if child.get_parent() == self:
+		remove_child(child)
+	child.queue_free()
 
 func _spawn_mines() -> void:
 	if hazard_config == null or mine_scene == null:
@@ -145,17 +163,25 @@ func _get_sewer_hole_position(used_positions: Array[Vector3]) -> Vector3:
 	return _get_random_sewer_hole_position()
 
 func _get_random_mine_position() -> Vector3:
+	var z: float = _get_random_surface_z(
+		hazard_config.placement_min_z,
+		hazard_config.placement_max_z
+	)
 	return Vector3(
 		_rng.randf_range(-hazard_config.placement_half_width, hazard_config.placement_half_width),
-		_surface_y(0.18),
-		_rng.randf_range(hazard_config.placement_min_z, hazard_config.placement_max_z)
+		_surface_y_at_z(z, 0.18),
+		z
 	)
 
 func _get_random_sewer_hole_position() -> Vector3:
+	var z: float = _get_random_surface_z(
+		hazard_config.placement_min_z,
+		hazard_config.placement_max_z
+	)
 	return Vector3(
 		_rng.randf_range(-hazard_config.placement_half_width, hazard_config.placement_half_width),
-		_surface_y(0.08),
-		_rng.randf_range(hazard_config.placement_min_z, hazard_config.placement_max_z)
+		_surface_y_at_z(z, 0.08),
+		z
 	)
 
 func _get_obstacle_position(segment_slots: Dictionary, large_counts: Dictionary, selected_scene: PackedScene) -> Dictionary:
@@ -165,6 +191,8 @@ func _get_obstacle_position(segment_slots: Dictionary, large_counts: Dictionary,
 
 	for _attempt in range(96):
 		var segment_index: int = _rng.randi_range(0, segment_count - 1)
+		if not _obstacle_segment_has_surface(segment_index):
+			continue
 		var available_lanes: Array[int] = _get_available_lanes(segment_slots, large_counts, segment_index, selected_scene)
 		if available_lanes.is_empty():
 			continue
@@ -228,11 +256,14 @@ func _get_obstacle_slot_position(segment_index: int, lane_index: int) -> Vector3
 	var segment_center: float = (segment_start + segment_end) * 0.5
 	var z_jitter: float = min(segment_length * 0.22, max((segment_end - segment_start) * 0.42, 0.0))
 	var x_position: float = _get_lane_center_x(lane_index)
+	var z_min: float = maxf(segment_center - z_jitter, hazard_config.obstacle_min_z)
+	var z_max: float = minf(segment_center + z_jitter, hazard_config.obstacle_max_z)
+	var z: float = _get_random_surface_z(z_min, z_max)
 
 	return Vector3(
 		clamp(x_position + _rng.randf_range(-hazard_config.obstacle_lane_jitter, hazard_config.obstacle_lane_jitter), -hazard_config.obstacle_half_width, hazard_config.obstacle_half_width),
-		_surface_y(0.45),
-		clamp(segment_center + _rng.randf_range(-z_jitter, z_jitter), hazard_config.obstacle_min_z, hazard_config.obstacle_max_z)
+		_surface_y_at_z(z, 0.45),
+		z
 	)
 
 func _get_lane_center_x(lane_index: int) -> float:
@@ -250,6 +281,22 @@ func _get_obstacle_segment_count() -> int:
 	var segment_length: float = max(hazard_config.obstacle_segment_length, 0.5)
 	var placement_length: float = max(hazard_config.obstacle_max_z - hazard_config.obstacle_min_z, 0.0)
 	return int(ceil(placement_length / segment_length))
+
+func _obstacle_segment_has_surface(segment_index: int) -> bool:
+	if hazard_config == null or hazard_config.placement_surface_zones.is_empty():
+		return true
+	var segment_length: float = max(hazard_config.obstacle_segment_length, 0.5)
+	var segment_start: float = hazard_config.obstacle_min_z + float(segment_index) * segment_length
+	var segment_end: float = min(segment_start + segment_length, hazard_config.obstacle_max_z)
+	var segment_center: float = (segment_start + segment_end) * 0.5
+	var z_jitter: float = min(segment_length * 0.22, max((segment_end - segment_start) * 0.42, 0.0))
+	var z_min: float = maxf(segment_center - z_jitter, hazard_config.obstacle_min_z)
+	var z_max: float = minf(segment_center + z_jitter, hazard_config.obstacle_max_z)
+	return SURFACE_SPAWN_RESOLVER.has_overlap(
+		hazard_config.placement_surface_zones,
+		z_min,
+		z_max
+	)
 
 func _is_large_obstacle_scene(scene: PackedScene) -> bool:
 	return scene == obstacle_scene or scene == vehicle_obstacle_scene
@@ -300,6 +347,20 @@ func _append_weighted_scene(weighted_scenes: Array[PackedScene], scene: PackedSc
 		weighted_scenes.append(scene)
 
 
-func _surface_y(offset: float) -> float:
+func _get_random_surface_z(min_z: float, max_z: float) -> float:
+	var active_config: HazardConfig = hazard_config
+	if active_config == null or active_config.placement_surface_zones.is_empty():
+		return _rng.randf_range(min_z, max_z)
+	return SURFACE_SPAWN_RESOLVER.random_z(
+		_rng,
+		active_config.placement_surface_zones,
+		min_z,
+		max_z
+	)
+
+
+func _surface_y_at_z(z: float, offset: float) -> float:
 	var base_y: float = hazard_config.placement_surface_y if hazard_config != null else 0.0
+	if hazard_config != null:
+		base_y = SURFACE_SPAWN_RESOLVER.y_at_z(hazard_config.placement_surface_zones, z, base_y)
 	return base_y + offset

@@ -1,6 +1,8 @@
 class_name HumanDefenderManager
 extends Node3D
 
+const SURFACE_SPAWN_RESOLVER := preload("res://scripts/maps/surface_spawn_resolver.gd")
+
 @export var config: HumanDefenderConfig
 @export var defender_scene: PackedScene
 @export var zombie_manager_path: NodePath
@@ -73,10 +75,11 @@ func _get_defender_position() -> Vector3:
 	return _get_random_defender_position()
 
 func _get_random_defender_position() -> Vector3:
+	var z: float = _get_random_surface_z(config.placement_min_z, config.placement_max_z)
 	return Vector3(
 		_rng.randf_range(-config.placement_half_width, config.placement_half_width),
-		0.12,
-		_rng.randf_range(config.placement_min_z, config.placement_max_z)
+		_surface_y_at_z(z, 0.12),
+		z
 	)
 
 func _face_road_center(defender: HumanDefender) -> void:
@@ -99,3 +102,20 @@ func _is_position_clear(candidate: Vector3, used_positions: Array[Vector3], mini
 		if offset.length_squared() < minimum_distance_squared:
 			return false
 	return true
+
+func _get_random_surface_z(min_z: float, max_z: float) -> float:
+	var active_config: HumanDefenderConfig = config
+	if active_config == null or active_config.placement_surface_zones.is_empty():
+		return _rng.randf_range(min_z, max_z)
+	return SURFACE_SPAWN_RESOLVER.random_z(
+		_rng,
+		active_config.placement_surface_zones,
+		min_z,
+		max_z
+	)
+
+func _surface_y_at_z(z: float, offset: float) -> float:
+	var base_y: float = config.placement_surface_y if config != null else 0.0
+	if config != null:
+		base_y = SURFACE_SPAWN_RESOLVER.y_at_z(config.placement_surface_zones, z, base_y)
+	return base_y + offset

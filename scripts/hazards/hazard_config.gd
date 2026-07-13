@@ -7,6 +7,7 @@ extends Resource
 @export var placement_min_z: float = -30.0
 @export var placement_max_z: float = 26.0
 @export var placement_surface_y: float = 0.0
+@export var placement_surface_zones: Array[Dictionary] = []
 @export var obstacle_half_width: float = 5.8
 @export var obstacle_min_z: float = -32.0
 @export var obstacle_max_z: float = 31.0

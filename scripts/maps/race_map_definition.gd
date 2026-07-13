@@ -106,6 +106,7 @@ func apply_hazard_profile_to(
 			powerup_config.boost_duration = map_boost_duration
 	if human_defender_config != null:
 		human_defender_config.defender_count = map_defender_count
+		human_defender_config.placement_surface_y = resolve_hazard_surface_y()
 		if map_defender_gun_type >= 0:
 			human_defender_config.gun_type = map_defender_gun_type
 		if map_defender_seconds_between_shots > 0.0:
