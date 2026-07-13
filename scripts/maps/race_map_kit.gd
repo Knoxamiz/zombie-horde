@@ -841,8 +841,229 @@ func _compose_broken_bridge(segments: Array[Dictionary], gaps: Array[Dictionary]
 
 	_compose_bridge_gap_visuals(gaps)
 	_place_bridge_lane_guides(segments, gaps)
+	_place_suspension_bridge_dressing(segments, edge_x)
 	_place_street_lights_authored(-70.0, 70.0, light_x, 24.0, 6.0)
 	_place_bridge_void_props(damage_clusters)
+
+
+func _place_suspension_bridge_dressing(
+	segments: Array[Dictionary],
+	edge_x: float
+) -> void:
+	if _visual_root == null or segments.is_empty():
+		return
+	var z_start: float = float(segments.front().get("z0", -84.0))
+	var z_end: float = float(segments.back().get("z1", 84.0))
+	var tower_z_values: PackedFloat32Array = PackedFloat32Array([
+		lerpf(z_start, z_end, 0.18),
+		lerpf(z_start, z_end, 0.82),
+	])
+	var side_x: float = edge_x + 2.4
+	var steel_mat: StandardMaterial3D = _make_bridge_steel_material()
+	var cable_mat: StandardMaterial3D = _make_bridge_cable_material()
+	var dressing_root := Node3D.new()
+	dressing_root.name = "SuspensionBridgeDressing"
+	_visual_root.add_child(dressing_root)
+
+	for tower_z in tower_z_values:
+		_add_bridge_tower_frame(dressing_root, tower_z, side_x, steel_mat)
+
+	for side in [-1.0, 1.0]:
+		_add_bridge_cable_anchor(
+			dressing_root,
+			Vector3(side * side_x, _surface_y_at(z_start) + 2.3, z_start + 3.0),
+			steel_mat
+		)
+		_add_bridge_cable_anchor(
+			dressing_root,
+			Vector3(side * side_x, _surface_y_at(z_end) + 2.3, z_end - 3.0),
+			steel_mat
+		)
+		var cable_points: Array[Vector3] = _build_suspension_cable_points(
+			side * side_x,
+			z_start,
+			z_end,
+			tower_z_values[0],
+			tower_z_values[1]
+		)
+		for point_index in range(cable_points.size() - 1):
+			_add_beam_between(
+				dressing_root,
+				"MainCable",
+				cable_points[point_index],
+				cable_points[point_index + 1],
+				Vector2(0.16, 0.16),
+				cable_mat
+			)
+		for cable_point in cable_points:
+			var deck_y: float = _surface_y_at(cable_point.z)
+			_add_bridge_box(
+				dressing_root,
+				"HangerCable",
+				Vector3(0.09, maxf(cable_point.y - deck_y - 1.25, 0.5), 0.09),
+				Vector3(cable_point.x, (cable_point.y + deck_y + 1.25) * 0.5, cable_point.z),
+				cable_mat
+			)
+			_add_bridge_box(
+				dressing_root,
+				"DeckTie",
+				Vector3(0.32, 0.18, 0.42),
+				Vector3(cable_point.x, deck_y + 1.12, cable_point.z),
+				steel_mat
+			)
+
+
+func _add_bridge_tower_frame(
+	parent: Node3D,
+	tower_z: float,
+	side_x: float,
+	steel_mat: Material
+) -> void:
+	var deck_y: float = _surface_y_at(tower_z)
+	var tower_height: float = 13.5
+	var tower_y: float = deck_y + tower_height * 0.5
+	var post_size: Vector3 = Vector3(0.58, tower_height, 0.58)
+	for side in [-1.0, 1.0]:
+		var x: float = side * side_x
+		_add_bridge_box(parent, "SuspensionTowerPost", post_size, Vector3(x, tower_y, tower_z), steel_mat)
+		_add_bridge_box(
+			parent,
+			"SuspensionTowerFoot",
+			Vector3(1.7, 0.45, 1.35),
+			Vector3(x, deck_y + 0.2, tower_z),
+			steel_mat
+		)
+	var top_y: float = deck_y + tower_height - 0.6
+	var mid_y: float = deck_y + tower_height * 0.58
+	var span_width: float = side_x * 2.0 + 0.8
+	_add_bridge_box(
+		parent,
+		"TowerTopCrossbeam",
+		Vector3(span_width, 0.48, 0.5),
+		Vector3(0.0, top_y, tower_z),
+		steel_mat
+	)
+	_add_bridge_box(
+		parent,
+		"TowerMidCrossbeam",
+		Vector3(span_width, 0.34, 0.4),
+		Vector3(0.0, mid_y, tower_z),
+		steel_mat
+	)
+	_add_beam_between(
+		parent,
+		"TowerXBrace",
+		Vector3(-side_x, deck_y + 1.4, tower_z),
+		Vector3(side_x, top_y - 0.4, tower_z),
+		Vector2(0.16, 0.16),
+		steel_mat
+	)
+	_add_beam_between(
+		parent,
+		"TowerXBrace",
+		Vector3(side_x, deck_y + 1.4, tower_z),
+		Vector3(-side_x, top_y - 0.4, tower_z),
+		Vector2(0.16, 0.16),
+		steel_mat
+	)
+
+
+func _add_bridge_cable_anchor(parent: Node3D, position: Vector3, steel_mat: Material) -> void:
+	_add_bridge_box(parent, "CableAnchor", Vector3(1.25, 1.1, 1.8), position, steel_mat)
+	_add_bridge_box(
+		parent,
+		"CableAnchorCap",
+		Vector3(1.7, 0.32, 2.1),
+		position + Vector3(0.0, 0.68, 0.0),
+		steel_mat
+	)
+
+
+func _build_suspension_cable_points(
+	x: float,
+	z_start: float,
+	z_end: float,
+	tower_start_z: float,
+	tower_end_z: float
+) -> Array[Vector3]:
+	var points: Array[Vector3] = []
+	var point_count: int = 19
+	var anchor_start_z: float = z_start + 5.0
+	var anchor_end_z: float = z_end - 5.0
+	for index in range(point_count):
+		var t: float = float(index) / float(point_count - 1)
+		var z: float = lerpf(anchor_start_z, anchor_end_z, t)
+		var deck_y: float = _surface_y_at(z)
+		var offset_y: float = 8.6
+		if z < tower_start_z:
+			var approach_t: float = inverse_lerp(anchor_start_z, tower_start_z, z)
+			offset_y = lerpf(4.8, 13.4, clampf(approach_t, 0.0, 1.0))
+		elif z > tower_end_z:
+			var exit_t: float = inverse_lerp(tower_end_z, anchor_end_z, z)
+			offset_y = lerpf(13.4, 4.8, clampf(exit_t, 0.0, 1.0))
+		else:
+			var span_t: float = inverse_lerp(tower_start_z, tower_end_z, z)
+			var centered: float = absf(span_t - 0.5) * 2.0
+			offset_y = 8.6 + centered * centered * 4.8
+		var cable_y: float = deck_y + offset_y
+		points.append(Vector3(x, cable_y, z))
+	return points
+
+
+func _add_bridge_box(
+	parent: Node3D,
+	box_name: String,
+	size: Vector3,
+	position: Vector3,
+	material: Material
+) -> MeshInstance3D:
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.name = box_name
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	mesh_instance.mesh = mesh
+	mesh_instance.position = position
+	mesh_instance.material_override = material
+	parent.add_child(mesh_instance)
+	return mesh_instance
+
+
+func _add_beam_between(
+	parent: Node3D,
+	beam_name: String,
+	start: Vector3,
+	end: Vector3,
+	cross_section: Vector2,
+	material: Material
+) -> void:
+	var delta: Vector3 = end - start
+	var length: float = delta.length()
+	if length <= 0.01:
+		return
+	var beam: MeshInstance3D = _add_bridge_box(
+		parent,
+		beam_name,
+		Vector3(cross_section.x, cross_section.y, length),
+		(start + end) * 0.5,
+		material
+	)
+	beam.look_at(end, Vector3.UP)
+
+
+func _make_bridge_steel_material() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.12, 0.16, 0.18, 1.0)
+	mat.metallic = 0.75
+	mat.roughness = 0.42
+	return mat
+
+
+func _make_bridge_cable_material() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.34, 0.38, 0.38, 1.0)
+	mat.metallic = 0.9
+	mat.roughness = 0.34
+	return mat
 
 
 func _place_bridge_side_shreds(
