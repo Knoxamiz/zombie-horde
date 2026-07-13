@@ -77,7 +77,7 @@ func _run_single_scenario(zombie_count: int) -> void:
 
 	var main_game: Node = await _boot_main_game()
 	if main_game == null:
-		metrics.passed = false
+		metrics["passed"] = false
 		_print_scenario_report(metrics, "main game boot failed")
 		return
 
@@ -88,13 +88,13 @@ func _run_single_scenario(zombie_count: int) -> void:
 	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(MAP_ID)
 
 	if map_controller == null or round_manager == null or zombie_manager == null or debug_join == null:
-		metrics.passed = false
+		metrics["passed"] = false
 		_print_scenario_report(metrics, "missing core systems")
 		main_game.queue_free()
 		return
 
 	if not map_controller.set_active_map_by_id(MAP_ID):
-		metrics.passed = false
+		metrics["passed"] = false
 		_print_scenario_report(metrics, "playable map load failed")
 		main_game.queue_free()
 		return
@@ -107,7 +107,7 @@ func _run_single_scenario(zombie_count: int) -> void:
 	await create_timer(0.2).timeout
 
 	if round_manager.get_pending_count() < zombie_count:
-		metrics.passed = false
+		metrics["passed"] = false
 		_print_scenario_report(
 			metrics,
 			"only %d participants queued before start (expected %d)"
@@ -117,9 +117,9 @@ func _run_single_scenario(zombie_count: int) -> void:
 		return
 
 	var monitor := _ZombieRunMonitor.new()
-	round_manager.start_round()
+	_start_and_launch_round_for_test(round_manager)
 	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 12.0):
-		metrics.passed = false
+		metrics["passed"] = false
 		_print_scenario_report(metrics, "round never entered RUNNING")
 		main_game.queue_free()
 		return
@@ -130,11 +130,11 @@ func _run_single_scenario(zombie_count: int) -> void:
 	await _ensure_race_systems_active(main_game)
 	_disable_combat_for_map_test(main_game)
 
-	metrics.spawned = zombie_manager.get_total_count()
-	if metrics.spawned != zombie_count:
+	metrics["spawned"] = zombie_manager.get_total_count()
+	if int(metrics["spawned"]) != zombie_count:
 		_fail_scenario(
 			metrics,
-			"expected %d spawned zombies, got %d" % [zombie_count, metrics.spawned]
+			"expected %d spawned zombies, got %d" % [zombie_count, int(metrics["spawned"])]
 		)
 
 	var timeout: float = _timeout_for_count(zombie_count)
@@ -150,15 +150,15 @@ func _run_single_scenario(zombie_count: int) -> void:
 			break
 
 	monitor.finish(zombie_manager)
-	metrics.reached_goal = monitor.reached_goal
-	metrics.killed_oob = monitor.killed_oob
-	metrics.killed_fell = monitor.killed_fell
-	metrics.killed_lateral_oob = monitor.killed_lateral_oob
-	metrics.killed_sewer = monitor.killed_sewer
-	metrics.killed_other = monitor.killed_other
-	metrics.stuck = monitor.stuck
-	metrics.off_bridge = monitor.off_bridge_violations
-	metrics.max_progress = monitor.max_progress
+	metrics["reached_goal"] = monitor.reached_goal
+	metrics["killed_oob"] = monitor.killed_oob
+	metrics["killed_fell"] = monitor.killed_fell
+	metrics["killed_lateral_oob"] = monitor.killed_lateral_oob
+	metrics["killed_sewer"] = monitor.killed_sewer
+	metrics["killed_other"] = monitor.killed_other
+	metrics["stuck"] = monitor.stuck
+	metrics["off_bridge"] = monitor.off_bridge_violations
+	metrics["max_progress"] = monitor.max_progress
 
 	_evaluate_scenario(metrics, zombie_count)
 	_print_scenario_report(metrics, "", monitor.get_stuck_diagnostics())
@@ -180,8 +180,8 @@ func _run_oob_probe() -> void:
 		main_game.queue_free()
 		return
 
-	if not map_controller.load_prototype_map_for_test(MAP_ID):
-		_fail("OOB probe: prototype load failed")
+	if not map_controller.set_active_map_by_id(MAP_ID):
+		_fail("OOB probe: playable map load failed")
 		main_game.queue_free()
 		return
 
@@ -194,7 +194,7 @@ func _run_oob_probe() -> void:
 		main_game.queue_free()
 		return
 
-	round_manager.start_round()
+	_start_and_launch_round_for_test(round_manager)
 	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 12.0):
 		_fail("OOB probe: round did not enter RUNNING")
 		main_game.queue_free()
@@ -252,8 +252,8 @@ func _run_void_hazard_probe() -> void:
 		main_game.queue_free()
 		return
 
-	if not map_controller.load_prototype_map_for_test(MAP_ID):
-		_fail("Void hazard probe: prototype load failed")
+	if not map_controller.set_active_map_by_id(MAP_ID):
+		_fail("Void hazard probe: playable map load failed")
 		main_game.queue_free()
 		return
 
@@ -266,7 +266,7 @@ func _run_void_hazard_probe() -> void:
 		main_game.queue_free()
 		return
 
-	round_manager.start_round()
+	_start_and_launch_round_for_test(round_manager)
 	if not await _wait_for_round_state(round_manager, RoundManager.RoundState.RUNNING, 12.0):
 		_fail("Void hazard probe: round did not enter RUNNING")
 		main_game.queue_free()
@@ -320,8 +320,8 @@ func _verify_hud_and_camera(main_game: Node) -> void:
 	if hud.get_script() == null:
 		_fail("HUD script failed to compile")
 
-	if map_controller != null and not map_controller.load_prototype_map_for_test(MAP_ID):
-		_fail("HUD verification could not load prototype map")
+	if map_controller != null and not map_controller.set_active_map_by_id(MAP_ID):
+		_fail("HUD verification could not load playable map")
 
 	hud.visible = true
 	if hud.has_method("refresh_display"):
@@ -350,9 +350,8 @@ func _restore_city_highway(main_game: Node) -> void:
 	if map_controller == null:
 		_fail("Could not restore City Highway: RaceMapController missing")
 		return
-	map_controller.clear_prototype_test_load(true)
-	if map_controller.is_prototype_test_load_active():
-		_fail("Prototype test flag still active after restore")
+	if not map_controller.set_active_map_by_id(MapCatalog.DEFAULT_MAP_ID):
+		_fail("Could not restore City Highway: playable map load failed")
 
 
 func _configure_test_round(
@@ -499,14 +498,22 @@ func _disable_combat_for_map_test(main_game: Node) -> void:
 
 
 func _evaluate_scenario(metrics: Dictionary, zombie_count: int) -> void:
-	if metrics.spawned <= 0:
+	var spawned: int = int(metrics["spawned"])
+	var reached_goal: int = int(metrics["reached_goal"])
+	var killed_oob: int = int(metrics["killed_oob"])
+	var killed_other: int = int(metrics["killed_other"])
+	var stuck: int = int(metrics["stuck"])
+	var off_bridge: int = int(metrics["off_bridge"])
+	var max_progress: float = float(metrics["max_progress"])
+
+	if spawned <= 0:
 		_fail_scenario(metrics, "no zombies spawned")
 		return
 
-	if metrics.spawned != zombie_count:
+	if spawned != zombie_count:
 		_fail_scenario(
 			metrics,
-			"expected %d spawned zombies, got %d" % [zombie_count, metrics.spawned]
+			"expected %d spawned zombies, got %d" % [zombie_count, spawned]
 		)
 
 	if _is_stress_report_only(zombie_count):
@@ -514,37 +521,37 @@ func _evaluate_scenario(metrics: Dictionary, zombie_count: int) -> void:
 		return
 
 	var resolved_count: int = (
-		metrics.reached_goal + metrics.killed_oob + metrics.killed_other
+		reached_goal + killed_oob + killed_other
 	)
-	var resolve_ratio: float = float(resolved_count) / float(metrics.spawned)
+	var resolve_ratio: float = float(resolved_count) / float(spawned)
 	var min_goal: int = _minimum_goal_count(zombie_count)
-	var passed_goal: bool = metrics.reached_goal >= min_goal
+	var passed_goal: bool = reached_goal >= min_goal
 	var passed_resolve: bool = resolve_ratio >= 0.80
 
 	if not passed_goal and not passed_resolve:
 		_fail_scenario(
 			metrics,
 			"need at least %d goal or 80%% clean resolve; got goal=%d resolve=%.0f%%"
-			% [min_goal, metrics.reached_goal, resolve_ratio * 100.0]
+			% [min_goal, reached_goal, resolve_ratio * 100.0]
 		)
 
-	if metrics.max_progress < 0.35:
+	if max_progress < 0.35:
 		_fail_scenario(
 			metrics,
-			"max progress %.2f below required 0.35" % metrics.max_progress
+			"max progress %.2f below required 0.35" % max_progress
 		)
 
-	var max_stuck: int = _maximum_stuck_count(metrics.spawned)
-	if metrics.stuck > max_stuck:
+	var max_stuck: int = _maximum_stuck_count(spawned)
+	if stuck > max_stuck:
 		_fail_scenario(
 			metrics,
-			"%d zombies were stuck on the bridge (max allowed %d)" % [metrics.stuck, max_stuck]
+			"%d zombies were stuck on the bridge (max allowed %d)" % [stuck, max_stuck]
 		)
 
-	if metrics.off_bridge > 0:
+	if off_bridge > 0:
 		_fail_scenario(
 			metrics,
-			"%d zombies ran on invisible floor outside the visible deck" % metrics.off_bridge
+			"%d zombies ran on invisible floor outside the visible deck" % off_bridge
 		)
 
 
@@ -568,19 +575,19 @@ func _print_stress_report_only(metrics: Dictionary) -> void:
 	print(
 		"[%d zombies] stress scenario is report-only (spawned=%d goal=%d oob=%d stuck=%d max_progress=%.2f)"
 		% [
-			metrics.requested,
-			metrics.spawned,
-			metrics.reached_goal,
-			metrics.killed_oob,
-			metrics.stuck,
-			metrics.max_progress,
+			int(metrics["requested"]),
+			int(metrics["spawned"]),
+			int(metrics["reached_goal"]),
+			int(metrics["killed_oob"]),
+			int(metrics["stuck"]),
+			float(metrics["max_progress"]),
 		]
 	)
-	if metrics.reached_goal <= 0 and metrics.max_progress < 0.25:
+	if int(metrics["reached_goal"]) <= 0 and float(metrics["max_progress"]) < 0.25:
 		_fail_scenario(
 			metrics,
 			"catastrophic stress failure: no goal reachers and max progress %.2f"
-			% metrics.max_progress
+			% float(metrics["max_progress"])
 		)
 
 
@@ -597,27 +604,28 @@ func _print_scenario_report(
 	extra_reason: String = "",
 	stuck_diagnostics: Array = []
 ) -> void:
-	if not extra_reason.is_empty() and metrics.passed:
-		metrics.passed = false
-		_fail("[%d zombies] %s" % [metrics.requested, extra_reason])
+	if not extra_reason.is_empty():
+		metrics["passed"] = false
+		_fail("[%d zombies] %s" % [int(metrics["requested"]), extra_reason])
 
-	var result_text: String = "PASSED" if metrics.passed else "FAILED"
-	if not metrics.passed:
+	var result_text: String = "PASSED" if bool(metrics["passed"]) else "FAILED"
+	if not bool(metrics["passed"]):
 		_overall_passed = false
 
 	print("")
 	print("BROKEN BRIDGE REAL GAMEPLAY TEST")
+	print("- zombies requested: %d" % int(metrics["requested"]))
 	print("- map loaded: %s" % MAP_ID)
-	print("- zombies spawned: %d" % metrics.spawned)
-	print("- zombies reached goal: %d" % metrics.reached_goal)
-	print("- zombies killed/OOB: %d" % metrics.killed_oob)
-	print("- zombies killed/fell: %d" % metrics.killed_fell)
-	print("- zombies killed/lateral_oob: %d" % metrics.killed_lateral_oob)
-	print("- zombies killed/sewer: %d" % metrics.killed_sewer)
-	print("- zombies killed/other: %d" % metrics.killed_other)
-	print("- zombies stuck: %d" % metrics.stuck)
-	print("- off-bridge violations: %d" % metrics.off_bridge)
-	print("- max progress: %.2f" % metrics.max_progress)
+	print("- zombies spawned: %d" % int(metrics["spawned"]))
+	print("- zombies reached goal: %d" % int(metrics["reached_goal"]))
+	print("- zombies killed/OOB: %d" % int(metrics["killed_oob"]))
+	print("- zombies killed/fell: %d" % int(metrics["killed_fell"]))
+	print("- zombies killed/lateral_oob: %d" % int(metrics["killed_lateral_oob"]))
+	print("- zombies killed/sewer: %d" % int(metrics["killed_sewer"]))
+	print("- zombies killed/other: %d" % int(metrics["killed_other"]))
+	print("- zombies stuck: %d" % int(metrics["stuck"]))
+	print("- off-bridge violations: %d" % int(metrics["off_bridge"]))
+	print("- max progress: %.2f" % float(metrics["max_progress"]))
 	print("- runtime errors: %s" % (_format_runtime_errors()))
 	print("- result: %s" % result_text)
 	if not stuck_diagnostics.is_empty():
@@ -646,6 +654,12 @@ func _wait_for_round_state(round_manager: RoundManager, target_state: int, timeo
 		await create_timer(0.1).timeout
 		elapsed += 0.1
 	return round_manager.state == target_state
+
+
+func _start_and_launch_round_for_test(round_manager: RoundManager) -> void:
+	round_manager.start_round()
+	if round_manager.state == RoundManager.RoundState.COUNTDOWN:
+		round_manager.launch_round()
 
 
 func _verify_saved_settings_unchanged() -> void:
@@ -710,8 +724,8 @@ func _node(main_game: Node, path: String) -> Node:
 
 
 func _fail_scenario(metrics: Dictionary, message: String) -> void:
-	metrics.passed = false
-	_fail("[%d zombies] %s" % [metrics.requested, message])
+	metrics["passed"] = false
+	_fail("[%d zombies] %s" % [int(metrics["requested"]), message])
 
 
 func _fail(message: String) -> void:
@@ -782,7 +796,7 @@ class _ZombieRunMonitor:
 		stuck_seconds: float,
 		off_bridge_margin: float
 	) -> void:
-		_deck_half_width = 4.5 if definition == null else definition.lane_half_width
+		_deck_half_width = _BRIDGE_SAFE_HALF_WIDTH
 		_deck_y = _BRIDGE_LAYOUT.BRIDGE_DECK_Y if definition == null else (
 			definition.deck_y if definition.deck_y > 0.0 else _BRIDGE_LAYOUT.BRIDGE_DECK_Y
 		)

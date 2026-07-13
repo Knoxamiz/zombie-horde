@@ -48,6 +48,8 @@ var _is_current_leader: bool = false
 var _lane_offset: float = 0.0
 var _stall_timer: float = 0.0
 var _last_progress_sample: float = 0.0
+var _death_cause: String = ""
+var _fell_visual_timer: float = 0.0
 
 const _ANTI_CLUMP_RADIUS: float = 0.78
 const _ANTI_CLUMP_STRENGTH: float = 2.6
@@ -102,6 +104,8 @@ func configure_zombie(
 	_stall_timer = 0.0
 	_last_progress_sample = 0.0
 	health = _get_config().max_health
+	_death_cause = ""
+	_fell_visual_timer = 0.0
 	_is_current_leader = false
 	_assign_zombie_tint_color()
 	_select_visual_variant()
@@ -190,12 +194,17 @@ func kill(cause: String) -> void:
 	if not is_alive():
 		return
 
+	var death_velocity: Vector3 = velocity
 	mobility_state = MobilityState.DEAD
 	_round_active = false
+	_death_cause = cause
 	collision_layer = 4
 	collision_mask = 1
-	velocity = Vector3.ZERO
-	_stop_animation()
+	if cause == "fell":
+		_begin_fell_visual(death_velocity, _get_config())
+	else:
+		velocity = Vector3.ZERO
+		_stop_animation()
 	GameEvents.impact_mark_requested.emit(global_position, "death_blood")
 	_apply_state_visuals()
 	died.emit(self, cause)
@@ -250,6 +259,10 @@ func _physics_process(delta: float) -> void:
 	_check_out_of_bounds(active_config)
 
 func _process_dead_body(delta: float, active_config: ZombieConfig) -> void:
+	if _is_fell_visual_active():
+		_process_fell_visual(delta, active_config)
+		return
+
 	var vertical_velocity: float = velocity.y
 	if not is_on_floor():
 		vertical_velocity -= active_config.gravity * delta
@@ -262,6 +275,49 @@ func _process_dead_body(delta: float, active_config: ZombieConfig) -> void:
 		move_toward(velocity.z, 0.0, active_config.body_settle_damping * delta)
 	)
 	_move_and_slide_with_audit()
+
+
+func _begin_fell_visual(death_velocity: Vector3, active_config: ZombieConfig) -> void:
+	_fell_visual_timer = maxf(active_config.fell_visual_duration, 0.0)
+	if _fell_visual_timer <= 0.0:
+		velocity = Vector3.ZERO
+		_stop_animation()
+		return
+
+	var horizontal_velocity: Vector3 = Vector3(death_velocity.x, 0.0, death_velocity.z)
+	if horizontal_velocity.length() > active_config.fell_visual_horizontal_speed:
+		horizontal_velocity = (
+			horizontal_velocity.normalized()
+			* active_config.fell_visual_horizontal_speed
+		)
+	velocity = Vector3(
+		horizontal_velocity.x,
+		-maxf(active_config.fell_visual_drop_speed, 0.1),
+		horizontal_velocity.z
+	)
+
+
+func _process_fell_visual(delta: float, active_config: ZombieConfig) -> void:
+	_fell_visual_timer = maxf(0.0, _fell_visual_timer - delta)
+	var drop_speed: float = maxf(active_config.fell_visual_drop_speed, 0.1)
+	velocity = Vector3(
+		move_toward(velocity.x, 0.0, active_config.body_settle_damping * delta),
+		-drop_speed,
+		move_toward(velocity.z, 0.0, active_config.body_settle_damping * delta)
+	)
+	_move_and_slide_with_audit()
+	if _fell_visual_timer <= 0.0 or global_position.y < active_config.out_of_bounds_min_y - 8.0:
+		_fell_visual_timer = 0.0
+		_hide_dead_visuals()
+
+
+func _is_fell_visual_active() -> bool:
+	return (
+		mobility_state == MobilityState.DEAD
+		and _death_cause == "fell"
+		and _fell_visual_timer > 0.0
+	)
+
 
 func _get_desired_velocity(active_config: ZombieConfig) -> Vector3:
 	var race_forward: Vector3 = _get_race_forward()
@@ -507,6 +563,8 @@ func _check_gap_void(active_config: ZombieConfig) -> bool:
 		var crossing_half: float = float(zone.get("crossing_half_width", 0.0))
 		if abs(global_position.x) <= crossing_half + 0.12:
 			continue
+		if zone.has("deck_y") and global_position.y >= active_config.out_of_bounds_min_y:
+			return false
 		GameEvents.world_feedback_requested.emit(
 			global_position + Vector3.UP * 1.2, "VOID!", Color(0.55, 0.78, 1.0, 1.0)
 		)
@@ -569,7 +627,10 @@ func _apply_state_visuals() -> void:
 		_apply_collision_profile(true)
 		_set_body_material(crawler_material)
 	elif mobility_state == MobilityState.DEAD:
-		_hide_dead_visuals()
+		if _is_fell_visual_active():
+			_show_fell_dead_visuals()
+		else:
+			_hide_dead_visuals()
 	else:
 		_visual_root.visible = true
 		_activate_visual_variant_for_state()
@@ -580,7 +641,10 @@ func _apply_state_visuals() -> void:
 	if mobility_state != MobilityState.DEAD:
 		_apply_name_label_style()
 	if mobility_state == MobilityState.DEAD:
-		_stop_animation()
+		if _is_fell_visual_active():
+			_play_animation_for_state(true)
+		else:
+			_stop_animation()
 	else:
 		_play_animation_for_state(true)
 	_refresh_name_label()
@@ -666,6 +730,16 @@ func _hide_dead_visuals() -> void:
 	_stop_animation()
 	_hide_variant_root(_variant_root)
 	_visual_root.visible = false
+	_set_name_label_visible(false)
+	_set_collision_enabled(false)
+
+
+func _show_fell_dead_visuals() -> void:
+	_visual_root.visible = true
+	_activate_visual_variant_for_state()
+	_visual_root.scale = Vector3.ONE
+	_visual_root.rotation_degrees = Vector3.ZERO
+	_set_body_material(dead_material)
 	_set_name_label_visible(false)
 	_set_collision_enabled(false)
 

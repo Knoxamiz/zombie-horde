@@ -887,15 +887,25 @@ func _apply_kit_gap_void_zones(map: Node3D) -> void:
 	var crossing_half_width: float = KIT_SURFACE_BUILDER.gap_crossing_half_width(
 		path_half_width, crossing_ratio
 	)
+	var surface_pieces: Array = KIT_SURFACE_BUILDER.resolve_layout_surface_pieces(layout)
 
 	for raw_gap in gaps:
 		if raw_gap is not Dictionary:
 			continue
 		var gap: Dictionary = raw_gap
+		var z0: float = float(gap.get("z0", 0.0))
+		var z1: float = float(gap.get("z1", 0.0))
+		var deck_y: float = KIT_SURFACE_BUILDER.get_gap_crossing_top_y(
+			surface_pieces,
+			z0,
+			z1,
+			0.0
+		)
 		zombie_config.gap_void_zones.append(
 			{
-				"z0": float(gap.get("z0", 0.0)),
-				"z1": float(gap.get("z1", 0.0)),
+				"z0": z0,
+				"z1": z1,
 				"crossing_half_width": crossing_half_width,
+				"deck_y": deck_y,
 			}
 		)

@@ -15,6 +15,7 @@ const FAIL := 1
 
 var _failures: PackedStringArray = PackedStringArray()
 var _death_cause: String = ""
+var _death_y: float = 0.0
 
 
 func _initialize() -> void:
@@ -37,7 +38,7 @@ func _run() -> void:
 	var crossing_half: float = SURFACE_BUILDER.gap_crossing_half_width(
 		path_half_width, crossing_ratio
 	)
-	var lane_half_width: float = 2.0
+	var edge_probe_x: float = path_half_width - 0.2
 
 	var packed: PackedScene = BOOT.load_main_game_scene()
 	if packed == null:
@@ -105,14 +106,14 @@ func _run() -> void:
 		round_manager,
 		zombie_manager,
 		debug_join,
-		Vector3(lane_half_width, deck_y + 0.45, gap_center_z),
+		Vector3(edge_probe_x, deck_y + 0.45, gap_center_z),
 		true,
 		"lane edge void"
 	)
-	if lane_half_width <= crossing_half + 0.12:
+	if edge_probe_x <= crossing_half + 0.12:
 		_fail(
-			"lane half-width %.2f must exceed crossing safe zone %.2f or gaps are not hazardous"
-			% [lane_half_width, crossing_half + 0.12]
+			"edge probe %.2f must exceed crossing safe zone %.2f or gaps are not hazardous"
+			% [edge_probe_x, crossing_half + 0.12]
 		)
 
 	main_game.queue_free()
@@ -128,6 +129,7 @@ func _probe_gap_position(
 	label: String
 ) -> void:
 	_death_cause = ""
+	_death_y = 0.0
 	round_manager.reset_round(false)
 	zombie_manager.clear_all_zombies()
 	debug_join.request_random_join()
@@ -151,10 +153,19 @@ func _probe_gap_position(
 	zombie.velocity = Vector3.ZERO
 
 	var elapsed: float = 0.0
+	var lowest_y: float = probe_position.y
 	while elapsed < 4.0:
+		lowest_y = minf(lowest_y, zombie.global_position.y)
 		if should_die and not zombie.is_alive():
 			if _death_cause != "fell":
 				_fail("%s: expected fell, got '%s'" % [label, _death_cause])
+			elif _death_y > probe_position.y - 1.0:
+				_fail(
+					"%s: zombie popped before a visible fall (start %.2f, death %.2f, lowest %.2f)"
+					% [label, probe_position.y, _death_y, lowest_y]
+				)
+			elif not await _wait_for_fall_visual(zombie, _death_y, label):
+				pass
 			else:
 				print("%s: passed" % label)
 			return
@@ -170,8 +181,33 @@ func _probe_gap_position(
 		_fail("%s: center crossing not walkable" % label)
 
 
-func _on_probe_died(_zombie: Node, cause: String) -> void:
+func _on_probe_died(zombie: Node, cause: String) -> void:
 	_death_cause = cause
+	var body: Node3D = zombie as Node3D
+	if body != null:
+		_death_y = body.global_position.y
+
+
+func _wait_for_fall_visual(zombie: Zombie, death_y: float, label: String) -> bool:
+	var visual_root: Node3D = zombie.get_node_or_null("VisualRoot") as Node3D
+	if visual_root == null:
+		_fail("%s: zombie has no visual root after fall death" % label)
+		return false
+	if not visual_root.visible:
+		_fail("%s: zombie visual hid immediately after fall death" % label)
+		return false
+
+	var elapsed: float = 0.0
+	var lowest_y: float = death_y
+	while elapsed < 0.8:
+		await create_timer(0.1).timeout
+		elapsed += 0.1
+		lowest_y = minf(lowest_y, zombie.global_position.y)
+
+	if lowest_y > death_y - 0.5:
+		_fail("%s: zombie did not continue dropping after fall death" % label)
+		return false
+	return true
 
 
 func _wait_for_state(round_manager: RoundManager, target_state: int, timeout: float) -> bool:

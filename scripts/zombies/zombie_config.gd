@@ -20,6 +20,9 @@ extends Resource
 @export var gravity: float = 24.0
 @export var launch_damping: float = 6.5
 @export var body_settle_damping: float = 10.0
+@export var fell_visual_duration: float = 1.35
+@export var fell_visual_drop_speed: float = 5.5
+@export var fell_visual_horizontal_speed: float = 1.2
 @export var crawler_visual_scale: Vector3 = Vector3.ONE
 @export var boost_decay_buffer: float = 0.05
 @export_range(0.0, 1.0, 0.01) var lethal_dismember_chance: float = 0.42
@@ -31,7 +34,7 @@ extends Resource
 @export var out_of_bounds_min_z: float = -48.0
 @export var out_of_bounds_max_z: float = 48.0
 @export var out_of_bounds_min_y: float = -3.0
-## Each entry: { "z0": float, "z1": float, "crossing_half_width": float }
+## Each entry: { "z0": float, "z1": float, "crossing_half_width": float, "deck_y": float }
 @export var gap_void_zones: Array[Dictionary] = []
 @export_range(0, 256, 1) var name_label_full_roster_limit: int = 24
 @export var color_variants_enabled: bool = true
