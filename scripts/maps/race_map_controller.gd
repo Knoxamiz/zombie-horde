@@ -68,7 +68,10 @@ func apply_profile(profile: StreamerSettingsProfile) -> bool:
 	var settings_index: int = 0
 	if profile != null:
 		settings_index = profile.get_selected_settings_map_index()
-	return set_active_map_by_settings_index(settings_index)
+	var applied: bool = set_active_map_by_settings_index(settings_index)
+	if applied and profile != null:
+		_apply_streamer_profile_overrides(profile)
+	return applied
 
 
 func set_active_map_index(requested_index: int) -> bool:
@@ -954,3 +957,15 @@ func _set_surface_placement_y(surface_y: float) -> void:
 		powerup_config.placement_surface_y = surface_y
 	if human_defender_config != null:
 		human_defender_config.placement_surface_y = surface_y
+
+
+func _apply_streamer_profile_overrides(profile: StreamerSettingsProfile) -> void:
+	profile.apply_to_configs(
+		hazard_config,
+		zombie_config,
+		null,
+		powerup_config,
+		human_defender_config,
+		null,
+		feature_config
+	)
