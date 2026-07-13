@@ -962,28 +962,12 @@ func _add_suspension_deck_structure(
 				Vector2(0.15, 0.15),
 				steel_mat
 			)
-		if int(round(center_z)) % 16 == 0:
+		if abs(int(round(center_z))) % 32 == 0:
 			_add_bridge_box(
 				parent,
-				"OverheadCrossBar",
-				Vector3(side_x * 2.0 + 0.6, 0.2, 0.24),
-				Vector3(0.0, deck_y + 4.15, center_z),
-				steel_mat
-			)
-			_add_beam_between(
-				parent,
-				"PortalBrace",
-				Vector3(-side_x, deck_y + 1.72, center_z - 0.4),
-				Vector3(side_x, deck_y + 4.15, center_z + 0.4),
-				Vector2(0.13, 0.13),
-				steel_mat
-			)
-			_add_beam_between(
-				parent,
-				"PortalBrace",
-				Vector3(side_x, deck_y + 1.72, center_z - 0.4),
-				Vector3(-side_x, deck_y + 4.15, center_z + 0.4),
-				Vector2(0.13, 0.13),
+				"HighOverheadCrossBar",
+				Vector3(side_x * 2.0 + 0.6, 0.18, 0.22),
+				Vector3(0.0, deck_y + 6.4, center_z),
 				steel_mat
 			)
 		z = next_z
