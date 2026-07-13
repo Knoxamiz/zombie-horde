@@ -865,6 +865,8 @@ func _place_suspension_bridge_dressing(
 	dressing_root.name = "SuspensionBridgeDressing"
 	_visual_root.add_child(dressing_root)
 
+	_add_suspension_deck_structure(dressing_root, segments, side_x, steel_mat)
+
 	for tower_z in tower_z_values:
 		_add_bridge_tower_frame(dressing_root, tower_z, side_x, steel_mat)
 
@@ -907,10 +909,68 @@ func _place_suspension_bridge_dressing(
 			_add_bridge_box(
 				dressing_root,
 				"DeckTie",
-				Vector3(0.32, 0.18, 0.42),
+				Vector3(0.55, 0.28, 0.62),
 				Vector3(cable_point.x, deck_y + 1.12, cable_point.z),
 				steel_mat
 			)
+
+
+func _add_suspension_deck_structure(
+	parent: Node3D,
+	segments: Array[Dictionary],
+	side_x: float,
+	steel_mat: Material
+) -> void:
+	var z_start: float = float(segments.front().get("z0", -84.0))
+	var z_end: float = float(segments.back().get("z1", 84.0))
+	var truss_step: float = 8.0
+	var z: float = z_start
+	while z < z_end - 0.01:
+		var next_z: float = minf(z + truss_step, z_end)
+		var center_z: float = (z + next_z) * 0.5
+		var deck_y: float = _surface_y_at(center_z)
+		var run_length: float = next_z - z
+		for side in [-1.0, 1.0]:
+			var x: float = side * side_x
+			_add_bridge_box(
+				parent,
+				"SideBoxGirder",
+				Vector3(0.48, 0.42, run_length + 0.05),
+				Vector3(x, deck_y + 0.82, center_z),
+				steel_mat
+			)
+			_add_bridge_box(
+				parent,
+				"UpperSideRail",
+				Vector3(0.24, 0.24, run_length + 0.05),
+				Vector3(x, deck_y + 1.72, center_z),
+				steel_mat
+			)
+			_add_beam_between(
+				parent,
+				"SideTrussBrace",
+				Vector3(x, deck_y + 0.74, z),
+				Vector3(x, deck_y + 1.72, next_z),
+				Vector2(0.15, 0.15),
+				steel_mat
+			)
+			_add_beam_between(
+				parent,
+				"SideTrussBrace",
+				Vector3(x, deck_y + 1.72, z),
+				Vector3(x, deck_y + 0.74, next_z),
+				Vector2(0.15, 0.15),
+				steel_mat
+			)
+		if int(round(center_z)) % 16 == 0:
+			_add_bridge_box(
+				parent,
+				"DeckCrossTie",
+				Vector3(side_x * 2.0 + 0.3, 0.18, 0.22),
+				Vector3(0.0, deck_y + 0.58, center_z),
+				steel_mat
+			)
+		z = next_z
 
 
 func _add_bridge_tower_frame(
@@ -1052,17 +1112,23 @@ func _add_beam_between(
 
 func _make_bridge_steel_material() -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.12, 0.16, 0.18, 1.0)
+	mat.albedo_color = Color(0.24, 0.31, 0.29, 1.0)
 	mat.metallic = 0.75
 	mat.roughness = 0.42
+	mat.emission_enabled = true
+	mat.emission = Color(0.03, 0.06, 0.05, 1.0)
+	mat.emission_energy_multiplier = 0.18
 	return mat
 
 
 func _make_bridge_cable_material() -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.34, 0.38, 0.38, 1.0)
+	mat.albedo_color = Color(0.5, 0.55, 0.52, 1.0)
 	mat.metallic = 0.9
 	mat.roughness = 0.34
+	mat.emission_enabled = true
+	mat.emission = Color(0.04, 0.05, 0.05, 1.0)
+	mat.emission_energy_multiplier = 0.12
 	return mat
 
 
