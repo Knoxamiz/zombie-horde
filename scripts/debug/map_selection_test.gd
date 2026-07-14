@@ -6,13 +6,7 @@ const KitMapArenaScript := preload("res://scripts/maps/kit_map_arena.gd")
 const KitMapSurfaceBuilderScript := preload("res://scripts/maps/kit_map_surface_builder.gd")
 const EXPECTED_MAP_IDS: Array[String] = [
 	"quarantine_boulevard",
-	"ai_generated_fallthrough_lower_deck_test",
 	"broken_bridge_pass",
-	"mine_alley",
-	"cone_slalom",
-	"vehicle_yard",
-	"defender_gauntlet",
-	"boost_rush",
 ]
 
 var _failures: PackedStringArray = PackedStringArray()
@@ -64,11 +58,11 @@ func _test_catalog_resolution() -> PackedStringArray:
 	if MapCatalog.get_settings_map_id(0) != "quarantine_boulevard":
 		failures.append("Settings map id 0 mismatch")
 
-	if MapCatalog.resolve_settings_index("", 7) != 7:
-		failures.append("Legacy index 7 should resolve to settings index 7 (Boost Rush)")
+	if MapCatalog.resolve_settings_index("", 2) != 1:
+		failures.append("Legacy index 2 should resolve to settings index 1 (Broken Bridge)")
 
-	if MapCatalog.get_settings_map_id(7) != "boost_rush":
-		failures.append("Settings index 7 should be boost_rush")
+	if MapCatalog.get_settings_map_id(1) != "broken_bridge_pass":
+		failures.append("Settings index 1 should be broken_bridge_pass")
 
 	if MapCatalog.get_playable_count() != EXPECTED_MAP_IDS.size():
 		failures.append(
@@ -86,14 +80,14 @@ func _test_profile_migration() -> PackedStringArray:
 	legacy_profile.selected_map_index = 7
 	legacy_profile.selected_map_id = ""
 	legacy_profile.sanitize_map_selection()
-	if legacy_profile.get_selected_map_id() != "boost_rush":
+	if legacy_profile.get_selected_map_id() != "quarantine_boulevard":
 		failures.append(
-			"Legacy index 7 should resolve to boost_rush, got id=%s"
+			"Disabled legacy index 7 should fall back to City Highway, got id=%s"
 			% legacy_profile.get_selected_map_id()
 		)
-	if legacy_profile.get_selected_settings_map_index() != 7:
+	if legacy_profile.get_selected_settings_map_index() != 0:
 		failures.append(
-			"Legacy index 7 should use settings index 7, got %d"
+			"Disabled legacy index 7 should use settings index 0, got %d"
 			% legacy_profile.get_selected_settings_map_index()
 		)
 

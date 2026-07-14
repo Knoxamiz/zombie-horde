@@ -49,7 +49,7 @@ func _apply_time_of_day(time_of_day: int) -> void:
 	var ground_horizon_color: Color = Color(0.025, 0.045, 0.07, 1.0)
 	var ambient_color: Color = Color(0.23, 0.29, 0.26, 1.0)
 	var ambient_energy: float = 0.72
-	var fog_density: float = 0.027
+	var fog_density: float = 0.009
 	var sun_energy: float = 0.34
 	var street_light_multiplier: float = 1.35
 	var sun_color: Color = Color(0.48, 0.62, 0.66, 1.0)
@@ -62,7 +62,7 @@ func _apply_time_of_day(time_of_day: int) -> void:
 			ground_horizon_color = Color(0.48, 0.56, 0.58, 1.0)
 			ambient_color = Color(0.66, 0.69, 0.63, 1.0)
 			ambient_energy = 1.12
-			fog_density = 0.014
+			fog_density = 0.005
 			sun_energy = 1.0
 			street_light_multiplier = 0.55
 			sun_color = Color(0.95, 0.9, 0.78, 1.0)
@@ -70,7 +70,7 @@ func _apply_time_of_day(time_of_day: int) -> void:
 	var lobby_background_color: Color = background_color.darkened(0.18).lerp(Color(0.018, 0.03, 0.022, 1.0), 0.58)
 	var lobby_ambient_color: Color = ambient_color.lerp(Color(0.16, 0.34, 0.18, 1.0), 0.38)
 	var lobby_ambient_energy: float = max(ambient_energy * 0.82, 0.58)
-	var lobby_fog_density: float = max(fog_density * 1.8, 0.04)
+	var lobby_fog_density: float = max(fog_density * 1.35, 0.014)
 
 	_apply_environment_values(
 		race_environment,

@@ -770,7 +770,7 @@ func _build_stage_atmosphere_context(width: float, length: float, base_y: float)
 	_visual_root.add_child(stage_root)
 
 	var horizon_mat: StandardMaterial3D = _make_stage_scrim_material(
-		Color(0.02, 0.105, 0.09, 0.42),
+		Color(0.02, 0.105, 0.09, 0.5),
 		Color(0.0, 0.24, 0.12, 1.0),
 		0.12
 	)
@@ -780,12 +780,12 @@ func _build_stage_atmosphere_context(width: float, length: float, base_y: float)
 		0.18
 	)
 	var haze_mat: StandardMaterial3D = _make_stage_scrim_material(
-		Color(0.08, 0.22, 0.16, 0.28),
+		Color(0.08, 0.22, 0.16, 0.36),
 		Color(0.08, 0.36, 0.2, 1.0),
 		0.08
 	)
 
-	var side_x: float = width * 0.5 + 18.0
+	var side_x: float = width * 0.5 + 32.0
 	var end_z: float = length * 0.5 + 22.0
 	var wall_height: float = 34.0
 	var wall_y: float = base_y + wall_height * 0.5 + 2.0
@@ -795,13 +795,6 @@ func _build_stage_atmosphere_context(width: float, length: float, base_y: float)
 		Vector3(width + 64.0, wall_height, 0.32),
 		Vector3(0.0, wall_y, end_z),
 		distant_mat
-	)
-	_add_bridge_box(
-		stage_root,
-		"StageHorizonFront",
-		Vector3(width + 64.0, wall_height * 0.72, 0.32),
-		Vector3(0.0, wall_y - 3.5, -end_z),
-		horizon_mat
 	)
 	for side in [-1.0, 1.0]:
 		_add_bridge_box(
@@ -815,7 +808,7 @@ func _build_stage_atmosphere_context(width: float, length: float, base_y: float)
 			stage_root,
 			"StageHazeBand",
 			Vector3(0.34, 8.0, length + 42.0),
-			Vector3(side * (side_x - 1.4), base_y + 7.0, 0.0),
+			Vector3(side * (side_x - 3.0), base_y + 7.0, 0.0),
 			haze_mat
 		)
 
