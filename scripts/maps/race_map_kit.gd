@@ -200,6 +200,7 @@ func build_route_context(
 		build_gap_support_piers(gaps, path_half_width, bed_y, surface_pieces)
 	if not surface_pieces.is_empty():
 		build_elevated_deck_supports(surface_pieces, path_half_width * 2.0, bed_y)
+	_build_stage_atmosphere_context(void_width, track_length, bed_y)
 	_reposition_environment_lights(spawn_z, goal_z)
 
 
@@ -635,6 +636,7 @@ func build_water(width: float, length: float, y: float = -6.0) -> void:
 		water_mat.emission_energy_multiplier = 0.28
 	water.material_override = water_mat
 	_root.add_child(water)
+	_build_stage_atmosphere_context(width, length, y)
 
 	if is_bridge_water:
 		var deep := MeshInstance3D.new()
@@ -755,6 +757,67 @@ func _place_bridge_end_city(parent: Node3D, length: float, water_y: float) -> vo
 					Vector3(x, water_y + height * 0.62, z - end_side * (depth * 0.5 + 0.05)),
 					MAT_CITY_WINDOW
 				)
+
+
+func _build_stage_atmosphere_context(width: float, length: float, base_y: float) -> void:
+	if _visual_root == null:
+		return
+	if _visual_root.get_node_or_null("StageAtmosphereContext") != null:
+		return
+
+	var stage_root: Node3D = Node3D.new()
+	stage_root.name = "StageAtmosphereContext"
+	_visual_root.add_child(stage_root)
+
+	var horizon_mat: StandardMaterial3D = _make_stage_scrim_material(
+		Color(0.02, 0.105, 0.09, 0.42),
+		Color(0.0, 0.24, 0.12, 1.0),
+		0.12
+	)
+	var distant_mat: StandardMaterial3D = _make_stage_scrim_material(
+		Color(0.018, 0.032, 0.06, 0.58),
+		Color(0.04, 0.08, 0.12, 1.0),
+		0.18
+	)
+	var haze_mat: StandardMaterial3D = _make_stage_scrim_material(
+		Color(0.08, 0.22, 0.16, 0.28),
+		Color(0.08, 0.36, 0.2, 1.0),
+		0.08
+	)
+
+	var side_x: float = width * 0.5 + 18.0
+	var end_z: float = length * 0.5 + 22.0
+	var wall_height: float = 34.0
+	var wall_y: float = base_y + wall_height * 0.5 + 2.0
+	_add_bridge_box(
+		stage_root,
+		"StageHorizonBack",
+		Vector3(width + 64.0, wall_height, 0.32),
+		Vector3(0.0, wall_y, end_z),
+		distant_mat
+	)
+	_add_bridge_box(
+		stage_root,
+		"StageHorizonFront",
+		Vector3(width + 64.0, wall_height * 0.72, 0.32),
+		Vector3(0.0, wall_y - 3.5, -end_z),
+		horizon_mat
+	)
+	for side in [-1.0, 1.0]:
+		_add_bridge_box(
+			stage_root,
+			"StageSideScrim",
+			Vector3(0.32, wall_height * 0.86, length + 52.0),
+			Vector3(side * side_x, wall_y - 1.8, 0.0),
+			horizon_mat
+		)
+		_add_bridge_box(
+			stage_root,
+			"StageHazeBand",
+			Vector3(0.34, 8.0, length + 42.0),
+			Vector3(side * (side_x - 1.4), base_y + 7.0, 0.0),
+			haze_mat
+		)
 
 
 func build_continuous_play_surface(
@@ -1282,6 +1345,22 @@ func _make_bridge_cable_material() -> StandardMaterial3D:
 	mat.emission_enabled = true
 	mat.emission = Color(0.04, 0.05, 0.05, 1.0)
 	mat.emission_energy_multiplier = 0.12
+	return mat
+
+
+func _make_stage_scrim_material(
+	albedo: Color,
+	emission: Color,
+	emission_energy: float
+) -> StandardMaterial3D:
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
+	mat.albedo_color = albedo
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.emission_enabled = true
+	mat.emission = emission
+	mat.emission_energy_multiplier = emission_energy
+	mat.roughness = 1.0
 	return mat
 
 
