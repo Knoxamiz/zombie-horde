@@ -200,6 +200,8 @@ func build_route_context(
 		build_gap_support_piers(gaps, path_half_width, bed_y, surface_pieces)
 	if not surface_pieces.is_empty():
 		build_elevated_deck_supports(surface_pieces, path_half_width * 2.0, bed_y)
+	if _visual_root != null and _visual_root.get_node_or_null("BridgeSkyDressing") == null:
+		_build_bridge_sky_dressing(void_width, track_length, bed_y)
 	_reposition_environment_lights(spawn_z, goal_z)
 
 
@@ -761,6 +763,8 @@ func _place_bridge_end_city(parent: Node3D, length: float, water_y: float) -> vo
 func _build_bridge_sky_dressing(width: float, length: float, water_y: float) -> void:
 	if _visual_root == null:
 		return
+	if _visual_root.get_node_or_null("BridgeSkyDressing") != null:
+		return
 
 	var sky_root: Node3D = Node3D.new()
 	sky_root.name = "BridgeSkyDressing"
@@ -782,16 +786,13 @@ func _build_bridge_sky_dressing(width: float, length: float, water_y: float) -> 
 func _build_starry_sky_layer(parent: Node3D, width: float, length: float, water_y: float) -> void:
 	var star_mat: StandardMaterial3D = _make_star_material()
 	var moon_mat: StandardMaterial3D = _make_moon_material()
-	var span_x: float = width * 0.5 + 42.0
-	var star_count: int = 88
+	var span_x: float = width * 0.5 + 28.0
+	var star_count: int = 150
 	for index in range(star_count):
-		var side_bias: float = -1.0 if index % 2 == 0 else 1.0
 		var x: float = lerpf(-span_x, span_x, _hashf(index, 701))
-		if absf(x) < 12.0:
-			x += side_bias * 18.0
-		var y: float = water_y + 28.0 + _hashf(index, 703) * 14.0
+		var y: float = water_y + 32.0 + _hashf(index, 703) * 18.0
 		var z: float = lerpf(-length * 0.55, length * 0.55, _hashf(index, 709))
-		var size: float = 0.16 + _hashf(index, 719) * 0.22
+		var size: float = 0.46 + _hashf(index, 719) * 0.58
 		_add_bridge_box(
 			parent,
 			"SkyStar",
@@ -804,8 +805,8 @@ func _build_starry_sky_layer(parent: Node3D, width: float, length: float, water_
 	_add_bridge_box(
 		parent,
 		"LowPolyMoon",
-		Vector3(3.8, 0.18, 3.8),
-		Vector3(-span_x * 0.62, water_y + 36.0, -length * 0.38),
+		Vector3(6.0, 0.35, 6.0),
+		Vector3(-span_x * 0.58, water_y + 43.0, -length * 0.36),
 		moon_mat
 	)
 
@@ -1382,9 +1383,10 @@ func _make_bridge_cable_material() -> StandardMaterial3D:
 func _make_star_material() -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(0.94, 0.96, 0.82, 1.0)
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.emission_enabled = true
 	mat.emission = Color(0.98, 0.96, 0.78, 1.0)
-	mat.emission_energy_multiplier = 1.25
+	mat.emission_energy_multiplier = 3.0
 	mat.roughness = 0.7
 	return mat
 
@@ -1392,9 +1394,10 @@ func _make_star_material() -> StandardMaterial3D:
 func _make_moon_material() -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(0.74, 0.78, 0.66, 1.0)
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.emission_enabled = true
 	mat.emission = Color(0.42, 0.46, 0.36, 1.0)
-	mat.emission_energy_multiplier = 0.45
+	mat.emission_energy_multiplier = 1.4
 	mat.roughness = 0.55
 	return mat
 
