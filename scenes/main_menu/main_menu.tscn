@@ -1,11 +1,11 @@
-[gd_scene load_steps=16 format=3 uid="uid://b8k3m2n1p4q5r"]
+[gd_scene load_steps=17 format=3 uid="uid://b8k3m2n1p4q5r"]
 
-[ext_resource type="Script" path="res://scripts/main_menu/main_menu_controller.gd" id="1_controller"]
+[ext_resource type="Script" uid="uid://cqk4hcw17svdm" path="res://scripts/main_menu/main_menu_controller.gd" id="1_controller"]
 [ext_resource type="Environment" path="res://resources/environment/main_menu_environment.tres" id="2_environment"]
-[ext_resource type="Texture2D" path="res://assets/ui/main_menu/zombie_chat_horde_menu_art.png" id="3_menu_art"]
+[ext_resource type="Texture2D" uid="uid://ny0xsakqx7e8" path="res://assets/ui/main_menu/zombie_chat_horde_menu_art.png" id="3_menu_art"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_menu_block_button.tscn" id="4_block_button"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_menu_3d_logo_rig.tscn" id="5_logo_rig"]
-[ext_resource type="Script" path="res://scripts/integrations/twitch/twitch_join_source.gd" id="6_twitch_join"]
+[ext_resource type="Script" uid="uid://cylr54g22xg1g" path="res://scripts/integrations/twitch/twitch_join_source.gd" id="6_twitch_join"]
 [ext_resource type="Resource" uid="uid://cy25ecmbimgyb" path="res://resources/config/twitch_chat_config.tres" id="7_twitch_config"]
 [ext_resource type="PackedScene" path="res://scenes/ui/streamer_menu.tscn" id="8_streamer_menu"]
 [ext_resource type="Resource" uid="uid://bupic2xlh7b2r" path="res://resources/config/hazard_config.tres" id="9_hazard_config"]
@@ -81,7 +81,7 @@ render_target_update_mode = 4
 [node name="MenuWorld" type="Node3D" parent="MenuViewportContainer/MenuViewport"]
 
 [node name="KeyLight" type="DirectionalLight3D" parent="MenuViewportContainer/MenuViewport/MenuWorld"]
-transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 1.2, 3.5, 2.0)
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 1.2, 3.5, 2)
 light_color = Color(1, 0.96, 0.88, 1)
 light_energy = 1.1
 shadow_enabled = true
@@ -107,8 +107,8 @@ action_id = &"start"
 text = "START"
 base_color = Color(0.38, 0.78, 0.16, 1)
 hover_color = Color(0.5, 0.95, 0.28, 1)
-font_size = 72
 block_size = Vector3(1.2, 0.3, 0.14)
+font_size = 72
 
 [node name="StreamerButton3D" parent="MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/ButtonCenterRack" instance=ExtResource("4_block_button")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.95, -6.85)
@@ -116,8 +116,8 @@ action_id = &"streamer"
 text = "STREAMER SETTINGS"
 base_color = Color(0.58, 0.24, 0.88, 1)
 hover_color = Color(0.72, 0.38, 1, 1)
-font_size = 60
 block_size = Vector3(1.2, 0.3, 0.14)
+font_size = 60
 idle_phase = 0.7
 
 [node name="QuitButton3D" parent="MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay/ButtonCenterRack" instance=ExtResource("4_block_button")]
@@ -126,8 +126,8 @@ action_id = &"quit"
 text = "QUIT"
 base_color = Color(0.82, 0.28, 0.18, 1)
 hover_color = Color(0.98, 0.38, 0.28, 1)
-font_size = 66
 block_size = Vector3(1.2, 0.3, 0.14)
+font_size = 66
 idle_phase = 1.4
 
 [node name="SettingsButton3D" parent="MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay" instance=ExtResource("4_block_button")]
@@ -136,8 +136,8 @@ action_id = &"settings"
 text = "SETTINGS"
 base_color = Color(0.95, 0.58, 0.1, 1)
 hover_color = Color(1, 0.72, 0.22, 1)
-font_size = 54
 block_size = Vector3(1.2, 0.3, 0.14)
+font_size = 54
 idle_phase = 2.1
 
 [node name="VersionLabel3D" type="Label3D" parent="MenuViewportContainer/MenuViewport/MenuWorld/CinematicCamera/Menu3DOverlay"]
@@ -164,6 +164,7 @@ mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBox_feed_panel")
 
 [node name="Margin" type="MarginContainer" parent="OverlayLayer/JoinFeedPanel"]
+layout_mode = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 18
 theme_override_constants/margin_top = 14
@@ -171,11 +172,12 @@ theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 14
 
 [node name="VBox" type="VBoxContainer" parent="OverlayLayer/JoinFeedPanel/Margin"]
+layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 12
 
 [node name="FeedTitle" type="Label" parent="OverlayLayer/JoinFeedPanel/Margin/VBox"]
-mouse_filter = 2
+layout_mode = 2
 theme_override_colors/font_color = Color(0.52, 1, 0.32, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_x = 2
@@ -184,11 +186,12 @@ theme_override_font_sizes/font_size = 30
 text = "STREAMER JOINS"
 
 [node name="FeedSeparator" type="HSeparator" parent="OverlayLayer/JoinFeedPanel/Margin/VBox"]
+layout_mode = 2
 mouse_filter = 2
 
 [node name="FeedStatusLabel" type="Label" parent="OverlayLayer/JoinFeedPanel/Margin/VBox"]
 visible = false
-mouse_filter = 2
+layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
@@ -200,7 +203,7 @@ autowrap_mode = 3
 
 [node name="FeedHintLabel" type="Label" parent="OverlayLayer/JoinFeedPanel/Margin/VBox"]
 visible = false
-mouse_filter = 2
+layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.72, 0.84, 0.7, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
@@ -212,10 +215,12 @@ autowrap_mode = 3
 
 [node name="FeedChannelSetup" type="VBoxContainer" parent="OverlayLayer/JoinFeedPanel/Margin/VBox"]
 visible = false
+layout_mode = 2
 mouse_filter = 0
 theme_override_constants/separation = 8
 
 [node name="FeedChannelRow" type="HBoxContainer" parent="OverlayLayer/JoinFeedPanel/Margin/VBox/FeedChannelSetup"]
+layout_mode = 2
 mouse_filter = 0
 theme_override_constants/separation = 8
 
@@ -225,8 +230,8 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 18
 placeholder_text = "your_channel"
-caret_blink = true
 max_length = 25
+caret_blink = true
 
 [node name="FeedConnectButton" type="Button" parent="OverlayLayer/JoinFeedPanel/Margin/VBox/FeedChannelSetup/FeedChannelRow"]
 custom_minimum_size = Vector2(108, 40)
@@ -236,7 +241,7 @@ text = "Connect"
 
 [node name="FeedWaitingLabel" type="Label" parent="OverlayLayer/JoinFeedPanel/Margin/VBox"]
 visible = false
-mouse_filter = 2
+layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_colors/font_color = Color(0.82, 1, 0.45, 1)
@@ -255,12 +260,11 @@ custom_minimum_size = Vector2(0, 220)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+mouse_filter = 2
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 2
-mouse_filter = 2
 
 [node name="FeedBody" type="Label" parent="OverlayLayer/JoinFeedPanel/Margin/VBox/FeedScroll"]
-mouse_filter = 2
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.9, 0.98, 0.82, 1)
@@ -268,12 +272,10 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 theme_override_font_sizes/font_size = 18
-text = ""
 autowrap_mode = 3
 
 [node name="StreamerMenu" parent="." instance=ExtResource("8_streamer_menu")]
 layer = 50
-expanded_modal = true
 hazard_config = ExtResource("9_hazard_config")
 zombie_config = ExtResource("10_zombie_config")
 minigun_config = ExtResource("11_minigun_config")
@@ -281,3 +283,4 @@ powerup_config = ExtResource("12_powerup_config")
 human_defender_config = ExtResource("13_defender_config")
 visual_config = ExtResource("14_visual_config")
 feature_config = ExtResource("15_feature_config")
+expanded_modal = true
