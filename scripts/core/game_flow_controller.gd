@@ -411,6 +411,7 @@ func _set_collision_node_enabled(node: Node, enabled: bool) -> void:
 func _apply_lobby_environment() -> void:
 	if _world_environment != null and lobby_environment != null:
 		_world_environment.environment = lobby_environment
+		_reapply_visual_settings()
 
 func _apply_race_environment() -> void:
 	var env: Environment = race_environment
@@ -420,6 +421,12 @@ func _apply_race_environment() -> void:
 			env = override
 	if _world_environment != null and env != null:
 		_world_environment.environment = env
+		_reapply_visual_settings()
+
+func _reapply_visual_settings() -> void:
+	var visual_settings: VisualSettingsController = get_node_or_null("../VisualSettingsController") as VisualSettingsController
+	if visual_settings != null:
+		visual_settings.apply_visual_settings()
 
 func _prepare_transition_overlay() -> void:
 	if _transition_overlay == null:

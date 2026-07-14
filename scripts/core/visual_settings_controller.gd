@@ -39,11 +39,15 @@ func apply_visual_settings() -> void:
 	var active_config: StreamerVisualConfig = _get_config()
 	_apply_time_of_day(active_config.time_of_day)
 	_apply_backdrop(active_config.backdrop_style)
+	_apply_sky_dressing(active_config.time_of_day)
 	_apply_streamer_avatar(active_config.streamer_avatar)
 	_apply_streamer_name(active_config.streamer_name)
 
 func _apply_time_of_day(time_of_day: int) -> void:
 	var background_color: Color = Color(0.045, 0.055, 0.064, 1.0)
+	var sky_top_color: Color = Color(0.012, 0.026, 0.07, 1.0)
+	var sky_horizon_color: Color = Color(0.05, 0.095, 0.15, 1.0)
+	var ground_horizon_color: Color = Color(0.025, 0.045, 0.07, 1.0)
 	var ambient_color: Color = Color(0.23, 0.29, 0.26, 1.0)
 	var ambient_energy: float = 0.72
 	var fog_density: float = 0.027
@@ -53,10 +57,13 @@ func _apply_time_of_day(time_of_day: int) -> void:
 
 	match time_of_day:
 		StreamerVisualConfig.TimeOfDay.DAY:
-			background_color = Color(0.16, 0.18, 0.19, 1.0)
-			ambient_color = Color(0.48, 0.5, 0.47, 1.0)
-			ambient_energy = 1.02
-			fog_density = 0.018
+			background_color = Color(0.42, 0.64, 0.86, 1.0)
+			sky_top_color = Color(0.34, 0.58, 0.88, 1.0)
+			sky_horizon_color = Color(0.78, 0.88, 0.96, 1.0)
+			ground_horizon_color = Color(0.48, 0.56, 0.58, 1.0)
+			ambient_color = Color(0.66, 0.69, 0.63, 1.0)
+			ambient_energy = 1.12
+			fog_density = 0.014
 			sun_energy = 1.0
 			street_light_multiplier = 0.55
 			sun_color = Color(0.95, 0.9, 0.78, 1.0)
@@ -66,18 +73,57 @@ func _apply_time_of_day(time_of_day: int) -> void:
 	var lobby_ambient_energy: float = max(ambient_energy * 0.82, 0.58)
 	var lobby_fog_density: float = max(fog_density * 1.8, 0.04)
 
-	_apply_environment_values(race_environment, background_color, ambient_color, ambient_energy, fog_density)
-	_apply_environment_values(lobby_environment, lobby_background_color, lobby_ambient_color, lobby_ambient_energy, lobby_fog_density)
+	_apply_environment_values(
+		race_environment,
+		background_color,
+		sky_top_color,
+		sky_horizon_color,
+		ground_horizon_color,
+		ambient_color,
+		ambient_energy,
+		fog_density
+	)
+	_apply_environment_values(
+		lobby_environment,
+		lobby_background_color,
+		sky_top_color.darkened(0.26),
+		sky_horizon_color.darkened(0.32),
+		ground_horizon_color.darkened(0.22),
+		lobby_ambient_color,
+		lobby_ambient_energy,
+		lobby_fog_density
+	)
 	if _world_environment != null and _world_environment.environment != null:
 		if _world_environment.environment == lobby_environment:
-			_apply_environment_values(_world_environment.environment, lobby_background_color, lobby_ambient_color, lobby_ambient_energy, lobby_fog_density)
+			_apply_environment_values(
+				_world_environment.environment,
+				lobby_background_color,
+				sky_top_color.darkened(0.26),
+				sky_horizon_color.darkened(0.32),
+				ground_horizon_color.darkened(0.22),
+				lobby_ambient_color,
+				lobby_ambient_energy,
+				lobby_fog_density
+			)
 		else:
-			_apply_environment_values(_world_environment.environment, background_color, ambient_color, ambient_energy, fog_density)
+			_apply_environment_values(
+				_world_environment.environment,
+				background_color,
+				sky_top_color,
+				sky_horizon_color,
+				ground_horizon_color,
+				ambient_color,
+				ambient_energy,
+				fog_density
+			)
 	_apply_road_lighting(sun_energy, street_light_multiplier, sun_color)
 
 func _apply_environment_values(
 	environment: Environment,
 	background_color: Color,
+	sky_top_color: Color,
+	sky_horizon_color: Color,
+	ground_horizon_color: Color,
 	ambient_color: Color,
 	ambient_energy: float,
 	fog_density: float
@@ -90,6 +136,13 @@ func _apply_environment_values(
 	environment.ambient_light_energy = ambient_energy
 	environment.fog_light_color = ambient_color.darkened(0.35)
 	environment.fog_density = fog_density
+	if environment.sky != null:
+		var sky_material: ProceduralSkyMaterial = environment.sky.sky_material as ProceduralSkyMaterial
+		if sky_material != null:
+			sky_material.sky_top_color = sky_top_color
+			sky_material.sky_horizon_color = sky_horizon_color
+			sky_material.ground_horizon_color = ground_horizon_color
+			sky_material.ground_bottom_color = ground_horizon_color.darkened(0.42)
 
 func _apply_road_lighting(sun_energy: float, street_light_multiplier: float, sun_color: Color) -> void:
 	if _road_arena == null:
@@ -124,6 +177,25 @@ func _apply_backdrop(backdrop_style: int) -> void:
 	_set_child_visible(backdrop, "LeftBuildings", backdrop_style != StreamerVisualConfig.BackdropStyle.INDUSTRIAL)
 	_set_child_visible(backdrop, "RightBuildings", backdrop_style != StreamerVisualConfig.BackdropStyle.INDUSTRIAL)
 	_set_child_visible(backdrop, "KitCityProps", backdrop_style != StreamerVisualConfig.BackdropStyle.SKYLINE)
+
+func _apply_sky_dressing(time_of_day: int) -> void:
+	if _road_arena == null:
+		return
+
+	var sky_dressing: Node3D = _find_child_by_name(_road_arena, "BridgeSkyDressing") as Node3D
+	if sky_dressing == null:
+		return
+
+	_set_child_visible(
+		sky_dressing,
+		"StarrySkyDressing",
+		time_of_day == StreamerVisualConfig.TimeOfDay.NIGHT
+	)
+	_set_child_visible(
+		sky_dressing,
+		"DayCloudDressing",
+		time_of_day == StreamerVisualConfig.TimeOfDay.DAY
+	)
 
 func _set_child_visible(parent: Node, child_name: String, visible: bool) -> void:
 	var child: Node3D = parent.get_node_or_null(child_name) as Node3D
