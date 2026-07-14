@@ -200,8 +200,6 @@ func build_route_context(
 		build_gap_support_piers(gaps, path_half_width, bed_y, surface_pieces)
 	if not surface_pieces.is_empty():
 		build_elevated_deck_supports(surface_pieces, path_half_width * 2.0, bed_y)
-	if _visual_root != null and _visual_root.get_node_or_null("BridgeSkyDressing") == null:
-		_build_bridge_sky_dressing(void_width, track_length, bed_y)
 	_reposition_environment_lights(spawn_z, goal_z)
 
 
@@ -653,7 +651,6 @@ func build_water(width: float, length: float, y: float = -6.0) -> void:
 		deep.material_override = deep_mat
 		_root.add_child(deep)
 		_build_bridge_river_city_context(width, length, y)
-		_build_bridge_sky_dressing(width, length, y)
 
 
 func _build_bridge_river_city_context(width: float, length: float, water_y: float) -> void:
@@ -758,98 +755,6 @@ func _place_bridge_end_city(parent: Node3D, length: float, water_y: float) -> vo
 					Vector3(x, water_y + height * 0.62, z - end_side * (depth * 0.5 + 0.05)),
 					MAT_CITY_WINDOW
 				)
-
-
-func _build_bridge_sky_dressing(width: float, length: float, water_y: float) -> void:
-	if _visual_root == null:
-		return
-	if _visual_root.get_node_or_null("BridgeSkyDressing") != null:
-		return
-
-	var sky_root: Node3D = Node3D.new()
-	sky_root.name = "BridgeSkyDressing"
-	_visual_root.add_child(sky_root)
-
-	var star_root: Node3D = Node3D.new()
-	star_root.name = "StarrySkyDressing"
-	sky_root.add_child(star_root)
-
-	var cloud_root: Node3D = Node3D.new()
-	cloud_root.name = "DayCloudDressing"
-	sky_root.add_child(cloud_root)
-
-	_build_starry_sky_layer(star_root, width, length, water_y)
-	_build_day_cloud_layer(cloud_root, width, length, water_y)
-	_set_bridge_sky_initial_visibility(star_root, cloud_root)
-
-
-func _build_starry_sky_layer(parent: Node3D, width: float, length: float, water_y: float) -> void:
-	var star_mat: StandardMaterial3D = _make_star_material()
-	var moon_mat: StandardMaterial3D = _make_moon_material()
-	var span_x: float = width * 0.5 + 28.0
-	var star_count: int = 150
-	for index in range(star_count):
-		var x: float = lerpf(-span_x, span_x, _hashf(index, 701))
-		var y: float = water_y + 32.0 + _hashf(index, 703) * 18.0
-		var z: float = lerpf(-length * 0.55, length * 0.55, _hashf(index, 709))
-		var size: float = 0.46 + _hashf(index, 719) * 0.58
-		_add_bridge_box(
-			parent,
-			"SkyStar",
-			Vector3(size, size, size),
-			Vector3(x, y, z),
-			star_mat
-		)
-
-	# A single chunky moon gives the night sky a readable anchor from the race camera.
-	_add_bridge_box(
-		parent,
-		"LowPolyMoon",
-		Vector3(6.0, 0.35, 6.0),
-		Vector3(-span_x * 0.58, water_y + 43.0, -length * 0.36),
-		moon_mat
-	)
-
-
-func _build_day_cloud_layer(parent: Node3D, width: float, length: float, water_y: float) -> void:
-	var cloud_light: StandardMaterial3D = _make_cloud_material(Color(0.88, 0.92, 0.9, 1.0), 0.1)
-	var cloud_shadow: StandardMaterial3D = _make_cloud_material(Color(0.58, 0.66, 0.68, 1.0), 0.03)
-	var span_x: float = width * 0.5 + 36.0
-	var cloud_count: int = 12
-	for cloud_index in range(cloud_count):
-		var side: float = -1.0 if cloud_index % 2 == 0 else 1.0
-		var center: Vector3 = Vector3(
-			side * lerpf(span_x * 0.38, span_x, _hashf(cloud_index, 811)),
-			water_y + 25.0 + _hashf(cloud_index, 823) * 7.5,
-			lerpf(-length * 0.54, length * 0.54, _hashf(cloud_index, 827))
-		)
-		var puff_count: int = 4 + int(_hashf(cloud_index, 829) * 3.0)
-		for puff_index in range(puff_count):
-			var puff_x: float = (float(puff_index) - float(puff_count - 1) * 0.5) * 2.5
-			var puff_y: float = (_hashf(cloud_index + puff_index, 839) - 0.5) * 1.2
-			var puff_z: float = (_hashf(cloud_index, puff_index + 853) - 0.5) * 3.8
-			var puff_size: Vector3 = Vector3(
-				2.8 + _hashf(puff_index, cloud_index + 857) * 2.2,
-				0.52 + _hashf(puff_index, cloud_index + 859) * 0.38,
-				1.35 + _hashf(puff_index, cloud_index + 863) * 1.3
-			)
-			_add_bridge_box(
-				parent,
-				"DayCloudPuff",
-				puff_size,
-				center + Vector3(puff_x, puff_y, puff_z),
-				cloud_light if puff_index % 3 != 0 else cloud_shadow
-			)
-
-
-func _set_bridge_sky_initial_visibility(star_root: Node3D, cloud_root: Node3D) -> void:
-	var profile: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
-	var show_day: bool = (
-		profile != null
-		and profile.time_of_day == StreamerSettingsProfile.TimeOfDay.DAY
-	)
-	star_root.visible = not show_day
-	cloud_root.visible = show_day
 
 
 func build_continuous_play_surface(
@@ -1377,38 +1282,6 @@ func _make_bridge_cable_material() -> StandardMaterial3D:
 	mat.emission_enabled = true
 	mat.emission = Color(0.04, 0.05, 0.05, 1.0)
 	mat.emission_energy_multiplier = 0.12
-	return mat
-
-
-func _make_star_material() -> StandardMaterial3D:
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.94, 0.96, 0.82, 1.0)
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.emission_enabled = true
-	mat.emission = Color(0.98, 0.96, 0.78, 1.0)
-	mat.emission_energy_multiplier = 3.0
-	mat.roughness = 0.7
-	return mat
-
-
-func _make_moon_material() -> StandardMaterial3D:
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.74, 0.78, 0.66, 1.0)
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.emission_enabled = true
-	mat.emission = Color(0.42, 0.46, 0.36, 1.0)
-	mat.emission_energy_multiplier = 1.4
-	mat.roughness = 0.55
-	return mat
-
-
-func _make_cloud_material(color: Color, emission_energy: float) -> StandardMaterial3D:
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = color
-	mat.roughness = 0.88
-	mat.emission_enabled = true
-	mat.emission = color.darkened(0.08)
-	mat.emission_energy_multiplier = emission_energy
 	return mat
 
 

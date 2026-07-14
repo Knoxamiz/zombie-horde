@@ -39,7 +39,6 @@ func apply_visual_settings() -> void:
 	var active_config: StreamerVisualConfig = _get_config()
 	_apply_time_of_day(active_config.time_of_day)
 	_apply_backdrop(active_config.backdrop_style)
-	_apply_sky_dressing(active_config.time_of_day)
 	_apply_streamer_avatar(active_config.streamer_avatar)
 	_apply_streamer_name(active_config.streamer_name)
 
@@ -177,25 +176,6 @@ func _apply_backdrop(backdrop_style: int) -> void:
 	_set_child_visible(backdrop, "LeftBuildings", backdrop_style != StreamerVisualConfig.BackdropStyle.INDUSTRIAL)
 	_set_child_visible(backdrop, "RightBuildings", backdrop_style != StreamerVisualConfig.BackdropStyle.INDUSTRIAL)
 	_set_child_visible(backdrop, "KitCityProps", backdrop_style != StreamerVisualConfig.BackdropStyle.SKYLINE)
-
-func _apply_sky_dressing(time_of_day: int) -> void:
-	if _road_arena == null:
-		return
-
-	var sky_dressing: Node3D = _find_child_by_name(_road_arena, "BridgeSkyDressing") as Node3D
-	if sky_dressing == null:
-		return
-
-	_set_child_visible(
-		sky_dressing,
-		"StarrySkyDressing",
-		time_of_day == StreamerVisualConfig.TimeOfDay.NIGHT
-	)
-	_set_child_visible(
-		sky_dressing,
-		"DayCloudDressing",
-		time_of_day == StreamerVisualConfig.TimeOfDay.DAY
-	)
 
 func _set_child_visible(parent: Node, child_name: String, visible: bool) -> void:
 	var child: Node3D = parent.get_node_or_null(child_name) as Node3D
