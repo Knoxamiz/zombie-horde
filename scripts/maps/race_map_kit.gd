@@ -814,7 +814,6 @@ func _compose_broken_bridge(segments: Array[Dictionary], gaps: Array[Dictionary]
 	var deck_columns: PackedFloat32Array = PackedFloat32Array([0.0])
 	var side_column: float = 4.0
 	var edge_x: float = 5.4
-	var light_x: float = 13.5
 	var damage_clusters: Array[Dictionary] = [
 		{"z": -62.0, "radius": 10.0, "side_loss": 0.82, "crack": 0.78},
 		{"z": -24.0, "radius": 12.0, "side_loss": 0.9, "crack": 0.92},
@@ -842,7 +841,6 @@ func _compose_broken_bridge(segments: Array[Dictionary], gaps: Array[Dictionary]
 	_compose_bridge_gap_visuals(gaps)
 	_place_bridge_lane_guides(segments, gaps)
 	_place_suspension_bridge_dressing(segments, edge_x)
-	_place_street_lights_authored(-70.0, 70.0, light_x, 24.0, 6.0)
 	_place_bridge_void_props(damage_clusters)
 
 
@@ -960,14 +958,6 @@ func _add_suspension_deck_structure(
 				Vector3(x, deck_y + 1.72, z),
 				Vector3(x, deck_y + 0.74, next_z),
 				Vector2(0.15, 0.15),
-				steel_mat
-			)
-		if abs(int(round(center_z))) % 32 == 0:
-			_add_bridge_box(
-				parent,
-				"HighOverheadCrossBar",
-				Vector3(side_x * 2.0 + 0.6, 0.18, 0.22),
-				Vector3(0.0, deck_y + 6.4, center_z),
 				steel_mat
 			)
 		z = next_z
