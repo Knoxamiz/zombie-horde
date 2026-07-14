@@ -117,6 +117,7 @@ func _test_layout_preset_uniqueness() -> PackedStringArray:
 		"vehicle_yard",
 		"defender_gauntlet",
 		"boost_rush",
+		"spiral_descent",
 	]
 	var signatures: Dictionary = {}
 	for preset_id in preset_ids:

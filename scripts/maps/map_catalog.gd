@@ -91,6 +91,16 @@ const ENTRIES: Array[Dictionary] = [
 		"status": STATUS_DISABLED,
 		"legacy_index": 7,
 	},
+	{
+		"id": "spiral_descent",
+		"display_name": "Spiral Descent",
+		"resource_path": "res://resources/maps/spiral_descent.tres",
+		"scene_path": "res://scenes/maps/spiral_descent.tscn",
+		"layout_preset_id": "spiral_descent",
+		"enabled": false,
+		"status": STATUS_PROTOTYPE,
+		"legacy_index": 8,
+	},
 ]
 
 

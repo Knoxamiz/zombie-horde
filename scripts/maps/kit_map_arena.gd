@@ -75,6 +75,8 @@ func _build_from_preset(preset_id: String) -> void:
 
 	if uses_surface_pieces:
 		_kit.build_ramp_visuals(SURFACE_BUILDER.collect_ramp_visual_specs(surface_pieces), road_width)
+		if bool(layout.get("spiral_dressing", false)):
+			_kit.build_spiral_descent_dressing(surface_pieces, path_half_width)
 	_kit.compose_map(segments, gaps)
 	_kit.build_route_context(
 		spawn_z,

@@ -1712,6 +1712,98 @@ func build_ramp_visuals(ramp_specs: Array, road_width: float) -> void:
 		_visual_root.add_child(ramp_mesh)
 
 
+func build_spiral_descent_dressing(surface_pieces: Array, path_half_width: float) -> void:
+	if surface_pieces.is_empty():
+		return
+
+	var deck_specs: Array[Dictionary] = []
+	for raw_spec in surface_pieces:
+		if raw_spec is not Dictionary:
+			continue
+		var spec: Dictionary = raw_spec
+		if str(spec.get("shape", "deck")) == "deck":
+			deck_specs.append(spec)
+
+	if deck_specs.size() < 2:
+		return
+
+	var outer_x: float = path_half_width + 8.0
+	var loop_width: float = 5.6
+	var rail_height: float = 0.6
+	var rail_thickness: float = 0.22
+	var lowest_y: float = SURFACE_BUILDER.get_lowest_top_y(surface_pieces, 0.0)
+	var highest_y: float = lowest_y
+	for deck in deck_specs:
+		highest_y = maxf(highest_y, float(deck.get("top_y", lowest_y)))
+
+	_add_visual_box(
+		"SpiralCoreColumn",
+		Vector3(1.2, highest_y - lowest_y + 5.0, 1.2),
+		Vector3(0.0, (highest_y + lowest_y) * 0.5 + 1.9, 0.0),
+		MAT_CITY_MID
+	)
+
+	for index in range(deck_specs.size()):
+		var deck: Dictionary = deck_specs[index]
+		var z0: float = float(deck.get("z0", 0.0))
+		var z1: float = float(deck.get("z1", z0))
+		var center_z: float = (z0 + z1) * 0.5
+		var length: float = maxf(z1 - z0, 0.0)
+		var y: float = float(deck.get("top_y", 0.0))
+		var side: float = -1.0 if index % 2 == 0 else 1.0
+		var deck_x: float = side * outer_x
+
+		_add_visual_box(
+			"SpiralOuterDeck",
+			Vector3(loop_width, 0.18, length * 0.9),
+			Vector3(deck_x, y - 0.03, center_z),
+			MAT_ROAD_ASPHALT
+		)
+		_add_visual_box(
+			"SpiralLandingLink",
+			Vector3(absf(deck_x) - path_half_width + loop_width * 0.5, 0.16, 5.4),
+			Vector3(deck_x * 0.5, y - 0.02, z0 + 3.5),
+			MAT_CONCRETE
+		)
+		_add_visual_box(
+			"SpiralLandingLink",
+			Vector3(absf(deck_x) - path_half_width + loop_width * 0.5, 0.16, 5.4),
+			Vector3(deck_x * 0.5, y - 0.02, z1 - 3.5),
+			MAT_CONCRETE
+		)
+		_add_visual_box(
+			"SpiralOuterRail",
+			Vector3(rail_thickness, rail_height, length * 0.88),
+			Vector3(deck_x + side * (loop_width * 0.5 + rail_thickness), y + rail_height * 0.5, center_z),
+			MAT_CITY_MID
+		)
+		_add_visual_box(
+			"SpiralInnerRail",
+			Vector3(rail_thickness, rail_height * 0.75, length * 0.84),
+			Vector3(deck_x - side * (loop_width * 0.5 + rail_thickness), y + rail_height * 0.42, center_z),
+			MAT_CITY_MID
+		)
+
+		for post_z in [z0 + 2.0, center_z, z1 - 2.0]:
+			var post_height: float = maxf(y - lowest_y + 1.2, 1.2)
+			_add_visual_box(
+				"SpiralSupportPost",
+				Vector3(0.35, post_height, 0.35),
+				Vector3(deck_x + side * (loop_width * 0.5 - 0.4), lowest_y + post_height * 0.5 - 0.8, post_z),
+				MAT_CITY_MID
+			)
+
+		var label := Label3D.new()
+		label.name = "SpiralLevelLabel"
+		label.text = "LEVEL %d" % (deck_specs.size() - index)
+		label.font_size = 34
+		label.outline_size = 8
+		label.modulate = Color(0.78, 1.0, 0.2, 1.0)
+		label.position = Vector3(-side * (path_half_width + 1.2), y + 1.2, center_z - length * 0.35)
+		label.rotation_degrees.y = 0.0
+		_visual_root.add_child(label)
+
+
 func _place_prop(scene: PackedScene, position: Vector3, scale_value: float, yaw_degrees: float) -> void:
 	if scene == null or _visual_root == null:
 		return
@@ -1775,6 +1867,17 @@ func _add_marker_box(box_name: String, size: Vector3, position: Vector3, materia
 	marker.position = position
 	marker.material_override = material
 	_root.add_child(marker)
+
+
+func _add_visual_box(box_name: String, size: Vector3, position: Vector3, material: Material) -> void:
+	var marker := MeshInstance3D.new()
+	marker.name = box_name
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	marker.mesh = mesh
+	marker.position = position
+	marker.material_override = material
+	_visual_root.add_child(marker)
 
 
 func _add_gate(left_pos: Vector3, right_pos: Vector3, accent: Material) -> void:

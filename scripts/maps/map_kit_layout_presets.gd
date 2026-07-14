@@ -23,6 +23,8 @@ static func get_preset(preset_id: String) -> Dictionary:
 			return _defender_gauntlet()
 		"boost_rush":
 			return _boost_rush()
+		"spiral_descent":
+			return _spiral_descent()
 		_:
 			push_warning("MapKitLayoutPresets: unknown preset '%s', using broken_bridge_pass" % preset_id)
 			return _broken_bridge_pass()
@@ -230,5 +232,35 @@ static func _boost_rush() -> Dictionary:
 			{"shape": "deck", "z0": -50.0, "z1": 50.0, "top_y": -1.0, "width": road_width},
 			{"shape": "ramp", "z0": 50.0, "z1": 58.0, "start_y": -1.0, "height_delta": 1.0, "width": road_width},
 			{"shape": "deck", "z0": 58.0, "z1": 92.0, "top_y": 0.0, "width": road_width},
+		],
+	}
+
+
+static func _spiral_descent() -> Dictionary:
+	var road_width: float = 12.0
+	return {
+		"style": RaceMapKit.MapStyle.LONG_ROAD,
+		"seed": 9614,
+		"path_half_width": 6.0,
+		"visual_width": 14.0,
+		"void_width": 72.0,
+		"track_length": 216.0,
+		"spawn_z": -96.0,
+		"goal_z": 96.0,
+		"start_gate_z": -88.0,
+		"finish_gate_z": 88.0,
+		"spiral_dressing": true,
+		"segments": [
+			{"z0": -96.0, "z1": 96.0},
+		],
+		"gaps": [],
+		"surface_pieces": [
+			{"shape": "deck", "z0": -96.0, "z1": -64.0, "top_y": 12.0, "width": road_width},
+			{"shape": "ramp", "z0": -64.0, "z1": -48.0, "start_y": 12.0, "height_delta": -4.0, "width": road_width},
+			{"shape": "deck", "z0": -48.0, "z1": -16.0, "top_y": 8.0, "width": road_width},
+			{"shape": "ramp", "z0": -16.0, "z1": 0.0, "start_y": 8.0, "height_delta": -4.0, "width": road_width},
+			{"shape": "deck", "z0": 0.0, "z1": 32.0, "top_y": 4.0, "width": road_width},
+			{"shape": "ramp", "z0": 32.0, "z1": 48.0, "start_y": 4.0, "height_delta": -4.0, "width": road_width},
+			{"shape": "deck", "z0": 48.0, "z1": 96.0, "top_y": 0.0, "width": road_width},
 		],
 	}
