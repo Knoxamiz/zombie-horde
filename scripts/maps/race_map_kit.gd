@@ -51,6 +51,13 @@ const MAT_SPAWN := preload("res://assets/materials/spawn_zone.tres")
 const MAT_GOAL := preload("res://assets/materials/goal_zone.tres")
 const MAT_CONCRETE := preload("res://assets/materials/base_concrete.tres")
 const MAT_ARENA_GROUND := preload("res://assets/materials/arena_ground.tres")
+const MAT_ROAD_ASPHALT := preload("res://assets/materials/road_asphalt.tres")
+const MAT_ROAD_LINE := preload("res://assets/materials/road_line.tres")
+const MAT_ROAD_SCUFF := preload("res://assets/materials/road_mark_scuff.tres")
+const MAT_ROAD_SCORCH := preload("res://assets/materials/road_mark_scorch.tres")
+const MAT_CITY_DARK := preload("res://assets/materials/city_building_dark.tres")
+const MAT_CITY_MID := preload("res://assets/materials/city_building_mid.tres")
+const MAT_CITY_WINDOW := preload("res://assets/materials/city_window_glow.tres")
 const SURFACE_BUILDER := preload("res://scripts/maps/kit_map_surface_builder.gd")
 
 var _root: Node3D
@@ -643,6 +650,111 @@ func build_water(width: float, length: float, y: float = -6.0) -> void:
 		deep_mat.emission_energy_multiplier = 0.35
 		deep.material_override = deep_mat
 		_root.add_child(deep)
+		_build_bridge_river_city_context(width, length, y)
+
+
+func _build_bridge_river_city_context(width: float, length: float, water_y: float) -> void:
+	if _visual_root == null:
+		return
+	var context_root := Node3D.new()
+	context_root.name = "BridgeRiverCityContext"
+	_visual_root.add_child(context_root)
+
+	var water_edge_x: float = (width + 16.0) * 0.5
+	var bank_x: float = water_edge_x + 11.0
+	var bank_y: float = water_y + 0.16
+	for side in [-1.0, 1.0]:
+		var signed_bank_x: float = side * bank_x
+		_add_bridge_box(
+			context_root,
+			"RiverBank",
+			Vector3(20.0, 0.24, length + 30.0),
+			Vector3(signed_bank_x, bank_y, 0.0),
+			MAT_ARENA_GROUND
+		)
+		_add_bridge_box(
+			context_root,
+			"QuayWall",
+			Vector3(0.72, 3.2, length + 24.0),
+			Vector3(side * (water_edge_x + 0.36), water_y + 1.45, 0.0),
+			MAT_CONCRETE
+		)
+		_add_bridge_box(
+			context_root,
+			"BankRoadStrip",
+			Vector3(10.5, 0.08, length + 12.0),
+			Vector3(signed_bank_x + side * 1.25, bank_y + 0.14, 0.0),
+			MAT_ROAD_ASPHALT
+		)
+		_place_bridge_skyline_side(context_root, side, bank_x + 18.0, length, water_y)
+
+	_place_bridge_end_city(context_root, length, water_y)
+
+
+func _place_bridge_skyline_side(
+	parent: Node3D,
+	side: float,
+	x: float,
+	length: float,
+	water_y: float
+) -> void:
+	var z: float = -length * 0.46
+	var building_index: int = 0
+	while z <= length * 0.46:
+		var height: float = 8.0 + _hashf(building_index, int(side * 19.0)) * 14.0
+		var building_width: float = 7.0 + _hashf(building_index, 31) * 5.0
+		var depth: float = 9.0 + _hashf(building_index, 37) * 6.0
+		var material: Material = MAT_CITY_DARK if building_index % 2 == 0 else MAT_CITY_MID
+		var block_x: float = side * (x + _hashf(building_index, 41) * 8.0)
+		_add_bridge_box(
+			parent,
+			"RiverCityBlock",
+			Vector3(building_width, height, depth),
+			Vector3(block_x, water_y + height * 0.5, z),
+			material
+		)
+		if building_index % 2 == 0:
+			var window_x: float = block_x - side * (building_width * 0.5 + 0.05)
+			_add_bridge_box(
+				parent,
+				"RiverCityWindowStrip",
+				Vector3(0.08, 0.26, depth * 0.62),
+				Vector3(window_x, water_y + height * 0.55, z),
+				MAT_CITY_WINDOW
+			)
+			_add_bridge_box(
+				parent,
+				"RiverCityWindowStrip",
+				Vector3(0.08, 0.22, depth * 0.42),
+				Vector3(window_x, water_y + height * 0.78, z + depth * 0.12),
+				MAT_CITY_WINDOW
+			)
+		z += depth + 8.0 + _hashf(building_index, 43) * 7.0
+		building_index += 1
+
+
+func _place_bridge_end_city(parent: Node3D, length: float, water_y: float) -> void:
+	for end_side in [-1.0, 1.0]:
+		var z: float = end_side * (length * 0.5 + 18.0)
+		for column in range(5):
+			var x: float = -30.0 + float(column) * 15.0
+			var height: float = 10.0 + _hashf(column, int(end_side * 53.0)) * 16.0
+			var depth: float = 9.0 + _hashf(column, 59) * 5.0
+			_add_bridge_box(
+				parent,
+				"EndCitySilhouette",
+				Vector3(10.0, height, depth),
+				Vector3(x, water_y + height * 0.5, z + end_side * _hashf(column, 61) * 10.0),
+				MAT_CITY_DARK if column % 2 == 0 else MAT_CITY_MID
+			)
+			if column % 2 == 1:
+				_add_bridge_box(
+					parent,
+					"EndCityWindowStrip",
+					Vector3(5.2, 0.22, 0.08),
+					Vector3(x, water_y + height * 0.62, z - end_side * (depth * 0.5 + 0.05)),
+					MAT_CITY_WINDOW
+				)
 
 
 func build_continuous_play_surface(
@@ -840,8 +952,59 @@ func _compose_broken_bridge(segments: Array[Dictionary], gaps: Array[Dictionary]
 
 	_compose_bridge_gap_visuals(gaps)
 	_place_bridge_lane_guides(segments, gaps)
+	_place_bridge_surface_wear(segments, gaps)
 	_place_suspension_bridge_dressing(segments, edge_x)
 	_place_bridge_void_props(damage_clusters)
+
+
+func _place_bridge_surface_wear(segments: Array[Dictionary], gaps: Array[Dictionary]) -> void:
+	if _visual_root == null:
+		return
+	for segment_index in range(segments.size()):
+		var segment: Dictionary = segments[segment_index]
+		var z: float = float(segment["z0"]) + 5.0
+		var z_end: float = float(segment["z1"]) - 3.0
+		while z < z_end:
+			if not _z_in_gap_ranges(z, gaps):
+				var surface_y: float = _surface_y_at(z)
+				var patch_width: float = 1.9 + _hashf(int(z * 10.0), segment_index + 3) * 1.4
+				var patch_length: float = 2.2 + _hashf(int(z * 9.0), segment_index + 9) * 2.2
+				var patch_x: float = lerpf(-2.0, 2.0, _hashf(int(z * 11.0), segment_index + 17))
+				_add_bridge_box(
+					_visual_root,
+					"BridgeAsphaltPatch",
+					Vector3(patch_width, 0.035, patch_length),
+					Vector3(patch_x, surface_y + 0.075, z),
+					MAT_ROAD_ASPHALT
+				)
+				if _hashf(int(z * 13.0), segment_index + 23) > 0.45:
+					_add_bridge_box(
+						_visual_root,
+						"BridgeRoadScuff",
+						Vector3(0.55, 0.03, patch_length * 0.85),
+						Vector3(patch_x + 0.45, surface_y + 0.1, z + 0.2),
+						MAT_ROAD_SCUFF
+					)
+				if _hashf(int(z * 15.0), segment_index + 29) > 0.72:
+					_add_bridge_box(
+						_visual_root,
+						"BridgeScorchMark",
+						Vector3(1.25, 0.032, 1.55),
+						Vector3(patch_x - 0.35, surface_y + 0.105, z - 0.6),
+						MAT_ROAD_SCORCH
+					)
+			z += 7.5
+
+	for gap in gaps:
+		for edge_z in [float(gap["z0"]) - 2.2, float(gap["z1"]) + 2.2]:
+			var surface_y: float = _surface_y_at(edge_z)
+			_add_bridge_box(
+				_visual_root,
+				"BrokenBridgeWarningStripe",
+				Vector3(6.6, 0.04, 0.24),
+				Vector3(0.0, surface_y + 0.13, edge_z),
+				MAT_ROAD_LINE
+			)
 
 
 func _place_suspension_bridge_dressing(
