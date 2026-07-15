@@ -8,6 +8,7 @@ const EXPECTED_MAP_IDS: Array[String] = [
 	"quarantine_boulevard",
 	"broken_bridge_pass",
 	"spiral_descent",
+	"true_spiral_ramp",
 ]
 const EXPECTED_PLAYABLE_COUNT := 2
 

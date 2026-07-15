@@ -31,6 +31,7 @@ extends Resource
 @export var defender_placement_half_width: float = 5.25
 @export var defender_placement_min_z: float = -24.0
 @export var defender_placement_max_z: float = 28.0
+@export var race_path_points: PackedVector3Array = PackedVector3Array()
 
 @export var uses_map_hazard_profile: bool = false
 @export_range(0, 96, 1) var map_mine_count: int = 6

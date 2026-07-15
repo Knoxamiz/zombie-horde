@@ -23,8 +23,8 @@ func _test_catalog_entry() -> void:
 	if entry.is_empty():
 		_fail("Spiral Descent missing from MapCatalog")
 		return
-	if MapCatalog.is_entry_selectable(entry):
-		_fail("Spiral Descent must remain hidden from settings until certified")
+	if MapCatalog.is_entry_playable(entry):
+		_fail("Spiral Descent must remain prototype status until certified")
 	if not MapCatalog.is_prototype_testable(entry):
 		_fail("Spiral Descent must be prototype-testable")
 

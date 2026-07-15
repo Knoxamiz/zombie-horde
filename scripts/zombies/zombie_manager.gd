@@ -6,6 +6,7 @@ extends Node3D
 @export var spawn_origin: Vector3 = Vector3(0.0, 0.8, -42.0)
 @export var spawn_area_size: Vector2 = Vector2(10.0, 4.0)
 @export var goal_position: Vector3 = Vector3(0.0, 0.8, 42.0)
+@export var race_path_points: PackedVector3Array = PackedVector3Array()
 @export var leader_update_interval: float = 0.2
 
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -56,7 +57,15 @@ func spawn_zombie(display_name: String, join_info: ParticipantJoinInfo = null) -
 	var payload: ParticipantJoinInfo = join_info
 	if payload == null:
 		payload = ParticipantJoinInfo.for_name(display_name)
-	zombie.configure_zombie(display_name, zombie_config, goal_position, spawn_position, int(_rng.randi()), payload)
+	zombie.configure_zombie(
+		display_name,
+		zombie_config,
+		goal_position,
+		spawn_position,
+		int(_rng.randi()),
+		payload,
+		race_path_points
+	)
 	zombie.set_round_active(_round_active)
 	zombie.died.connect(_on_zombie_died)
 

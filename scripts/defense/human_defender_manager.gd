@@ -75,6 +75,13 @@ func _get_defender_position() -> Vector3:
 	return _get_random_defender_position()
 
 func _get_random_defender_position() -> Vector3:
+	if SURFACE_SPAWN_RESOLVER.has_path(config.placement_path_points):
+		return SURFACE_SPAWN_RESOLVER.random_path_position(
+			_rng,
+			config.placement_path_points,
+			config.placement_half_width,
+			0.12
+		)
 	var z: float = _get_random_surface_z(config.placement_min_z, config.placement_max_z)
 	return Vector3(
 		_rng.randf_range(-config.placement_half_width, config.placement_half_width),
@@ -83,6 +90,21 @@ func _get_random_defender_position() -> Vector3:
 	)
 
 func _face_road_center(defender: HumanDefender) -> void:
+	if SURFACE_SPAWN_RESOLVER.has_path(config.placement_path_points):
+		var distance: float = SURFACE_SPAWN_RESOLVER.closest_path_distance(
+			config.placement_path_points,
+			defender.global_position
+		)
+		var center: Vector3 = SURFACE_SPAWN_RESOLVER.point_at_path_distance(
+			config.placement_path_points,
+			distance,
+			0.0,
+			0.0
+		)
+		center.y = defender.global_position.y
+		if defender.global_position.distance_squared_to(center) > 0.001:
+			defender.look_at(center, Vector3.UP)
+		return
 	var look_target: Vector3 = Vector3(0.0, defender.global_position.y, defender.global_position.z)
 	if defender.global_position.distance_squared_to(look_target) > 0.001:
 		defender.look_at(look_target, Vector3.UP)

@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="RaceMapDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/maps/race_map_definition.gd" id="1_definition"]
+[ext_resource type="PackedScene" path="res://scenes/maps/true_spiral_ramp.tscn" id="2_scene"]
+[ext_resource type="Environment" path="res://resources/environment/race_environment.tres" id="3_env"]
+
+[resource]
+script = ExtResource("1_definition")
+display_name = "True Spiral Ramp"
+scene = ExtResource("2_scene")
+premium_only = true
+spawn_origin = Vector3(0, 15.8, -21)
+spawn_area_size = Vector2(4.5, 2.5)
+goal_position = Vector3(15.12, 0.8, 0)
+base_position = Vector3(15.12, 0, 0)
+minigun_position = Vector3(12.2, 0, -2.6)
+lane_half_width = 3.3
+out_of_bounds_half_width = 34.0
+out_of_bounds_min_z = -34.0
+out_of_bounds_max_z = 28.0
+out_of_bounds_min_y = -5.0
+deck_y = 7.5
+race_environment_override = ExtResource("3_env")
+hazard_placement_half_width = 2.8
+hazard_placement_min_z = -28.0
+hazard_placement_max_z = 24.0
+obstacle_half_width = 2.6
+obstacle_min_z = -28.0
+obstacle_max_z = 24.0
+obstacle_lane_count = 2
+obstacle_segment_length = 8.0
+powerup_placement_half_width = 2.4
+powerup_placement_min_z = -28.0
+powerup_placement_max_z = 24.0
+defender_placement_half_width = 3.8
+defender_placement_min_z = -28.0
+defender_placement_max_z = 24.0
+race_path_points = PackedVector3Array(Vector3(0, 15, -21), Vector3(10.189, 14.625, -18.194), Vector3(17.655, 14.25, -10.819), Vector3(20.543, 13.875, -0.807), Vector3(18.187, 13.5, 9.267), Vector3(11.259, 13.125, 16.85), Vector3(1.578, 12.75, 20.056), Vector3(-8.361, 12.375, 18.137), Vector3(-16.038, 12, 11.652), Vector3(-19.541, 11.625, 2.313), Vector3(-18.043, 11.25, -7.474), Vector3(-12, 10.875, -15.222), Vector3(-3.009, 10.5, -18.999), Vector3(6.607, 10.125, -17.909), Vector3(14.404, 9.75, -12.302), Vector3(18.434, 9.375, -3.667), Vector3(17.735, 9, 5.763), Vector3(12.558, 8.625, 13.586), Vector3(4.285, 8.25, 17.847), Vector3(-4.942, 7.875, 17.523), Vector3(-12.77, 7.5, 12.77), Vector3(-17.24, 7.125, 4.862), Vector3(-17.275, 6.75, -4.147), Vector3(-12.938, 6.375, -11.96), Vector3(-5.399, 6, -16.617), Vector3(3.38, 5.625, -16.992), Vector3(11.156, 5.25, -13.062), Vector3(15.978, 4.875, -5.895), Vector3(16.676, 4.5, 2.641), Vector3(13.144, 4.125, 10.362), Vector3(6.349, 3.75, 15.327), Vector3(-1.933, 3.375, 16.329), Vector3(-9.579, 3, 13.184), Vector3(-14.666, 2.625, 6.761), Vector3(-15.953, 2.25, -1.256), Vector3(-13.183, 1.875, -8.809), Vector3(-7.131, 1.5, -13.996), Vector3(0.611, 1.125, -15.549), Vector3(8.054, 0.75, -13.143), Vector3(13.32, 0.375, -7.46), Vector3(15.12, 0, 0))
+uses_map_hazard_profile = true
+map_mechanic_hook = "true descending spiral route"
+map_mine_count = 8
+map_obstacle_count = 14
+map_sewer_hole_count = 2
+map_barrier_obstacle_weight = 48
+map_cone_obstacle_weight = 42
+map_vehicle_obstacle_weight = 10
+map_boost_pad_count = 5
+map_defender_count = 2
+map_boost_multiplier = 1.75
+map_boost_duration = 2.0
+map_profile_obstacle_lane_count = 2
+map_max_obstacles_per_segment = 1
+map_guaranteed_open_lanes = 1
+map_mine_blast_radius = 4.4
+map_mine_launch_strength = 13.0

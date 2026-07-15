@@ -102,6 +102,16 @@ const ENTRIES: Array[Dictionary] = [
 		"status": STATUS_PROTOTYPE,
 		"legacy_index": 8,
 	},
+	{
+		"id": "true_spiral_ramp",
+		"display_name": "True Spiral Ramp",
+		"resource_path": "res://resources/maps/true_spiral_ramp.tres",
+		"scene_path": "res://scenes/maps/true_spiral_ramp.tscn",
+		"enabled": false,
+		"enabled_for_testing": true,
+		"status": STATUS_PROTOTYPE,
+		"legacy_index": 9,
+	},
 ]
 
 

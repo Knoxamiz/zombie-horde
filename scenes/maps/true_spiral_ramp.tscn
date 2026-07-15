@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/maps/spiral_ramp_arena.gd" id="1_arena"]
+
+[node name="RoadArena" type="Node3D"]
+script = ExtResource("1_arena")
+
+[node name="MapDressing" type="Node3D" parent="."]
+
+[node name="MapBanner" type="Label3D" parent="MapDressing"]
+transform = Transform3D(1, 0, 0, 0, 0.984808, -0.173648, 0, 0.173648, 0.984808, 0, 18.2, -25)
+text = "TRUE SPIRAL RAMP"
+font_size = 42
+outline_size = 12
+modulate = Color(0.78, 1, 0.18, 1)

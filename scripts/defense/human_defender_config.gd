@@ -19,6 +19,7 @@ enum GunType {
 @export var placement_max_z: float = 28.0
 @export var placement_surface_y: float = 0.0
 @export var placement_surface_zones: Array[Dictionary] = []
+@export var placement_path_points: PackedVector3Array = PackedVector3Array()
 @export var position_jitter: float = 0.65
 @export var defender_min_spacing: float = 6.0
 @export var reserved_position_clearance: float = 3.0

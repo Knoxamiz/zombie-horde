@@ -60,6 +60,13 @@ func _get_pad_position(hazard_positions: Array[Vector3], boost_positions: Array[
 	return _get_random_pad_position()
 
 func _get_random_pad_position() -> Vector3:
+	if SURFACE_SPAWN_RESOLVER.has_path(powerup_config.placement_path_points):
+		return SURFACE_SPAWN_RESOLVER.random_path_position(
+			_rng,
+			powerup_config.placement_path_points,
+			powerup_config.placement_half_width,
+			0.12
+		)
 	var z: float = _get_random_surface_z(
 		powerup_config.placement_min_z,
 		powerup_config.placement_max_z

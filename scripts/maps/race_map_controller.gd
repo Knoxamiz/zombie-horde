@@ -691,6 +691,7 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		_zombie_manager.spawn_origin = definition.spawn_origin
 		_zombie_manager.spawn_area_size = definition.spawn_area_size
 		_zombie_manager.goal_position = definition.goal_position
+		_zombie_manager.race_path_points = definition.race_path_points
 
 	if zombie_config != null:
 		zombie_config.lane_half_width = definition.lane_half_width
@@ -727,6 +728,7 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		human_defender_config.placement_surface_y = definition.resolve_hazard_surface_y()
 
 	definition.apply_hazard_profile_to(hazard_config, powerup_config, human_defender_config)
+	_apply_path_placement(definition.race_path_points)
 	_apply_kit_surface_placement_zones(definition, _get_current_map())
 
 	if _base_goal != null:
@@ -957,6 +959,15 @@ func _set_surface_placement_y(surface_y: float) -> void:
 		powerup_config.placement_surface_y = surface_y
 	if human_defender_config != null:
 		human_defender_config.placement_surface_y = surface_y
+
+
+func _apply_path_placement(path_points: PackedVector3Array) -> void:
+	if hazard_config != null:
+		hazard_config.placement_path_points = path_points
+	if powerup_config != null:
+		powerup_config.placement_path_points = path_points
+	if human_defender_config != null:
+		human_defender_config.placement_path_points = path_points
 
 
 func _apply_streamer_profile_overrides(profile: StreamerSettingsProfile) -> void:

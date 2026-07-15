@@ -136,7 +136,7 @@ func _spawn_obstacles() -> void:
 		obstacle.name = "RoadObstacle_%02d" % (index + 1)
 		var obstacle_position: Vector3 = placement.get("position", Vector3.ZERO)
 		obstacle.global_position = obstacle_position
-		obstacle.rotation_degrees.y = _rng.randf_range(-hazard_config.obstacle_rotation_degrees, hazard_config.obstacle_rotation_degrees)
+		obstacle.rotation_degrees.y = _get_obstacle_yaw_degrees(obstacle_position)
 		_spawned_obstacles.append(obstacle)
 		_reserved_positions.append(obstacle_position)
 
@@ -163,6 +163,13 @@ func _get_sewer_hole_position(used_positions: Array[Vector3]) -> Vector3:
 	return _get_random_sewer_hole_position()
 
 func _get_random_mine_position() -> Vector3:
+	if SURFACE_SPAWN_RESOLVER.has_path(hazard_config.placement_path_points):
+		return SURFACE_SPAWN_RESOLVER.random_path_position(
+			_rng,
+			hazard_config.placement_path_points,
+			hazard_config.placement_half_width,
+			0.18
+		)
 	var z: float = _get_random_surface_z(
 		hazard_config.placement_min_z,
 		hazard_config.placement_max_z
@@ -174,6 +181,13 @@ func _get_random_mine_position() -> Vector3:
 	)
 
 func _get_random_sewer_hole_position() -> Vector3:
+	if SURFACE_SPAWN_RESOLVER.has_path(hazard_config.placement_path_points):
+		return SURFACE_SPAWN_RESOLVER.random_path_position(
+			_rng,
+			hazard_config.placement_path_points,
+			hazard_config.placement_half_width,
+			0.08
+		)
 	var z: float = _get_random_surface_z(
 		hazard_config.placement_min_z,
 		hazard_config.placement_max_z
@@ -250,6 +264,30 @@ func _reserve_obstacle_slot(
 		large_counts[segment_index] = int(large_counts.get(segment_index, 0)) + 1
 
 func _get_obstacle_slot_position(segment_index: int, lane_index: int) -> Vector3:
+	if SURFACE_SPAWN_RESOLVER.has_path(hazard_config.placement_path_points):
+		var lane_center: float = _get_lane_center_x(lane_index)
+		var path_length: float = SURFACE_SPAWN_RESOLVER.path_length(hazard_config.placement_path_points)
+		var segment_length_for_path: float = max(hazard_config.obstacle_segment_length, 0.5)
+		var segment_start_distance: float = float(segment_index) * segment_length_for_path
+		var segment_end_distance: float = min(segment_start_distance + segment_length_for_path, path_length)
+		var segment_center_distance: float = (segment_start_distance + segment_end_distance) * 0.5
+		var distance_jitter: float = min(segment_length_for_path * 0.22, max((segment_end_distance - segment_start_distance) * 0.42, 0.0))
+		var distance: float = _rng.randf_range(
+			maxf(segment_center_distance - distance_jitter, 0.0),
+			minf(segment_center_distance + distance_jitter, path_length)
+		)
+		var lateral_offset: float = clamp(
+			lane_center + _rng.randf_range(-hazard_config.obstacle_lane_jitter, hazard_config.obstacle_lane_jitter),
+			-hazard_config.obstacle_half_width,
+			hazard_config.obstacle_half_width
+		)
+		return SURFACE_SPAWN_RESOLVER.point_at_path_distance(
+			hazard_config.placement_path_points,
+			distance,
+			lateral_offset,
+			0.45
+		)
+
 	var segment_length: float = max(hazard_config.obstacle_segment_length, 0.5)
 	var segment_start: float = hazard_config.obstacle_min_z + float(segment_index) * segment_length
 	var segment_end: float = min(segment_start + segment_length, hazard_config.obstacle_max_z)
@@ -277,8 +315,28 @@ func _get_lane_center_x(lane_index: int) -> float:
 func _get_obstacle_lane_count() -> int:
 	return max(hazard_config.obstacle_lane_count, 1)
 
+
+func _get_obstacle_yaw_degrees(position: Vector3) -> float:
+	var jitter: float = _rng.randf_range(
+		-hazard_config.obstacle_rotation_degrees,
+		hazard_config.obstacle_rotation_degrees
+	)
+	if hazard_config != null and SURFACE_SPAWN_RESOLVER.has_path(hazard_config.placement_path_points):
+		var distance: float = SURFACE_SPAWN_RESOLVER.closest_path_distance(
+			hazard_config.placement_path_points,
+			position
+		)
+		var forward: Vector3 = SURFACE_SPAWN_RESOLVER.direction_at_path_distance(
+			hazard_config.placement_path_points,
+			distance
+		)
+		return rad_to_deg(atan2(forward.x, forward.z)) + jitter
+	return jitter
+
 func _get_obstacle_segment_count() -> int:
 	var segment_length: float = max(hazard_config.obstacle_segment_length, 0.5)
+	if hazard_config != null and SURFACE_SPAWN_RESOLVER.has_path(hazard_config.placement_path_points):
+		return int(ceil(SURFACE_SPAWN_RESOLVER.path_length(hazard_config.placement_path_points) / segment_length))
 	var placement_length: float = max(hazard_config.obstacle_max_z - hazard_config.obstacle_min_z, 0.0)
 	return int(ceil(placement_length / segment_length))
 
