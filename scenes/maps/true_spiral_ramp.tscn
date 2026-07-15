@@ -9,7 +9,7 @@ script = ExtResource("1_arena")
 
 [node name="MapBanner" type="Label3D" parent="MapDressing"]
 transform = Transform3D(1, 0, 0, 0, 0.984808, -0.173648, 0, 0.173648, 0.984808, 0, 18.2, -25)
-text = "TRUE SPIRAL RAMP"
+text = "SQUARE SPIRAL RAMP"
 font_size = 42
 outline_size = 12
 modulate = Color(0.78, 1, 0.18, 1)

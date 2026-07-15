@@ -6,7 +6,7 @@
 
 [resource]
 script = ExtResource("1_definition")
-display_name = "True Spiral Ramp"
+display_name = "Square Spiral Ramp"
 scene = ExtResource("2_scene")
 premium_only = true
 spawn_origin = Vector3(-18, 14.8, -18)

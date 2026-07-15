@@ -93,7 +93,7 @@ const ENTRIES: Array[Dictionary] = [
 	},
 	{
 		"id": "spiral_descent",
-		"display_name": "Spiral Descent",
+		"display_name": "Straight Descent Prototype",
 		"resource_path": "res://resources/maps/spiral_descent.tres",
 		"scene_path": "res://scenes/maps/spiral_descent.tscn",
 		"layout_preset_id": "spiral_descent",
@@ -104,7 +104,7 @@ const ENTRIES: Array[Dictionary] = [
 	},
 	{
 		"id": "true_spiral_ramp",
-		"display_name": "True Spiral Ramp",
+		"display_name": "Square Spiral Ramp",
 		"resource_path": "res://resources/maps/true_spiral_ramp.tres",
 		"scene_path": "res://scenes/maps/true_spiral_ramp.tscn",
 		"enabled": false,

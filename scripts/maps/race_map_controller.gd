@@ -240,17 +240,16 @@ func get_map_definition_by_id(map_id: String) -> RaceMapDefinition:
 
 
 func get_active_map_definition() -> RaceMapDefinition:
+	if is_prototype_test_load_active():
+		return get_map_definition_by_id(_prototype_test_map_id)
 	if active_map_id.is_empty():
 		return get_map_definition_by_id(MapCatalog.DEFAULT_MAP_ID)
 	return get_map_definition_by_id(active_map_id)
 
 
 func should_use_definition_race_camera() -> bool:
-	return (
-		not active_map_id.is_empty()
-		and active_map_id != MapCatalog.DEFAULT_MAP_ID
-		and not is_prototype_test_load_active()
-	)
+	var resolved_map_id: String = get_resolved_map_id()
+	return not resolved_map_id.is_empty() and resolved_map_id != MapCatalog.DEFAULT_MAP_ID
 
 
 func ensure_spectator_camera_active() -> void:

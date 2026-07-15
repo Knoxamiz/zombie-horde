@@ -386,6 +386,14 @@ func _test_runtime_load_verify() -> PackedStringArray:
 		)
 	if map_controller.did_last_load_use_fallback():
 		failures.append("True Spiral Ramp settings selection used City Highway fallback")
+	var active_definition: RaceMapDefinition = map_controller.get_active_map_definition()
+	if active_definition == null or active_definition.display_name != "Square Spiral Ramp":
+		failures.append(
+			"Expected active definition Square Spiral Ramp, got %s"
+			% (active_definition.display_name if active_definition != null else "null")
+		)
+	if not map_controller.should_use_definition_race_camera():
+		failures.append("True Spiral Ramp should use definition camera framing")
 	road_arena = _main_game.get_node_or_null("World/RoadArena")
 	if road_arena == null:
 		failures.append("RoadArena missing after loading True Spiral Ramp")
