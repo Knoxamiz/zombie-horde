@@ -17,6 +17,7 @@ const LAYER_COUNT: int = 4
 const EDGE_BARRIER_HEIGHT: float = 0.86
 const EDGE_BARRIER_THICKNESS: float = 0.34
 const SEGMENT_END_INSET: float = 3.8
+const RAIL_END_INSET: float = 6.4
 
 var _visual_root: Node3D
 var _collision_root: Node3D
@@ -135,7 +136,7 @@ func _build_safety_rails(points: PackedVector3Array) -> void:
 		var horizontal_length: float = Vector2(delta.x, delta.z).length()
 		var raw_length: float = maxf(delta.length(), 0.5)
 		var direction: Vector3 = delta.normalized()
-		var inset: float = minf(SEGMENT_END_INSET, raw_length * 0.22)
+		var inset: float = minf(RAIL_END_INSET, raw_length * 0.3)
 		var adjusted_a: Vector3 = a + direction * inset
 		var adjusted_b: Vector3 = b - direction * inset
 		var center: Vector3 = (adjusted_a + adjusted_b) * 0.5
@@ -150,14 +151,14 @@ func _build_safety_rails(points: PackedVector3Array) -> void:
 			)
 			_add_collision_box(
 				"SpiralEdgeBarrier",
-				Vector3(EDGE_BARRIER_THICKNESS, EDGE_BARRIER_HEIGHT, length + 0.1),
+				Vector3(EDGE_BARRIER_THICKNESS, EDGE_BARRIER_HEIGHT, length),
 				rail_position,
 				yaw,
 				pitch
 			)
 			_add_visual_box(
 				"SpiralEdgeBarrierVisual",
-				Vector3(EDGE_BARRIER_THICKNESS, EDGE_BARRIER_HEIGHT, length + 0.1),
+				Vector3(EDGE_BARRIER_THICKNESS, EDGE_BARRIER_HEIGHT, length),
 				rail_position,
 				yaw,
 				pitch,
