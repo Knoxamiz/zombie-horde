@@ -506,10 +506,12 @@ func _on_backdrop_selected(index: int) -> void:
 func _on_map_selected(option_index: int) -> void:
 	if _is_refreshing:
 		return
-	if _round_manager != null and _round_manager.get_state_text() != "Joining":
+	if _is_map_change_locked():
 		_refresh_controls()
 		_set_status("Map locked during round")
 		return
+	if _round_manager != null and _round_manager.state == RoundManager.RoundState.ENDED:
+		_round_manager.reset_round()
 
 	_profile.set_selected_settings_map_index(_get_settings_map_index_for_option(option_index))
 	_apply_profile_to_game(true)
@@ -607,12 +609,22 @@ func _on_premium_control_changed(_value: float) -> void:
 	_save_profile("Saved chaos controls")
 
 func _on_reroll_pressed() -> void:
-	if _round_manager != null and _round_manager.get_state_text() != "Joining":
+	if _is_map_change_locked():
 		_set_status("Locked during round")
 		return
 
 	_apply_profile_to_game(true)
 	_save_profile("Saved and rerolled street")
+
+
+func _is_map_change_locked() -> bool:
+	if _round_manager == null:
+		return false
+	return _round_manager.state in [
+		RoundManager.RoundState.COUNTDOWN,
+		RoundManager.RoundState.RUNNING,
+		RoundManager.RoundState.PAUSED,
+	]
 
 func _commit_streamer_name() -> void:
 	if _is_refreshing:

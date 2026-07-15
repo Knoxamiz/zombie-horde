@@ -372,6 +372,28 @@ func _test_runtime_load_verify() -> PackedStringArray:
 		if "SpectatorCamera" not in camera_path:
 			failures.append("Spectator camera is not active after City Highway load: %s" % camera_path)
 
+	profile.set_selected_map_id("broken_bridge_pass")
+	loaded = map_controller.apply_profile(profile)
+	if not loaded:
+		failures.append("apply_profile returned false for Broken Bridge")
+	_assert_loaded_map_script(
+		failures,
+		map_controller,
+		"broken_bridge_pass",
+		"kit_map_arena.gd"
+	)
+
+	profile.set_selected_map_id("spiral_descent")
+	loaded = map_controller.apply_profile(profile)
+	if not loaded:
+		failures.append("apply_profile returned false for Straight Descent Prototype")
+	_assert_loaded_map_script(
+		failures,
+		map_controller,
+		"spiral_descent",
+		"kit_map_arena.gd"
+	)
+
 	var spiral_settings_index: int = MapCatalog.resolve_settings_index("true_spiral_ramp", -1)
 	profile.set_selected_settings_map_index(spiral_settings_index)
 	loaded = map_controller.apply_profile(profile)
@@ -406,8 +428,78 @@ func _test_runtime_load_verify() -> PackedStringArray:
 				% arena_script_path
 			)
 
+	failures.append_array(await _test_streamer_menu_ended_map_change())
 	_main_game.queue_free()
 	return failures
+
+
+func _test_streamer_menu_ended_map_change() -> PackedStringArray:
+	var failures: PackedStringArray = PackedStringArray()
+	var map_controller: RaceMapController = _main_game.get_node_or_null(
+		"Systems/RaceMapController"
+	) as RaceMapController
+	var round_manager: RoundManager = _main_game.get_node_or_null(
+		"Systems/RoundManager"
+	) as RoundManager
+	var streamer_menu: StreamerMenuController = _main_game.get_node_or_null(
+		"StreamerMenu"
+	) as StreamerMenuController
+	if map_controller == null or round_manager == null or streamer_menu == null:
+		failures.append("Streamer menu ended map change test missing required nodes")
+		return failures
+
+	var broken_profile: StreamerSettingsProfile = StreamerSettingsProfile.new()
+	broken_profile.set_selected_map_id("broken_bridge_pass")
+	if not map_controller.apply_profile(broken_profile):
+		failures.append("Could not load Broken Bridge before ended-state map change test")
+		return failures
+
+	round_manager.state = RoundManager.RoundState.ENDED
+	streamer_menu.call("_on_map_selected", MapCatalog.resolve_settings_index("true_spiral_ramp", -1))
+	await create_timer(0.2).timeout
+
+	if round_manager.state != RoundManager.RoundState.IDLE:
+		failures.append("Selecting a new map after Ended should reset to Joining")
+	if map_controller.get_resolved_map_id() != "true_spiral_ramp":
+		failures.append(
+			"Streamer menu ended-state map change kept %s instead of true_spiral_ramp"
+			% map_controller.get_resolved_map_id()
+		)
+	var road_arena: Node = _main_game.get_node_or_null("World/RoadArena")
+	var arena_script: Script = null
+	if road_arena != null:
+		arena_script = road_arena.get_script() as Script
+	var arena_script_path: String = arena_script.resource_path if arena_script != null else ""
+	if not arena_script_path.ends_with("spiral_ramp_arena.gd"):
+		failures.append(
+			"Streamer menu ended-state map change loaded wrong arena: %s"
+			% arena_script_path
+		)
+	return failures
+
+
+func _assert_loaded_map_script(
+	failures: PackedStringArray,
+	map_controller: RaceMapController,
+	expected_map_id: String,
+	expected_script_suffix: String
+) -> void:
+	if map_controller.get_resolved_map_id() != expected_map_id:
+		failures.append(
+			"Expected resolved map id %s, got %s"
+			% [expected_map_id, map_controller.get_resolved_map_id()]
+		)
+	var road_arena: Node = _main_game.get_node_or_null("World/RoadArena")
+	if road_arena == null:
+		failures.append("RoadArena missing after loading %s" % expected_map_id)
+		return
+	var arena_script: Script = road_arena.get_script() as Script
+	var arena_script_path: String = arena_script.resource_path if arena_script != null else ""
+	if not arena_script_path.ends_with(expected_script_suffix):
+		failures.append(
+			"%s loaded the wrong arena script: %s"
+			% [expected_map_id, arena_script_path]
+		)
 
 
 func _finish() -> void:
