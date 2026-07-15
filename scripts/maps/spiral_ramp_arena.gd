@@ -7,14 +7,12 @@ const MAT_CITY_MID := preload("res://assets/materials/city_building_mid.tres")
 const MAT_SPAWN := preload("res://assets/materials/spawn_zone.tres")
 const MAT_GOAL := preload("res://assets/materials/goal_zone.tres")
 
-const SEGMENT_LENGTH: float = 7.25
-const ROAD_WIDTH: float = 8.5
+const ROAD_WIDTH: float = 8.0
 const ROAD_THICKNESS: float = 0.42
-const RADIUS: float = 21.0
-const TOP_Y: float = 15.0
+const HALF_EXTENT: float = 18.0
+const TOP_Y: float = 14.0
 const BOTTOM_Y: float = 0.0
-const TURNS: float = 3.25
-const SEGMENTS: int = 40
+const LAYER_COUNT: int = 4
 
 var _visual_root: Node3D
 var _collision_root: Node3D
@@ -26,17 +24,16 @@ func _ready() -> void:
 
 static func build_path_points() -> PackedVector3Array:
 	var points := PackedVector3Array()
-	for index in range(SEGMENTS + 1):
-		var t: float = float(index) / float(SEGMENTS)
-		var angle: float = -PI * 0.5 + t * TAU * TURNS
-		var radius: float = lerpf(RADIUS, RADIUS * 0.72, t)
-		points.append(
-			Vector3(
-				cos(angle) * radius,
-				lerpf(TOP_Y, BOTTOM_Y, t),
-				sin(angle) * radius
-			)
-		)
+	var layer_step: float = (TOP_Y - BOTTOM_Y) / float(LAYER_COUNT)
+	points.append(Vector3(-HALF_EXTENT, TOP_Y, -HALF_EXTENT))
+	for layer_index in range(LAYER_COUNT):
+		var y: float = TOP_Y - layer_step * float(layer_index)
+		var next_y: float = maxf(BOTTOM_Y, y - layer_step)
+		points.append(Vector3(HALF_EXTENT, y, -HALF_EXTENT))
+		points.append(Vector3(HALF_EXTENT, y, HALF_EXTENT))
+		points.append(Vector3(-HALF_EXTENT, y, HALF_EXTENT))
+		points.append(Vector3(-HALF_EXTENT, next_y, -HALF_EXTENT))
+	points.append(Vector3(HALF_EXTENT, BOTTOM_Y, -HALF_EXTENT))
 	return points
 
 
@@ -122,12 +119,12 @@ func _build_markers(points: PackedVector3Array) -> void:
 
 
 func _build_level_labels(points: PackedVector3Array) -> void:
-	for index in range(4):
-		var point_index: int = int(round(float(index) / 3.0 * float(points.size() - 1)))
+	for index in range(LAYER_COUNT):
+		var point_index: int = min(index * 4, points.size() - 1)
 		var point: Vector3 = points[point_index]
 		var label := Label3D.new()
 		label.name = "SpiralLevelLabel"
-		label.text = "RING %d" % (4 - index)
+		label.text = "LEVEL %d" % (LAYER_COUNT - index)
 		label.font_size = 32
 		label.outline_size = 8
 		label.modulate = Color(0.78, 1.0, 0.2, 1.0)

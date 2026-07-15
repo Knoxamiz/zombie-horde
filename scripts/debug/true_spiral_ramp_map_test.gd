@@ -29,8 +29,8 @@ func _test_catalog_entry() -> void:
 	if definition == null:
 		_fail("True Spiral Ramp definition failed to load")
 		return
-	if definition.race_path_points.size() < 24:
-		_fail("True Spiral Ramp needs enough route points for a readable spiral")
+	if definition.race_path_points.size() != 18:
+		_fail("True Spiral Ramp should use the authored square-staircase route")
 	if definition.spawn_origin.y <= definition.goal_position.y:
 		_fail("True Spiral Ramp should spawn at the top and finish at the bottom")
 	if not definition.uses_map_hazard_profile:
@@ -53,8 +53,8 @@ func _test_scene_builds() -> void:
 	var surfaces: Node = scene_root.get_node_or_null("KitSurfaces")
 	if surfaces == null:
 		_fail("True Spiral Ramp did not build KitSurfaces")
-	elif surfaces.get_child_count() < 24:
-		_fail("True Spiral Ramp should build many spiral collision segments")
+	elif surfaces.get_child_count() < 17:
+		_fail("True Spiral Ramp should build square-staircase collision segments")
 
 	var visual_kit: Node = scene_root.get_node_or_null("VisualKit")
 	if visual_kit == null:

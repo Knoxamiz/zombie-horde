@@ -372,6 +372,32 @@ func _test_runtime_load_verify() -> PackedStringArray:
 		if "SpectatorCamera" not in camera_path:
 			failures.append("Spectator camera is not active after City Highway load: %s" % camera_path)
 
+	var spiral_settings_index: int = MapCatalog.resolve_settings_index("true_spiral_ramp", -1)
+	profile.set_selected_settings_map_index(spiral_settings_index)
+	loaded = map_controller.apply_profile(profile)
+	if not loaded:
+		failures.append("apply_profile returned false for True Spiral Ramp")
+	if not map_controller.is_prototype_test_load_active():
+		failures.append("True Spiral Ramp settings selection should use prototype load mode")
+	if map_controller.get_resolved_map_id() != "true_spiral_ramp":
+		failures.append(
+			"Expected resolved prototype map id true_spiral_ramp, got %s"
+			% map_controller.get_resolved_map_id()
+		)
+	if map_controller.did_last_load_use_fallback():
+		failures.append("True Spiral Ramp settings selection used City Highway fallback")
+	road_arena = _main_game.get_node_or_null("World/RoadArena")
+	if road_arena == null:
+		failures.append("RoadArena missing after loading True Spiral Ramp")
+	else:
+		var arena_script: Script = road_arena.get_script() as Script
+		var arena_script_path: String = arena_script.resource_path if arena_script != null else ""
+		if not arena_script_path.ends_with("spiral_ramp_arena.gd"):
+			failures.append(
+				"True Spiral Ramp loaded the wrong arena script: %s"
+				% arena_script_path
+			)
+
 	_main_game.queue_free()
 	return failures
 

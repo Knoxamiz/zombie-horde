@@ -115,6 +115,10 @@ func set_active_map_by_id(
 	if fallback_used:
 		return _fail_map_load(trimmed_id, settings_index, entry, fallback_reason, is_fallback_attempt)
 
+	if MapCatalog.is_prototype_testable(entry):
+		active_settings_map_index = settings_index
+		return load_prototype_map_for_test(trimmed_id)
+
 	var legacy_index: int = int(entry.get("legacy_index", 0))
 	var definition: RaceMapDefinition = get_map_definition_for_legacy_index(legacy_index)
 	if definition == null or definition.scene == null or _race_world == null:
@@ -489,11 +493,7 @@ func _fail_prototype_load(reason: String) -> bool:
 func _fallback_prototype_load_to_city_highway(reason: String) -> bool:
 	push_warning("RaceMapController: prototype test load failed (%s); falling back to City Highway" % reason)
 	_prototype_test_map_id = ""
-	var profile: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
-	var settings_index: int = 0
-	if profile != null:
-		settings_index = profile.get_selected_settings_map_index()
-	return set_active_map_by_settings_index(settings_index)
+	return set_active_map_by_id(MapCatalog.DEFAULT_MAP_ID, true, 0)
 
 
 func _log_prototype_dimension_report(definition: RaceMapDefinition) -> void:
