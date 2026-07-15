@@ -1,3 +1,4 @@
+@tool
 class_name SpiralRampArena
 extends Node3D
 
@@ -38,6 +39,7 @@ static func build_path_points() -> PackedVector3Array:
 
 
 func _build() -> void:
+	_clear_generated_roots()
 	_collision_root = _make_child("KitSurfaces", self)
 	_visual_root = _make_child("VisualKit", self)
 	var points: PackedVector3Array = build_path_points()
@@ -46,6 +48,14 @@ func _build() -> void:
 	_build_safety_rails(points)
 	_build_markers(points)
 	_build_level_labels(points)
+
+
+func _clear_generated_roots() -> void:
+	for child_name in ["KitSurfaces", "VisualKit"]:
+		var child: Node = get_node_or_null(child_name)
+		if child != null:
+			remove_child(child)
+			child.free()
 
 
 func _build_center_column() -> void:
