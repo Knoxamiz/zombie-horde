@@ -98,6 +98,7 @@ const ENTRIES: Array[Dictionary] = [
 		"scene_path": "res://scenes/maps/spiral_descent.tscn",
 		"layout_preset_id": "spiral_descent",
 		"enabled": false,
+		"enabled_for_testing": true,
 		"status": STATUS_PROTOTYPE,
 		"legacy_index": 8,
 	},

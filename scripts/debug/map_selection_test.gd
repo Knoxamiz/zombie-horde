@@ -7,7 +7,9 @@ const KitMapSurfaceBuilderScript := preload("res://scripts/maps/kit_map_surface_
 const EXPECTED_MAP_IDS: Array[String] = [
 	"quarantine_boulevard",
 	"broken_bridge_pass",
+	"spiral_descent",
 ]
+const EXPECTED_PLAYABLE_COUNT := 2
 
 var _failures: PackedStringArray = PackedStringArray()
 var _main_game: Node
@@ -64,10 +66,10 @@ func _test_catalog_resolution() -> PackedStringArray:
 	if MapCatalog.get_settings_map_id(1) != "broken_bridge_pass":
 		failures.append("Settings index 1 should be broken_bridge_pass")
 
-	if MapCatalog.get_playable_count() != EXPECTED_MAP_IDS.size():
+	if MapCatalog.get_playable_count() != EXPECTED_PLAYABLE_COUNT:
 		failures.append(
 			"Expected %d playable maps, got %d"
-			% [EXPECTED_MAP_IDS.size(), MapCatalog.get_playable_count()]
+			% [EXPECTED_PLAYABLE_COUNT, MapCatalog.get_playable_count()]
 		)
 
 	return failures
