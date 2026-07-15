@@ -16,6 +16,7 @@ const BOTTOM_Y: float = 0.0
 const LAYER_COUNT: int = 4
 const EDGE_BARRIER_HEIGHT: float = 0.86
 const EDGE_BARRIER_THICKNESS: float = 0.34
+const SEGMENT_END_INSET: float = 3.8
 
 var _visual_root: Node3D
 var _collision_root: Node3D
@@ -47,7 +48,9 @@ func _build() -> void:
 	var points: PackedVector3Array = build_path_points()
 	_build_center_column()
 	_build_road_segments(points)
+	_build_corner_decks(points)
 	_build_safety_rails(points)
+	_build_corner_barrier_posts(points)
 	_build_markers(points)
 	_build_level_labels(points)
 
@@ -75,10 +78,15 @@ func _build_road_segments(points: PackedVector3Array) -> void:
 	for index in range(points.size() - 1):
 		var a: Vector3 = points[index]
 		var b: Vector3 = points[index + 1]
-		var center: Vector3 = (a + b) * 0.5
 		var delta: Vector3 = b - a
 		var horizontal_length: float = Vector2(delta.x, delta.z).length()
-		var length: float = maxf(delta.length(), 0.5)
+		var raw_length: float = maxf(delta.length(), 0.5)
+		var direction: Vector3 = delta.normalized()
+		var inset: float = minf(SEGMENT_END_INSET, raw_length * 0.22)
+		var adjusted_a: Vector3 = a + direction * inset
+		var adjusted_b: Vector3 = b - direction * inset
+		var center: Vector3 = (adjusted_a + adjusted_b) * 0.5
+		var length: float = maxf(adjusted_a.distance_to(adjusted_b), 0.5)
 		var yaw: float = atan2(delta.x, delta.z)
 		var pitch: float = -atan2(delta.y, horizontal_length)
 		_add_collision_box(
@@ -98,6 +106,25 @@ func _build_road_segments(points: PackedVector3Array) -> void:
 		)
 
 
+func _build_corner_decks(points: PackedVector3Array) -> void:
+	for point: Vector3 in points:
+		_add_collision_box(
+			"SpiralCornerDeck",
+			Vector3(ROAD_WIDTH, ROAD_THICKNESS, ROAD_WIDTH),
+			point,
+			0.0,
+			0.0
+		)
+		_add_visual_box(
+			"SpiralCornerDeckVisual",
+			Vector3(ROAD_WIDTH, ROAD_THICKNESS * 0.72, ROAD_WIDTH),
+			point + Vector3.UP * 0.03,
+			0.0,
+			0.0,
+			MAT_ROAD_ASPHALT
+		)
+
+
 func _build_safety_rails(points: PackedVector3Array) -> void:
 	for index in range(points.size() - 1):
 		var a: Vector3 = points[index]
@@ -105,9 +132,14 @@ func _build_safety_rails(points: PackedVector3Array) -> void:
 		var delta: Vector3 = b - a
 		var horizontal_forward := Vector3(delta.x, 0.0, delta.z).normalized()
 		var side := Vector3(horizontal_forward.z, 0.0, -horizontal_forward.x).normalized()
-		var center: Vector3 = (a + b) * 0.5
 		var horizontal_length: float = Vector2(delta.x, delta.z).length()
-		var length: float = maxf(delta.length(), 0.5)
+		var raw_length: float = maxf(delta.length(), 0.5)
+		var direction: Vector3 = delta.normalized()
+		var inset: float = minf(SEGMENT_END_INSET, raw_length * 0.22)
+		var adjusted_a: Vector3 = a + direction * inset
+		var adjusted_b: Vector3 = b - direction * inset
+		var center: Vector3 = (adjusted_a + adjusted_b) * 0.5
+		var length: float = maxf(adjusted_a.distance_to(adjusted_b), 0.5)
 		var yaw: float = atan2(delta.x, delta.z)
 		var pitch: float = -atan2(delta.y, horizontal_length)
 		for rail_side in [-1.0, 1.0]:
@@ -131,6 +163,33 @@ func _build_safety_rails(points: PackedVector3Array) -> void:
 				pitch,
 				MAT_CONCRETE
 			)
+
+
+func _build_corner_barrier_posts(points: PackedVector3Array) -> void:
+	var post_offset: float = ROAD_WIDTH * 0.5 + EDGE_BARRIER_THICKNESS * 0.5
+	for point: Vector3 in points:
+		for x_side in [-1.0, 1.0]:
+			for z_side in [-1.0, 1.0]:
+				var post_position := Vector3(
+					point.x + post_offset * x_side,
+					point.y + EDGE_BARRIER_HEIGHT * 0.5 + 0.16,
+					point.z + post_offset * z_side
+				)
+				_add_collision_box(
+					"SpiralCornerBarrierPost",
+					Vector3(EDGE_BARRIER_THICKNESS, EDGE_BARRIER_HEIGHT, EDGE_BARRIER_THICKNESS),
+					post_position,
+					0.0,
+					0.0
+				)
+				_add_visual_box(
+					"SpiralCornerBarrierPostVisual",
+					Vector3(EDGE_BARRIER_THICKNESS, EDGE_BARRIER_HEIGHT, EDGE_BARRIER_THICKNESS),
+					post_position,
+					0.0,
+					0.0,
+					MAT_CONCRETE
+				)
 
 
 func _build_markers(points: PackedVector3Array) -> void:

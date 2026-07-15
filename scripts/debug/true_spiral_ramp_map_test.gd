@@ -61,6 +61,8 @@ func _test_scene_builds() -> void:
 		_fail("True Spiral Ramp should build square-staircase collision segments")
 	elif surfaces.find_child("SpiralEdgeBarrier", true, false) == null:
 		_fail("True Spiral Ramp should build physical edge barriers")
+	elif surfaces.find_child("SpiralCornerDeck", true, false) == null:
+		_fail("True Spiral Ramp should build clean corner deck joints")
 
 	var visual_kit: Node = scene_root.get_node_or_null("VisualKit")
 	if visual_kit == null:
