@@ -10,10 +10,12 @@ const MAT_GOAL := preload("res://assets/materials/goal_zone.tres")
 
 const ROAD_WIDTH: float = 8.0
 const ROAD_THICKNESS: float = 0.42
-const HALF_EXTENT: float = 18.0
-const TOP_Y: float = 14.0
+const HALF_EXTENT: float = 54.0
+const TOP_Y: float = 42.0
 const BOTTOM_Y: float = 0.0
 const LAYER_COUNT: int = 4
+const EDGE_BARRIER_HEIGHT: float = 0.86
+const EDGE_BARRIER_THICKNESS: float = 0.34
 
 var _visual_root: Node3D
 var _collision_root: Node3D
@@ -98,8 +100,6 @@ func _build_road_segments(points: PackedVector3Array) -> void:
 
 func _build_safety_rails(points: PackedVector3Array) -> void:
 	for index in range(points.size() - 1):
-		if index % 2 != 0:
-			continue
 		var a: Vector3 = points[index]
 		var b: Vector3 = points[index + 1]
 		var delta: Vector3 = b - a
@@ -111,10 +111,22 @@ func _build_safety_rails(points: PackedVector3Array) -> void:
 		var yaw: float = atan2(delta.x, delta.z)
 		var pitch: float = -atan2(delta.y, horizontal_length)
 		for rail_side in [-1.0, 1.0]:
+			var rail_position: Vector3 = (
+				center
+				+ side * rail_side * (ROAD_WIDTH * 0.5 + EDGE_BARRIER_THICKNESS * 0.5)
+				+ Vector3.UP * (EDGE_BARRIER_HEIGHT * 0.5 + 0.16)
+			)
+			_add_collision_box(
+				"SpiralEdgeBarrier",
+				Vector3(EDGE_BARRIER_THICKNESS, EDGE_BARRIER_HEIGHT, length + 0.1),
+				rail_position,
+				yaw,
+				pitch
+			)
 			_add_visual_box(
-				"SpiralGuardRail",
-				Vector3(0.22, 0.82, length + 0.1),
-				center + side * rail_side * (ROAD_WIDTH * 0.5 + 0.18) + Vector3.UP * 0.56,
+				"SpiralEdgeBarrierVisual",
+				Vector3(EDGE_BARRIER_THICKNESS, EDGE_BARRIER_HEIGHT, length + 0.1),
+				rail_position,
 				yaw,
 				pitch,
 				MAT_CONCRETE

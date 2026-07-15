@@ -378,6 +378,9 @@ static func compute_race_camera_view_for_definition(definition: RaceMapDefinitio
 	if definition == null:
 		return {"position": Vector3.ZERO, "rotation_degrees": Vector3.ZERO}
 
+	if not definition.race_path_points.is_empty():
+		return _compute_path_camera_view_for_definition(definition)
+
 	var spawn_z: float = definition.spawn_origin.z
 	var goal_z: float = definition.goal_position.z
 	var center_z: float = (spawn_z + goal_z) * 0.5
@@ -388,6 +391,45 @@ static func compute_race_camera_view_for_definition(definition: RaceMapDefinitio
 	var back_offset: float = clampf(bridge_length * 0.38, 26.0, 46.0)
 	var camera_position := Vector3(-side_offset, deck_y + height, spawn_z - back_offset)
 	var focus := Vector3(0.0, deck_y + 0.5, center_z)
+
+	var look_transform := Transform3D(Basis(), camera_position).looking_at(focus, Vector3.UP)
+	var rotation_degrees: Vector3 = look_transform.basis.get_euler(EULER_ORDER_YXZ) * (180.0 / PI)
+	return {
+		"position": camera_position,
+		"rotation_degrees": rotation_degrees,
+		"focus": focus,
+	}
+
+
+static func _compute_path_camera_view_for_definition(definition: RaceMapDefinition) -> Dictionary:
+	var min_x: float = definition.race_path_points[0].x
+	var max_x: float = definition.race_path_points[0].x
+	var min_y: float = definition.race_path_points[0].y
+	var max_y: float = definition.race_path_points[0].y
+	var min_z: float = definition.race_path_points[0].z
+	var max_z: float = definition.race_path_points[0].z
+	for path_point: Vector3 in definition.race_path_points:
+		min_x = minf(min_x, path_point.x)
+		max_x = maxf(max_x, path_point.x)
+		min_y = minf(min_y, path_point.y)
+		max_y = maxf(max_y, path_point.y)
+		min_z = minf(min_z, path_point.z)
+		max_z = maxf(max_z, path_point.z)
+
+	var center := Vector3(
+		(min_x + max_x) * 0.5,
+		(min_y + max_y) * 0.5,
+		(min_z + max_z) * 0.5
+	)
+	var extent_x: float = max_x - min_x
+	var extent_z: float = max_z - min_z
+	var max_extent: float = maxf(extent_x, extent_z)
+	var camera_position := Vector3(
+		center.x - maxf(max_extent * 0.72, 30.0),
+		max_y + maxf(max_extent * 0.42, 28.0),
+		center.z - maxf(max_extent * 0.78, 34.0)
+	)
+	var focus := center + Vector3.UP * 2.0
 
 	var look_transform := Transform3D(Basis(), camera_position).looking_at(focus, Vector3.UP)
 	var rotation_degrees: Vector3 = look_transform.basis.get_euler(EULER_ORDER_YXZ) * (180.0 / PI)
