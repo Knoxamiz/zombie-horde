@@ -31,14 +31,30 @@ func _test_catalog_entry() -> void:
 		return
 	if definition.race_path_points.size() != 18:
 		_fail("True Spiral Ramp should use the authored square-staircase route")
+		return
+	var generated_points: PackedVector3Array = SpiralRampArena.build_path_points()
+	if not _points_match(definition.race_path_points, generated_points):
+		_fail("True Spiral Ramp resource route should match generated scene route")
 	if definition.spawn_origin.y < 40.0:
 		_fail("True Spiral Ramp should have expanded vertical level spacing")
+	if definition.spawn_origin.distance_to(definition.race_path_points[0] + Vector3.UP * 0.8) > 0.1:
+		_fail("True Spiral Ramp spawn should sit on the top route point")
+	if definition.goal_position.distance_to(definition.race_path_points[definition.race_path_points.size() - 1] + Vector3.UP * 0.8) > 0.1:
+		_fail("True Spiral Ramp goal should sit on the bottom finish point")
 	if absf(definition.race_path_points[0].x) < 50.0:
 		_fail("True Spiral Ramp should have expanded horizontal footprint")
 	if definition.spawn_origin.y <= definition.goal_position.y:
 		_fail("True Spiral Ramp should spawn at the top and finish at the bottom")
+	if definition.out_of_bounds_half_width < 70.0:
+		_fail("True Spiral Ramp OOB width should cover the expanded footprint")
+	if definition.out_of_bounds_min_z > -70.0 or definition.out_of_bounds_max_z < 60.0:
+		_fail("True Spiral Ramp OOB depth should cover the expanded footprint")
+	if definition.out_of_bounds_min_y > -5.0:
+		_fail("True Spiral Ramp fall plane should sit below the bottom layer")
 	if not definition.uses_map_hazard_profile:
 		_fail("True Spiral Ramp should use a map hazard profile")
+	if definition.map_mine_count <= 0 or definition.map_obstacle_count <= 0 or definition.map_boost_pad_count <= 0:
+		_fail("True Spiral Ramp should ship with a populated hazard profile")
 
 
 func _test_scene_builds() -> void:
@@ -55,22 +71,50 @@ func _test_scene_builds() -> void:
 	await create_timer(0.2).timeout
 
 	var surfaces: Node = scene_root.get_node_or_null("KitSurfaces")
+	var expected_path_points: int = SpiralRampArena.build_path_points().size()
+	var expected_segments: int = expected_path_points - 1
 	if surfaces == null:
 		_fail("True Spiral Ramp did not build KitSurfaces")
-	elif surfaces.get_child_count() < 17:
+	elif _count_named_descendants(surfaces, "SpiralRampSurface") != expected_segments:
 		_fail("True Spiral Ramp should build square-staircase collision segments")
-	elif surfaces.find_child("SpiralEdgeBarrier", true, false) == null:
+	elif _count_named_descendants(surfaces, "SpiralCornerDeck") != expected_path_points:
+		_fail("True Spiral Ramp should build a corner deck for every route joint")
+	elif _count_named_descendants(surfaces, "SpiralEdgeBarrier") < expected_segments * 2:
 		_fail("True Spiral Ramp should build physical edge barriers")
 	elif surfaces.find_child("SpiralCornerDeck", true, false) == null:
 		_fail("True Spiral Ramp should build clean corner deck joints")
+	elif _count_named_descendants(surfaces, "SpiralCornerBarrierWall") < 30:
+		_fail("True Spiral Ramp should wall exposed corner deck edges")
+	elif _count_named_descendants(surfaces, "SpiralCornerBarrierPost") < 60:
+		_fail("True Spiral Ramp should reinforce corner walls with pylons")
 
 	var visual_kit: Node = scene_root.get_node_or_null("VisualKit")
 	if visual_kit == null:
 		_fail("True Spiral Ramp did not build VisualKit")
 	elif visual_kit.find_child("SpiralRoadDeck", true, false) == null:
 		_fail("True Spiral Ramp dressing did not build road deck visuals")
+	elif _count_named_descendants(visual_kit, "SpiralCornerBarrierWallVisual") < 30:
+		_fail("True Spiral Ramp should show visible corner barrier walls")
 
 	scene_root.queue_free()
+
+
+func _points_match(actual: PackedVector3Array, expected: PackedVector3Array) -> bool:
+	if actual.size() != expected.size():
+		return false
+	for index in range(actual.size()):
+		if actual[index].distance_to(expected[index]) > 0.01:
+			return false
+	return true
+
+
+func _count_named_descendants(node: Node, node_name: String) -> int:
+	var count: int = 0
+	for child: Node in node.get_children():
+		if child.name == node_name:
+			count += 1
+		count += _count_named_descendants(child, node_name)
+	return count
 
 
 func _fail(message: String) -> void:

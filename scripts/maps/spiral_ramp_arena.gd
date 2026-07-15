@@ -51,6 +51,7 @@ func _build() -> void:
 	_build_road_segments(points)
 	_build_corner_decks(points)
 	_build_safety_rails(points)
+	_build_corner_barrier_walls(points)
 	_build_corner_barrier_posts(points)
 	_build_markers(points)
 	_build_level_labels(points)
@@ -164,6 +165,75 @@ func _build_safety_rails(points: PackedVector3Array) -> void:
 				pitch,
 				MAT_CONCRETE
 			)
+
+
+func _build_corner_barrier_walls(points: PackedVector3Array) -> void:
+	var wall_offset: float = ROAD_WIDTH * 0.5 + EDGE_BARRIER_THICKNESS * 0.5
+	var wall_directions: Array[Vector3] = [
+		Vector3.RIGHT,
+		Vector3.LEFT,
+		Vector3.FORWARD,
+		Vector3.BACK,
+	]
+	for index in range(points.size()):
+		var point: Vector3 = points[index]
+		var openings: Array[Vector3] = _corner_opening_directions(points, index)
+		for normal: Vector3 in wall_directions:
+			if _has_corner_opening(openings, normal):
+				continue
+			var tangent := Vector3(-normal.z, 0.0, normal.x).normalized()
+			var yaw: float = atan2(tangent.x, tangent.z)
+			var wall_position := Vector3(
+				point.x + normal.x * wall_offset,
+				point.y + EDGE_BARRIER_HEIGHT * 0.5 + 0.16,
+				point.z + normal.z * wall_offset
+			)
+			_add_collision_box(
+				"SpiralCornerBarrierWall",
+				Vector3(EDGE_BARRIER_THICKNESS, EDGE_BARRIER_HEIGHT, ROAD_WIDTH),
+				wall_position,
+				yaw,
+				0.0
+			)
+			_add_visual_box(
+				"SpiralCornerBarrierWallVisual",
+				Vector3(EDGE_BARRIER_THICKNESS, EDGE_BARRIER_HEIGHT, ROAD_WIDTH),
+				wall_position,
+				yaw,
+				0.0,
+				MAT_CONCRETE
+			)
+
+
+func _corner_opening_directions(points: PackedVector3Array, point_index: int) -> Array[Vector3]:
+	var openings: Array[Vector3] = []
+	var point: Vector3 = points[point_index]
+	if point_index > 0:
+		var previous_direction: Vector3 = _horizontal_cardinal_direction(points[point_index - 1] - point)
+		if previous_direction != Vector3.ZERO:
+			openings.append(previous_direction)
+	if point_index < points.size() - 1:
+		var next_direction: Vector3 = _horizontal_cardinal_direction(points[point_index + 1] - point)
+		if next_direction != Vector3.ZERO:
+			openings.append(next_direction)
+	return openings
+
+
+func _horizontal_cardinal_direction(delta: Vector3) -> Vector3:
+	if absf(delta.x) >= absf(delta.z):
+		if absf(delta.x) <= 0.001:
+			return Vector3.ZERO
+		return Vector3.RIGHT if delta.x > 0.0 else Vector3.LEFT
+	if absf(delta.z) <= 0.001:
+		return Vector3.ZERO
+	return Vector3.BACK if delta.z > 0.0 else Vector3.FORWARD
+
+
+func _has_corner_opening(openings: Array[Vector3], direction: Vector3) -> bool:
+	for opening: Vector3 in openings:
+		if opening.dot(direction) > 0.99:
+			return true
+	return false
 
 
 func _build_corner_barrier_posts(points: PackedVector3Array) -> void:
