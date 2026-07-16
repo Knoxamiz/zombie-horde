@@ -36,6 +36,7 @@ func _begin_runtime_load() -> void:
 
 func _continue_runtime_load() -> void:
 	_failures.append_array(_test_runtime_load_verify())
+	_failures.append_array(await _test_saved_profile_boot_map())
 	_finish()
 
 
@@ -420,11 +421,15 @@ func _test_runtime_load_verify() -> PackedStringArray:
 	if road_arena == null:
 		failures.append("RoadArena missing after loading True Spiral Ramp")
 	else:
-		var arena_script: Script = road_arena.get_script() as Script
+		var core_road: Node = road_arena.get_node_or_null("CoreRoad")
+		if core_road == null:
+			failures.append("True Spiral Ramp RoadArena missing CoreRoad")
+			return failures
+		var arena_script: Script = core_road.get_script() as Script
 		var arena_script_path: String = arena_script.resource_path if arena_script != null else ""
 		if not arena_script_path.ends_with("spiral_ramp_arena.gd"):
 			failures.append(
-				"True Spiral Ramp loaded the wrong arena script: %s"
+				"True Spiral Ramp loaded the wrong CoreRoad script: %s"
 				% arena_script_path
 			)
 
@@ -468,14 +473,90 @@ func _test_streamer_menu_ended_map_change() -> PackedStringArray:
 	var road_arena: Node = _main_game.get_node_or_null("World/RoadArena")
 	var arena_script: Script = null
 	if road_arena != null:
-		arena_script = road_arena.get_script() as Script
+		var core_road: Node = road_arena.get_node_or_null("CoreRoad")
+		if core_road != null:
+			arena_script = core_road.get_script() as Script
 	var arena_script_path: String = arena_script.resource_path if arena_script != null else ""
 	if not arena_script_path.ends_with("spiral_ramp_arena.gd"):
 		failures.append(
-			"Streamer menu ended-state map change loaded wrong arena: %s"
+			"Streamer menu ended-state map change loaded wrong CoreRoad script: %s"
 			% arena_script_path
 		)
 	return failures
+
+
+func _test_saved_profile_boot_map() -> PackedStringArray:
+	var failures: PackedStringArray = PackedStringArray()
+	var save_path: String = ProjectSettings.globalize_path(StreamerSettingsProfile.SAVE_PATH)
+	var had_existing_save: bool = FileAccess.file_exists(save_path)
+	var existing_save_text: String = ""
+	if had_existing_save:
+		var existing_file: FileAccess = FileAccess.open(save_path, FileAccess.READ)
+		if existing_file != null:
+			existing_save_text = existing_file.get_as_text()
+			existing_file.close()
+
+	var profile: StreamerSettingsProfile = StreamerSettingsProfile.new()
+	profile.set_selected_map_id("true_spiral_ramp")
+	var save_error: Error = profile.save_to_disk()
+	if save_error != OK:
+		failures.append("Failed to save true_spiral_ramp boot profile: %s" % save_error)
+		_restore_profile_save(save_path, had_existing_save, existing_save_text)
+		return failures
+
+	var packed: PackedScene = load(MAIN_GAME_SCENE)
+	if packed == null:
+		failures.append("Failed to load main game scene for saved-profile boot test")
+		_restore_profile_save(save_path, had_existing_save, existing_save_text)
+		return failures
+
+	var main_game: Node = packed.instantiate()
+	root.add_child(main_game)
+	await create_timer(0.35).timeout
+
+	var map_controller: RaceMapController = main_game.get_node_or_null(
+		"Systems/RaceMapController"
+	) as RaceMapController
+	if map_controller == null:
+		failures.append("RaceMapController missing in saved-profile boot test")
+	else:
+		if map_controller.get_resolved_map_id() != "true_spiral_ramp":
+			failures.append(
+				"Saved true_spiral_ramp boot resolved %s"
+				% map_controller.get_resolved_map_id()
+			)
+		if map_controller.did_last_load_use_fallback():
+			failures.append("Saved true_spiral_ramp boot used fallback")
+		var road_arena: Node = main_game.get_node_or_null("World/RoadArena")
+		if road_arena == null:
+			failures.append("RoadArena missing after saved true_spiral_ramp boot")
+		else:
+			var core_road: Node = road_arena.get_node_or_null("CoreRoad")
+			if core_road == null:
+				failures.append("Saved true_spiral_ramp boot loaded RoadArena without CoreRoad")
+			else:
+				var arena_script: Script = core_road.get_script() as Script
+				var arena_script_path: String = arena_script.resource_path if arena_script != null else ""
+				if not arena_script_path.ends_with("spiral_ramp_arena.gd"):
+					failures.append(
+						"Saved true_spiral_ramp boot loaded wrong CoreRoad script: %s"
+						% arena_script_path
+					)
+
+	main_game.queue_free()
+	_restore_profile_save(save_path, had_existing_save, existing_save_text)
+	return failures
+
+
+func _restore_profile_save(save_path: String, had_existing_save: bool, existing_save_text: String) -> void:
+	if had_existing_save:
+		var restore_file: FileAccess = FileAccess.open(save_path, FileAccess.WRITE)
+		if restore_file != null:
+			restore_file.store_string(existing_save_text)
+			restore_file.close()
+		return
+	if FileAccess.file_exists(save_path):
+		DirAccess.remove_absolute(save_path)
 
 
 func _assert_loaded_map_script(
@@ -493,11 +574,14 @@ func _assert_loaded_map_script(
 	if road_arena == null:
 		failures.append("RoadArena missing after loading %s" % expected_map_id)
 		return
-	var arena_script: Script = road_arena.get_script() as Script
+	var scripted_node: Node = road_arena.get_node_or_null("CoreRoad")
+	if scripted_node == null:
+		scripted_node = road_arena
+	var arena_script: Script = scripted_node.get_script() as Script
 	var arena_script_path: String = arena_script.resource_path if arena_script != null else ""
 	if not arena_script_path.ends_with(expected_script_suffix):
 		failures.append(
-			"%s loaded the wrong arena script: %s"
+			"%s loaded the wrong map script: %s"
 			% [expected_map_id, arena_script_path]
 		)
 

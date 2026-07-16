@@ -70,7 +70,17 @@ func _test_scene_builds() -> void:
 	root.add_child(scene_root)
 	await create_timer(0.2).timeout
 
-	var surfaces: Node = scene_root.get_node_or_null("KitSurfaces")
+	var core_road: Node = scene_root.get_node_or_null("CoreRoad")
+	if core_road == null:
+		_fail("True Spiral Ramp scene should expose RoadArena/CoreRoad like other selectable maps")
+		scene_root.queue_free()
+		return
+	var core_script: Script = core_road.get_script() as Script
+	var core_script_path: String = core_script.resource_path if core_script != null else ""
+	if not core_script_path.ends_with("spiral_ramp_arena.gd"):
+		_fail("True Spiral Ramp CoreRoad should use spiral_ramp_arena.gd")
+
+	var surfaces: Node = core_road.get_node_or_null("KitSurfaces")
 	var expected_path_points: int = SpiralRampArena.build_path_points().size()
 	var expected_segments: int = expected_path_points - 1
 	if surfaces == null:
@@ -88,7 +98,7 @@ func _test_scene_builds() -> void:
 	elif _count_named_descendants(surfaces, "SpiralCornerBarrierPost") < 60:
 		_fail("True Spiral Ramp should reinforce corner walls with pylons")
 
-	var visual_kit: Node = scene_root.get_node_or_null("VisualKit")
+	var visual_kit: Node = core_road.get_node_or_null("VisualKit")
 	if visual_kit == null:
 		_fail("True Spiral Ramp did not build VisualKit")
 	elif visual_kit.find_child("SpiralRoadDeck", true, false) == null:

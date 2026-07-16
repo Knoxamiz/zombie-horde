@@ -25,7 +25,7 @@ enum MenuTier {
 @export var streamer_name: String = "Streamer"
 @export_enum("Random", "Pistol", "SMG", "Rifle", "Shotgun") var tower_gun: int = 0
 @export var show_tower_weapons: bool = true
-@export_range(0, 1, 1) var selected_map_index: int = 0
+@export_range(0, 32, 1) var selected_map_index: int = 0
 @export var selected_map_id: String = ""
 @export_range(0, 96, 1) var premium_mine_count: int = 6
 @export_range(0, 96, 1) var premium_obstacle_count: int = 12

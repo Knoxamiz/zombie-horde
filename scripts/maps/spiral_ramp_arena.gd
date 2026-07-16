@@ -30,6 +30,10 @@ var _atmosphere_material: StandardMaterial3D
 
 
 func _ready() -> void:
+	ensure_built()
+
+
+func ensure_built() -> void:
 	_build()
 
 
