@@ -93,8 +93,18 @@ func _test_scene_builds() -> void:
 		_fail("True Spiral Ramp did not build VisualKit")
 	elif visual_kit.find_child("SpiralRoadDeck", true, false) == null:
 		_fail("True Spiral Ramp dressing did not build road deck visuals")
+	elif _count_named_descendants(visual_kit, "SpiralRoadCenterLine") < expected_segments:
+		_fail("True Spiral Ramp should have readable road markings")
 	elif _count_named_descendants(visual_kit, "SpiralCornerBarrierWallVisual") < 30:
 		_fail("True Spiral Ramp should show visible corner barrier walls")
+	elif _count_named_descendants(visual_kit, "SpiralGroundPillar") < 4:
+		_fail("True Spiral Ramp should have ground-level structural pillars")
+	elif _count_named_descendants(visual_kit, "SpiralRouteSupportPillar") < 24:
+		_fail("True Spiral Ramp should have route support pillars")
+	elif _count_named_descendants(visual_kit, "SpiralSightBlocker") < 8:
+		_fail("True Spiral Ramp should have neighboring sight blockers")
+	elif _count_named_descendants(visual_kit, "SpiralAtmosphereBand") < 4:
+		_fail("True Spiral Ramp should have surrounding atmosphere bands")
 
 	scene_root.queue_free()
 
