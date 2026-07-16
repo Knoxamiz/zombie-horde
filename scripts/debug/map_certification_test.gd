@@ -210,6 +210,10 @@ func _test_invalid_map_id_rejected() -> void:
 		_fail("invalid map id guard: set_active_map_by_id returned true")
 	if map_controller.get_resolved_map_id() == invalid_id:
 		_fail("invalid map id guard: resolved to invalid map id")
+	if not map_controller.get_resolved_map_id().is_empty():
+		_fail("invalid map id guard: failed request left a prior map marked active")
+	if main_game.get_node_or_null("World/RoadArena") != null:
+		_fail("invalid map id guard: failed request left the prior RoadArena visible")
 	if map_controller.get_last_load_failure_reason().is_empty():
 		_fail("invalid map id guard: missing failure reason")
 	if map_controller.did_last_load_use_fallback():

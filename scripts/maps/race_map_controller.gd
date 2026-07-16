@@ -348,11 +348,27 @@ func _fail_map_load(
 	entry: Dictionary,
 	reason: String
 ) -> bool:
+	# Never leave the prior arena visible after a failed selection. A stale scene
+	# makes a bad map request look like it loaded the previously played map.
+	_clear_active_map_after_failed_load()
 	_last_load_failure_reason = reason
 	_last_fallback_used = false
 	_log_race_start_map_selection(settings_index, entry, false, reason)
 	push_error("RaceMapController MAP LOAD FAILED [%s]: %s" % [requested_map_id, reason])
 	return false
+
+
+func _clear_active_map_after_failed_load() -> void:
+	var current_map: Node3D = _get_current_map()
+	if current_map == null and _race_world != null:
+		current_map = _race_world.get_node_or_null("RoadArena") as Node3D
+	if current_map != null and not current_map.is_queued_for_deletion():
+		current_map.name = "RoadArena_FailedLoad"
+		current_map.queue_free()
+	_active_map = null
+	active_map_id = ""
+	active_map_index = -1
+	active_settings_map_index = -1
 
 
 func _clamp_map_index(index: int) -> int:
