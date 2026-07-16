@@ -53,12 +53,10 @@ func _run_test() -> void:
 	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(MAP_ID)
 	_assert_not_null(definition, "%s definition" % MAP_ID)
 
-	map_controller.set_active_map_by_id(MAP_ID)
-	if map_controller.active_map_id != MAP_ID:
-		_fail("Failed to activate %s" % MAP_ID)
-
-	if map_controller.is_prototype_test_load_active():
-		_fail("Playable map load should not set prototype test flag")
+	if not map_controller.set_active_map_by_id(MAP_ID):
+		_fail("Failed to activate %s: %s" % [MAP_ID, map_controller.get_last_load_failure_reason()])
+	elif map_controller.active_map_id != MAP_ID:
+		_fail("Active map id mismatch for %s" % MAP_ID)
 
 	var road_arena: Node3D = main_game.get_node_or_null("World/RoadArena") as Node3D
 	_assert_not_null(road_arena, "World/RoadArena")
@@ -72,11 +70,10 @@ func _run_test() -> void:
 	if map_controller.zombie_config != null and map_controller.zombie_config.gap_void_zones.is_empty():
 		_fail("%s should configure gap_void_zones" % MAP_ID)
 
-	if map_controller.load_prototype_map_for_test("missing_map_id"):
-		_fail("Expected missing map id prototype load to return false")
-	if OS.is_debug_build() or DisplayServer.get_name() == "headless":
-		if map_controller.get_last_load_failure_reason().is_empty():
-			_fail("Expected loud failure reason for missing prototype map id")
+	if map_controller.set_active_map_by_id("missing_map_id"):
+		_fail("Expected missing map id load to return false")
+	if map_controller.get_last_load_failure_reason().is_empty():
+		_fail("Expected loud failure reason for missing map id")
 
 	var profile_after: StreamerSettingsProfile = StreamerSettingsProfile.load_from_disk()
 	if profile_after != null and profile_after.selected_map_index != saved_map_index:
@@ -85,8 +82,8 @@ func _run_test() -> void:
 			% [saved_map_index, profile_after.selected_map_index]
 		)
 
-	if MapCatalog.get_playable_count() != 8:
-		_fail("Playable map count changed after load test (expected 8)")
+	if MapCatalog.get_playable_count() != 4:
+		_fail("Playable map count changed after load test (expected 4)")
 
 	if _failures.is_empty():
 		print("PASS: playable map load test for %s" % MAP_ID)

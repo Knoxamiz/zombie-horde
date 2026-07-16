@@ -6,6 +6,8 @@ const FINISH_POSITION_TOLERANCE := RaceMapController.FINISH_POSITION_TOLERANCE
 const DEFAULT_CERTIFIED_MAP_IDS: Array[String] = [
 	MapCatalog.DEFAULT_MAP_ID,
 	"broken_bridge_pass",
+	"spiral_descent",
+	"true_spiral_ramp",
 ]
 
 
@@ -25,11 +27,8 @@ static func certify_catalog_entry(map_id: String) -> Array[String]:
 		failures.append("map id '%s' not found in MapCatalog" % trimmed_id)
 		return failures
 
-	if not MapCatalog.is_entry_selectable(entry):
-		failures.append(
-			"map '%s' is not selectable (enabled playable or enabled_for_testing prototype required)"
-			% trimmed_id
-		)
+	if not MapCatalog.is_entry_playable(entry):
+		failures.append("map '%s' is not a playable catalog entry" % trimmed_id)
 
 	var resource_path: String = str(entry.get("resource_path", ""))
 	var scene_path: String = str(entry.get("scene_path", ""))
@@ -49,11 +48,19 @@ static func certify_definition(definition: RaceMapDefinition, map_id: String) ->
 	if definition.scene == null:
 		failures.append("[%s] RaceMapDefinition.scene is null" % map_id)
 
-	if definition.spawn_origin.z >= definition.goal_position.z:
-		failures.append(
-			"[%s] spawn_origin.z (%.2f) must be less than goal_position.z (%.2f)"
-			% [map_id, definition.spawn_origin.z, definition.goal_position.z]
-		)
+	if definition.race_path_points.is_empty():
+		if definition.spawn_origin.z >= definition.goal_position.z:
+			failures.append(
+				"[%s] spawn_origin.z (%.2f) must be less than goal_position.z (%.2f)"
+				% [map_id, definition.spawn_origin.z, definition.goal_position.z]
+			)
+	else:
+		var route_start: Vector3 = definition.race_path_points[0] + Vector3.UP * 0.8
+		var route_end: Vector3 = definition.race_path_points[definition.race_path_points.size() - 1] + Vector3.UP * 0.8
+		if definition.spawn_origin.distance_to(route_start) > FINISH_POSITION_TOLERANCE:
+			failures.append("[%s] spawn_origin must align with the first route point" % map_id)
+		if definition.goal_position.distance_to(route_end) > FINISH_POSITION_TOLERANCE:
+			failures.append("[%s] goal_position must align with the final route point" % map_id)
 	if definition.lane_half_width <= 0.0:
 		failures.append("[%s] lane_half_width must be > 0" % map_id)
 	if definition.out_of_bounds_half_width < definition.lane_half_width:
@@ -68,11 +75,8 @@ static func certify_definition(definition: RaceMapDefinition, map_id: String) ->
 			"[%s] out_of_bounds_min_y (%.2f) must be below spawn height (%.2f)"
 			% [map_id, definition.out_of_bounds_min_y, definition.spawn_origin.y]
 		)
-	if abs(definition.base_position.z - definition.goal_position.z) > FINISH_POSITION_TOLERANCE:
-		failures.append(
-			"[%s] base_position.z (%.2f) must align with goal_position.z (%.2f)"
-			% [map_id, definition.base_position.z, definition.goal_position.z]
-		)
+	if definition.base_position.distance_to(definition.goal_position) > FINISH_POSITION_TOLERANCE:
+		failures.append("[%s] base_position must align with goal_position" % map_id)
 
 	var camera_view: Dictionary = RaceMapController.compute_race_camera_view_for_definition(definition)
 	var camera_position: Vector3 = camera_view.get("position", Vector3.ZERO)

@@ -17,7 +17,7 @@ func _initialize() -> void:
 func _run_all() -> void:
 	_started_msec = Time.get_ticks_msec()
 	print("=== Race quick smoke test ===")
-	await _run_quick_map_scenario(CITY_HIGHWAY_MAP_ID, false)
+	await _run_quick_map_scenario(CITY_HIGHWAY_MAP_ID)
 
 	var elapsed_sec: float = float(Time.get_ticks_msec() - _started_msec) / 1000.0
 	if _failures.is_empty():
@@ -32,9 +32,9 @@ func _run_all() -> void:
 		_finish(FAIL)
 
 
-func _run_quick_map_scenario(map_id: String, use_prototype_loader: bool) -> void:
+func _run_quick_map_scenario(map_id: String) -> void:
 	print("-- %s quick loop --" % map_id)
-	var ctx: Dictionary = await _boot_scenario(map_id, use_prototype_loader)
+	var ctx: Dictionary = await _boot_scenario(map_id)
 	if ctx.is_empty():
 		return
 
@@ -95,7 +95,7 @@ func _verify_reset_and_rejoin(
 	main_game.queue_free()
 
 
-func _boot_scenario(map_id: String, use_prototype_loader: bool) -> Dictionary:
+func _boot_scenario(map_id: String) -> Dictionary:
 	var main_game: Node = await _boot_main_game()
 	if main_game == null:
 		_fail("%s: main game boot failed" % map_id)
@@ -110,17 +110,14 @@ func _boot_scenario(map_id: String, use_prototype_loader: bool) -> Dictionary:
 		main_game.queue_free()
 		return {}
 
-	if use_prototype_loader:
-		if not map_controller.load_prototype_map_for_test(map_id):
-			_fail("%s: prototype map load failed" % map_id)
-			main_game.queue_free()
-			return {}
-	else:
-		map_controller.set_active_map_by_id(map_id)
-		if map_controller.active_map_id != map_id:
-			_fail("%s: failed to activate map" % map_id)
-			main_game.queue_free()
-			return {}
+	if not map_controller.set_active_map_by_id(map_id):
+		_fail("%s: failed to activate map: %s" % [map_id, map_controller.get_last_load_failure_reason()])
+		main_game.queue_free()
+		return {}
+	if map_controller.active_map_id != map_id:
+		_fail("%s: active map id mismatch" % map_id)
+		main_game.queue_free()
+		return {}
 
 	_configure_test_round(round_manager, map_controller, main_game)
 	await _ensure_race_systems_active(main_game)

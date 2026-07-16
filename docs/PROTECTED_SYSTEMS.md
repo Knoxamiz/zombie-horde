@@ -70,7 +70,7 @@ Related docs:
 |----------------|------------------------|
 | Values on a specific map resource after certification | Removing or repurposing fields used by `RaceMapController` or `ZombieConfig` |
 | New optional fields with controller support + tests | Hardcoding map dimensions in zombie or round code |
-| Prototype map `.tres` files (`enabled=false`) | Promoting map fields without updating certification |
+| Disabled map assets (`enabled=false`) | Promoting map fields without updating certification |
 
 **Required tests before merge:** `--tier=certification` for map definition changes; `--tier=smoke` minimum
 
@@ -86,8 +86,8 @@ Related docs:
 |----------------|------------------------|
 | Log/diagnostic output | Re-enabling silent City Highway fallback in debug or headless |
 | Certification checklist extensions with tests | Bypassing `MapCertification` or scene contract validation |
-| Catalog entries for prototype/test maps | Setting `enabled=true` / `status=playable` without certification |
-| Release-only fallback (documented) | Weakening `_fail_map_load` / `_fail_prototype_load` guards |
+| Catalog entries for disabled assets | Setting `enabled=true` / `status=playable` without certification |
+| Clear failure diagnostics | Adding a fallback or second map loader |
 
 **Required tests before merge:** `--tier=smoke` + `--tier=certification`; `--tier=map` for bridge gameplay changes
 
@@ -185,7 +185,7 @@ See [MAP_CERTIFICATION.md](MAP_CERTIFICATION.md) for fallback behavior.
 |----------------|------------------------|
 | Non-gameplay dressing on the map | Changing default map id without migration |
 | Certified definition tweaks with tests | Relying on City Highway substitution to hide broken maps in debug/test |
-| Release fallback (documented in MAP_CERTIFICATION) | Disabling certification for City Highway |
+| Catalog documentation | Disabling certification for City Highway |
 
 **Required tests before merge:** `--tier=smoke` + `--tier=certification`
 
@@ -195,7 +195,7 @@ See [MAP_CERTIFICATION.md](MAP_CERTIFICATION.md) for fallback behavior.
 
 **Files:** `scripts/maps/map_certification.gd`, `scripts/debug/map_certification_test.gd`, `scripts/debug/test_runner.gd` (`certification` tier)
 
-**Why protected:** PR #42 gate prevents prototype/broken maps from appearing playable in headless runs.
+**Why protected:** Certification prevents disabled or broken maps from appearing playable in headless runs.
 
 | Safe to change | Do not change casually |
 |----------------|------------------------|

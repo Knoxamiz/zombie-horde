@@ -12,77 +12,28 @@ func _initialize() -> void:
 
 
 func _run_all() -> void:
-	print("=== Prototype map review test ===")
+	print("=== Disabled authored-map audit ===")
 	var expected_ids: Array[String] = AIMapBlueprintRegistry.get_all_generated_map_ids()
 	if expected_ids.is_empty():
-		print("No AI-generated prototype maps registered; skipping load checks")
+		print("No disabled authored maps registered; skipping audit")
 		_finish()
 		return
 
-	_test_catalog_lists_ai_generated_prototypes(expected_ids)
-	for map_id in expected_ids:
-		await _test_prototype_load(map_id)
+	_test_catalog_lists_disabled_authored_maps(expected_ids)
 	_finish()
 
 
-func _test_catalog_lists_ai_generated_prototypes(expected_ids: Array[String]) -> void:
-	print("-- catalog ai-generated prototypes --")
-	var entries: Array[Dictionary] = MapCatalog.get_ai_generated_prototype_entries()
-	var found_ids: Array[String] = []
-	for entry in entries:
-		var map_id: String = str(entry.get("id", ""))
-		found_ids.append(map_id)
-		if bool(entry.get("enabled", false)):
-			_fail("AI-generated prototype '%s' must remain enabled=false" % map_id)
-		if str(entry.get("status", "")) != MapCatalog.STATUS_PROTOTYPE:
-			_fail("AI-generated prototype '%s' must remain status=prototype" % map_id)
-
-	for expected_id in expected_ids:
-		if expected_id not in found_ids:
-			_fail("expected AI-generated prototype missing from catalog: %s" % expected_id)
-
-
-func _test_prototype_load(map_id: String) -> void:
-	print("-- prototype load: %s --" % map_id)
-	var packed: PackedScene = load(MAIN_GAME_SCENE)
-	if packed == null:
-		_fail("Could not load main game scene")
-		return
-
-	var main_game: Node = packed.instantiate()
-	root.add_child(main_game)
-	await create_timer(0.8).timeout
-
-	var map_controller: RaceMapController = main_game.get_node_or_null(
-		"Systems/RaceMapController"
-	) as RaceMapController
-	if map_controller == null:
-		_fail("RaceMapController missing")
-		main_game.queue_free()
-		return
-
-	if not map_controller.load_prototype_map_for_test(map_id):
-		_fail(
-			"load_prototype_map_for_test failed for %s: %s"
-			% [map_id, map_controller.get_last_load_failure_reason()]
-		)
-		main_game.queue_free()
-		return
-
-	if map_controller.did_last_load_use_fallback():
-		_fail("prototype load used City Highway fallback for %s" % map_id)
-
-	if map_controller.get_resolved_map_id() != map_id:
-		_fail(
-			"resolved map id '%s' != '%s'"
-			% [map_controller.get_resolved_map_id(), map_id]
-		)
-
-	if not map_controller.is_prototype_test_load_active():
-		_fail("prototype test load flag was not set for %s" % map_id)
-
-	map_controller.clear_prototype_test_load(true)
-	main_game.queue_free()
+func _test_catalog_lists_disabled_authored_maps(expected_ids: Array[String]) -> void:
+	print("-- disabled authored maps --")
+	for map_id in expected_ids:
+		var entry: Dictionary = MapCatalog.get_entry_by_id(map_id)
+		if entry.is_empty():
+			_fail("expected authored map missing from catalog: %s" % map_id)
+			continue
+		if MapCatalog.is_entry_playable(entry):
+			_fail("authored map '%s' must be disabled until release-ready" % map_id)
+		if str(entry.get("status", "")) != MapCatalog.STATUS_DISABLED:
+			_fail("authored map '%s' must use disabled status" % map_id)
 
 
 func _fail(message: String) -> void:

@@ -16,8 +16,8 @@ func _initialize() -> void:
 
 func _run_all() -> void:
 	print("=== Race lifecycle smoke test ===")
-	await _run_map_finish_scenario(CITY_HIGHWAY_MAP_ID, false)
-	await _run_map_timeout_scenario(CITY_HIGHWAY_MAP_ID, false)
+	await _run_map_finish_scenario(CITY_HIGHWAY_MAP_ID)
+	await _run_map_timeout_scenario(CITY_HIGHWAY_MAP_ID)
 
 	if _failures.is_empty():
 		print("SUITE RESULT: PASSED")
@@ -29,9 +29,9 @@ func _run_all() -> void:
 		_finish(FAIL)
 
 
-func _run_map_finish_scenario(map_id: String, use_prototype_loader: bool) -> void:
+func _run_map_finish_scenario(map_id: String) -> void:
 	print("-- %s finish scenario --" % map_id)
-	var ctx: Dictionary = await _boot_scenario(map_id, use_prototype_loader, 180.0, 0.0, true)
+	var ctx: Dictionary = await _boot_scenario(map_id, 180.0, 0.0, true)
 	if ctx.is_empty():
 		return
 
@@ -72,9 +72,9 @@ func _run_map_finish_scenario(map_id: String, use_prototype_loader: bool) -> voi
 	await _verify_reset_and_rejoin(map_id, round_manager, debug_join, main_game)
 
 
-func _run_map_timeout_scenario(map_id: String, use_prototype_loader: bool) -> void:
+func _run_map_timeout_scenario(map_id: String) -> void:
 	print("-- %s timeout scenario --" % map_id)
-	var ctx: Dictionary = await _boot_scenario(map_id, use_prototype_loader, 8.0, 0.0, false)
+	var ctx: Dictionary = await _boot_scenario(map_id, 8.0, 0.0, false)
 	if ctx.is_empty():
 		return
 
@@ -133,7 +133,6 @@ func _verify_reset_and_rejoin(
 
 func _boot_scenario(
 	map_id: String,
-	use_prototype_loader: bool,
 	max_race_seconds: float,
 	auto_reset_seconds: float,
 	enable_goal: bool
@@ -151,17 +150,14 @@ func _boot_scenario(
 		main_game.queue_free()
 		return {}
 
-	if use_prototype_loader:
-		if not map_controller.load_prototype_map_for_test(map_id):
-			_fail("%s: prototype map load failed" % map_id)
-			main_game.queue_free()
-			return {}
-	else:
-		map_controller.set_active_map_by_id(map_id)
-		if map_controller.active_map_id != map_id:
-			_fail("%s: failed to activate map" % map_id)
-			main_game.queue_free()
-			return {}
+	if not map_controller.set_active_map_by_id(map_id):
+		_fail("%s: failed to activate map: %s" % [map_id, map_controller.get_last_load_failure_reason()])
+		main_game.queue_free()
+		return {}
+	if map_controller.active_map_id != map_id:
+		_fail("%s: active map id mismatch" % map_id)
+		main_game.queue_free()
+		return {}
 
 	_configure_test_round(round_manager, map_controller, main_game, max_race_seconds, auto_reset_seconds)
 	await _ensure_race_systems_active(main_game)

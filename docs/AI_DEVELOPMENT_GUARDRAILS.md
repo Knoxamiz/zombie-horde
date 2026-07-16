@@ -75,7 +75,7 @@ Every Cursor/Codex implementation report **must** include:
 | Hardcoding map-specific behavior in `zombie.gd` | Unmaintainable; bypasses `RaceMapDefinition` |
 | Changing zombie movement while building visual tools | Unreviewable side effects |
 | Making smoke slow again (>60s target) | Violates PR #41 fast smoke runner |
-| Enabling prototype maps as playable without certification | Violates map certification gate |
+| Enabling disabled map assets without certification | Violates map certification gate |
 | Leaving hidden duplicate UI/HUD paths active | OBS/layout regressions |
 | Ignoring `MAP LOAD FAILED` / `MAP CERTIFICATION FAILED` in logs | Fake green tests |
 | Disabling certification guards to “make tests green” | Breaks map safety net |

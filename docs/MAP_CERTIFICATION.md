@@ -1,68 +1,62 @@
 # Map Certification
 
-Every selectable map must pass certification before promotion. Certification is strict in debug and headless runs: failed maps fail loudly and never silently load City Highway.
+Every selectable map must pass certification before it becomes playable.
+Certification is strict: a failed map load fails loudly and never substitutes
+City Highway or leaves the old map running.
 
-See also: [PROTECTED_SYSTEMS.md](PROTECTED_SYSTEMS.md), [AI_DEVELOPMENT_GUARDRAILS.md](AI_DEVELOPMENT_GUARDRAILS.md), [TESTING.md](TESTING.md).
+See [MAP_NAMING.md](MAP_NAMING.md) for the one catalog / definition / scene
+contract.
 
-## Map stages
+## Map States
 
-| Stage | Meaning |
-|-------|---------|
-| **Prototype map** | `enabled=false`, `status=prototype`. Loadable in map lab / prototype loader only. |
-| **Testing map** | `enabled_for_testing=true` prototype (e.g. Broken Bridge TEST). Selectable in settings but not playable production. |
-| **Certified map** | Passes `map_certification_test.gd` checklist in headless runs. |
-| **Playable map** | `enabled=true`, `status=playable`. Shown as production map (e.g. City Highway). |
+| State | Meaning |
+|---|---|
+| Disabled asset | `enabled=false`, `status=disabled`. Kept for authoring only. It is not selectable or loadable by the game. |
+| Certified map | Passes `map_certification_test.gd` in headless runs. |
+| Playable map | `enabled=true`, `status=playable`. Listed in settings and loaded by `RaceMapController.set_active_map_by_id(map_id)`. |
 
-## Certification checklist
+## Certification Checklist
 
 `MapCertification` validates:
 
-1. Map id exists in `MapCatalog` and is selectable
-2. `RaceMapDefinition` resource and scene path exist
-3. `RaceMapDefinition` spawn/goal/base/OOB/camera values are valid
-4. Map scene loads and meets scene contract (`RoadArena`, `CoreRoad`, blueprint layers)
-5. `World/StreamerBase` aligns with `definition.base_position` (finish contract)
-6. OOB values are applied to `ZombieConfig`
-7. Mini race: join → RUNNING → resolve → reset → rejoin
-8. No City Highway fallback on failure (debug/headless)
+1. Map ID exists in `MapCatalog` and is playable.
+2. Definition resource and scene path exist.
+3. Spawn, goal, base, OOB, hazard placement, and camera data are valid.
+4. The instantiated map has the `RoadArena` and `CoreRoad` scene contract.
+5. `World/StreamerBase` aligns with `definition.base_position`.
+6. OOB values are applied to `ZombieConfig`.
+7. A mini race can join, start, resolve, reset, and rejoin.
+8. No fallback map was used.
 
 ## Commands
 
 ```bash
-# All default certified maps (City Highway + Broken Bridge)
+# All required maps
 godot --headless --path . -s res://scripts/debug/map_certification_test.gd
 
-# Single map
+# One map
 godot --headless --path . -s res://scripts/debug/map_certification_test.gd -- --map_id=quarantine_boulevard
 godot --headless --path . -s res://scripts/debug/map_certification_test.gd -- --map_id=broken_bridge_pass
+godot --headless --path . -s res://scripts/debug/map_certification_test.gd -- --map_id=spiral_descent
+godot --headless --path . -s res://scripts/debug/map_certification_test.gd -- --map_id=true_spiral_ramp
 
-# Certification tier (map selection + full certification)
+# Selection plus certification
 godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=certification
 ```
 
-## Promotion requirements
+## Enabling A Map
 
-Before promoting a map from testing → playable:
+1. Add the definition and scene under the canonical paths.
+2. Add one disabled catalog entry.
+3. Pass map certification, finish contract, and OOB checks as applicable.
+4. Add the ID to `MapCertification.DEFAULT_CERTIFIED_MAP_IDS`.
+5. Set only that catalog entry to `enabled=true`, `status=playable`.
+6. Run smoke and certification again.
 
-1. Pass `map_certification_test.gd`
-2. Pass `void_oob_authority_test.gd` if elevated/bridge layout
-3. Pass `race_finish_contract_test.gd`
-4. Pass `broken_bridge_real_gameplay_test.gd --zombies=5 --skip-stress` (bridge maps)
-5. Add to `MapCertification.DEFAULT_CERTIFIED_MAP_IDS` when it becomes a required gate map
+## Non-Negotiable Rules
 
-## What Cursor/Codex must not bypass
-
-- Do not ignore `MAP LOAD FAILED` errors in headless output
-- Do not treat a failed map load as success if City Highway appears in logs
-- Do not disable certification guards to "make tests green"
-- Do not add silent fallback in debug/test paths
-- Run `--tier=certification` before merging map controller or map content changes
-
-## Fallback behavior
-
-| Context | Invalid map load |
-|---------|------------------|
-| **Debug / headless** | Fails loudly. No City Highway substitution. |
-| **Release export** | May fall back to City Highway with `push_warning` (see `RaceMapController._fail_map_load`). |
-
-Release fallback exists only in non-debug, non-headless builds inside `RaceMapController._fail_map_load` and `_fallback_prototype_load_to_city_highway`.
+- Do not add a second loader or scene-export map slot.
+- Do not ignore `MAP LOAD FAILED` output.
+- Do not disable certification checks to make a test pass.
+- Do not add a silent fallback.
+- Do not make map scenes their own finish or OOB authority.

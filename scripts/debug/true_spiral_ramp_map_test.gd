@@ -22,8 +22,6 @@ func _test_catalog_entry() -> void:
 		return
 	if not MapCatalog.is_entry_playable(entry):
 		_fail("True Spiral Ramp must be a normal playable map")
-	if MapCatalog.is_prototype_testable(entry):
-		_fail("True Spiral Ramp must not use prototype-test loading")
 
 	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(MAP_ID)
 	if definition == null:
@@ -79,6 +77,10 @@ func _test_scene_builds() -> void:
 	var core_script_path: String = core_script.resource_path if core_script != null else ""
 	if not core_script_path.ends_with("spiral_ramp_arena.gd"):
 		_fail("True Spiral Ramp CoreRoad should use spiral_ramp_arena.gd")
+	# Dynamic map scenes are built by RaceMapController after instantiation. Mirror
+	# that release path before asserting the generated collision and visual nodes.
+	if core_road.has_method("ensure_built"):
+		core_road.call("ensure_built")
 
 	var surfaces: Node = core_road.get_node_or_null("KitSurfaces")
 	var expected_path_points: int = SpiralRampArena.build_path_points().size()
@@ -86,12 +88,19 @@ func _test_scene_builds() -> void:
 	if surfaces == null:
 		_fail("True Spiral Ramp did not build KitSurfaces")
 	elif _count_named_descendants(surfaces, "SpiralRampSurface") != expected_segments:
-		_fail("True Spiral Ramp should build square-staircase collision segments")
+		_fail(
+			"True Spiral Ramp collision segments: expected %d, got %d (KitSurfaces children=%d)"
+			% [
+				expected_segments,
+				_count_named_descendants(surfaces, "SpiralRampSurface"),
+				surfaces.get_child_count(),
+			]
+		)
 	elif _count_named_descendants(surfaces, "SpiralCornerDeck") != expected_path_points:
 		_fail("True Spiral Ramp should build a corner deck for every route joint")
 	elif _count_named_descendants(surfaces, "SpiralEdgeBarrier") < expected_segments * 2:
 		_fail("True Spiral Ramp should build physical edge barriers")
-	elif surfaces.find_child("SpiralCornerDeck", true, false) == null:
+	elif _count_named_descendants(surfaces, "SpiralCornerDeck") <= 0:
 		_fail("True Spiral Ramp should build clean corner deck joints")
 	elif _count_named_descendants(surfaces, "SpiralCornerBarrierWall") < 30:
 		_fail("True Spiral Ramp should wall exposed corner deck edges")
@@ -101,10 +110,17 @@ func _test_scene_builds() -> void:
 	var visual_kit: Node = core_road.get_node_or_null("VisualKit")
 	if visual_kit == null:
 		_fail("True Spiral Ramp did not build VisualKit")
-	elif visual_kit.find_child("SpiralRoadDeck", true, false) == null:
+	elif _count_named_descendants(visual_kit, "SpiralRoadDeck") < expected_segments:
 		_fail("True Spiral Ramp dressing did not build road deck visuals")
 	elif _count_named_descendants(visual_kit, "SpiralRoadCenterLine") < expected_segments:
-		_fail("True Spiral Ramp should have readable road markings")
+		_fail(
+			"True Spiral Ramp road markings: expected at least %d, got %d (VisualKit children=%d)"
+			% [
+				expected_segments,
+				_count_named_descendants(visual_kit, "SpiralRoadCenterLine"),
+				visual_kit.get_child_count(),
+			]
+		)
 	elif _count_named_descendants(visual_kit, "SpiralCornerBarrierWallVisual") < 30:
 		_fail("True Spiral Ramp should show visible corner barrier walls")
 	elif _count_named_descendants(visual_kit, "SpiralGroundPillar") < 4:
@@ -131,7 +147,9 @@ func _points_match(actual: PackedVector3Array, expected: PackedVector3Array) -> 
 func _count_named_descendants(node: Node, node_name: String) -> int:
 	var count: int = 0
 	for child: Node in node.get_children():
-		if child.name == node_name:
+		# Godot keeps sibling names unique by adding a numeric suffix. The builder
+		# intentionally creates repeated segment families, so count that family.
+		if str(child.name).begins_with(node_name):
 			count += 1
 		count += _count_named_descendants(child, node_name)
 	return count

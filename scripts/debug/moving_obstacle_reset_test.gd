@@ -20,7 +20,7 @@ func _run_all() -> void:
 	_test_drop_and_play_assets_registered()
 	_test_obstacle_scene_instantiates_and_resets()
 	_test_round_reset_signal_resets_obstacle()
-	await _test_probe_prototype_load()
+	await _test_probe_map_load()
 	_finish()
 
 
@@ -103,14 +103,14 @@ func _test_round_reset_signal_resets_obstacle() -> void:
 	host.queue_free()
 
 
-func _test_probe_prototype_load() -> void:
+func _test_probe_map_load() -> void:
 	print("-- phase3 moving hazard probe load --")
 	var entry: Dictionary = MapCatalog.get_entry_by_id(PROBE_MAP_ID)
 	if entry.is_empty():
 		print("Skipping probe load: '%s' is not in MapCatalog" % PROBE_MAP_ID)
 		return
-	if not MapCatalog.is_prototype_testable(entry):
-		print("Skipping probe load: '%s' is not prototype-testable" % PROBE_MAP_ID)
+	if not MapCatalog.is_entry_playable(entry):
+		print("Skipping probe load: '%s' is disabled and not part of the game loader" % PROBE_MAP_ID)
 		return
 
 	var packed: PackedScene = load(MAIN_GAME_SCENE)
@@ -130,9 +130,9 @@ func _test_probe_prototype_load() -> void:
 		main_game.queue_free()
 		return
 
-	if not map_controller.load_prototype_map_for_test(PROBE_MAP_ID):
+	if not map_controller.set_active_map_by_id(PROBE_MAP_ID):
 		_fail(
-			"load_prototype_map_for_test failed: %s"
+			"map load failed: %s"
 			% map_controller.get_last_load_failure_reason()
 		)
 		main_game.queue_free()

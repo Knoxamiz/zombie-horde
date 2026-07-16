@@ -16,7 +16,7 @@ func _initialize() -> void:
 func _run_all() -> void:
 	print("=== Void / OOB authority test ===")
 	await _test_city_highway_lateral_oob()
-	await _test_map_void_zones_non_authoritative(CITY_HIGHWAY_MAP_ID, false)
+	await _test_map_void_zones_non_authoritative(CITY_HIGHWAY_MAP_ID)
 
 	if _failures.is_empty():
 		print("SUITE RESULT: PASSED")
@@ -31,7 +31,7 @@ func _run_all() -> void:
 func _test_city_highway_lateral_oob() -> void:
 	print("-- City Highway lateral OOB regression --")
 	_death_cause = ""
-	var ctx: Dictionary = await _boot_map(CITY_HIGHWAY_MAP_ID, false)
+	var ctx: Dictionary = await _boot_map(CITY_HIGHWAY_MAP_ID)
 	if ctx.is_empty():
 		return
 
@@ -81,9 +81,9 @@ func _test_city_highway_lateral_oob() -> void:
 	main_game.queue_free()
 
 
-func _test_map_void_zones_non_authoritative(map_id: String, use_prototype_loader: bool) -> void:
+func _test_map_void_zones_non_authoritative(map_id: String) -> void:
 	print("-- %s void zone non-authority check --" % map_id)
-	var ctx: Dictionary = await _boot_map(map_id, use_prototype_loader)
+	var ctx: Dictionary = await _boot_map(map_id)
 	if ctx.is_empty():
 		return
 
@@ -128,7 +128,7 @@ func _on_probe_zombie_died(_zombie: Zombie, cause: String) -> void:
 	_death_cause = cause
 
 
-func _boot_map(map_id: String, use_prototype_loader: bool) -> Dictionary:
+func _boot_map(map_id: String) -> Dictionary:
 	var main_game: Node = await _boot_main_game()
 	if main_game == null:
 		_fail("%s: main game boot failed" % map_id)
@@ -143,17 +143,14 @@ func _boot_map(map_id: String, use_prototype_loader: bool) -> Dictionary:
 		main_game.queue_free()
 		return {}
 
-	if use_prototype_loader:
-		if not map_controller.load_prototype_map_for_test(map_id):
-			_fail("%s: prototype map load failed" % map_id)
-			main_game.queue_free()
-			return {}
-	else:
-		map_controller.set_active_map_by_id(map_id)
-		if map_controller.active_map_id != map_id:
-			_fail("%s: failed to activate map" % map_id)
-			main_game.queue_free()
-			return {}
+	if not map_controller.set_active_map_by_id(map_id):
+		_fail("%s: failed to activate map: %s" % [map_id, map_controller.get_last_load_failure_reason()])
+		main_game.queue_free()
+		return {}
+	if map_controller.active_map_id != map_id:
+		_fail("%s: active map id mismatch" % map_id)
+		main_game.queue_free()
+		return {}
 
 	_configure_test_round(round_manager, map_controller, main_game)
 	await _ensure_race_systems_active(main_game)

@@ -1,40 +1,40 @@
-# Current focus
+# Current Focus
 
-Update this file at the start of each dev session. Agents read it first.
+## Active Goal
 
-## Active goal
+One authoritative map catalog and loader: every selectable map must resolve from
+the same catalog entry, definition resource, and scene path.
 
-Map naming audit: IDs, files, folders, and presets must stay aligned (see `docs/MAP_NAMING.md`).
+## Playable Maps
 
-## Map / area
-
-<!-- e.g. broken_bridge_pass, quarantine_boulevard, lobby -->
-`broken_bridge_pass`
+- `quarantine_boulevard` - City Highway
+- `broken_bridge_pass` - Broken Bridge
+- `spiral_descent` - Straight Descent
+- `true_spiral_ramp` - Square Spiral Ramp
 
 ## Evidence
 
-<!-- Link or path to spray export, issue, or test failure -->
-- Spray export: `artifacts/dev_annotation_latest.json` (attach when reporting visual bugs)
-- Gap test: `scripts/debug/broken_bridge_gap_walk_test.gd`
+- Runtime selection proof: `scripts/debug/map_selection_test.gd`
+- Certification proof: `scripts/debug/map_certification_test.gd`
 
-## Success criteria
+## Success Criteria
 
-<!-- How do we know we're done? -->
-- [ ] `bash scripts/debug/run_tests.sh smoke` passes
-- [ ] `bash scripts/debug/run_tests.sh map` passes for bridge work
-- [ ] Manual: zombies fall through gap void outside crossing width
-- [ ] Spray paint: left-drag marks gaps, Export produces JSON with points
+- [x] Settings lists exactly the four playable maps above.
+- [x] Each selection loads its matching definition and scene.
+- [x] Failed loads report an error instead of swapping in another map.
+- [x] Smoke suite passes.
+- [x] Certification suite passes.
 
-## Do not touch (this session)
+## Do Not Touch
 
-<!-- Protected systems or unrelated areas -->
-- Finish contract (`StreamerBaseGoal`)
-- OOB authority (`Zombie._check_out_of_bounds`)
-- Twitch / scoring / HUD layout (unless explicitly requested)
+- Finish contract: `StreamerBaseGoal`
+- OOB authority: `Zombie._check_out_of_bounds`
+- Twitch, scoring, and HUD layout unless the user explicitly requests it.
 
-## Notes
+## Map Contract
 
-<!-- Freeform context for the agent -->
-- Manual race start: Stage Race → Go (no auto countdown)
-- F3 dev panel: Quick tab has spray paint at top
-- Cloud agents need `.cursor/environment.json` for Godot
+- Catalog: `scripts/maps/map_catalog.gd`
+- Loader: `scripts/maps/race_map_controller.gd`
+- Definition: `resources/maps/<map_id>.tres`
+- Scene: `scenes/maps/<map_id>.tscn`
+- Disabled assets may be retained for authoring, but the game cannot select or load them.

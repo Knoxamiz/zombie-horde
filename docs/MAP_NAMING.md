@@ -1,82 +1,88 @@
-# Map naming reference
+# Map Naming And Loading
 
-Canonical rules for map IDs, files, and folders. **Smoke tier enforces these** via `map_naming_audit_test.gd`.
+This is the canonical contract for every map Zombie Horde can play.
 
-## Golden rule
+## One Map, One Home
 
-For every catalog map:
+For every map in `scripts/maps/map_catalog.gd`:
 
 ```
 map_id == resources/maps/<map_id>.tres basename
-        == scenes/maps/<map_id>.tscn basename
+       == scenes/maps/<map_id>.tscn basename
 ```
 
-For **kit maps**, also:
+For kit maps, `map_id` must also equal the `layout_preset_id` on that scene's
+`CoreRoad` and the key in `scripts/maps/map_kit_layout_presets.gd`.
 
+The catalog is the only selection source. The definition resource is the only
+data source. The definition's packed scene is the only scene source.
+
+## Playable Map Order
+
+| Settings index | Map ID | Display name | Scene type |
+|---|---|---|---|
+| 0 | `quarantine_boulevard` | City Highway | Hand-authored road scene |
+| 1 | `broken_bridge_pass` | Broken Bridge | Kit map |
+| 2 | `spiral_descent` | Straight Descent | Kit map |
+| 3 | `true_spiral_ramp` | Square Spiral Ramp | Hand-authored ramp scene |
+
+Source of truth: `scripts/maps/map_catalog.gd`.
+
+Entries marked `enabled=false`, `status=disabled` are stored authoring assets.
+They do not appear in settings and the game loader refuses to instantiate them.
+
+## Loading Contract
+
+All playable maps use exactly one API:
+
+```gdscript
+RaceMapController.set_active_map_by_id(map_id)
 ```
-map_id == layout_preset_id on scenes/maps/<map_id>.tscn CoreRoad node
-       == MapKitLayoutPresets preset key
-```
 
-## IDs vs display names
+The controller resolves the ID through `MapCatalog`, loads
+`resources/maps/<map_id>.tres`, then instantiates the definition's scene. A
+load failure is reported loudly. It never replaces the requested map with City
+Highway or keeps the prior map in place.
 
-| Kind | Example ID | Example display name |
-|------|------------|----------------------|
-| Default production map | `quarantine_boulevard` | City Highway |
-| Signature kit map | `broken_bridge_pass` | Broken Bridge |
-| AI-generated map | `ai_generated_fallthrough_lower_deck_test` | Fallthrough Lower Deck |
+## IDs And Display Names
 
-**Never use display names as map IDs in code, tests, or issues.**
+Use IDs in code, tests, save data, and bug reports. Display names are UI only.
 
-## Banned retired IDs
+| ID | Display name |
+|---|---|
+| `quarantine_boulevard` | City Highway |
+| `broken_bridge_pass` | Broken Bridge |
+| `spiral_descent` | Straight Descent |
+| `true_spiral_ramp` | Square Spiral Ramp |
 
-Do not reintroduce:
+Do not reintroduce these retired IDs:
 
-- `broken_bridge_candidate` → use `broken_bridge_pass`
-- `city_highway` → use `quarantine_boulevard`
-- `broken_bridge` (preset only) → use `broken_bridge_pass`
+- `broken_bridge_candidate` -> `broken_bridge_pass`
+- `city_highway` -> `quarantine_boulevard`
+- `broken_bridge` -> `broken_bridge_pass`
 
-## Playable maps (8)
+## Adding A Map
 
-| Settings index | Map ID | Display name | Kit preset |
-|----------------|--------|--------------|------------|
-| 0 | `quarantine_boulevard` | City Highway | — (hand-authored scene) |
-| 1 | `ai_generated_fallthrough_lower_deck_test` | Fallthrough Lower Deck | — (AI arena) |
-| 2 | `broken_bridge_pass` | Broken Bridge | `broken_bridge_pass` |
-| 3 | `mine_alley` | Mine Alley | `mine_alley` |
-| 4 | `cone_slalom` | Cone Slalom | `cone_slalom` |
-| 5 | `vehicle_yard` | Vehicle Yard | `vehicle_yard` |
-| 6 | `defender_gauntlet` | Defender Gauntlet | `defender_gauntlet` |
-| 7 | `boost_rush` | Boost Rush | `boost_rush` |
+1. Choose a stable ID.
+2. Create `resources/maps/<map_id>.tres` and `scenes/maps/<map_id>.tscn`.
+3. For kit maps, add a matching layout preset and set `CoreRoad.layout_preset_id`.
+4. Add one disabled catalog entry with the matching resource and scene paths.
+5. Pass certification.
+6. Change only that entry to `enabled=true`, `status=playable`.
+7. Run smoke and certification before merging.
 
-Source of truth: `scripts/maps/map_catalog.gd`
-
-## Loading maps in code
-
-| Map status | API |
-|------------|-----|
-| Playable (`enabled=true`, `status=playable`) | `RaceMapController.set_active_map_by_id(map_id)` |
-| Prototype test (`enabled=false`, `status=prototype`) | `RaceMapController.load_prototype_map_for_test(map_id)` |
-
-Constants: `scripts/maps/map_naming.gd`
-
-## Adding a new kit map
-
-1. Add preset to `scripts/maps/map_kit_layout_presets.gd` — preset key **must equal** planned map ID
-2. Create `resources/maps/<map_id>.tres` and `scenes/maps/<map_id>.tscn`
-3. Set `layout_preset_id = "<map_id>"` on `CoreRoad` in the scene
-4. Add catalog entry in `scripts/maps/map_catalog.gd` with matching paths and `layout_preset_id`
-5. Run `bash scripts/debug/run_tests.sh smoke` — `map_naming_audit_test` must pass
-
-## Validation
+## Verification
 
 ```bash
-bash scripts/debug/run_godot.sh test smoke   # includes map_naming_audit_test
-godot --headless --path . -s res://scripts/debug/map_naming_audit_test.gd
+bash scripts/debug/run_tests.sh smoke
+bash scripts/debug/run_tests.sh certification
 ```
 
-## Related docs
+`map_selection_test.gd` loads every playable catalog map through the real
+controller and verifies the resulting scene identity.
+
+## Related Docs
 
 - [MAP_CERTIFICATION.md](MAP_CERTIFICATION.md)
-- [MAP_KIT_PIPELINE.md](MAP_KIT_PIPELINE.md)
+- [PROTECTED_SYSTEMS.md](PROTECTED_SYSTEMS.md)
 - [AGENTS.md](../AGENTS.md)

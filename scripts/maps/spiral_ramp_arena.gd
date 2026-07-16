@@ -27,6 +27,7 @@ const RAIL_END_INSET: float = 6.4
 var _visual_root: Node3D
 var _collision_root: Node3D
 var _atmosphere_material: StandardMaterial3D
+var _generated_name_counts: Dictionary = {}
 
 
 func _ready() -> void:
@@ -54,6 +55,7 @@ static func build_path_points() -> PackedVector3Array:
 
 func _build() -> void:
 	_clear_generated_roots()
+	_generated_name_counts.clear()
 	_collision_root = _make_child("KitSurfaces", self)
 	_visual_root = _make_child("VisualKit", self)
 	var points: PackedVector3Array = build_path_points()
@@ -460,7 +462,7 @@ func _build_level_labels(points: PackedVector3Array) -> void:
 		var point_index: int = min(index * 4, points.size() - 1)
 		var point: Vector3 = points[point_index]
 		var label := Label3D.new()
-		label.name = "SpiralLevelLabel"
+		label.name = _next_generated_name("SpiralLevelLabel")
 		label.text = "LEVEL %d" % (LAYER_COUNT - index)
 		label.font_size = 32
 		label.outline_size = 8
@@ -477,7 +479,7 @@ func _add_collision_box(
 	pitch: float
 ) -> void:
 	var body := StaticBody3D.new()
-	body.name = box_name
+	body.name = _next_generated_name(box_name)
 	body.collision_layer = 1
 	body.collision_mask = 0
 	body.position = position
@@ -499,7 +501,7 @@ func _add_visual_box(
 	material: Material
 ) -> void:
 	var mesh_instance := MeshInstance3D.new()
-	mesh_instance.name = box_name
+	mesh_instance.name = _next_generated_name(box_name)
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	mesh_instance.mesh = mesh
@@ -514,6 +516,14 @@ func _make_child(child_name: String, parent: Node3D) -> Node3D:
 	node.name = child_name
 	parent.add_child(node)
 	return node
+
+
+func _next_generated_name(family_name: String) -> String:
+	# Generated siblings are named deterministically so the editor tree and
+	# map validation can identify every physical piece without ambiguity.
+	var next_index: int = int(_generated_name_counts.get(family_name, 0)) + 1
+	_generated_name_counts[family_name] = next_index
+	return "%s_%02d" % [family_name, next_index]
 
 
 func _get_atmosphere_material() -> StandardMaterial3D:

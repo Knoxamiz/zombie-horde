@@ -251,11 +251,9 @@ func _build_maps_tab() -> Control:
 	var body := _get_tab_body(scroll)
 
 	var map_card := _make_section_card(body, THEME.COLOR_PURPLE)
-	_add_card_title(map_card, "Prototype Maps")
-	_add_card_hint(map_card, "Loads test maps not listed in the streamer menu.")
-	_dev_map_status_label = _add_card_readout(map_card, "No dev map loaded.")
-	_add_styled_button(map_card, "Load Fallthrough Lower Deck", _on_load_fallthrough_lower_deck_pressed)
-	_add_styled_button(map_card, "Load + Queue 20 NPCs", _on_load_fallthrough_queue_twenty_pressed)
+	_add_card_title(map_card, "Map Loader")
+	_add_card_hint(map_card, "Playable maps use the same catalog and loader as Streamer Settings.")
+	_dev_map_status_label = _add_card_readout(map_card, "No map selected.")
 
 	var debug_card := _make_section_card(body, THEME.COLOR_MUTED)
 	_add_card_title(debug_card, "Debug Overlays")
@@ -697,17 +695,12 @@ func _load_dev_test_map(map_id: String) -> bool:
 		_refresh_display()
 		return false
 
-	var loaded: bool = false
-	if MapCatalog.is_entry_playable(catalog_entry):
-		loaded = _race_map_controller.set_active_map_by_id(map_id)
-	elif MapCatalog.is_prototype_testable(catalog_entry):
-		loaded = _race_map_controller.load_prototype_map_for_test(map_id)
-	else:
-		push_error(
-			"Dev map test: '%s' is neither playable nor prototype-testable" % map_id
-		)
+	if not MapCatalog.is_entry_playable(catalog_entry):
+		push_error("Dev map test: '%s' is not a playable catalog map" % map_id)
 		_refresh_display()
 		return false
+
+	var loaded: bool = _race_map_controller.set_active_map_by_id(map_id)
 
 	if not loaded:
 		push_error(
@@ -1202,10 +1195,9 @@ func _refresh_dev_map_status() -> void:
 		return
 
 	var active_id: String = _race_map_controller.get_resolved_map_id()
-	var is_dev_map: bool = active_id == FALLTHROUGH_LOWER_DECK_TEST_MAP_ID
-	var load_status: String = "idle"
-	if _race_map_controller.is_prototype_test_load_active():
-		load_status = "loaded" if is_dev_map else "other prototype"
+	var load_status: String = "loaded"
+	if active_id.is_empty():
+		load_status = "idle"
 	elif not _race_map_controller.get_last_load_failure_reason().is_empty():
 		load_status = "failed"
 

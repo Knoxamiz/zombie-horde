@@ -70,10 +70,6 @@ static func _performance_stress_profiler_available(stress_profiler: PerformanceS
 static func _resolve_map_id(race_map_controller: RaceMapController) -> String:
 	if race_map_controller == null:
 		return "unavailable"
-	if race_map_controller.is_prototype_test_load_active():
-		var prototype_id: String = race_map_controller.get_prototype_test_map_id()
-		if not prototype_id.is_empty():
-			return prototype_id
 	if not race_map_controller.active_map_id.is_empty():
 		return race_map_controller.active_map_id
 	return "unknown"

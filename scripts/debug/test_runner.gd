@@ -71,7 +71,6 @@ const PROOF_TESTS: Array[Dictionary] = [
 ]
 
 const ALL_EXTRA_TESTS: Array[Dictionary] = [
-	{"name": "prototype_map_load_test", "script": "prototype_map_load_test.gd", "args": []},
 	{"name": "race_finish_window_test", "script": "race_finish_window_test.gd", "args": []},
 	{"name": "podium_results_test", "script": "podium_results_test.gd", "args": []},
 	{"name": "supporter_upgrade_test", "script": "supporter_upgrade_test.gd", "args": []},

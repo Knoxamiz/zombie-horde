@@ -1,4 +1,4 @@
-[gd_scene load_steps=54 format=3 uid="uid://cpckbkq2isxty"]
+[gd_scene load_steps=53 format=3 uid="uid://cpckbkq2isxty"]
 
 [ext_resource type="Script" uid="uid://bdrcas6cpq4y0" path="res://scripts/core/input_map_setup.gd" id="1_input"]
 [ext_resource type="Script" uid="uid://ddgxum5bath7f" path="res://scripts/core/debug_join_source.gd" id="2_join"]
@@ -43,7 +43,6 @@
 [ext_resource type="Script" uid="uid://cmdo1psjsmpcj" path="res://scripts/core/streamer_settings_applier.gd" id="41_settings_applier"]
 [ext_resource type="Resource" path="res://resources/config/feature_access_config.tres" id="42_feature_config"]
 [ext_resource type="Script" uid="uid://d024e6ourlubf" path="res://scripts/maps/race_map_controller.gd" id="43_map_controller"]
-[ext_resource type="Resource" path="res://resources/maps/quarantine_boulevard.tres" id="44_map_quarantine"]
 [ext_resource type="Script" path="res://scripts/ui/world_text_board.gd" id="51_world_board"]
 [ext_resource type="PackedScene" path="res://scenes/ui/main_menu_3d_button.tscn" id="52_3d_button"]
 [ext_resource type="PackedScene" path="res://scenes/debug/dev_control_panel.tscn" id="53_dev_panel"]
@@ -93,7 +92,6 @@ zombie_config = ExtResource("8_zombie_config")
 powerup_config = ExtResource("10_powerup_config")
 human_defender_config = ExtResource("35_defender_config")
 spectator_camera_path = NodePath("../../SpectatorCamera")
-map_0_definition = ExtResource("44_map_quarantine")
 
 [node name="LeaderboardStore" type="Node" parent="Systems"]
 script = ExtResource("38_leaderboard_store")

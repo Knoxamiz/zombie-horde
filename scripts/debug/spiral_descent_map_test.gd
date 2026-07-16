@@ -23,10 +23,8 @@ func _test_catalog_entry() -> void:
 	if entry.is_empty():
 		_fail("Spiral Descent missing from MapCatalog")
 		return
-	if MapCatalog.is_entry_playable(entry):
-		_fail("Spiral Descent must remain prototype status until certified")
-	if not MapCatalog.is_prototype_testable(entry):
-		_fail("Spiral Descent must be prototype-testable")
+	if not MapCatalog.is_entry_playable(entry):
+		_fail("Spiral Descent must be a normal playable map")
 
 	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(MAP_ID)
 	if definition == null:
@@ -108,7 +106,7 @@ func _fail(message: String) -> void:
 
 func _finish() -> void:
 	if _failures.is_empty():
-		print("PASS: Spiral Descent prototype map contract")
+		print("PASS: Spiral Descent playable map contract")
 		quit(0)
 		return
 	for failure in _failures:

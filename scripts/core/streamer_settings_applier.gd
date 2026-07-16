@@ -14,11 +14,10 @@ var active_profile: StreamerSettingsProfile
 var _applied: bool = false
 var _race_map_controller: RaceMapController
 
-func _enter_tree() -> void:
-	_apply_saved_profile_once()
-
 func _ready() -> void:
-	_apply_saved_profile_once()
+	# Map loading needs the complete main-game tree, including World and its anchors.
+	# This is the single initial profile application; RaceMapController is a loader.
+	call_deferred("_apply_saved_profile_once")
 
 func reload_and_apply() -> void:
 	_race_map_controller = get_node_or_null(race_map_controller_path) as RaceMapController

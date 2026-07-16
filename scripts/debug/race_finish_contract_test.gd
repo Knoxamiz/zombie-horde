@@ -16,9 +16,9 @@ func _initialize() -> void:
 
 func _run_all() -> void:
 	print("=== Race finish contract test ===")
-	await _test_finish_contract_valid_on_load(CITY_HIGHWAY_MAP_ID, false)
-	await _test_map_finish_round(CITY_HIGHWAY_MAP_ID, false)
-	await _test_miswired_finish_fails_validation(CITY_HIGHWAY_MAP_ID, false)
+	await _test_finish_contract_valid_on_load(CITY_HIGHWAY_MAP_ID)
+	await _test_map_finish_round(CITY_HIGHWAY_MAP_ID)
+	await _test_miswired_finish_fails_validation(CITY_HIGHWAY_MAP_ID)
 
 	if _failures.is_empty():
 		print("SUITE RESULT: PASSED")
@@ -30,9 +30,9 @@ func _run_all() -> void:
 		_finish(FAIL)
 
 
-func _test_finish_contract_valid_on_load(map_id: String, use_prototype_loader: bool) -> void:
+func _test_finish_contract_valid_on_load(map_id: String) -> void:
 	print("-- %s finish contract validation --" % map_id)
-	var ctx: Dictionary = await _boot_map(map_id, use_prototype_loader)
+	var ctx: Dictionary = await _boot_map(map_id)
 	if ctx.is_empty():
 		return
 
@@ -52,9 +52,9 @@ func _test_finish_contract_valid_on_load(map_id: String, use_prototype_loader: b
 	main_game.queue_free()
 
 
-func _test_map_finish_round(map_id: String, use_prototype_loader: bool) -> void:
+func _test_map_finish_round(map_id: String) -> void:
 	print("-- %s finish round scenario --" % map_id)
-	var ctx: Dictionary = await _boot_map(map_id, use_prototype_loader)
+	var ctx: Dictionary = await _boot_map(map_id)
 	if ctx.is_empty():
 		return
 
@@ -92,7 +92,7 @@ func _test_map_finish_round(map_id: String, use_prototype_loader: bool) -> void:
 	main_game.queue_free()
 
 
-func _test_no_duplicate_finish_event(map_id: String, use_prototype_loader: bool) -> void:
+func _test_no_duplicate_finish_event(map_id: String) -> void:
 	print("-- %s duplicate finish guard --" % map_id)
 	_finish_event_count = 0
 	var game_events: Node = _get_game_events()
@@ -102,7 +102,7 @@ func _test_no_duplicate_finish_event(map_id: String, use_prototype_loader: bool)
 	if not game_events.zombie_reached_base.is_connected(_on_zombie_reached_base_counted):
 		game_events.zombie_reached_base.connect(_on_zombie_reached_base_counted)
 
-	var ctx: Dictionary = await _boot_map(map_id, use_prototype_loader)
+	var ctx: Dictionary = await _boot_map(map_id)
 	if ctx.is_empty():
 		_disconnect_finish_counter()
 		return
@@ -143,9 +143,9 @@ func _test_no_duplicate_finish_event(map_id: String, use_prototype_loader: bool)
 	_disconnect_finish_counter()
 
 
-func _test_miswired_finish_fails_validation(map_id: String, use_prototype_loader: bool) -> void:
+func _test_miswired_finish_fails_validation(map_id: String) -> void:
 	print("-- %s miswired finish validation --" % map_id)
-	var ctx: Dictionary = await _boot_map(map_id, use_prototype_loader)
+	var ctx: Dictionary = await _boot_map(map_id)
 	if ctx.is_empty():
 		return
 
@@ -187,7 +187,7 @@ func _assert_single_streamer_finish_authority(main_game: Node) -> bool:
 	return true
 
 
-func _boot_map(map_id: String, use_prototype_loader: bool) -> Dictionary:
+func _boot_map(map_id: String) -> Dictionary:
 	var main_game: Node = await _boot_main_game()
 	if main_game == null:
 		_fail("%s: main game boot failed" % map_id)
@@ -201,17 +201,14 @@ func _boot_map(map_id: String, use_prototype_loader: bool) -> Dictionary:
 		main_game.queue_free()
 		return {}
 
-	if use_prototype_loader:
-		if not map_controller.load_prototype_map_for_test(map_id):
-			_fail("%s: prototype map load failed" % map_id)
-			main_game.queue_free()
-			return {}
-	else:
-		map_controller.set_active_map_by_id(map_id)
-		if map_controller.active_map_id != map_id:
-			_fail("%s: failed to activate map" % map_id)
-			main_game.queue_free()
-			return {}
+	if not map_controller.set_active_map_by_id(map_id):
+		_fail("%s: failed to activate map: %s" % [map_id, map_controller.get_last_load_failure_reason()])
+		main_game.queue_free()
+		return {}
+	if map_controller.active_map_id != map_id:
+		_fail("%s: active map id mismatch" % map_id)
+		main_game.queue_free()
+		return {}
 
 	_configure_test_round(round_manager, map_controller, main_game)
 	await _ensure_race_systems_active(main_game)

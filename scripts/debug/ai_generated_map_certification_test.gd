@@ -65,12 +65,10 @@ func _test_catalog_entry(generated_map_id: String) -> void:
 	if entry.is_empty():
 		_fail("generated map id '%s' missing from MapCatalog" % generated_map_id)
 		return
-	if bool(entry.get("enabled", false)):
-		_fail("generated map '%s' must not be enabled/playable" % generated_map_id)
-	if str(entry.get("status", "")) != MapCatalog.STATUS_PROTOTYPE:
-		_fail("generated map '%s' must remain prototype status" % generated_map_id)
-	if not MapCatalog.is_prototype_testable(entry):
-		_fail("generated map '%s' must be prototype-testable" % generated_map_id)
+	if MapCatalog.is_entry_playable(entry):
+		_fail("generated map '%s' must remain disabled until it is release-ready" % generated_map_id)
+	if str(entry.get("status", "")) != MapCatalog.STATUS_DISABLED:
+		_fail("generated map '%s' must remain disabled" % generated_map_id)
 	if not ResourceLoader.exists(str(entry.get("resource_path", ""))):
 		_fail("generated RaceMapDefinition resource missing for '%s'" % generated_map_id)
 	if not ResourceLoader.exists(str(entry.get("scene_path", ""))):
@@ -107,7 +105,11 @@ func _test_exporter_definition(generated_map_id: String) -> void:
 
 func _test_runtime_certification(generated_map_id: String) -> void:
 	print("  runtime certification")
-	var failures: Array[String] = _certify_prototype_catalog_entry(generated_map_id)
+	var entry: Dictionary = MapCatalog.get_entry_by_id(generated_map_id)
+	if not MapCatalog.is_entry_playable(entry):
+		print("  skipped: disabled maps are not part of the game loader")
+		return
+	var failures: Array[String] = _certify_playable_catalog_entry(generated_map_id)
 	if not failures.is_empty():
 		_record_failures(generated_map_id, failures)
 		return
@@ -131,11 +133,11 @@ func _test_runtime_certification(generated_map_id: String) -> void:
 		main_game.queue_free()
 		return
 
-	if not map_controller.load_prototype_map_for_test(generated_map_id):
+	if not map_controller.set_active_map_by_id(generated_map_id):
 		_record_failures(
 			generated_map_id,
 			[
-				"prototype load failed: %s"
+				"map load failed: %s"
 				% map_controller.get_last_load_failure_reason()
 			]
 		)
@@ -143,7 +145,7 @@ func _test_runtime_certification(generated_map_id: String) -> void:
 		return
 
 	if map_controller.did_last_load_use_fallback():
-		_record_failures(generated_map_id, ["prototype load used City Highway fallback"])
+		_record_failures(generated_map_id, ["map load used an unexpected fallback"])
 		main_game.queue_free()
 		return
 	if map_controller.get_resolved_map_id() != generated_map_id:
@@ -248,16 +250,14 @@ func _test_runtime_certification(generated_map_id: String) -> void:
 	main_game.queue_free()
 
 
-func _certify_prototype_catalog_entry(map_id: String) -> Array[String]:
+func _certify_playable_catalog_entry(map_id: String) -> Array[String]:
 	var failures: Array[String] = []
 	var entry: Dictionary = MapCatalog.get_entry_by_id(map_id)
 	if entry.is_empty():
 		failures.append("map id '%s' not found in MapCatalog" % map_id)
 		return failures
-	if bool(entry.get("enabled", false)):
-		failures.append("generated map '%s' must not be enabled/playable" % map_id)
-	if not MapCatalog.is_prototype_testable(entry):
-		failures.append("generated map '%s' must be prototype-testable" % map_id)
+	if not MapCatalog.is_entry_playable(entry):
+		failures.append("map '%s' is not a playable catalog entry" % map_id)
 	var resource_path: String = str(entry.get("resource_path", ""))
 	var scene_path: String = str(entry.get("scene_path", ""))
 	if resource_path.is_empty() or not ResourceLoader.exists(resource_path):
