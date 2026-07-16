@@ -107,9 +107,8 @@ const ENTRIES: Array[Dictionary] = [
 		"display_name": "Square Spiral Ramp",
 		"resource_path": "res://resources/maps/true_spiral_ramp.tres",
 		"scene_path": "res://scenes/maps/true_spiral_ramp.tscn",
-		"enabled": false,
-		"enabled_for_testing": true,
-		"status": STATUS_PROTOTYPE,
+		"enabled": true,
+		"status": STATUS_PLAYABLE,
 		"legacy_index": 9,
 	},
 ]

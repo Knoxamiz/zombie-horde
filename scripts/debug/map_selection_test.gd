@@ -10,7 +10,7 @@ const EXPECTED_MAP_IDS: Array[String] = [
 	"spiral_descent",
 	"true_spiral_ramp",
 ]
-const EXPECTED_PLAYABLE_COUNT := 2
+const EXPECTED_PLAYABLE_COUNT := 3
 
 var _failures: PackedStringArray = PackedStringArray()
 var _main_game: Node
@@ -400,11 +400,11 @@ func _test_runtime_load_verify() -> PackedStringArray:
 	loaded = map_controller.apply_profile(profile)
 	if not loaded:
 		failures.append("apply_profile returned false for True Spiral Ramp")
-	if not map_controller.is_prototype_test_load_active():
-		failures.append("True Spiral Ramp settings selection should use prototype load mode")
+	if map_controller.is_prototype_test_load_active():
+		failures.append("True Spiral Ramp settings selection should use normal playable map loading")
 	if map_controller.get_resolved_map_id() != "true_spiral_ramp":
 		failures.append(
-			"Expected resolved prototype map id true_spiral_ramp, got %s"
+			"Expected resolved map id true_spiral_ramp, got %s"
 			% map_controller.get_resolved_map_id()
 		)
 	if map_controller.did_last_load_use_fallback():

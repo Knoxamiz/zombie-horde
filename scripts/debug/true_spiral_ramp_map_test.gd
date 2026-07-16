@@ -20,10 +20,10 @@ func _test_catalog_entry() -> void:
 	if entry.is_empty():
 		_fail("True Spiral Ramp missing from MapCatalog")
 		return
-	if MapCatalog.is_entry_playable(entry):
-		_fail("True Spiral Ramp must remain prototype status until certified")
-	if not MapCatalog.is_prototype_testable(entry):
-		_fail("True Spiral Ramp must be prototype-testable")
+	if not MapCatalog.is_entry_playable(entry):
+		_fail("True Spiral Ramp must be a normal playable map")
+	if MapCatalog.is_prototype_testable(entry):
+		_fail("True Spiral Ramp must not use prototype-test loading")
 
 	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(MAP_ID)
 	if definition == null:
@@ -144,7 +144,7 @@ func _fail(message: String) -> void:
 
 func _finish() -> void:
 	if _failures.is_empty():
-		print("PASS: True Spiral Ramp prototype map contract")
+		print("PASS: True Spiral Ramp playable map contract")
 		quit(0)
 		return
 	for failure in _failures:
