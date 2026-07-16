@@ -120,7 +120,7 @@ func set_active_map_by_id(
 		return load_prototype_map_for_test(trimmed_id)
 
 	var legacy_index: int = int(entry.get("legacy_index", 0))
-	var definition: RaceMapDefinition = get_map_definition_for_legacy_index(legacy_index)
+	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id(trimmed_id)
 	if definition == null or definition.scene == null or _race_world == null:
 		_last_fallback_used = true
 		return _fail_map_load(
