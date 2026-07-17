@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://j6udir1k3xba"]
+[gd_scene load_steps=3 format=3 uid="uid://j6udir1k3xba"]
 
 [ext_resource type="Script" uid="uid://dcswnogqd3se2" path="res://scripts/maps/spiral_ramp_arena.gd" id="1_arena"]
+[ext_resource type="Script" path="res://scripts/maps/map_art_dressing.gd" id="2_art"]
 
 [node name="RoadArena" type="Node3D"]
 
@@ -8,10 +9,11 @@
 script = ExtResource("1_arena")
 
 [node name="MapDressing" type="Node3D" parent="."]
+script = ExtResource("2_art")
+profile = 3
 
 [node name="MapBanner" type="Label3D" parent="MapDressing"]
 transform = Transform3D(1, 0, 0, 0, 0.984808, -0.173648, 0, 0.173648, 0.984808, 0, 18.2, -25)
 modulate = Color(0.78, 1, 0.18, 1)
 text = "SQUARE SPIRAL RAMP"
 font_size = 42
-outline_size = 12

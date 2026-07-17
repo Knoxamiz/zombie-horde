@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/maps/kit_map_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://scripts/core/visual_collision_sanitizer.gd" id="2_sanitizer"]
+[ext_resource type="Script" path="res://scripts/maps/map_art_dressing.gd" id="3_art"]
 
 [node name="RoadArena" type="Node3D"]
 
@@ -10,6 +11,8 @@ script = ExtResource("1_arena")
 layout_preset_id = "broken_bridge_pass"
 
 [node name="MapDressing" type="Node3D" parent="."]
+script = ExtResource("3_art")
+profile = 1
 
 [node name="VisualCollisionSanitizer" type="Node" parent="MapDressing"]
 script = ExtResource("2_sanitizer")
