@@ -218,6 +218,8 @@ func _build_fence_line(position: Vector3, width: float, yaw: float, gate_z: floa
 	var gate_half_width := 2.5
 	for post_index in range(6):
 		var offset: float = -width * 0.5 + float(post_index) * width * 0.2
+		if absf(offset - gate_local) < gate_half_width:
+			continue
 		var local_offset := Vector3(offset, 0.0, 0.0).rotated(Vector3.UP, yaw)
 		_add_box("FencePost", Vector3(0.18, 1.3, 0.18), position + local_offset + Vector3.UP * 0.58, yaw, "picket_wood")
 	for rail_y in [0.38, 0.78]:
