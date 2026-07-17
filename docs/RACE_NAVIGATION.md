@@ -1,41 +1,32 @@
 # Race Navigation
 
-Zombie Horde uses Godot's 3D navigation stack for runner movement. Map route
-order and physical pathfinding are intentionally separate:
+Zombie Horde uses two complementary navigation layers. They have different
+responsibilities and neither replaces the other.
 
-- `RaceMapDefinition.race_path_points` defines race checkpoint order for turns,
-  ramps, stacked decks, progress, and leaderboard ranking.
-- `RaceNavigationWorld` creates `NavigationRegion3D` nodes from authoritative
-  walk collision after the selected map loads.
-- Each zombie owns a `NavigationAgent3D`; it requests a path to its current
-  ordered checkpoint and uses Godot RVO avoidance to pass other zombies and
-  registered hazards.
+## Authored race course
 
-## Map authoring contract
+Every `RaceMapDefinition` owns ordered `race_path_points`. At runtime,
+`RaceNavigationWorld` creates a child `Path3D` named `RaceCoursePath` from
+those points. This is the authoritative course: a zombie's route navigator
+advances only through the next authored segment and steers toward a point
+ahead on that segment.
 
-Every walkable surface must opt into the `race_navigation_surfaces` group.
+This is essential for elevated, looping, and stacked maps. A runner cannot
+skip to a nearby deck, take a shortcut through empty space, or choose the
+wrong side of a wall merely because it is closer to the final goal.
 
-- `MapSurfacePiece` does this automatically.
-- Procedural map builders should add the group only to road, deck, ramp, and
-  intentionally narrow crossing collision bodies.
-- Never add barriers, void kill volumes, decoration, or sight blockers to the
-  group.
+## Godot navigation and avoidance
 
-`RaceNavigationWorld` creates links only where opted-in surfaces touch in X/Z
-and share an elevation range. This joins a narrow bridge crossing to its deck
-without connecting separate stacked levels.
+Walkable collision surfaces opt into `race_navigation_surfaces`. The runtime
+builder turns those surfaces into `NavigationRegion3D` instances and connects
+touching pieces with `NavigationLink3D`. `NavigationAgent3D` receives the
+current course checkpoint and performs local RVO crowd and vehicle avoidance.
 
-## Dynamic hazards
+Navigation avoidance can adjust a runner around nearby obstacles. It must not
+replace or redirect the authored race course. New maps therefore need both:
 
-Hazards that runners should move around use `NavigationObstacle3D`. Vehicles
-are registered as avoidance obstacles, so they influence RVO steering without
-changing finish, fall, or collision authority.
+1. Ordered `race_path_points` from spawn through every turn to finish.
+2. Walkable `MapSurfacePiece` or kit collision marked as a navigation surface.
 
-## Verification
-
-`scripts/debug/race_navigation_world_test.gd` validates navigation surfaces
-and a complete NavigationServer path across every selectable map. Run it with:
-
-```powershell
-& "C:\Tools\Godot\Godot_v4.4-stable_win64.exe" --headless --path . -s res://scripts/debug/race_navigation_world_test.gd
-```
+The direct navigation contract test verifies both layers and confirms that a
+runtime `RaceCoursePath` matches every map definition.

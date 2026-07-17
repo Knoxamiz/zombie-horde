@@ -343,7 +343,7 @@ func _is_fell_visual_active() -> bool:
 func _get_desired_velocity(active_config: ZombieConfig) -> Vector3:
 	var race_forward: Vector3 = _get_race_forward()
 	var side: Vector3 = _get_race_side(race_forward)
-	var to_goal: Vector3 = _get_navigation_path_target() - global_position
+	var to_goal: Vector3 = _get_course_follow_target(active_config) - global_position
 	to_goal.y = 0.0
 	if to_goal.length_squared() <= 0.001:
 		return Vector3.ZERO
@@ -367,11 +367,13 @@ func _sync_navigation_target() -> void:
 	_has_safe_navigation_velocity = false
 
 
-func _get_navigation_path_target() -> Vector3:
-	if _navigation_agent != null and _is_navigation_map_ready():
-		var next_path_point: Vector3 = _navigation_agent.get_next_path_position()
-		if next_path_point.distance_squared_to(global_position) > 0.01:
-			return next_path_point
+func _get_course_follow_target(active_config: ZombieConfig) -> Vector3:
+	# The route resource is the movement authority. NavigationAgent3D still
+	# receives each checkpoint so its RVO solver can safely separate runners,
+	# but its path query must never override an authored elevated/spiral course.
+	if _has_race_path():
+		var lookahead_distance: float = maxf(_get_current_speed(active_config) * 0.6, 3.0)
+		return _race_route.get_target_point(lookahead_distance)
 	return _get_route_target_point()
 
 

@@ -6,8 +6,9 @@ extends Node
 ## Walkable map pieces opt in through MapSurfacePiece.NAVIGATION_GROUP. This
 ## keeps navigation geometry aligned with collision: maps declare surfaces,
 ## this service turns those surfaces into Godot NavigationRegions, and runners
-## use NavigationAgent3D to query the resulting world. No zombie code knows
-## about a particular map layout.
+## use NavigationAgent3D for local avoidance. The authored RaceCoursePath is
+## the global course authority, so a stacked map can never route a runner
+## toward a different deck simply because it is spatially closer.
 
 const MapSurfacePieceScript := preload("res://scripts/maps/map_surface_piece.gd")
 
@@ -17,6 +18,7 @@ var _map_root: Node3D
 var _definition: RaceMapDefinition
 var _regions: Array[NavigationRegion3D] = []
 var _links: Array[NavigationLink3D] = []
+var _race_course_path: Path3D
 var _surface_descriptors: Array[Dictionary] = []
 var _surface_count: int = 0
 var _ready_for_agents: bool = false
@@ -25,7 +27,32 @@ var _ready_for_agents: bool = false
 func configure(map_root: Node3D, definition: RaceMapDefinition) -> void:
 	_map_root = map_root
 	_definition = definition
+	_build_race_course_path()
 	call_deferred("rebuild")
+
+
+func _build_race_course_path() -> void:
+	if _map_root == null or not is_instance_valid(_map_root) or _definition == null:
+		return
+
+	_race_course_path = _map_root.get_node_or_null("RaceCoursePath") as Path3D
+	if _race_course_path == null:
+		_race_course_path = Path3D.new()
+		_race_course_path.name = "RaceCoursePath"
+		_map_root.add_child(_race_course_path)
+
+	var authored_points: PackedVector3Array = _definition.race_path_points
+	if authored_points.size() < 2:
+		authored_points = PackedVector3Array([
+			_definition.spawn_origin,
+			_definition.goal_position,
+		])
+
+	var curve := Curve3D.new()
+	curve.bake_interval = 0.5
+	for world_point in authored_points:
+		curve.add_point(_map_root.to_local(world_point))
+	_race_course_path.curve = curve
 
 
 func rebuild() -> void:

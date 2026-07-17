@@ -38,6 +38,7 @@ func _test_map_navigation_surface_coverage(map_id: String) -> void:
 		_fail("%s did not expose navigable walk surfaces" % map_id)
 	if not bool(navigation_world.call("is_ready_for_agents")):
 		_fail("%s navigation world did not synchronize" % map_id)
+	_assert_authored_course_path(arena, definition, map_id)
 	print(
 		"Navigation coverage %s: surfaces=%d links=%d"
 		% [map_id, int(navigation_world.call("get_surface_count")), int(navigation_world.call("get_link_count"))]
@@ -89,6 +90,7 @@ func _test_square_spiral_route() -> void:
 		_fail("Navigation world should register the spiral's authored road surfaces")
 	if not bool(navigation_world.call("is_ready_for_agents")):
 		_fail("Navigation world did not synchronize with NavigationServer3D")
+	_assert_authored_course_path(arena, definition, "Square Spiral Ramp")
 
 	var agent_anchor := Node3D.new()
 	arena.add_child(agent_anchor)
@@ -106,6 +108,28 @@ func _test_square_spiral_route() -> void:
 			_fail("NavigationAgent3D could not route through spiral segment %d" % segment_index)
 
 	arena.queue_free()
+
+
+func _assert_authored_course_path(arena: Node3D, definition: RaceMapDefinition, map_name: String) -> void:
+	var course_path := arena.get_node_or_null("RaceCoursePath") as Path3D
+	if course_path == null or course_path.curve == null:
+		_fail("%s did not build its RaceCoursePath" % map_name)
+		return
+
+	var expected_points: PackedVector3Array = definition.race_path_points
+	if expected_points.size() < 2:
+		expected_points = PackedVector3Array([definition.spawn_origin, definition.goal_position])
+	if course_path.curve.point_count != expected_points.size():
+		_fail("%s RaceCoursePath point count does not match its map definition" % map_name)
+		return
+	var first_point: Vector3 = course_path.to_global(course_path.curve.get_point_position(0))
+	var last_point: Vector3 = course_path.to_global(
+		course_path.curve.get_point_position(course_path.curve.point_count - 1)
+	)
+	if first_point.distance_to(expected_points[0]) > 0.05:
+		_fail("%s RaceCoursePath does not begin at the authored spawn" % map_name)
+	if last_point.distance_to(expected_points[expected_points.size() - 1]) > 0.05:
+		_fail("%s RaceCoursePath does not end at the authored finish" % map_name)
 
 
 func _fail(message: String) -> void:
