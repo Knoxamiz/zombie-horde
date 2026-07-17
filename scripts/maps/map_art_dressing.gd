@@ -72,9 +72,10 @@ func _build_suburban_outbreak() -> void:
 	_add_box("SuburbanGround", Vector3(112.0, 0.12, 184.0), Vector3(0.0, -0.26, 0.0), 0.0, "suburban_ground")
 	for side in [-1.0, 1.0]:
 		# Neighborhood cross-section, from the race lane outward:
-		# street, raised curb, narrow grass verge, raised sidewalk, fenced yard.
+		# raised curb, street, narrow grass verge, raised sidewalk, fenced yard.
 		_add_box("SuburbanStreetExtension", Vector3(13.0, 0.12, 176.0), Vector3(side * 14.5, 0.0, 0.0), 0.0, "asphalt")
-		_add_box("SuburbanCurb", Vector3(0.28, 0.18, 176.0), Vector3(side * 21.14, 0.12, 0.0), 0.0, "curb")
+		# The curb deliberately touches the 16 m Zombie track at x = +/-8.
+		_add_box("SuburbanCurb", Vector3(0.28, 0.18, 176.0), Vector3(side * 8.14, 0.12, 0.0), 0.0, "curb")
 		_add_box("SuburbanGrassVerge", Vector3(2.0, 0.12, 176.0), Vector3(side * 22.28, -0.14, 0.0), 0.0, "lawn")
 		_add_box("SuburbanSidewalk", Vector3(3.2, 0.12, 176.0), Vector3(side * 24.88, 0.15, 0.0), 0.0, "sidewalk")
 		_build_suburban_street_lamps(side)
