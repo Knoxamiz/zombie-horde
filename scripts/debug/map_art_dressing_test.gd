@@ -7,7 +7,12 @@ extends SceneTree
 var _map_cases: Array[Dictionary] = [
 	{
 		"id": "quarantine_boulevard",
-		"nodes": PackedStringArray(["SuburbanGround", "SuburbanSidewalk", "SuburbanCurb"]),
+		"nodes": PackedStringArray([
+			"SuburbanGround", "SuburbanSidewalk", "SuburbanHouseCottage",
+			"SuburbanHouseFamily", "SuburbanHouseTwoStory", "SuburbanHouseRanch",
+			"SuburbanDriveway", "FencePost", "Mailbox", "SuburbanTreeCanopy",
+			"SuburbanParkedCar", "YardDog", "NeighborhoodEntrySign",
+		]),
 	},
 	{
 		"id": "broken_bridge_pass",
@@ -88,9 +93,6 @@ func _validate_suburban_environment(arena: Node3D) -> void:
 	var dressing: Node3D = arena.get_node_or_null("MapDressing") as Node3D
 	if dressing == null:
 		return
-	for legacy_prefix in ["SuburbanHouse", "SuburbanGarage", "SuburbanRoof", "YardDog"]:
-		if not dressing.find_children("%s*" % legacy_prefix, "", true, false).is_empty():
-			_fail("quarantine_boulevard must begin clean without '%s'" % legacy_prefix)
 
 
 func _fail(message: String) -> void:

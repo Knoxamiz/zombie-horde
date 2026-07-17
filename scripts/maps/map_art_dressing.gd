@@ -22,6 +22,18 @@ const GERMAN_SHEPHERD_SCENE := preload(
 const PUG_SCENE := preload(
 	"res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_Pug.gltf"
 )
+const FIRE_HYDRANT_SCENE := preload(
+	"res://assets/third_party/zombie_apocalypse_kit/imported/Environment/FireHydrant.gltf"
+)
+const TRASH_BAG_SCENE := preload(
+	"res://assets/third_party/zombie_apocalypse_kit/imported/Environment/TrashBag_1.gltf"
+)
+const PICKUP_SCENE := preload(
+	"res://assets/third_party/zombie_apocalypse_kit/imported/Vehicles/Vehicle_Pickup.gltf"
+)
+const SPORTS_CAR_SCENE := preload(
+	"res://assets/third_party/zombie_apocalypse_kit/imported/Vehicles/Vehicle_Sports.gltf"
+)
 
 @export var profile: Profile = Profile.SUBURBAN_OUTBREAK
 
@@ -51,12 +63,35 @@ func _build_profile() -> void:
 
 
 func _build_suburban_outbreak() -> void:
-	# Clean exterior foundation for the upcoming suburban neighborhood pass. The
-	# road, its collision, hazards, navigation, and all gameplay stay untouched.
+	# A complete, visual-only neighborhood. The road, its collision, hazards,
+	# navigation, and all gameplay stay untouched.
 	_add_box("SuburbanGround", Vector3(88.0, 0.12, 184.0), Vector3(0.0, -0.26, 0.0), 0.0, "suburban_ground")
 	for side in [-1.0, 1.0]:
 		_add_box("SuburbanSidewalk", Vector3(2.2, 0.1, 176.0), Vector3(side * 12.1, -0.16, 0.0), 0.0, "sidewalk")
 		_add_box("SuburbanCurb", Vector3(0.3, 0.22, 176.0), Vector3(side * 10.9, 0.0, 0.0), 0.0, "curb")
+		_build_suburban_street_lamps(side)
+
+	var homes: Array[Dictionary] = [
+		{"x": -25.0, "z": -68.0, "style": "cottage", "color": "suburban_blue"},
+		{"x": 25.0, "z": -56.0, "style": "family", "color": "suburban_cream"},
+		{"x": -25.0, "z": -39.0, "style": "two_story", "color": "suburban_red"},
+		{"x": 25.0, "z": -26.0, "style": "ranch", "color": "suburban_green"},
+		{"x": -25.0, "z": -9.0, "style": "family", "color": "suburban_cream"},
+		{"x": 25.0, "z": 6.0, "style": "cottage", "color": "suburban_blue"},
+		{"x": -25.0, "z": 23.0, "style": "ranch", "color": "suburban_red"},
+		{"x": 25.0, "z": 38.0, "style": "two_story", "color": "suburban_cream"},
+		{"x": -25.0, "z": 55.0, "style": "cottage", "color": "suburban_green"},
+		{"x": 25.0, "z": 69.0, "style": "family", "color": "suburban_blue"},
+	]
+	for index in range(homes.size()):
+		var home: Dictionary = homes[index]
+		_build_suburban_lot(
+			Vector3(float(home["x"]), 0.0, float(home["z"])),
+			str(home["style"]),
+			str(home["color"]),
+			index
+		)
+	_build_neighborhood_endcaps()
 
 
 func _remove_legacy_city_highway_dressing() -> void:
@@ -76,27 +111,85 @@ func _remove_legacy_city_highway_dressing() -> void:
 			legacy_dressing.queue_free()
 
 
-func _build_suburban_home(position: Vector3, wall_material: String, index: int) -> void:
+func _build_suburban_lot(position: Vector3, style: String, wall_material: String, index: int) -> void:
 	var outward_sign: float = sign(position.x)
-	var house_position := position + Vector3(outward_sign * 3.8, 0.0, 1.0)
-	var front_position := house_position - Vector3(outward_sign * 4.18, 0.0, 0.0)
-	_add_box("SuburbanLawn", Vector3(19.0, 0.14, 19.0), position, 0.0, "lawn")
-	_add_box("SuburbanHouse", Vector3(8.2, 5.8, 7.4), house_position + Vector3.UP * 2.72, 0.0, wall_material)
-	_add_box("SuburbanRoof", Vector3(9.1, 1.1, 8.3), house_position + Vector3.UP * 6.14, 0.0, "roof")
-	_add_box("SuburbanGarage", Vector3(3.5, 3.3, 4.2), house_position + Vector3(0.0, 1.57, -5.2), 0.0, wall_material)
-	_add_box("SuburbanGarageRoof", Vector3(4.0, 0.7, 4.7), house_position + Vector3(0.0, 3.55, -5.2), 0.0, "roof")
-	_add_box("SuburbanDriveway", Vector3(13.5, 0.1, 4.6), Vector3(outward_sign * 17.5, -0.14, position.z - 4.2), 0.0, "driveway")
-	_add_box("SuburbanPorch", Vector3(1.7, 0.32, 2.2), front_position + Vector3(0.0, 0.16, 1.6), 0.0, "concrete")
-	_add_box("SuburbanDoor", Vector3(0.16, 2.05, 1.2), front_position + Vector3(0.0, 1.23, 1.6), 0.0, "door")
-	for window_z in [-1.35, 3.05]:
-		_add_box("SuburbanWindow", Vector3(0.12, 1.15, 1.35), front_position + Vector3(0.0, 3.35, window_z), 0.0, "window")
-	_add_box("SuburbanChimney", Vector3(0.72, 2.2, 0.72), house_position + Vector3(outward_sign * 2.5, 7.1, -1.8), 0.0, "brick")
-	_build_fence_line(Vector3(outward_sign * 14.2, 0.0, position.z), 18.0, PI * 0.5)
-	_build_mailbox(Vector3(outward_sign * 11.8, 0.0, position.z - 5.4), 0.0)
-	_build_tree(position + Vector3(outward_sign * 6.7, 0.0, 5.4), index)
-	_build_hedge(position + Vector3(outward_sign * 8.0, 0.0, -6.5), outward_sign)
+	var house_position := position + Vector3(outward_sign * 3.6, 0.0, 1.2)
+	_add_box("SuburbanLot", Vector3(19.2, 0.14, 19.0), position, 0.0, "lawn")
+	_add_box("SuburbanDriveway", Vector3(13.2, 0.1, 4.4), Vector3(outward_sign * 17.5, -0.14, position.z - 4.35), 0.0, "driveway")
+	_build_suburban_house(house_position, outward_sign, style, wall_material)
+	_build_fence_line(Vector3(outward_sign * 14.1, 0.0, position.z), 18.0, PI * 0.5)
+	_build_mailbox(Vector3(outward_sign * 11.75, 0.0, position.z - 5.5), 0.0)
+	_build_tree(position + Vector3(outward_sign * 6.7, 0.0, 5.3), index)
+	_build_hedge(position + Vector3(outward_sign * 8.0, 0.0, -6.6), outward_sign)
+	_build_yard_detail(position, outward_sign, index)
 	if index in [1, 4, 7]:
-		_add_dog(position + Vector3(outward_sign * 5.6, 0.0, 4.1), -outward_sign * 0.4, index % 2 == 0)
+		_add_dog(position + Vector3(outward_sign * 5.5, 0.0, 4.1), -outward_sign * 0.4, index % 2 == 0)
+	if index in [1, 3, 6, 9]:
+		_add_suburban_vehicle(Vector3(outward_sign * 20.2, 0.0, position.z - 4.2), outward_sign, index)
+
+
+func _build_suburban_house(position: Vector3, outward_sign: float, style: String, wall_material: String) -> void:
+	var body_size := Vector3(8.0, 5.5, 7.2)
+	var garage_size := Vector3(3.5, 3.1, 4.0)
+	var roof_height := 6.0
+	var house_name := "SuburbanHouseFamily"
+	match style:
+		"cottage":
+			body_size = Vector3(6.7, 4.6, 6.4)
+			garage_size = Vector3(0.0, 0.0, 0.0)
+			roof_height = 5.05
+			house_name = "SuburbanHouseCottage"
+		"two_story":
+			body_size = Vector3(7.8, 8.0, 7.0)
+			garage_size = Vector3(3.25, 3.1, 4.0)
+			roof_height = 8.55
+			house_name = "SuburbanHouseTwoStory"
+		"ranch":
+			body_size = Vector3(10.3, 4.4, 7.4)
+			garage_size = Vector3(4.3, 3.1, 4.0)
+			roof_height = 4.9
+			house_name = "SuburbanHouseRanch"
+	_add_box(house_name, body_size, position + Vector3.UP * (body_size.y * 0.5 - 0.18), 0.0, wall_material)
+	_add_box("SuburbanRoof", body_size + Vector3(0.85, 0.9, 0.85), position + Vector3.UP * roof_height, 0.0, "roof")
+	var front := position - Vector3(outward_sign * (body_size.x * 0.5 + 0.08), 0.0, 0.0)
+	_add_box("SuburbanPorch", Vector3(1.65, 0.3, 2.15), front + Vector3(0.0, 0.14, 1.5), 0.0, "concrete")
+	_add_box("SuburbanDoor", Vector3(0.14, 2.0, 1.15), front + Vector3(0.0, 1.18, 1.5), 0.0, "door")
+	for window_z in [-1.3, 3.0]:
+		_add_box("SuburbanWindow", Vector3(0.12, 1.1, 1.28), front + Vector3(0.0, 3.1, window_z), 0.0, "window")
+	if style == "two_story":
+		for window_z in [-1.3, 3.0]:
+			_add_box("SuburbanWindow", Vector3(0.12, 1.1, 1.28), front + Vector3(0.0, 5.85, window_z), 0.0, "window")
+	if garage_size.x > 0.0:
+		var garage_position := position + Vector3(0.0, garage_size.y * 0.5 - 0.18, -5.0)
+		_add_box("SuburbanGarage", garage_size, garage_position, 0.0, wall_material)
+		_add_box("SuburbanGarageRoof", garage_size + Vector3(0.45, 0.65, 0.5), garage_position + Vector3.UP * (garage_size.y * 0.5 + 0.3), 0.0, "roof")
+		var garage_front := garage_position - Vector3(outward_sign * (garage_size.x * 0.5 + 0.08), 0.0, 0.0)
+		_add_box("SuburbanGarageDoor", Vector3(0.14, 2.15, 2.5), garage_front + Vector3(0.0, 0.1, 0.0), 0.0, "garage_door")
+	_add_box("SuburbanChimney", Vector3(0.7, 2.1, 0.7), position + Vector3(outward_sign * 2.25, roof_height + 0.8, -1.75), 0.0, "brick")
+
+
+func _build_yard_detail(position: Vector3, outward_sign: float, index: int) -> void:
+	_add_box("SuburbanPlanter", Vector3(1.3, 0.55, 1.3), position + Vector3(outward_sign * 6.3, 0.25, -0.8), 0.0, "planter")
+	_add_sphere("SuburbanFlowerBush", 0.7, position + Vector3(outward_sign * 6.3, 0.75, -0.8), "flower")
+	if index % 2 == 0:
+		_add_box("SuburbanTrashBin", Vector3(0.65, 1.05, 0.72), position + Vector3(outward_sign * 8.1, 0.48, 6.1), 0.0, "trash_bin")
+	else:
+		_add_scene_prop("YardTrashBag", TRASH_BAG_SCENE, position + Vector3(outward_sign * 7.8, 0.0, 6.0), 0.15 * outward_sign, 0.95)
+	if index in [0, 5, 8]:
+		_add_scene_prop("SuburbanFireHydrant", FIRE_HYDRANT_SCENE, Vector3(outward_sign * 11.4, 0.0, position.z + 5.8), 0.0, 1.0)
+
+
+func _add_suburban_vehicle(position: Vector3, outward_sign: float, index: int) -> void:
+	var vehicle_scene: PackedScene = PICKUP_SCENE if index % 2 == 0 else SPORTS_CAR_SCENE
+	_add_scene_prop("SuburbanParkedCar", vehicle_scene, position, 90.0 * outward_sign, 0.92)
+
+
+func _build_neighborhood_endcaps() -> void:
+	for side in [-1.0, 1.0]:
+		var sign_position := Vector3(side * 17.0, 0.0, 86.0)
+		_add_box("NeighborhoodEntryPost", Vector3(0.22, 2.4, 0.22), sign_position + Vector3.UP * 1.2, 0.0, "fence")
+		_add_box("NeighborhoodEntrySign", Vector3(4.3, 0.95, 0.16), sign_position + Vector3(0.0, 2.0, 0.0), 0.0, "neighborhood_sign")
+		_build_tree(Vector3(side * 31.0, 0.0, 80.0), int(side + 1.0))
 
 
 func _build_fence_line(position: Vector3, width: float, yaw: float) -> void:
@@ -217,6 +310,17 @@ func _add_dog(position: Vector3, yaw: float, shepherd: bool) -> void:
 	add_child(dog)
 
 
+func _add_scene_prop(node_name: String, scene: PackedScene, position: Vector3, yaw_degrees: float, scale_factor: float) -> void:
+	var prop: Node3D = scene.instantiate() as Node3D
+	if prop == null:
+		return
+	prop.name = node_name
+	prop.position = position
+	prop.rotation_degrees.y = yaw_degrees
+	prop.scale = Vector3.ONE * scale_factor
+	add_child(prop)
+
+
 func _add_box(node_name: String, size: Vector3, position: Vector3, yaw: float, material_key: String) -> void:
 	var mesh_instance := MeshInstance3D.new()
 	mesh_instance.name = node_name
@@ -305,6 +409,7 @@ static func _get_material_color(key: String) -> Color:
 		"suburban_blue": return Color("6b91a6")
 		"suburban_cream": return Color("c6b78b")
 		"suburban_red": return Color("9b5a4c")
+		"suburban_green": return Color("7a9b71")
 		"roof": return Color("3e4048")
 		"door": return Color("3a2820")
 		"window": return Color("a4d7e7")
@@ -312,6 +417,11 @@ static func _get_material_color(key: String) -> Color:
 		"fence": return Color("ddd1b1")
 		"mailbox": return Color("334a61")
 		"driveway": return Color("6d6e6c")
+		"garage_door": return Color("b9bfc0")
+		"planter": return Color("ae7259")
+		"flower": return Color("d56d88")
+		"trash_bin": return Color("445b4c")
+		"neighborhood_sign": return Color("5a7546")
 		"hedge": return Color("35613a")
 		"tree_trunk": return Color("69472d")
 		"tree_light": return Color("4c813c")
