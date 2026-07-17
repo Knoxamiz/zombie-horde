@@ -3,7 +3,7 @@ extends CharacterBody3D
 
 signal died(zombie: Zombie, cause: String)
 
-const SURFACE_SPAWN_RESOLVER := preload("res://scripts/maps/surface_spawn_resolver.gd")
+const RACE_ROUTE_NAVIGATOR := preload("res://scripts/maps/race_route_navigator.gd")
 
 enum MobilityState {
 	RUNNER,
@@ -53,6 +53,7 @@ var _stall_timer: float = 0.0
 var _last_progress_sample: float = 0.0
 var _death_cause: String = ""
 var _fell_visual_timer: float = 0.0
+var _race_route = RACE_ROUTE_NAVIGATOR.new()
 
 const _ANTI_CLUMP_RADIUS: float = 0.78
 const _ANTI_CLUMP_STRENGTH: float = 2.6
@@ -101,6 +102,7 @@ func configure_zombie(
 	goal_position = new_goal_position
 	race_path_points = new_race_path_points
 	_start_position = new_start_position
+	_race_route.configure(race_path_points, _start_position, goal_position)
 	_rng.seed = random_seed
 	_join_info = join_info if join_info != null else ParticipantJoinInfo.for_name(new_display_name)
 	_has_finished_race = false
@@ -149,14 +151,7 @@ func get_progress() -> float:
 		return 1.0
 
 	if _has_race_path():
-		var path_length: float = SURFACE_SPAWN_RESOLVER.path_length(race_path_points)
-		if path_length <= 0.001:
-			return 0.0
-		return clamp(
-			SURFACE_SPAWN_RESOLVER.closest_path_distance(race_path_points, global_position) / path_length,
-			0.0,
-			1.0
-		)
+		return _race_route.get_progress_ratio()
 
 	var path: Vector3 = goal_position - _start_position
 	path.y = 0.0
@@ -261,6 +256,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_update_drift(delta)
+	_race_route.advance(global_position, active_config.lane_half_width + 1.0)
 	_update_stall_timer(delta)
 	var desired_velocity: Vector3 = _get_desired_velocity(active_config)
 	velocity = Vector3(
@@ -425,8 +421,7 @@ func _apply_anti_clump_nudge(active_config: ZombieConfig) -> void:
 
 func _get_race_forward() -> Vector3:
 	if _has_race_path():
-		var distance: float = SURFACE_SPAWN_RESOLVER.closest_path_distance(race_path_points, global_position)
-		return SURFACE_SPAWN_RESOLVER.direction_at_path_distance(race_path_points, distance)
+		return _race_route.get_forward_direction()
 	var z_direction: float = sign(goal_position.z - _start_position.z)
 	if is_zero_approx(z_direction):
 		z_direction = 1.0
@@ -536,28 +531,20 @@ func _apply_crowd_bump(active_config: ZombieConfig) -> void:
 
 
 func _has_race_path() -> bool:
-	return SURFACE_SPAWN_RESOLVER.has_path(race_path_points)
+	return _race_route.has_route()
 
 
 func _get_route_center_point() -> Vector3:
 	if not _has_race_path():
 		return goal_position
-	var distance: float = SURFACE_SPAWN_RESOLVER.closest_path_distance(race_path_points, global_position)
-	return SURFACE_SPAWN_RESOLVER.point_at_path_distance(race_path_points, distance, 0.0, 0.0)
+	return _race_route.get_center_point()
 
 
 func _get_route_target_point() -> Vector3:
 	if not _has_race_path():
 		return goal_position
-	var distance: float = SURFACE_SPAWN_RESOLVER.closest_path_distance(race_path_points, global_position)
 	var lookahead: float = maxf(_get_config().runner_speed * 0.45, 2.5)
-	var path_length: float = SURFACE_SPAWN_RESOLVER.path_length(race_path_points)
-	return SURFACE_SPAWN_RESOLVER.point_at_path_distance(
-		race_path_points,
-		minf(distance + lookahead, path_length),
-		0.0,
-		0.0
-	)
+	return _race_route.get_target_point(lookahead)
 
 func _get_current_speed(active_config: ZombieConfig) -> float:
 	var speed: float = active_config.runner_speed
