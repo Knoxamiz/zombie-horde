@@ -32,6 +32,7 @@ powerup_placement_max_z = 32.0
 defender_placement_half_width = 5.25
 defender_placement_min_z = -24.0
 defender_placement_max_z = 28.0
+free_camera_safe_regions = [AABB(-24, 4, -58, 48, 48, 116)]
 uses_map_hazard_profile = true
 map_mechanic_hook = "3-lane chaos sampler"
 map_mine_count = 5

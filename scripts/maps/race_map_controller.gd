@@ -259,7 +259,7 @@ func frame_spectator_camera_for_definition(
 ) -> void:
 	if spectator_camera == null or definition == null:
 		return
-	spectator_camera.update_bounds_for_map_definition(definition)
+	spectator_camera.configure_free_camera_limits(definition)
 	var view: Dictionary = compute_race_camera_view_for_definition(definition)
 	spectator_camera.set_view(
 		view.get("position", Vector3.ZERO),

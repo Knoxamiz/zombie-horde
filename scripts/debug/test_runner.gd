@@ -29,6 +29,7 @@ const CORE_TESTS: Array[Dictionary] = [
 ]
 
 const MAP_TESTS: Array[Dictionary] = [
+	{"name": "map_camera_limits_test", "script": "map_camera_limits_test.gd", "args": []},
 	{"name": "kit_map_gap_audit_test", "script": "kit_map_gap_audit_test.gd", "args": []},
 	{"name": "spiral_descent_map_test", "script": "spiral_descent_map_test.gd", "args": []},
 	{"name": "true_spiral_ramp_map_test", "script": "true_spiral_ramp_map_test.gd", "args": []},

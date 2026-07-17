@@ -33,6 +33,13 @@ extends Resource
 @export var defender_placement_max_z: float = 28.0
 @export var race_path_points: PackedVector3Array = PackedVector3Array()
 
+## Spectator-camera space is map data, not gameplay collision. Each AABB is a
+## safe free-flight volume; together they can describe a long route, a bridge,
+## or an exterior frame around a multi-level map without trapping the camera
+## inside visible geometry.
+@export_category("Spectator Camera")
+@export var free_camera_safe_regions: Array[AABB] = []
+
 @export var uses_map_hazard_profile: bool = false
 @export_range(0, 96, 1) var map_mine_count: int = 6
 @export_range(0, 96, 1) var map_obstacle_count: int = 12
@@ -65,6 +72,10 @@ func resolve_hazard_surface_y() -> float:
 	if deck_y > 0.0:
 		return deck_y
 	return 0.0
+
+
+func has_free_camera_safe_regions() -> bool:
+	return not free_camera_safe_regions.is_empty()
 
 
 func apply_hazard_profile_to(

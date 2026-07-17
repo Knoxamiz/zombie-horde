@@ -48,6 +48,7 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 ### map (~5–8 minutes)
 
 - `map_selection_test.gd`
+- `map_camera_limits_test.gd` â€” verifies each playable map supplies an explicit spectator free-camera flight space
 - `broken_bridge_real_gameplay_test.gd --zombies=5 --skip-stress`
 
 **When to run:** before merging map content, bridge layout, or map controller changes.

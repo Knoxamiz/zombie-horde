@@ -1,6 +1,8 @@
 class_name SpectatorCameraController
 extends Node3D
 
+const FreeCameraFlightLimitsScript := preload("res://scripts/camera/free_camera_flight_limits.gd")
+
 @export var move_speed: float = 16.0
 @export var boost_multiplier: float = 2.4
 @export var mouse_sensitivity: float = 0.08
@@ -34,6 +36,7 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _director_enabled: bool = false
 var _annotation_paint_active: bool = false
 var _zombie_manager: ZombieManager
+var _free_camera_flight_limits = FreeCameraFlightLimitsScript.new()
 
 @onready var _camera: Camera3D = get_node("Camera3D") as Camera3D
 
@@ -161,14 +164,29 @@ func set_lobby_view(new_global_position: Vector3, new_rotation_degrees: Vector3)
 		_camera.current = true
 
 
-func update_bounds_for_map_definition(definition: RaceMapDefinition) -> void:
+func configure_free_camera_limits(definition: RaceMapDefinition) -> void:
 	if definition == null:
 		return
-	var side_extent: float = max(definition.lane_half_width + 8.0, 14.0)
-	var min_z: float = min(definition.spawn_origin.z, definition.goal_position.z) - 12.0
-	var max_z: float = max(definition.spawn_origin.z, definition.goal_position.z) + 12.0
-	camera_bounds_min = Vector3(-side_extent, 2.2, min_z)
-	camera_bounds_max = Vector3(side_extent, 38.0, max_z)
+	_free_camera_flight_limits.configure_for_map_definition(definition)
+	camera_bounds_min = _free_camera_flight_limits.get_enclosing_bounds_min()
+	camera_bounds_max = _free_camera_flight_limits.get_enclosing_bounds_max()
+
+
+func update_bounds_for_map_definition(definition: RaceMapDefinition) -> void:
+	# Compatibility entry point for editor tools that still use the old name.
+	configure_free_camera_limits(definition)
+
+
+func get_free_camera_safe_region_count() -> int:
+	return _free_camera_flight_limits.get_safe_region_count()
+
+
+func is_position_within_active_free_camera_limits(target_position: Vector3) -> bool:
+	return _free_camera_flight_limits.is_position_inside_active_limits(target_position)
+
+
+func clamp_position_to_active_free_camera_limits(target_position: Vector3) -> Vector3:
+	return _clamp_to_bounds(target_position)
 
 func set_mouse_capture_allowed(allowed: bool) -> void:
 	recapture_on_click = allowed
@@ -233,19 +251,7 @@ func set_director_enabled(enabled: bool) -> void:
 func _clamp_to_bounds(target_position: Vector3) -> Vector3:
 	if not position_limits_enabled:
 		return target_position
-
-	var min_x: float = min(camera_bounds_min.x, camera_bounds_max.x)
-	var max_x: float = max(camera_bounds_min.x, camera_bounds_max.x)
-	var min_y: float = min(camera_bounds_min.y, camera_bounds_max.y)
-	var max_y: float = max(camera_bounds_min.y, camera_bounds_max.y)
-	var min_z: float = min(camera_bounds_min.z, camera_bounds_max.z)
-	var max_z: float = max(camera_bounds_min.z, camera_bounds_max.z)
-
-	return Vector3(
-		clamp(target_position.x, min_x, max_x),
-		clamp(target_position.y, min_y, max_y),
-		clamp(target_position.z, min_z, max_z)
-	)
+	return _free_camera_flight_limits.clamp_position(target_position)
 
 func _on_camera_shake_requested(strength: float, duration: float) -> void:
 	_shake_strength = max(_shake_strength, strength)

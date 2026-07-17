@@ -33,6 +33,7 @@ powerup_placement_max_z = 66.0
 defender_placement_half_width = 3.5
 defender_placement_min_z = -66.0
 defender_placement_max_z = 66.0
+free_camera_safe_regions = [AABB(-34, 13, -104, 68, 54, 208)]
 uses_map_hazard_profile = true
 map_mechanic_hook = "gap jumps + raised spans"
 map_mine_count = 3

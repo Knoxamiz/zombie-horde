@@ -36,6 +36,7 @@ defender_placement_half_width = 3.8
 defender_placement_min_z = -64.0
 defender_placement_max_z = 60.0
 race_path_points = PackedVector3Array(-54.0, 42.0, -54.0, 54.0, 42.0, -54.0, 54.0, 42.0, 54.0, -54.0, 42.0, 54.0, -54.0, 31.5, -54.0, 54.0, 31.5, -54.0, 54.0, 31.5, 54.0, -54.0, 31.5, 54.0, -54.0, 21.0, -54.0, 54.0, 21.0, -54.0, 54.0, 21.0, 54.0, -54.0, 21.0, 54.0, -54.0, 10.5, -54.0, 54.0, 10.5, -54.0, 54.0, 10.5, 54.0, -54.0, 10.5, 54.0, -54.0, 0.0, -54.0, 54.0, 0.0, -54.0)
+free_camera_safe_regions = [AABB(-102, 46, -102, 204, 50, 204), AABB(-112, 12, -102, 45, 42, 204), AABB(67, 12, -102, 45, 42, 204), AABB(-102, 12, -112, 204, 42, 45), AABB(-102, 12, 67, 204, 42, 45)]
 uses_map_hazard_profile = true
 map_mechanic_hook = "square stairwell descent route"
 map_mine_count = 8
