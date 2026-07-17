@@ -100,6 +100,7 @@ func _build_suburban_outbreak() -> void:
 			str(home["color"]),
 			index
 		)
+	_build_suburban_perimeter_privacy_fences()
 	_build_neighborhood_endcaps()
 
 
@@ -137,7 +138,6 @@ func _build_suburban_lot(position: Vector3, style: String, wall_material: String
 	_add_box("SuburbanDriveway", Vector3(23.0, 0.1, 4.4), Vector3(outward_sign * 19.8, 0.215, position.z - 4.35), 0.0, "driveway")
 	_build_suburban_house(house_position, outward_sign, style, wall_material)
 	_build_fence_line(Vector3(outward_sign * 13.8, 0.0, position.z), 18.0, PI * 0.5, position.z - 4.35)
-	_build_backyard_privacy_fence(Vector3(outward_sign * 33.25, 0.0, position.z), 18.0, PI * 0.5)
 	_build_mailbox(Vector3(outward_sign * 13.45, 0.0, position.z - 7.1), 0.0)
 	_build_tree(position + Vector3(outward_sign * 6.7, 0.0, 5.3), index)
 	_build_hedge(position + Vector3(outward_sign * 8.0, 0.0, -6.6), outward_sign)
@@ -235,15 +235,25 @@ func _build_fence_line(position: Vector3, width: float, yaw: float, gate_z: floa
 
 
 func _build_backyard_privacy_fence(position: Vector3, width: float, yaw: float) -> void:
-	# Tall rear fencing is intentionally visual-only. The City Highway map
-	# definition places lateral OOB immediately beyond this property line.
-	for post_offset in [-width * 0.5, width * 0.5]:
+	# One continuous neighborhood perimeter. It stays visual-only; City Highway's
+	# definition begins lateral OOB immediately outside this property line.
+	var panel_count := int(ceil(width / 3.5))
+	var panel_width := width / float(panel_count)
+	for post_index in range(panel_count + 1):
+		if post_index % 4 != 0 and post_index != panel_count:
+			continue
+		var post_offset: float = -width * 0.5 + float(post_index) * panel_width
 		var local_post := Vector3(post_offset, 0.0, 0.0).rotated(Vector3.UP, yaw)
 		_add_box("BackyardPrivacyFencePost", Vector3(0.22, 2.75, 0.22), position + local_post + Vector3.UP * 1.2, yaw, "privacy_wood")
-	for panel_index in range(10):
-		var panel_offset: float = -width * 0.5 + 0.9 + float(panel_index) * 1.8
+	for panel_index in range(panel_count):
+		var panel_offset: float = -width * 0.5 + panel_width * 0.5 + float(panel_index) * panel_width
 		var local_panel := Vector3(panel_offset, 0.0, 0.0).rotated(Vector3.UP, yaw)
-		_add_box("BackyardPrivacyFence", Vector3(1.74, 2.35, 0.16), position + local_panel + Vector3.UP * 1.06, yaw, "privacy_wood")
+		_add_box("BackyardPrivacyFence", Vector3(panel_width - 0.08, 2.35, 0.16), position + local_panel + Vector3.UP * 1.06, yaw, "privacy_wood")
+
+
+func _build_suburban_perimeter_privacy_fences() -> void:
+	for side in [-1.0, 1.0]:
+		_build_backyard_privacy_fence(Vector3(side * 33.25, 0.0, 0.0), 176.0, PI * 0.5)
 
 
 func _build_mailbox(position: Vector3, yaw: float) -> void:
