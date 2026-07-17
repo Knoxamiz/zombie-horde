@@ -438,8 +438,8 @@ func _finalize_loaded_map_scene(
 		_log_map_scene_integration_diagnostics("finish_contract_failed", entry)
 		return false
 	_log_map_scene_integration_diagnostics("map_load", entry)
-	if should_use_definition_race_camera() and _spectator_camera != null:
-		frame_spectator_camera_for_definition(_spectator_camera, definition, false)
+	# Loading a map must not take over the current camera. GameFlow frames the
+	# spectator only when the race phase begins; this preserves the lobby cage.
 	return true
 
 

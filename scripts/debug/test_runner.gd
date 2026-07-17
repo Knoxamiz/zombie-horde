@@ -77,6 +77,7 @@ const ALL_EXTRA_TESTS: Array[Dictionary] = [
 	{"name": "zombie_color_variant_test", "script": "zombie_color_variant_test.gd", "args": []},
 	{"name": "streaming_bootstrap_test", "script": "streaming_bootstrap_test.gd", "args": []},
 	{"name": "lobby_empty_boot_test", "script": "lobby_empty_boot_test.gd", "args": []},
+	{"name": "lobby_cage_visual_contract_test", "script": "lobby_cage_visual_contract_test.gd", "args": []},
 ]
 
 var _tier: String = "smoke"

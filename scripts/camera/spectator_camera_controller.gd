@@ -148,6 +148,19 @@ func set_view(new_global_position: Vector3, new_rotation_degrees: Vector3, enabl
 		_camera.current = true
 
 
+func set_lobby_view(new_global_position: Vector3, new_rotation_degrees: Vector3) -> void:
+	# Race-map bounds belong to the active course. The lobby cage lives outside
+	# those bounds, so its fixed presentation camera must not be clamped by them.
+	_set_director_enabled(false)
+	global_position = new_global_position
+	_pitch_degrees = clamp(new_rotation_degrees.x, min_pitch_degrees, max_pitch_degrees)
+	_yaw_degrees = new_rotation_degrees.y
+	_apply_rotation()
+	_set_look_enabled(false)
+	if _camera != null:
+		_camera.current = true
+
+
 func update_bounds_for_map_definition(definition: RaceMapDefinition) -> void:
 	if definition == null:
 		return

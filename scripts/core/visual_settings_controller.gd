@@ -12,6 +12,12 @@ var _world_environment: WorldEnvironment
 var _road_arena: Node3D
 var _minigun: BaseMinigun
 
+# The lobby camera is deliberately close to the cage. Keep its atmosphere
+# present, but never dense enough to erase the enclosure behind the UI.
+const LOBBY_FOG_DENSITY_SCALE: float = 0.34
+const LOBBY_FOG_DENSITY_MIN: float = 0.0018
+const LOBBY_FOG_DENSITY_MAX: float = 0.0035
+
 func _ready() -> void:
 	call_deferred("_initialize")
 
@@ -70,7 +76,11 @@ func _apply_time_of_day(time_of_day: int) -> void:
 	var lobby_background_color: Color = background_color.darkened(0.18).lerp(Color(0.018, 0.03, 0.022, 1.0), 0.58)
 	var lobby_ambient_color: Color = ambient_color.lerp(Color(0.16, 0.34, 0.18, 1.0), 0.38)
 	var lobby_ambient_energy: float = max(ambient_energy * 0.82, 0.58)
-	var lobby_fog_density: float = max(fog_density * 1.35, 0.014)
+	var lobby_fog_density: float = clampf(
+		fog_density * LOBBY_FOG_DENSITY_SCALE,
+		LOBBY_FOG_DENSITY_MIN,
+		LOBBY_FOG_DENSITY_MAX
+	)
 
 	_apply_environment_values(
 		race_environment,

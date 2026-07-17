@@ -94,6 +94,7 @@ Core + map tiers, plus stable unit/integration debug suites:
 - `zombie_color_variant_test.gd`
 - `streaming_bootstrap_test.gd`
 - `lobby_empty_boot_test.gd`
+- `lobby_cage_visual_contract_test.gd`
 - `prototype_map_load_test.gd`
 
 **When to run:** before release branches or large refactors.

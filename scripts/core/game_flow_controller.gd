@@ -95,6 +95,9 @@ func _initialize_flow() -> void:
 	_prepare_transition_overlay()
 	_apply_phase("lobby")
 	_apply_launch_request()
+	# Profile-driven map loading is deferred during boot. Reassert the lobby
+	# frame afterward so a saved race map cannot leave the cage off-camera.
+	call_deferred("_restore_non_race_camera_after_startup")
 	_fade_overlay_to(0.0, 0.35)
 
 func show_intro() -> void:
@@ -156,6 +159,14 @@ func _on_active_map_changed(_map_index: int, _display_name: String) -> void:
 	_apply_phase(_current_phase)
 
 
+func _restore_non_race_camera_after_startup() -> void:
+	await get_tree().process_frame
+	if _current_phase == "intro":
+		_apply_intro_camera_view()
+	elif _current_phase == "lobby":
+		_apply_lobby_camera_view()
+
+
 func _apply_race_camera_view() -> void:
 	if _spectator_camera == null:
 		return
@@ -176,6 +187,24 @@ func _apply_race_camera_view() -> void:
 			)
 			return
 	_spectator_camera.set_view(race_camera_position, race_camera_rotation_degrees, allow_race_free_cam)
+
+
+func _apply_intro_camera_view() -> void:
+	if _spectator_camera == null:
+		_spectator_camera = get_node_or_null(spectator_camera_path) as SpectatorCameraController
+	if _spectator_camera == null:
+		return
+	_spectator_camera.set_mouse_capture_allowed(false)
+	_spectator_camera.set_lobby_view(intro_camera_position, intro_camera_rotation_degrees)
+
+
+func _apply_lobby_camera_view() -> void:
+	if _spectator_camera == null:
+		_spectator_camera = get_node_or_null(spectator_camera_path) as SpectatorCameraController
+	if _spectator_camera == null:
+		return
+	_spectator_camera.set_mouse_capture_allowed(false)
+	_spectator_camera.set_lobby_view(lobby_camera_position, lobby_camera_rotation_degrees)
 
 func _transition_to_phase(phase_name: String) -> void:
 	if phase_name == _current_phase:
@@ -217,9 +246,7 @@ func _apply_phase(phase_name: String) -> void:
 			_set_node_visible(_streamer_menu, false)
 			if _pre_round_ui != null:
 				_pre_round_ui.set_screen_mode("intro")
-			if _spectator_camera != null:
-				_spectator_camera.set_mouse_capture_allowed(false)
-				_spectator_camera.set_view(intro_camera_position, intro_camera_rotation_degrees, false)
+			_apply_intro_camera_view()
 		"lobby":
 			_intro_active = false
 			_apply_lobby_environment()
@@ -230,9 +257,7 @@ func _apply_phase(phase_name: String) -> void:
 			_set_node_visible(_streamer_menu, true)
 			if _pre_round_ui != null:
 				_pre_round_ui.set_screen_mode("lobby")
-			if _spectator_camera != null:
-				_spectator_camera.set_mouse_capture_allowed(false)
-				_spectator_camera.set_view(lobby_camera_position, lobby_camera_rotation_degrees, false)
+			_apply_lobby_camera_view()
 		"race":
 			_apply_race_environment()
 			_set_world_active(_race_world, true)

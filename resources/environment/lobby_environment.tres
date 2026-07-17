@@ -29,5 +29,5 @@ glow_strength = 0.7
 fog_enabled = true
 fog_light_color = Color(0.16, 0.3, 0.2, 1)
 fog_light_energy = 0.24
-fog_density = 0.014
+fog_density = 0.003
 fog_aerial_perspective = 0.12
