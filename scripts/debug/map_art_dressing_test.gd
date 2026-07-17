@@ -7,7 +7,7 @@ extends SceneTree
 var _map_cases: Array[Dictionary] = [
 	{
 		"id": "quarantine_boulevard",
-		"nodes": PackedStringArray(["SuburbanGround", "SuburbanHouse", "SuburbanGarage", "SuburbanTreeCanopy", "FencePost", "YardDog"]),
+		"nodes": PackedStringArray(["SuburbanGround", "SuburbanSidewalk", "SuburbanCurb"]),
 	},
 	{
 		"id": "broken_bridge_pass",
@@ -83,10 +83,14 @@ func _validate_visual_only(node: Node, map_id: String) -> void:
 func _validate_suburban_environment(arena: Node3D) -> void:
 	for node_path in ["CoreRoad/CityBackdrop", "CoreRoad/SetDressing"]:
 		var old_dressing: Node3D = arena.get_node_or_null(node_path) as Node3D
-		if old_dressing == null:
-			_fail("quarantine_boulevard is missing inherited node '%s'" % node_path)
-		elif old_dressing.visible:
-			_fail("quarantine_boulevard must hide old city dressing '%s'" % node_path)
+		if old_dressing != null:
+			_fail("quarantine_boulevard must remove legacy dressing '%s'" % node_path)
+	var dressing: Node3D = arena.get_node_or_null("MapDressing") as Node3D
+	if dressing == null:
+		return
+	for legacy_prefix in ["SuburbanHouse", "SuburbanGarage", "SuburbanRoof", "YardDog"]:
+		if not dressing.find_children("%s*" % legacy_prefix, "", true, false).is_empty():
+			_fail("quarantine_boulevard must begin clean without '%s'" % legacy_prefix)
 
 
 func _fail(message: String) -> void:

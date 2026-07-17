@@ -32,6 +32,8 @@ static var _material_cache: Dictionary = {}
 
 
 func _ready() -> void:
+	if profile == Profile.SUBURBAN_OUTBREAK:
+		_remove_legacy_city_highway_dressing()
 	_build_profile()
 	VisualCollisionSanitizerScript.sanitize_subtree(self)
 
@@ -49,35 +51,29 @@ func _build_profile() -> void:
 
 
 func _build_suburban_outbreak() -> void:
-	# This replaces the inherited downtown backdrop on City Highway. Every piece
-	# sits beyond the course rail and has no physics, navigation, or shadows.
+	# Clean exterior foundation for the upcoming suburban neighborhood pass. The
+	# road, its collision, hazards, navigation, and all gameplay stay untouched.
 	_add_box("SuburbanGround", Vector3(88.0, 0.12, 184.0), Vector3(0.0, -0.26, 0.0), 0.0, "suburban_ground")
 	for side in [-1.0, 1.0]:
 		_add_box("SuburbanSidewalk", Vector3(2.2, 0.1, 176.0), Vector3(side * 12.1, -0.16, 0.0), 0.0, "sidewalk")
 		_add_box("SuburbanCurb", Vector3(0.3, 0.22, 176.0), Vector3(side * 10.9, 0.0, 0.0), 0.0, "curb")
-		_build_suburban_street_lamps(side)
 
-	# Alternating house shapes and colors make a readable neighborhood at a
-	# streamer-camera distance without loading a large environment scene.
-	var homes: Array[Dictionary] = [
-		{"x": -24.0, "z": -68.0, "color": "suburban_blue"},
-		{"x": 24.0, "z": -56.0, "color": "suburban_cream"},
-		{"x": -24.0, "z": -39.0, "color": "suburban_red"},
-		{"x": 24.0, "z": -26.0, "color": "suburban_blue"},
-		{"x": -24.0, "z": -9.0, "color": "suburban_cream"},
-		{"x": 24.0, "z": 6.0, "color": "suburban_red"},
-		{"x": -24.0, "z": 23.0, "color": "suburban_blue"},
-		{"x": 24.0, "z": 38.0, "color": "suburban_cream"},
-		{"x": -24.0, "z": 55.0, "color": "suburban_red"},
-		{"x": 24.0, "z": 69.0, "color": "suburban_blue"},
-	]
-	for index in range(homes.size()):
-		var home: Dictionary = homes[index]
-		_build_suburban_home(
-			Vector3(float(home["x"]), 0.0, float(home["z"])),
-			str(home["color"]),
-			index
-		)
+
+func _remove_legacy_city_highway_dressing() -> void:
+	var arena: Node = get_parent()
+	if arena == null:
+		return
+	var core_road: Node = arena.get_node_or_null("CoreRoad")
+	if core_road == null:
+		return
+	# CityBackdrop owns the black towers, water tower, and industrial side props.
+	# SetDressing owns the remaining old road-side visual package. Remove both
+	# only for City Highway; neither node participates in course gameplay.
+	for node_name in ["CityBackdrop", "SetDressing"]:
+		var legacy_dressing: Node3D = core_road.get_node_or_null(node_name) as Node3D
+		if legacy_dressing != null:
+			legacy_dressing.visible = false
+			legacy_dressing.queue_free()
 
 
 func _build_suburban_home(position: Vector3, wall_material: String, index: int) -> void:

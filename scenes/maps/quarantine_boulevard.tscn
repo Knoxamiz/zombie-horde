@@ -5,7 +5,7 @@
 [ext_resource type="Material" path="res://assets/materials/lobby_warning_red.tres" id="3_red"]
 [ext_resource type="Material" path="res://assets/materials/city_window_glow.tres" id="4_glow"]
 [ext_resource type="Material" path="res://assets/materials/lobby_hazard_yellow.tres" id="5_yellow"]
-[ext_resource type="Script" path="res://scripts/maps/map_art_dressing.gd" id="6_art"]
+[ext_resource type="Script" uid="uid://c1q5qivoq22wx" path="res://scripts/maps/map_art_dressing.gd" id="6_art"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_map_banner"]
 size = Vector3(7.8, 1.35, 0.16)
@@ -20,18 +20,8 @@ size = Vector3(0.24, 2.8, 0.24)
 
 [node name="CoreRoad" parent="." instance=ExtResource("1_core")]
 
-; City Highway is authored as a self-contained suburban course. The shared road
-; scene's city package is deliberately hidden here rather than edited globally,
-; because the other maps still use it as part of their own art direction.
-[node name="CityBackdrop" parent="CoreRoad"]
-visible = false
-
-[node name="SetDressing" parent="CoreRoad"]
-visible = false
-
 [node name="MapDressing" type="Node3D" parent="."]
 script = ExtResource("6_art")
-profile = 0
 
 [node name="VisualCollisionSanitizer" type="Node" parent="MapDressing"]
 script = ExtResource("2_sanitizer")
