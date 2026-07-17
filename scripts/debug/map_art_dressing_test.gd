@@ -11,7 +11,7 @@ var _map_cases: Array[Dictionary] = [
 			"SuburbanGround", "SuburbanSidewalk", "SuburbanHouseCottage",
 			"SuburbanHouseFamily", "SuburbanHouseTwoStory", "SuburbanHouseRanch",
 			"SuburbanDriveway", "FencePost", "Mailbox", "SuburbanTreeCanopy",
-			"PicketFenceSlat", "SuburbanGrassVerge", "SuburbanCurb", "SuburbanParkedCar",
+			"PicketFenceSlat", "BackyardPrivacyFence", "SuburbanGrassVerge", "SuburbanCurb", "SuburbanParkedCar",
 			"YardDog", "SuburbanWaterTower", "NeighborhoodEntrySign",
 		]),
 	},
@@ -69,7 +69,7 @@ func _validate_map_art(map_case: Dictionary) -> void:
 		if dressing.find_children("%s*" % node_prefix, "", true, false).is_empty():
 			_fail("%s did not build required art node '%s'" % [map_id, node_prefix])
 	if map_id == "quarantine_boulevard":
-		_validate_suburban_environment(arena)
+		_validate_suburban_environment(arena, definition)
 	_validate_visual_only(dressing, map_id)
 	arena.queue_free()
 	await process_frame
@@ -86,7 +86,7 @@ func _validate_visual_only(node: Node, map_id: String) -> void:
 		_validate_visual_only(child, map_id)
 
 
-func _validate_suburban_environment(arena: Node3D) -> void:
+func _validate_suburban_environment(arena: Node3D, definition: RaceMapDefinition) -> void:
 	for node_path in ["CoreRoad/CityBackdrop", "CoreRoad/SetDressing"]:
 		var old_dressing: Node3D = arena.get_node_or_null(node_path) as Node3D
 		if old_dressing != null:
@@ -102,6 +102,8 @@ func _validate_suburban_environment(arena: Node3D) -> void:
 		var rail_collision: CollisionShape3D = arena.get_node_or_null(collision_path) as CollisionShape3D
 		if rail_collision == null or not rail_collision.disabled:
 			_fail("quarantine_boulevard must disable legacy side rail '%s'" % collision_path)
+	if definition.out_of_bounds_half_width < 33.6:
+		_fail("quarantine_boulevard OOB boundary must sit outside its backyard privacy fence")
 
 
 func _fail(message: String) -> void:
