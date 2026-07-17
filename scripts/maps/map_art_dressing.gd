@@ -66,13 +66,14 @@ func _build_profile() -> void:
 
 
 func _build_suburban_outbreak() -> void:
-	# A complete, visual-only neighborhood. The road, its collision, hazards,
-	# navigation, and all gameplay stay untouched.
+	# A complete neighborhood. The race road, hazards, navigation, and finish
+	# remain authoritative; City Highway deliberately leaves its suburban edge
+	# open so runners can spill into the fenced yards.
 	_add_box("SuburbanGround", Vector3(112.0, 0.12, 184.0), Vector3(0.0, -0.26, 0.0), 0.0, "suburban_ground")
 	for side in [-1.0, 1.0]:
-		_add_box("SuburbanFrontageStreet", Vector3(13.2, 0.1, 180.0), Vector3(side * 15.5, -0.17, 0.0), 0.0, "asphalt")
-		_add_box("SuburbanFrontageLine", Vector3(0.16, 0.04, 176.0), Vector3(side * 18.8, -0.08, 0.0), 0.0, "road_marking")
-		_add_box("SuburbanSidewalk", Vector3(2.4, 0.1, 176.0), Vector3(side * 23.0, -0.16, 0.0), 0.0, "sidewalk")
+		# The sidewalk starts at the 16 m race road edge and runs uninterrupted
+		# to the curb, so it reads as one suburban street rather than a parallel road.
+		_add_box("SuburbanSidewalk", Vector3(16.3, 0.1, 176.0), Vector3(side * 16.15, -0.16, 0.0), 0.0, "sidewalk")
 		_add_box("SuburbanCurb", Vector3(0.3, 0.22, 176.0), Vector3(side * 24.3, 0.0, 0.0), 0.0, "curb")
 		_build_suburban_street_lamps(side)
 
@@ -114,12 +115,16 @@ func _remove_legacy_city_highway_dressing() -> void:
 		if legacy_dressing != null:
 			legacy_dressing.visible = false
 			legacy_dressing.queue_free()
-	# The visible rails made City Highway read like a closed arena. Keep their
-	# collision bodies active for the current route, but remove only the meshes.
+	# City Highway is an open neighborhood map. Remove the legacy course rails
+	# completely: yards and their picket fences provide the readable edge instead.
 	for mesh_path in ["LeftRail/LeftRailMesh", "RightRail/RightRailMesh"]:
 		var rail_mesh: MeshInstance3D = core_road.get_node_or_null(mesh_path) as MeshInstance3D
 		if rail_mesh != null:
 			rail_mesh.visible = false
+	for collision_path in ["LeftRail/LeftRailCollision", "RightRail/RightRailCollision"]:
+		var rail_collision: CollisionShape3D = core_road.get_node_or_null(collision_path) as CollisionShape3D
+		if rail_collision != null:
+			rail_collision.disabled = true
 
 
 func _build_suburban_lot(position: Vector3, style: String, wall_material: String, index: int) -> void:
