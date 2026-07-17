@@ -20,6 +20,15 @@ size = Vector3(0.24, 2.8, 0.24)
 
 [node name="CoreRoad" parent="." instance=ExtResource("1_core")]
 
+; City Highway is authored as a self-contained suburban course. The shared road
+; scene's city package is deliberately hidden here rather than edited globally,
+; because the other maps still use it as part of their own art direction.
+[node name="CityBackdrop" parent="CoreRoad"]
+visible = false
+
+[node name="SetDressing" parent="CoreRoad"]
+visible = false
+
 [node name="MapDressing" type="Node3D" parent="."]
 script = ExtResource("6_art")
 profile = 0

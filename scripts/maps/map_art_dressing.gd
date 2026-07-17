@@ -49,38 +49,58 @@ func _build_profile() -> void:
 
 
 func _build_suburban_outbreak() -> void:
-	# Houses and yards sit beyond the race curb: recognizable suburb, zero gameplay cost.
+	# This replaces the inherited downtown backdrop on City Highway. Every piece
+	# sits beyond the course rail and has no physics, navigation, or shadows.
+	_add_box("SuburbanGround", Vector3(88.0, 0.12, 184.0), Vector3(0.0, -0.26, 0.0), 0.0, "suburban_ground")
+	for side in [-1.0, 1.0]:
+		_add_box("SuburbanSidewalk", Vector3(2.2, 0.1, 176.0), Vector3(side * 12.1, -0.16, 0.0), 0.0, "sidewalk")
+		_add_box("SuburbanCurb", Vector3(0.3, 0.22, 176.0), Vector3(side * 10.9, 0.0, 0.0), 0.0, "curb")
+		_build_suburban_street_lamps(side)
+
+	# Alternating house shapes and colors make a readable neighborhood at a
+	# streamer-camera distance without loading a large environment scene.
 	var homes: Array[Dictionary] = [
-		{"x": -18.0, "z": -57.0, "color": "suburban_blue", "yaw": 0.0},
-		{"x": 18.0, "z": -46.0, "color": "suburban_cream", "yaw": PI},
-		{"x": -18.0, "z": -20.0, "color": "suburban_cream", "yaw": 0.0},
-		{"x": 18.0, "z": -7.0, "color": "suburban_blue", "yaw": PI},
-		{"x": -18.0, "z": 19.0, "color": "suburban_red", "yaw": 0.0},
-		{"x": 18.0, "z": 34.0, "color": "suburban_cream", "yaw": PI},
-		{"x": -18.0, "z": 61.0, "color": "suburban_blue", "yaw": 0.0},
-		{"x": 18.0, "z": 72.0, "color": "suburban_red", "yaw": PI},
+		{"x": -24.0, "z": -68.0, "color": "suburban_blue"},
+		{"x": 24.0, "z": -56.0, "color": "suburban_cream"},
+		{"x": -24.0, "z": -39.0, "color": "suburban_red"},
+		{"x": 24.0, "z": -26.0, "color": "suburban_blue"},
+		{"x": -24.0, "z": -9.0, "color": "suburban_cream"},
+		{"x": 24.0, "z": 6.0, "color": "suburban_red"},
+		{"x": -24.0, "z": 23.0, "color": "suburban_blue"},
+		{"x": 24.0, "z": 38.0, "color": "suburban_cream"},
+		{"x": -24.0, "z": 55.0, "color": "suburban_red"},
+		{"x": 24.0, "z": 69.0, "color": "suburban_blue"},
 	]
 	for index in range(homes.size()):
 		var home: Dictionary = homes[index]
 		_build_suburban_home(
 			Vector3(float(home["x"]), 0.0, float(home["z"])),
-			float(home["yaw"]),
 			str(home["color"]),
 			index
 		)
 
 
-func _build_suburban_home(position: Vector3, yaw: float, wall_material: String, index: int) -> void:
+func _build_suburban_home(position: Vector3, wall_material: String, index: int) -> void:
 	var outward_sign: float = sign(position.x)
-	_add_box("SuburbanLawn", Vector3(15.5, 0.14, 17.0), position + Vector3(outward_sign * 1.8, -0.24, 0.0), 0.0, "lawn")
-	_add_box("SuburbanHouse", Vector3(8.2, 5.8, 7.0), position + Vector3(outward_sign * 3.8, 2.65, 1.2), yaw, wall_material)
-	_add_box("SuburbanRoof", Vector3(9.0, 1.15, 7.9), position + Vector3(outward_sign * 3.8, 6.1, 1.2), yaw, "roof")
-	_add_box("SuburbanPorch", Vector3(2.3, 0.4, 2.1), position + Vector3(outward_sign * 0.15, 0.18, -1.4), yaw, "concrete")
-	_add_box("SuburbanDoor", Vector3(1.15, 2.0, 0.16), position + Vector3(outward_sign * 0.2, 1.2, -1.4), yaw, "door")
-	_build_fence_line(position + Vector3(outward_sign * 0.9, 0.38, -6.2), 10.0, yaw)
-	_build_mailbox(position + Vector3(outward_sign * 0.1, 0.0, -4.5), yaw)
-	if index in [1, 3, 6]:
-		_add_dog(position + Vector3(outward_sign * 2.0, 0.0, 3.4), yaw + 0.5, index % 2 == 0)
+	var house_position := position + Vector3(outward_sign * 3.8, 0.0, 1.0)
+	var front_position := house_position - Vector3(outward_sign * 4.18, 0.0, 0.0)
+	_add_box("SuburbanLawn", Vector3(19.0, 0.14, 19.0), position, 0.0, "lawn")
+	_add_box("SuburbanHouse", Vector3(8.2, 5.8, 7.4), house_position + Vector3.UP * 2.72, 0.0, wall_material)
+	_add_box("SuburbanRoof", Vector3(9.1, 1.1, 8.3), house_position + Vector3.UP * 6.14, 0.0, "roof")
+	_add_box("SuburbanGarage", Vector3(3.5, 3.3, 4.2), house_position + Vector3(0.0, 1.57, -5.2), 0.0, wall_material)
+	_add_box("SuburbanGarageRoof", Vector3(4.0, 0.7, 4.7), house_position + Vector3(0.0, 3.55, -5.2), 0.0, "roof")
+	_add_box("SuburbanDriveway", Vector3(13.5, 0.1, 4.6), Vector3(outward_sign * 17.5, -0.14, position.z - 4.2), 0.0, "driveway")
+	_add_box("SuburbanPorch", Vector3(1.7, 0.32, 2.2), front_position + Vector3(0.0, 0.16, 1.6), 0.0, "concrete")
+	_add_box("SuburbanDoor", Vector3(0.16, 2.05, 1.2), front_position + Vector3(0.0, 1.23, 1.6), 0.0, "door")
+	for window_z in [-1.35, 3.05]:
+		_add_box("SuburbanWindow", Vector3(0.12, 1.15, 1.35), front_position + Vector3(0.0, 3.35, window_z), 0.0, "window")
+	_add_box("SuburbanChimney", Vector3(0.72, 2.2, 0.72), house_position + Vector3(outward_sign * 2.5, 7.1, -1.8), 0.0, "brick")
+	_build_fence_line(Vector3(outward_sign * 14.2, 0.0, position.z), 18.0, PI * 0.5)
+	_build_mailbox(Vector3(outward_sign * 11.8, 0.0, position.z - 5.4), 0.0)
+	_build_tree(position + Vector3(outward_sign * 6.7, 0.0, 5.4), index)
+	_build_hedge(position + Vector3(outward_sign * 8.0, 0.0, -6.5), outward_sign)
+	if index in [1, 4, 7]:
+		_add_dog(position + Vector3(outward_sign * 5.6, 0.0, 4.1), -outward_sign * 0.4, index % 2 == 0)
 
 
 func _build_fence_line(position: Vector3, width: float, yaw: float) -> void:
@@ -95,6 +115,26 @@ func _build_fence_line(position: Vector3, width: float, yaw: float) -> void:
 func _build_mailbox(position: Vector3, yaw: float) -> void:
 	_add_box("MailboxPost", Vector3(0.12, 0.95, 0.12), position + Vector3(0.0, 0.45, 0.0), yaw, "mailbox")
 	_add_box("Mailbox", Vector3(0.58, 0.36, 0.44), position + Vector3(0.0, 0.93, 0.0), yaw, "mailbox")
+
+
+func _build_tree(position: Vector3, index: int) -> void:
+	_add_cylinder("SuburbanTreeTrunk", 0.32, 3.6, position + Vector3.UP * 1.8, "tree_trunk")
+	var canopy_material: String = "tree_light" if index % 2 == 0 else "tree_dark"
+	_add_sphere("SuburbanTreeCanopy", 2.1, position + Vector3.UP * 4.0, canopy_material)
+	_add_sphere("SuburbanTreeCanopy", 1.55, position + Vector3(1.15, 4.75, 0.35), canopy_material)
+
+
+func _build_hedge(position: Vector3, side: float) -> void:
+	_add_box("SuburbanHedge", Vector3(3.8, 1.05, 0.72), position + Vector3(0.0, 0.5, 0.0), 0.0, "hedge")
+	_add_box("SuburbanHedge", Vector3(0.72, 1.05, 4.0), position + Vector3(side * 1.55, 0.5, 1.65), 0.0, "hedge")
+
+
+func _build_suburban_street_lamps(side: float) -> void:
+	for z in [-63.0, -19.0, 25.0, 67.0]:
+		var position := Vector3(side * 11.2, 0.0, z)
+		_add_box("SuburbanStreetLampPost", Vector3(0.16, 5.4, 0.16), position + Vector3.UP * 2.7, 0.0, "street_lamp")
+		_add_box("SuburbanStreetLampArm", Vector3(1.25, 0.12, 0.12), position + Vector3(-side * 0.58, 5.1, 0.0), 0.0, "street_lamp")
+		_add_box("SuburbanStreetLampHead", Vector3(0.48, 0.2, 0.34), position + Vector3(-side * 1.14, 5.0, 0.0), 0.0, "lamp_glow")
 
 
 func _build_coastal_evacuation() -> void:
@@ -249,7 +289,7 @@ static func _get_material(key: String) -> StandardMaterial3D:
 	material.albedo_color = _get_material_color(key)
 	material.roughness = 0.78
 	material.metallic = 0.0
-	if key in ["water", "window", "construction_yellow"]:
+	if key in ["water", "window", "lamp_glow", "construction_yellow"]:
 		material.emission_enabled = key != "water"
 		material.emission = material.albedo_color
 		material.emission_energy_multiplier = 0.28 if key == "construction_yellow" else 0.5
@@ -263,13 +303,25 @@ static func _get_material(key: String) -> StandardMaterial3D:
 static func _get_material_color(key: String) -> Color:
 	match key:
 		"lawn": return Color("477a38")
+		"suburban_ground": return Color("5f7d46")
+		"sidewalk": return Color("b8b4aa")
+		"curb": return Color("8f948c")
 		"suburban_blue": return Color("6b91a6")
 		"suburban_cream": return Color("c6b78b")
 		"suburban_red": return Color("9b5a4c")
 		"roof": return Color("3e4048")
 		"door": return Color("3a2820")
+		"window": return Color("a4d7e7")
+		"brick": return Color("8b483b")
 		"fence": return Color("ddd1b1")
 		"mailbox": return Color("334a61")
+		"driveway": return Color("6d6e6c")
+		"hedge": return Color("35613a")
+		"tree_trunk": return Color("69472d")
+		"tree_light": return Color("4c813c")
+		"tree_dark": return Color("2d5d38")
+		"street_lamp": return Color("3f4749")
+		"lamp_glow": return Color("ffe5a3")
 		"water": return Color("1b5279")
 		"boat": return Color("d9d5c9")
 		"boat_cabin": return Color("c45442")

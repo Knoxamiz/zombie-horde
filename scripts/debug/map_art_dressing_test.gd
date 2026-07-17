@@ -7,7 +7,7 @@ extends SceneTree
 var _map_cases: Array[Dictionary] = [
 	{
 		"id": "quarantine_boulevard",
-		"nodes": PackedStringArray(["SuburbanHouse", "FencePost", "YardDog"]),
+		"nodes": PackedStringArray(["SuburbanGround", "SuburbanHouse", "SuburbanGarage", "SuburbanTreeCanopy", "FencePost", "YardDog"]),
 	},
 	{
 		"id": "broken_bridge_pass",
@@ -62,6 +62,8 @@ func _validate_map_art(map_case: Dictionary) -> void:
 	for node_prefix in map_case["nodes"] as PackedStringArray:
 		if dressing.find_children("%s*" % node_prefix, "", true, false).is_empty():
 			_fail("%s did not build required art node '%s'" % [map_id, node_prefix])
+	if map_id == "quarantine_boulevard":
+		_validate_suburban_environment(arena)
 	_validate_visual_only(dressing, map_id)
 	arena.queue_free()
 	await process_frame
@@ -76,6 +78,15 @@ func _validate_visual_only(node: Node, map_id: String) -> void:
 		_fail("%s art node '%s' owns an enabled collision shape" % [map_id, node.name])
 	for child in node.get_children():
 		_validate_visual_only(child, map_id)
+
+
+func _validate_suburban_environment(arena: Node3D) -> void:
+	for node_path in ["CoreRoad/CityBackdrop", "CoreRoad/SetDressing"]:
+		var old_dressing: Node3D = arena.get_node_or_null(node_path) as Node3D
+		if old_dressing == null:
+			_fail("quarantine_boulevard is missing inherited node '%s'" % node_path)
+		elif old_dressing.visible:
+			_fail("quarantine_boulevard must hide old city dressing '%s'" % node_path)
 
 
 func _fail(message: String) -> void:
