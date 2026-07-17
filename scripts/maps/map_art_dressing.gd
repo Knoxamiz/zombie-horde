@@ -34,6 +34,9 @@ const PICKUP_SCENE := preload(
 const SPORTS_CAR_SCENE := preload(
 	"res://assets/third_party/zombie_apocalypse_kit/imported/Vehicles/Vehicle_Sports.gltf"
 )
+const WATER_TOWER_SCENE := preload(
+	"res://assets/third_party/zombie_apocalypse_kit/imported/Environment/WaterTower.gltf"
+)
 
 @export var profile: Profile = Profile.SUBURBAN_OUTBREAK
 
@@ -65,23 +68,25 @@ func _build_profile() -> void:
 func _build_suburban_outbreak() -> void:
 	# A complete, visual-only neighborhood. The road, its collision, hazards,
 	# navigation, and all gameplay stay untouched.
-	_add_box("SuburbanGround", Vector3(88.0, 0.12, 184.0), Vector3(0.0, -0.26, 0.0), 0.0, "suburban_ground")
+	_add_box("SuburbanGround", Vector3(112.0, 0.12, 184.0), Vector3(0.0, -0.26, 0.0), 0.0, "suburban_ground")
 	for side in [-1.0, 1.0]:
-		_add_box("SuburbanSidewalk", Vector3(2.2, 0.1, 176.0), Vector3(side * 12.1, -0.16, 0.0), 0.0, "sidewalk")
-		_add_box("SuburbanCurb", Vector3(0.3, 0.22, 176.0), Vector3(side * 10.9, 0.0, 0.0), 0.0, "curb")
+		_add_box("SuburbanFrontageStreet", Vector3(13.2, 0.1, 180.0), Vector3(side * 15.5, -0.17, 0.0), 0.0, "asphalt")
+		_add_box("SuburbanFrontageLine", Vector3(0.16, 0.04, 176.0), Vector3(side * 18.8, -0.08, 0.0), 0.0, "road_marking")
+		_add_box("SuburbanSidewalk", Vector3(2.4, 0.1, 176.0), Vector3(side * 23.0, -0.16, 0.0), 0.0, "sidewalk")
+		_add_box("SuburbanCurb", Vector3(0.3, 0.22, 176.0), Vector3(side * 24.3, 0.0, 0.0), 0.0, "curb")
 		_build_suburban_street_lamps(side)
 
 	var homes: Array[Dictionary] = [
-		{"x": -25.0, "z": -68.0, "style": "cottage", "color": "suburban_blue"},
-		{"x": 25.0, "z": -56.0, "style": "family", "color": "suburban_cream"},
-		{"x": -25.0, "z": -39.0, "style": "two_story", "color": "suburban_red"},
-		{"x": 25.0, "z": -26.0, "style": "ranch", "color": "suburban_green"},
-		{"x": -25.0, "z": -9.0, "style": "family", "color": "suburban_cream"},
-		{"x": 25.0, "z": 6.0, "style": "cottage", "color": "suburban_blue"},
-		{"x": -25.0, "z": 23.0, "style": "ranch", "color": "suburban_red"},
-		{"x": 25.0, "z": 38.0, "style": "two_story", "color": "suburban_cream"},
-		{"x": -25.0, "z": 55.0, "style": "cottage", "color": "suburban_green"},
-		{"x": 25.0, "z": 69.0, "style": "family", "color": "suburban_blue"},
+		{"x": -35.0, "z": -68.0, "style": "cottage", "color": "suburban_blue"},
+		{"x": 35.0, "z": -56.0, "style": "family", "color": "suburban_cream"},
+		{"x": -35.0, "z": -39.0, "style": "two_story", "color": "suburban_red"},
+		{"x": 35.0, "z": -26.0, "style": "ranch", "color": "suburban_green"},
+		{"x": -35.0, "z": -9.0, "style": "family", "color": "suburban_cream"},
+		{"x": 35.0, "z": 6.0, "style": "cottage", "color": "suburban_blue"},
+		{"x": -35.0, "z": 23.0, "style": "ranch", "color": "suburban_red"},
+		{"x": 35.0, "z": 38.0, "style": "two_story", "color": "suburban_cream"},
+		{"x": -35.0, "z": 55.0, "style": "cottage", "color": "suburban_green"},
+		{"x": 35.0, "z": 69.0, "style": "family", "color": "suburban_blue"},
 	]
 	for index in range(homes.size()):
 		var home: Dictionary = homes[index]
@@ -109,23 +114,29 @@ func _remove_legacy_city_highway_dressing() -> void:
 		if legacy_dressing != null:
 			legacy_dressing.visible = false
 			legacy_dressing.queue_free()
+	# The visible rails made City Highway read like a closed arena. Keep their
+	# collision bodies active for the current route, but remove only the meshes.
+	for mesh_path in ["LeftRail/LeftRailMesh", "RightRail/RightRailMesh"]:
+		var rail_mesh: MeshInstance3D = core_road.get_node_or_null(mesh_path) as MeshInstance3D
+		if rail_mesh != null:
+			rail_mesh.visible = false
 
 
 func _build_suburban_lot(position: Vector3, style: String, wall_material: String, index: int) -> void:
 	var outward_sign: float = sign(position.x)
 	var house_position := position + Vector3(outward_sign * 3.6, 0.0, 1.2)
 	_add_box("SuburbanLot", Vector3(19.2, 0.14, 19.0), position, 0.0, "lawn")
-	_add_box("SuburbanDriveway", Vector3(13.2, 0.1, 4.4), Vector3(outward_sign * 17.5, -0.14, position.z - 4.35), 0.0, "driveway")
+	_add_box("SuburbanDriveway", Vector3(18.2, 0.1, 4.4), Vector3(outward_sign * 29.1, -0.14, position.z - 4.35), 0.0, "driveway")
 	_build_suburban_house(house_position, outward_sign, style, wall_material)
-	_build_fence_line(Vector3(outward_sign * 14.1, 0.0, position.z), 18.0, PI * 0.5)
-	_build_mailbox(Vector3(outward_sign * 11.75, 0.0, position.z - 5.5), 0.0)
+	_build_fence_line(Vector3(outward_sign * 25.0, 0.0, position.z), 18.0, PI * 0.5)
+	_build_mailbox(Vector3(outward_sign * 24.8, 0.0, position.z - 5.5), 0.0)
 	_build_tree(position + Vector3(outward_sign * 6.7, 0.0, 5.3), index)
 	_build_hedge(position + Vector3(outward_sign * 8.0, 0.0, -6.6), outward_sign)
 	_build_yard_detail(position, outward_sign, index)
 	if index in [1, 4, 7]:
 		_add_dog(position + Vector3(outward_sign * 5.5, 0.0, 4.1), -outward_sign * 0.4, index % 2 == 0)
 	if index in [1, 3, 6, 9]:
-		_add_suburban_vehicle(Vector3(outward_sign * 20.2, 0.0, position.z - 4.2), outward_sign, index)
+		_add_suburban_vehicle(Vector3(outward_sign * 31.0, 0.0, position.z - 4.2), outward_sign, index)
 
 
 func _build_suburban_house(position: Vector3, outward_sign: float, style: String, wall_material: String) -> void:
@@ -189,16 +200,21 @@ func _build_neighborhood_endcaps() -> void:
 		var sign_position := Vector3(side * 17.0, 0.0, 86.0)
 		_add_box("NeighborhoodEntryPost", Vector3(0.22, 2.4, 0.22), sign_position + Vector3.UP * 1.2, 0.0, "fence")
 		_add_box("NeighborhoodEntrySign", Vector3(4.3, 0.95, 0.16), sign_position + Vector3(0.0, 2.0, 0.0), 0.0, "neighborhood_sign")
-		_build_tree(Vector3(side * 31.0, 0.0, 80.0), int(side + 1.0))
+		_build_tree(Vector3(side * 45.0, 0.0, 80.0), int(side + 1.0))
+	_add_scene_prop("SuburbanWaterTower", WATER_TOWER_SCENE, Vector3(-48.0, 0.0, -73.0), 12.0, 1.45)
 
 
 func _build_fence_line(position: Vector3, width: float, yaw: float) -> void:
-	for post_index in range(5):
-		var offset: float = -width * 0.5 + float(post_index) * width * 0.25
+	for post_index in range(6):
+		var offset: float = -width * 0.5 + float(post_index) * width * 0.2
 		var local_offset := Vector3(offset, 0.0, 0.0).rotated(Vector3.UP, yaw)
-		_add_box("FencePost", Vector3(0.16, 1.15, 0.16), position + local_offset, yaw, "fence")
+		_add_box("FencePost", Vector3(0.18, 1.3, 0.18), position + local_offset + Vector3.UP * 0.58, yaw, "picket_wood")
 	for rail_y in [0.38, 0.78]:
-		_add_box("FenceRail", Vector3(width, 0.1, 0.1), position + Vector3(0.0, rail_y, 0.0), yaw, "fence")
+		_add_box("PicketFenceRail", Vector3(width, 0.1, 0.12), position + Vector3(0.0, rail_y, 0.0), yaw, "picket_wood")
+	for picket_index in range(19):
+		var picket_offset: float = -width * 0.5 + 0.45 + float(picket_index) * 0.95
+		var local_picket_offset := Vector3(picket_offset, 0.0, 0.0).rotated(Vector3.UP, yaw)
+		_add_box("PicketFenceSlat", Vector3(0.1, 1.05, 0.2), position + local_picket_offset + Vector3.UP * 0.56, yaw, "picket_wood")
 
 
 func _build_mailbox(position: Vector3, yaw: float) -> void:
@@ -220,7 +236,7 @@ func _build_hedge(position: Vector3, side: float) -> void:
 
 func _build_suburban_street_lamps(side: float) -> void:
 	for z in [-63.0, -19.0, 25.0, 67.0]:
-		var position := Vector3(side * 11.2, 0.0, z)
+		var position := Vector3(side * 24.5, 0.0, z)
 		_add_box("SuburbanStreetLampPost", Vector3(0.16, 5.4, 0.16), position + Vector3.UP * 2.7, 0.0, "street_lamp")
 		_add_box("SuburbanStreetLampArm", Vector3(1.25, 0.12, 0.12), position + Vector3(-side * 0.58, 5.1, 0.0), 0.0, "street_lamp")
 		_add_box("SuburbanStreetLampHead", Vector3(0.48, 0.2, 0.34), position + Vector3(-side * 1.14, 5.0, 0.0), 0.0, "lamp_glow")
@@ -415,8 +431,10 @@ static func _get_material_color(key: String) -> Color:
 		"window": return Color("a4d7e7")
 		"brick": return Color("8b483b")
 		"fence": return Color("ddd1b1")
+		"picket_wood": return Color("e6d3ad")
 		"mailbox": return Color("334a61")
 		"driveway": return Color("6d6e6c")
+		"road_marking": return Color("e5dca9")
 		"garage_door": return Color("b9bfc0")
 		"planter": return Color("ae7259")
 		"flower": return Color("d56d88")

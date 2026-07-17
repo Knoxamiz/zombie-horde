@@ -11,7 +11,8 @@ var _map_cases: Array[Dictionary] = [
 			"SuburbanGround", "SuburbanSidewalk", "SuburbanHouseCottage",
 			"SuburbanHouseFamily", "SuburbanHouseTwoStory", "SuburbanHouseRanch",
 			"SuburbanDriveway", "FencePost", "Mailbox", "SuburbanTreeCanopy",
-			"SuburbanParkedCar", "YardDog", "NeighborhoodEntrySign",
+			"PicketFenceSlat", "SuburbanFrontageStreet", "SuburbanParkedCar",
+			"YardDog", "SuburbanWaterTower", "NeighborhoodEntrySign",
 		]),
 	},
 	{
@@ -93,6 +94,14 @@ func _validate_suburban_environment(arena: Node3D) -> void:
 	var dressing: Node3D = arena.get_node_or_null("MapDressing") as Node3D
 	if dressing == null:
 		return
+	for rail_path in ["CoreRoad/LeftRail/LeftRailMesh", "CoreRoad/RightRail/RightRailMesh"]:
+		var rail_mesh: MeshInstance3D = arena.get_node_or_null(rail_path) as MeshInstance3D
+		if rail_mesh == null or rail_mesh.visible:
+			_fail("quarantine_boulevard must hide visible side rail '%s'" % rail_path)
+	for collision_path in ["CoreRoad/LeftRail/LeftRailCollision", "CoreRoad/RightRail/RightRailCollision"]:
+		var rail_collision: CollisionShape3D = arena.get_node_or_null(collision_path) as CollisionShape3D
+		if rail_collision == null or rail_collision.disabled:
+			_fail("quarantine_boulevard must retain route collision '%s'" % collision_path)
 
 
 func _fail(message: String) -> void:
