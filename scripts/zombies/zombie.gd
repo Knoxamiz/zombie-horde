@@ -276,6 +276,7 @@ func _physics_process(delta: float) -> void:
 		vertical_velocity,
 		move_toward(velocity.z, steering_velocity.z, active_config.acceleration * delta)
 	)
+	_update_visual_facing(delta)
 	_move_and_slide_with_audit()
 	_check_out_of_bounds(active_config)
 
@@ -375,6 +376,20 @@ func _get_course_follow_target(active_config: ZombieConfig) -> Vector3:
 		var lookahead_distance: float = maxf(_get_current_speed(active_config) * 0.6, 3.0)
 		return _race_route.get_target_point(lookahead_distance)
 	return _get_route_target_point()
+
+
+func _update_visual_facing(delta: float) -> void:
+	if _visual_root == null:
+		return
+	var horizontal_velocity := Vector3(velocity.x, 0.0, velocity.z)
+	if horizontal_velocity.length_squared() < 0.0025:
+		return
+
+	# Imported zombie models face local -Z. Rotate only their visual root so
+	# CharacterBody3D collision and all race-coordinate gameplay remain stable.
+	var desired_yaw: float = atan2(-horizontal_velocity.x, -horizontal_velocity.z)
+	var turn_weight: float = minf(delta * 12.0, 1.0)
+	_visual_root.rotation.y = lerp_angle(_visual_root.rotation.y, desired_yaw, turn_weight)
 
 
 func _submit_navigation_velocity(desired_velocity: Vector3) -> void:
