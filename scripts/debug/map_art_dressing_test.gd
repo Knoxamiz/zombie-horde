@@ -11,7 +11,7 @@ var _map_cases: Array[Dictionary] = [
 			"SuburbanGround", "SuburbanSidewalk", "SuburbanHouseCottage",
 			"SuburbanHouseFamily", "SuburbanHouseTwoStory", "SuburbanHouseRanch",
 			"SuburbanDriveway", "FencePost", "Mailbox", "SuburbanTreeCanopy",
-			"PicketFenceSlat", "SuburbanCurb", "SuburbanParkedCar",
+			"PicketFenceSlat", "SuburbanStreetExtension", "SuburbanGrassVerge", "SuburbanCurb", "SuburbanParkedCar",
 			"YardDog", "SuburbanWaterTower", "NeighborhoodEntrySign",
 		]),
 	},

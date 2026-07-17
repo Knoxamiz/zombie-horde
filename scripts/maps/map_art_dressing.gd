@@ -71,10 +71,12 @@ func _build_suburban_outbreak() -> void:
 	# open so runners can spill into the fenced yards.
 	_add_box("SuburbanGround", Vector3(112.0, 0.12, 184.0), Vector3(0.0, -0.26, 0.0), 0.0, "suburban_ground")
 	for side in [-1.0, 1.0]:
-		# The sidewalk starts at the 16 m race road edge and runs uninterrupted
-		# to the curb, so it reads as one suburban street rather than a parallel road.
-		_add_box("SuburbanSidewalk", Vector3(16.3, 0.1, 176.0), Vector3(side * 16.15, -0.16, 0.0), 0.0, "sidewalk")
-		_add_box("SuburbanCurb", Vector3(0.3, 0.22, 176.0), Vector3(side * 24.3, 0.0, 0.0), 0.0, "curb")
+		# Neighborhood cross-section, from the race lane outward:
+		# street, raised curb, narrow grass verge, raised sidewalk, fenced yard.
+		_add_box("SuburbanStreetExtension", Vector3(13.0, 0.12, 176.0), Vector3(side * 14.5, 0.0, 0.0), 0.0, "asphalt")
+		_add_box("SuburbanCurb", Vector3(0.28, 0.18, 176.0), Vector3(side * 21.14, 0.12, 0.0), 0.0, "curb")
+		_add_box("SuburbanGrassVerge", Vector3(2.0, 0.12, 176.0), Vector3(side * 22.28, -0.14, 0.0), 0.0, "lawn")
+		_add_box("SuburbanSidewalk", Vector3(3.2, 0.12, 176.0), Vector3(side * 24.88, 0.15, 0.0), 0.0, "sidewalk")
 		_build_suburban_street_lamps(side)
 
 	var homes: Array[Dictionary] = [
@@ -131,17 +133,17 @@ func _build_suburban_lot(position: Vector3, style: String, wall_material: String
 	var outward_sign: float = sign(position.x)
 	var house_position := position + Vector3(outward_sign * 3.6, 0.0, 1.2)
 	_add_box("SuburbanLot", Vector3(19.2, 0.14, 19.0), position, 0.0, "lawn")
-	_add_box("SuburbanDriveway", Vector3(18.2, 0.1, 4.4), Vector3(outward_sign * 29.1, -0.14, position.z - 4.35), 0.0, "driveway")
+	_add_box("SuburbanDriveway", Vector3(21.5, 0.1, 4.4), Vector3(outward_sign * 32.0, 0.215, position.z - 4.35), 0.0, "driveway")
 	_build_suburban_house(house_position, outward_sign, style, wall_material)
-	_build_fence_line(Vector3(outward_sign * 25.0, 0.0, position.z), 18.0, PI * 0.5)
-	_build_mailbox(Vector3(outward_sign * 24.8, 0.0, position.z - 5.5), 0.0)
+	_build_fence_line(Vector3(outward_sign * 26.9, 0.0, position.z), 18.0, PI * 0.5, position.z - 4.35)
+	_build_mailbox(Vector3(outward_sign * 26.45, 0.0, position.z - 7.1), 0.0)
 	_build_tree(position + Vector3(outward_sign * 6.7, 0.0, 5.3), index)
 	_build_hedge(position + Vector3(outward_sign * 8.0, 0.0, -6.6), outward_sign)
 	_build_yard_detail(position, outward_sign, index)
 	if index in [1, 4, 7]:
 		_add_dog(position + Vector3(outward_sign * 5.5, 0.0, 4.1), -outward_sign * 0.4, index % 2 == 0)
 	if index in [1, 3, 6, 9]:
-		_add_suburban_vehicle(Vector3(outward_sign * 31.0, 0.0, position.z - 4.2), outward_sign, index)
+		_add_suburban_vehicle(Vector3(outward_sign * 35.5, 0.0, position.z - 4.2), outward_sign, index)
 
 
 func _build_suburban_house(position: Vector3, outward_sign: float, style: String, wall_material: String) -> void:
@@ -209,15 +211,21 @@ func _build_neighborhood_endcaps() -> void:
 	_add_scene_prop("SuburbanWaterTower", WATER_TOWER_SCENE, Vector3(-48.0, 0.0, -73.0), 12.0, 1.45)
 
 
-func _build_fence_line(position: Vector3, width: float, yaw: float) -> void:
+func _build_fence_line(position: Vector3, width: float, yaw: float, gate_z: float) -> void:
+	# With a 90 degree fence rotation, local +X maps to world -Z.
+	var gate_local := position.z - gate_z
+	var gate_half_width := 2.5
 	for post_index in range(6):
 		var offset: float = -width * 0.5 + float(post_index) * width * 0.2
 		var local_offset := Vector3(offset, 0.0, 0.0).rotated(Vector3.UP, yaw)
 		_add_box("FencePost", Vector3(0.18, 1.3, 0.18), position + local_offset + Vector3.UP * 0.58, yaw, "picket_wood")
 	for rail_y in [0.38, 0.78]:
-		_add_box("PicketFenceRail", Vector3(width, 0.1, 0.12), position + Vector3(0.0, rail_y, 0.0), yaw, "picket_wood")
+		_add_box("PicketFenceRail", Vector3(gate_local - gate_half_width + width * 0.5, 0.1, 0.12), position + Vector3((gate_local - gate_half_width - width * 0.5) * 0.5, rail_y, 0.0).rotated(Vector3.UP, yaw), yaw, "picket_wood")
+		_add_box("PicketFenceRail", Vector3(width * 0.5 - gate_local - gate_half_width, 0.1, 0.12), position + Vector3((gate_local + gate_half_width + width * 0.5) * 0.5, rail_y, 0.0).rotated(Vector3.UP, yaw), yaw, "picket_wood")
 	for picket_index in range(19):
 		var picket_offset: float = -width * 0.5 + 0.45 + float(picket_index) * 0.95
+		if absf(picket_offset - gate_local) < gate_half_width:
+			continue
 		var local_picket_offset := Vector3(picket_offset, 0.0, 0.0).rotated(Vector3.UP, yaw)
 		_add_box("PicketFenceSlat", Vector3(0.1, 1.05, 0.2), position + local_picket_offset + Vector3.UP * 0.56, yaw, "picket_wood")
 
@@ -241,7 +249,7 @@ func _build_hedge(position: Vector3, side: float) -> void:
 
 func _build_suburban_street_lamps(side: float) -> void:
 	for z in [-63.0, -19.0, 25.0, 67.0]:
-		var position := Vector3(side * 24.5, 0.0, z)
+		var position := Vector3(side * 22.3, 0.0, z)
 		_add_box("SuburbanStreetLampPost", Vector3(0.16, 5.4, 0.16), position + Vector3.UP * 2.7, 0.0, "street_lamp")
 		_add_box("SuburbanStreetLampArm", Vector3(1.25, 0.12, 0.12), position + Vector3(-side * 0.58, 5.1, 0.0), 0.0, "street_lamp")
 		_add_box("SuburbanStreetLampHead", Vector3(0.48, 0.2, 0.34), position + Vector3(-side * 1.14, 5.0, 0.0), 0.0, "lamp_glow")
