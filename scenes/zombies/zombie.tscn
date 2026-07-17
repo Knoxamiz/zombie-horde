@@ -28,6 +28,16 @@ dead_material = ExtResource("5_dead")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_body")
 
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_desired_distance = 0.45
+target_desired_distance = 0.9
+avoidance_enabled = true
+radius = 0.42
+height = 1.4
+neighbor_distance = 4.5
+max_neighbors = 12
+time_horizon_agents = 1.4
+
 [node name="VisualRoot" type="Node3D" parent="."]
 
 [node name="BodyMesh" type="MeshInstance3D" parent="VisualRoot"]

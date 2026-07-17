@@ -1,13 +1,12 @@
 class_name RaceRouteNavigator
 extends RefCounted
 
-## Per-runner, forward-only navigation over a map-authored centerline.
+## Per-runner race sequencing over a map-authored centerline.
 ##
-## A RaceMapDefinition may supply an authored `race_path_points` route for turns,
-## ramps, and stacked roads. When it does not, the navigator creates a simple
-## spawn-to-goal route. Progress is deliberately constrained to the current
-## segment so vertically overlapping decks can never steal a runner to a later
-## segment just because it happens to be closer in world space.
+## This class owns checkpoint order and progress only. Actual pathfinding and
+## avoidance are handled by NavigationAgent3D via RaceNavigationWorld. Keeping
+## those responsibilities separate prevents a stacked map from changing race
+## order while still allowing agents to route around hazards on each surface.
 
 var _points: PackedVector3Array = PackedVector3Array()
 var _segment_index: int = 0
@@ -77,6 +76,13 @@ func get_target_point(lookahead_distance: float) -> Vector3:
 	return _point_at_distance(
 		minf(_distance_along_route + maxf(lookahead_distance, 0.0), _total_length)
 	)
+
+
+func get_current_segment_end() -> Vector3:
+	if not has_route():
+		return Vector3.ZERO
+	var safe_index: int = mini(_segment_index + 1, _points.size() - 1)
+	return _points[safe_index]
 
 
 func get_center_point() -> Vector3:

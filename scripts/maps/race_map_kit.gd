@@ -1839,6 +1839,7 @@ func _add_invisible_collision_box(box_name: String, size: Vector3, position: Vec
 	body.position = position
 	body.collision_layer = 1
 	body.collision_mask = 0
+	body.add_to_group("race_navigation_surfaces")
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
 	box.size = size

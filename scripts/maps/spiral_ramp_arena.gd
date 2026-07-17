@@ -258,7 +258,8 @@ func _build_road_segments(points: PackedVector3Array) -> void:
 			Vector3(ROAD_WIDTH, ROAD_THICKNESS, length + 0.22),
 			center,
 			yaw,
-			pitch
+			pitch,
+			true
 		)
 		_add_visual_box(
 			"SpiralRoadDeck",
@@ -302,7 +303,8 @@ func _build_corner_decks(points: PackedVector3Array) -> void:
 			Vector3(ROAD_WIDTH, ROAD_THICKNESS, ROAD_WIDTH),
 			point,
 			0.0,
-			0.0
+			0.0,
+			true
 		)
 		_add_visual_box(
 			"SpiralCornerDeckVisual",
@@ -476,7 +478,8 @@ func _add_collision_box(
 	size: Vector3,
 	position: Vector3,
 	yaw: float,
-	pitch: float
+	pitch: float,
+	is_navigation_surface: bool = false
 ) -> void:
 	var body := StaticBody3D.new()
 	body.name = _next_generated_name(box_name)
@@ -489,6 +492,8 @@ func _add_collision_box(
 	box.size = size
 	shape.shape = box
 	body.add_child(shape)
+	if is_navigation_surface:
+		body.add_to_group("race_navigation_surfaces")
 	_collision_root.add_child(body)
 
 

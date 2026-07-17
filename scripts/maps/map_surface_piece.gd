@@ -7,6 +7,7 @@ extends StaticBody3D
 
 const WALK_COLLISION_LAYER: int = 1
 const GROUP_NAME := "map_walk_surfaces"
+const NAVIGATION_GROUP := "race_navigation_surfaces"
 const MIN_THICKNESS: float = 0.12
 
 @export var surface_layer_index: int = 0
@@ -23,6 +24,7 @@ func _init() -> void:
 
 func _ready() -> void:
 	add_to_group(GROUP_NAME)
+	add_to_group(NAVIGATION_GROUP)
 	collision_layer = WALK_COLLISION_LAYER
 	collision_mask = 0
 

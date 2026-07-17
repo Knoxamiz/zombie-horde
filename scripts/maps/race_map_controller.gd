@@ -1,6 +1,8 @@
 class_name RaceMapController
 extends Node
 
+const RaceNavigationWorldScript := preload("res://scripts/maps/race_navigation_world.gd")
+
 ## Finish authority: World/StreamerBase (StreamerBaseGoal) is the sole race finish trigger.
 ## Maps only supply goal_position / base_position via RaceMapDefinition; map-scene GoalCatch
 ## zones are visual markers only and must never emit zombie_reached_base.
@@ -113,6 +115,7 @@ func set_active_map_by_id(
 		and _get_current_map() != null
 	):
 		_apply_map_geometry(definition, _get_current_map())
+		_configure_map_navigation(definition, _get_current_map())
 		_apply_gameplay_dimensions(definition)
 		active_settings_map_index = settings_index
 		_last_fallback_used = false
@@ -142,6 +145,7 @@ func set_active_map_by_id(
 	active_settings_map_index = settings_index
 	_last_fallback_used = false
 	_apply_map_geometry(definition, new_map)
+	_configure_map_navigation(definition, new_map)
 	_apply_gameplay_dimensions(definition)
 	if not _finalize_loaded_map_scene(new_map, definition, entry):
 		new_map.queue_free()
@@ -601,6 +605,17 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 	_apply_map_environment(definition)
 	_disable_map_void_kill_zones(_get_current_map())
 	_finish_contract_valid = _enforce_finish_contract(definition)
+
+
+func _configure_map_navigation(definition: RaceMapDefinition, map: Node3D) -> void:
+	if definition == null or map == null:
+		return
+	var navigation_world: Node = map.get_node_or_null("RaceNavigationWorld")
+	if navigation_world == null:
+		navigation_world = RaceNavigationWorldScript.new()
+		navigation_world.name = "RaceNavigationWorld"
+		map.add_child(navigation_world)
+	navigation_world.call("configure", map, definition)
 
 
 func _apply_map_environment(definition: RaceMapDefinition) -> void:
