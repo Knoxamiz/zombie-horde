@@ -72,25 +72,25 @@ func _build_suburban_outbreak() -> void:
 	_add_box("SuburbanGround", Vector3(112.0, 0.12, 184.0), Vector3(0.0, -0.26, 0.0), 0.0, "suburban_ground")
 	for side in [-1.0, 1.0]:
 		# Neighborhood cross-section, from the race lane outward:
-		# raised curb, street, narrow grass verge, raised sidewalk, fenced yard.
-		_add_box("SuburbanStreetExtension", Vector3(13.0, 0.12, 176.0), Vector3(side * 14.5, 0.0, 0.0), 0.0, "asphalt")
+		# raised curb, narrow grass verge, raised sidewalk, fenced yard.
+		# The central race course is the only street on this map.
 		# The curb deliberately touches the 16 m Zombie track at x = +/-8.
 		_add_box("SuburbanCurb", Vector3(0.28, 0.18, 176.0), Vector3(side * 8.14, 0.12, 0.0), 0.0, "curb")
-		_add_box("SuburbanGrassVerge", Vector3(2.0, 0.12, 176.0), Vector3(side * 22.28, -0.14, 0.0), 0.0, "lawn")
-		_add_box("SuburbanSidewalk", Vector3(3.2, 0.12, 176.0), Vector3(side * 24.88, 0.15, 0.0), 0.0, "sidewalk")
+		_add_box("SuburbanGrassVerge", Vector3(2.0, 0.12, 176.0), Vector3(side * 9.28, -0.14, 0.0), 0.0, "lawn")
+		_add_box("SuburbanSidewalk", Vector3(3.2, 0.12, 176.0), Vector3(side * 11.88, 0.15, 0.0), 0.0, "sidewalk")
 		_build_suburban_street_lamps(side)
 
 	var homes: Array[Dictionary] = [
-		{"x": -35.0, "z": -68.0, "style": "cottage", "color": "suburban_blue"},
-		{"x": 35.0, "z": -56.0, "style": "family", "color": "suburban_cream"},
-		{"x": -35.0, "z": -39.0, "style": "two_story", "color": "suburban_red"},
-		{"x": 35.0, "z": -26.0, "style": "ranch", "color": "suburban_green"},
-		{"x": -35.0, "z": -9.0, "style": "family", "color": "suburban_cream"},
-		{"x": 35.0, "z": 6.0, "style": "cottage", "color": "suburban_blue"},
-		{"x": -35.0, "z": 23.0, "style": "ranch", "color": "suburban_red"},
-		{"x": 35.0, "z": 38.0, "style": "two_story", "color": "suburban_cream"},
-		{"x": -35.0, "z": 55.0, "style": "cottage", "color": "suburban_green"},
-		{"x": 35.0, "z": 69.0, "style": "family", "color": "suburban_blue"},
+		{"x": -23.5, "z": -68.0, "style": "cottage", "color": "suburban_blue"},
+		{"x": 23.5, "z": -56.0, "style": "family", "color": "suburban_cream"},
+		{"x": -23.5, "z": -39.0, "style": "two_story", "color": "suburban_red"},
+		{"x": 23.5, "z": -26.0, "style": "ranch", "color": "suburban_green"},
+		{"x": -23.5, "z": -9.0, "style": "family", "color": "suburban_cream"},
+		{"x": 23.5, "z": 6.0, "style": "cottage", "color": "suburban_blue"},
+		{"x": -23.5, "z": 23.0, "style": "ranch", "color": "suburban_red"},
+		{"x": 23.5, "z": 38.0, "style": "two_story", "color": "suburban_cream"},
+		{"x": -23.5, "z": 55.0, "style": "cottage", "color": "suburban_green"},
+		{"x": 23.5, "z": 69.0, "style": "family", "color": "suburban_blue"},
 	]
 	for index in range(homes.size()):
 		var home: Dictionary = homes[index]
@@ -134,17 +134,17 @@ func _build_suburban_lot(position: Vector3, style: String, wall_material: String
 	var outward_sign: float = sign(position.x)
 	var house_position := position + Vector3(outward_sign * 3.6, 0.0, 1.2)
 	_add_box("SuburbanLot", Vector3(19.2, 0.14, 19.0), position, 0.0, "lawn")
-	_add_box("SuburbanDriveway", Vector3(21.5, 0.1, 4.4), Vector3(outward_sign * 32.0, 0.215, position.z - 4.35), 0.0, "driveway")
+	_add_box("SuburbanDriveway", Vector3(23.0, 0.1, 4.4), Vector3(outward_sign * 19.8, 0.215, position.z - 4.35), 0.0, "driveway")
 	_build_suburban_house(house_position, outward_sign, style, wall_material)
-	_build_fence_line(Vector3(outward_sign * 26.9, 0.0, position.z), 18.0, PI * 0.5, position.z - 4.35)
-	_build_mailbox(Vector3(outward_sign * 26.45, 0.0, position.z - 7.1), 0.0)
+	_build_fence_line(Vector3(outward_sign * 13.8, 0.0, position.z), 18.0, PI * 0.5, position.z - 4.35)
+	_build_mailbox(Vector3(outward_sign * 13.45, 0.0, position.z - 7.1), 0.0)
 	_build_tree(position + Vector3(outward_sign * 6.7, 0.0, 5.3), index)
 	_build_hedge(position + Vector3(outward_sign * 8.0, 0.0, -6.6), outward_sign)
 	_build_yard_detail(position, outward_sign, index)
 	if index in [1, 4, 7]:
 		_add_dog(position + Vector3(outward_sign * 5.5, 0.0, 4.1), -outward_sign * 0.4, index % 2 == 0)
 	if index in [1, 3, 6, 9]:
-		_add_suburban_vehicle(Vector3(outward_sign * 35.5, 0.0, position.z - 4.2), outward_sign, index)
+		_add_suburban_vehicle(Vector3(outward_sign * 25.0, 0.0, position.z - 4.2), outward_sign, index)
 
 
 func _build_suburban_house(position: Vector3, outward_sign: float, style: String, wall_material: String) -> void:
@@ -250,7 +250,7 @@ func _build_hedge(position: Vector3, side: float) -> void:
 
 func _build_suburban_street_lamps(side: float) -> void:
 	for z in [-63.0, -19.0, 25.0, 67.0]:
-		var position := Vector3(side * 22.3, 0.0, z)
+		var position := Vector3(side * 9.4, 0.0, z)
 		_add_box("SuburbanStreetLampPost", Vector3(0.16, 5.4, 0.16), position + Vector3.UP * 2.7, 0.0, "street_lamp")
 		_add_box("SuburbanStreetLampArm", Vector3(1.25, 0.12, 0.12), position + Vector3(-side * 0.58, 5.1, 0.0), 0.0, "street_lamp")
 		_add_box("SuburbanStreetLampHead", Vector3(0.48, 0.2, 0.34), position + Vector3(-side * 1.14, 5.0, 0.0), 0.0, "lamp_glow")
