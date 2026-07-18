@@ -13,6 +13,7 @@ func _run() -> void:
 	_test_lane_offsets_do_not_snap_to_center()
 	_test_edge_recovery_keeps_forward_progress()
 	_test_avoidance_cannot_reverse_a_runner()
+	_test_visual_facing_matches_forward_velocity()
 	_finish()
 
 
@@ -42,6 +43,12 @@ func _test_avoidance_cannot_reverse_a_runner() -> void:
 	var resolved := RACE_STEERING.preserve_forward_avoidance(Vector3(0.0, 0.0, 4.0), Vector3(0.0, 0.0, -2.0))
 	if resolved.z <= 3.5:
 		_fail("Local avoidance must not reverse route progress")
+
+
+func _test_visual_facing_matches_forward_velocity() -> void:
+	var forward_yaw: float = RACE_STEERING.visual_yaw_for_velocity(Vector3(0.0, 0.0, 4.0))
+	if absf(forward_yaw) > 0.001:
+		_fail("A +Z runner must keep the imported model facing forward")
 
 
 func _fail(message: String) -> void:

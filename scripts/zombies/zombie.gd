@@ -388,9 +388,9 @@ func _update_visual_facing(delta: float, steering_velocity: Vector3) -> void:
 	if horizontal_velocity.length_squared() < 0.0025:
 		return
 
-	# Imported zombie models face local -Z. Rotate only their visual root so
+	# Imported zombie models face local +Z. Rotate only their visual root so
 	# CharacterBody3D collision and all race-coordinate gameplay remain stable.
-	var desired_yaw: float = atan2(-horizontal_velocity.x, -horizontal_velocity.z)
+	var desired_yaw: float = RACE_STEERING.visual_yaw_for_velocity(horizontal_velocity)
 	var turn_weight: float = minf(delta * 12.0, 1.0)
 	_visual_root.rotation.y = lerp_angle(_visual_root.rotation.y, desired_yaw, turn_weight)
 

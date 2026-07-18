@@ -71,3 +71,9 @@ static func preserve_forward_avoidance(desired_velocity: Vector3, safe_velocity:
 	if safe_forward_speed <= desired.length() * 0.18:
 		return desired_velocity
 	return desired_velocity.lerp(safe_velocity, 0.6)
+
+
+static func visual_yaw_for_velocity(velocity: Vector3) -> float:
+	# The imported zombie variants face local +Z. Keep presentation aligned with
+	# their actual steering direction without rotating gameplay coordinates.
+	return atan2(velocity.x, velocity.z)
