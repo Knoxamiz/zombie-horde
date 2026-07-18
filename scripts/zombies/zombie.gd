@@ -4,6 +4,7 @@ extends CharacterBody3D
 signal died(zombie: Zombie, cause: String)
 
 const RACE_ROUTE_NAVIGATOR := preload("res://scripts/maps/race_route_navigator.gd")
+const RACE_STEERING := preload("res://scripts/zombies/race_steering.gd")
 
 enum MobilityState {
 	RUNNER,
@@ -276,7 +277,7 @@ func _physics_process(delta: float) -> void:
 		vertical_velocity,
 		move_toward(velocity.z, steering_velocity.z, active_config.acceleration * delta)
 	)
-	_update_visual_facing(delta)
+	_update_visual_facing(delta, steering_velocity)
 	_move_and_slide_with_audit()
 	_check_out_of_bounds(active_config)
 
@@ -344,17 +345,19 @@ func _is_fell_visual_active() -> bool:
 func _get_desired_velocity(active_config: ZombieConfig) -> Vector3:
 	var race_forward: Vector3 = _get_race_forward()
 	var side: Vector3 = _get_race_side(race_forward)
-	var to_goal: Vector3 = _get_course_follow_target(active_config) - global_position
-	to_goal.y = 0.0
-	if to_goal.length_squared() <= 0.001:
-		return Vector3.ZERO
-
-	var forward: Vector3 = to_goal.normalized()
-	var direction: Vector3 = (
-		forward
-		+ side * _drift_direction * active_config.drift_strength
-	).normalized()
-	return direction * _get_current_speed(active_config)
+	return RACE_STEERING.calculate_desired_velocity(
+		global_position,
+		_get_route_center_point(),
+		race_forward,
+		_get_course_follow_target(active_config),
+		_lane_offset,
+		active_config.lane_half_width,
+		_drift_direction,
+		active_config.drift_strength,
+		active_config.edge_recovery_strength,
+		_get_crowd_separation(active_config, side) * active_config.crowd_separation_strength,
+		_get_current_speed(active_config)
+	)
 
 
 func _sync_navigation_target() -> void:
@@ -378,10 +381,10 @@ func _get_course_follow_target(active_config: ZombieConfig) -> Vector3:
 	return _get_route_target_point()
 
 
-func _update_visual_facing(delta: float) -> void:
+func _update_visual_facing(delta: float, steering_velocity: Vector3) -> void:
 	if _visual_root == null:
 		return
-	var horizontal_velocity := Vector3(velocity.x, 0.0, velocity.z)
+	var horizontal_velocity := Vector3(steering_velocity.x, 0.0, steering_velocity.z)
 	if horizontal_velocity.length_squared() < 0.0025:
 		return
 
@@ -400,7 +403,7 @@ func _submit_navigation_velocity(desired_velocity: Vector3) -> void:
 
 func _resolve_navigation_velocity(desired_velocity: Vector3) -> Vector3:
 	if _navigation_agent != null and _is_navigation_map_ready() and _has_safe_navigation_velocity:
-		return _safe_navigation_velocity
+		return RACE_STEERING.preserve_forward_avoidance(desired_velocity, _safe_navigation_velocity)
 	return desired_velocity
 
 

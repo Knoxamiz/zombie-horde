@@ -21,6 +21,7 @@ const SMOKE_TESTS: Array[Dictionary] = [
 ]
 
 const CORE_TESTS: Array[Dictionary] = [
+	{"name": "race_steering_test", "script": "race_steering_test.gd", "args": []},
 	{"name": "hazard_collision_contract_test", "script": "hazard_collision_contract_test.gd", "args": []},
 	{"name": "race_route_navigation_test", "script": "race_route_navigation_test.gd", "args": []},
 	{"name": "race_navigation_world_test", "script": "race_navigation_world_test.gd", "args": []},
