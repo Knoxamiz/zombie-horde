@@ -10,7 +10,7 @@ radius = 1.5
 size = Vector3(2.4, 0.16, 1.4)
 
 [node name="BoostPad" type="Area3D"]
-collision_layer = 16
+collision_layer = 0
 collision_mask = 2
 script = ExtResource("1_script")
 

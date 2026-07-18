@@ -39,6 +39,10 @@ func _trigger(zombie: Zombie) -> void:
 	var active_config: HazardConfig = _get_config()
 	_armed = false
 	monitoring = false
+	# The detonation visual is non-physical. Retire this trigger immediately so
+	# a spent mine cannot remain in the physics query space after its blast.
+	if _collision_shape != null:
+		_collision_shape.set_deferred("disabled", true)
 	_apply_visual()
 	_spawn_explosion()
 	GameEvents.impact_mark_requested.emit(global_position, "scorch")

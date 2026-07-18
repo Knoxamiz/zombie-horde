@@ -6,6 +6,7 @@ const HAZARD_SCENES := [
 	preload("res://scenes/hazards/road_obstacle.tscn"),
 	preload("res://scenes/hazards/traffic_cone_obstacle.tscn"),
 	preload("res://scenes/hazards/vehicle_obstacle.tscn"),
+	preload("res://scenes/hazards/mine_explosion_effect.tscn"),
 	preload("res://scenes/powerups/boost_pad.tscn"),
 ]
 
@@ -36,6 +37,10 @@ func _assert_no_hidden_navigation_obstacles(node: Node) -> void:
 
 
 func _assert_no_solid_hazard_collision(node: Node) -> void:
+	if node is Area3D:
+		var area := node as Area3D
+		if area.collision_layer != 0:
+			_fail("Hazard triggers must use a detection mask only: %s" % node.get_path())
 	if node is StaticBody3D or node is CharacterBody3D or node is RigidBody3D:
 		var collision_object := node as CollisionObject3D
 		if collision_object.collision_layer != 0:
