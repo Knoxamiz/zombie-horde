@@ -12,7 +12,7 @@ var _map_cases: Array[Dictionary] = [
 			"SuburbanHouseFamily", "SuburbanHouseTwoStory", "SuburbanHouseRanch",
 			"SuburbanDriveway", "FencePost", "Mailbox", "SuburbanTreeCanopy",
 			"PicketFenceSlat", "BackyardPrivacyFence", "SuburbanGrassVerge", "SuburbanCurb", "SuburbanParkedCar",
-			"YardDog", "SuburbanWaterTower", "NeighborhoodEntrySign",
+			"YardDog", "SuburbanWaterTower", "NeighborhoodEntrySign", "SuburbanStreetExtension",
 		]),
 	},
 	{
@@ -104,6 +104,12 @@ func _validate_suburban_environment(arena: Node3D, definition: RaceMapDefinition
 			_fail("quarantine_boulevard must disable legacy side rail '%s'" % collision_path)
 	if definition.out_of_bounds_half_width < 33.6:
 		_fail("quarantine_boulevard OOB boundary must sit outside its backyard privacy fence")
+	var street_extensions: Array[Node] = dressing.find_children("SuburbanStreetExtension*", "", true, false)
+	if street_extensions.size() != 2:
+		_fail("quarantine_boulevard must continue the street beyond both race gates")
+	var street_center_lines: Array[Node] = dressing.find_children("SuburbanStreetCenterLine*", "", true, false)
+	if street_center_lines.size() != 2:
+		_fail("quarantine_boulevard street extensions must retain center-line continuity")
 
 
 func _fail(message: String) -> void:

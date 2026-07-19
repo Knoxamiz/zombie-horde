@@ -70,10 +70,11 @@ func _build_suburban_outbreak() -> void:
 	# remain authoritative; City Highway deliberately leaves its suburban edge
 	# open so runners can spill into the fenced yards.
 	_add_box("SuburbanGround", Vector3(112.0, 0.12, 184.0), Vector3(0.0, -0.26, 0.0), 0.0, "suburban_ground")
+	_build_suburban_public_street_extensions()
 	for side in [-1.0, 1.0]:
 		# Neighborhood cross-section, from the race lane outward:
 		# raised curb, narrow grass verge, raised sidewalk, fenced yard.
-		# The central race course is the only street on this map.
+		# The central race course continues as a public street at both map ends.
 		# The curb deliberately touches the 16 m Zombie track at x = +/-8.
 		_add_box("SuburbanCurb", Vector3(0.28, 0.18, 176.0), Vector3(side * 8.14, 0.12, 0.0), 0.0, "curb")
 		_add_box("SuburbanGrassVerge", Vector3(2.0, 0.12, 176.0), Vector3(side * 9.28, -0.14, 0.0), 0.0, "lawn")
@@ -102,6 +103,37 @@ func _build_suburban_outbreak() -> void:
 		)
 	_build_suburban_perimeter_privacy_fences()
 	_build_neighborhood_endcaps()
+
+
+func _build_suburban_public_street_extensions() -> void:
+	# RoadArena's gameplay road spans z = -44..44. Continue that asphalt all the
+	# way to the neighborhood endcaps so the gates sit within a coherent street,
+	# rather than directly in front of a grass gap. These meshes stay visual-only;
+	# NeighborhoodWalkableGround remains the walk-collision authority off-track.
+	for side in [-1.0, 1.0]:
+		var extension_center_z: float = side * 66.0
+		_add_box(
+			"SuburbanStreetExtension",
+			Vector3(16.0, 0.12, 44.0),
+			Vector3(0.0, 0.0, extension_center_z),
+			0.0,
+			"asphalt"
+		)
+		_add_box(
+			"SuburbanStreetCenterLine",
+			Vector3(0.18, 0.04, 43.8),
+			Vector3(0.0, 0.09, extension_center_z),
+			0.0,
+			"road_marking"
+		)
+		for edge_x in [-6.75, 6.75]:
+			_add_box(
+				"SuburbanStreetEdgeLine",
+				Vector3(0.18, 0.05, 43.8),
+				Vector3(edge_x, 0.10, extension_center_z),
+				0.0,
+				"road_marking"
+			)
 
 
 func _remove_legacy_city_highway_dressing() -> void:
