@@ -1,6 +1,7 @@
 extends SceneTree
 
 const FreeCameraFlightLimitsScript := preload("res://scripts/camera/free_camera_flight_limits.gd")
+const RaceMapControllerScript := preload("res://scripts/maps/race_map_controller.gd")
 
 const EXPECTED_REGION_COUNTS := {
 	"quarantine_boulevard": 1,
@@ -60,6 +61,19 @@ func _test_map_camera_limits(map_id: String, expected_region_count: int) -> void
 		var spiral_clamped: Vector3 = limits.clamp_position(stacked_road_interior)
 		if spiral_clamped.is_equal_approx(stacked_road_interior):
 			_fail("true_spiral_ramp: interior camera position was not redirected")
+
+	if map_id == "quarantine_boulevard":
+		var city_start_view: Dictionary = RaceMapControllerScript.compute_race_camera_view_for_definition(definition)
+		var city_start_position: Vector3 = city_start_view.get("position", Vector3.ZERO) as Vector3
+		if not limits.is_position_inside_active_limits(city_start_position):
+			_fail("quarantine_boulevard: initial race camera view must not clamp to the start boundary")
+		var city_overview_points: Array[Vector3] = [
+			Vector3(-52.0, 28.0, -96.0),
+			Vector3(52.0, 28.0, 96.0),
+		]
+		for city_overview_point: Vector3 in city_overview_points:
+			if not limits.is_position_inside_active_limits(city_overview_point):
+				_fail("quarantine_boulevard: free camera must cover the full suburban neighborhood")
 
 
 func _fail(message: String) -> void:
