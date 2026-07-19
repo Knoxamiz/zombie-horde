@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://c3nxbnlkgvl02"]
+[gd_scene load_steps=11 format=3 uid="uid://c3nxbnlkgvl02"]
 
 [ext_resource type="PackedScene" uid="uid://degy2yw827pd" path="res://scenes/main/road_arena.tscn" id="1_core"]
 [ext_resource type="Script" uid="uid://cymo4gv4ahkpy" path="res://scripts/core/visual_collision_sanitizer.gd" id="2_sanitizer"]
@@ -16,9 +16,20 @@ size = Vector3(11.5, 0.18, 0.22)
 [sub_resource type="BoxMesh" id="BoxMesh_neon_post"]
 size = Vector3(0.24, 2.8, 0.24)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_neighborhood_ground"]
+size = Vector3(66.4, 0.36, 184.0)
+
 [node name="RoadArena2" type="Node3D"]
 
 [node name="CoreRoad" parent="." instance=ExtResource("1_core")]
+
+[node name="NeighborhoodWalkableGround" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NeighborhoodWalkableGround"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.38, 0)
+shape = SubResource("BoxShape3D_neighborhood_ground")
 
 [node name="MapDressing" type="Node3D" parent="."]
 script = ExtResource("6_art")

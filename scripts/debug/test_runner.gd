@@ -33,6 +33,7 @@ const CORE_TESTS: Array[Dictionary] = [
 ]
 
 const MAP_TESTS: Array[Dictionary] = [
+	{"name": "city_highway_collision_contract_test", "script": "city_highway_collision_contract_test.gd", "args": []},
 	{"name": "map_camera_limits_test", "script": "map_camera_limits_test.gd", "args": []},
 	{"name": "map_art_dressing_test", "script": "map_art_dressing_test.gd", "args": []},
 	{"name": "kit_map_gap_audit_test", "script": "kit_map_gap_audit_test.gd", "args": []},
