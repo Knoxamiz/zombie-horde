@@ -28,7 +28,7 @@ var _map_cases: Array[Dictionary] = [
 	{
 		"id": "spiral_descent",
 		"nodes": PackedStringArray([
-			"DesertCanyonFloor", "DesertDune", "DesertMesa", "DesertMesaCap",
+			"DesertCanyonFloor", "DesertDune",
 			"DesertCactus", "DesertCactusArm", "DesertBoulder", "DesertRoadsideMarker",
 		]),
 	},
@@ -184,6 +184,12 @@ func _validate_desert_highway_environment(arena: Node3D) -> void:
 	var terrain: Array[Node] = visual_kit.find_children("DesertElevationShelf*", "", true, false)
 	if terrain.size() < 10:
 		_fail("spiral_descent must build sand shelves along every elevation section")
+	if visual_kit.find_children("DesertRoadBlend*", "", true, false).size() < 10:
+		_fail("spiral_descent must blend sand directly into both road edges")
+	if visual_kit.find_children("DesertCactusProp*", "", true, false).size() < 10:
+		_fail("spiral_descent must decorate the elevation-matched dunes with cacti")
+	if visual_kit.find_children("DesertRockCluster*", "", true, false).size() < 20:
+		_fail("spiral_descent must decorate its dunes with low-poly rock clusters")
 
 
 func _fail(message: String) -> void:

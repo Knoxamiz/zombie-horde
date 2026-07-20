@@ -1830,6 +1830,7 @@ func build_desert_highway_context(
 	var sand: StandardMaterial3D = _make_desert_material(Color("c68f4f"), 0.94)
 	var dark_sand: StandardMaterial3D = _make_desert_material(Color("9a6334"), 0.98)
 	var rock: StandardMaterial3D = _make_desert_material(Color("75472d"), 0.93)
+	var cactus: StandardMaterial3D = _make_desert_material(Color("3e6e37"), 0.88)
 	_add_bridge_box(
 		desert_root,
 		"DesertTerrainBase",
@@ -1855,14 +1856,8 @@ func build_desert_highway_context(
 			var side: float = float(side_value)
 			_build_desert_elevation_shelf(
 				desert_root, side, path_half_width, center_y, center_z, length,
-				slope_angle, base_y, sand, dark_sand
+				slope_angle, base_y, sand, dark_sand, cactus, rock
 			)
-	var mesa_positions: Array[Vector3] = [
-		Vector3(-48.0, -8.2, -70.0), Vector3(51.0, -7.2, -34.0),
-		Vector3(-53.0, -8.8, 12.0), Vector3(49.0, -7.8, 58.0),
-	]
-	for mesa_position: Vector3 in mesa_positions:
-		_add_bridge_box(desert_root, "DesertCanyonMesa", Vector3(18.0, 13.0, 22.0), mesa_position, rock)
 
 
 func _build_desert_elevation_shelf(
@@ -1875,8 +1870,19 @@ func _build_desert_elevation_shelf(
 	slope_angle: float,
 	base_y: float,
 	sand: Material,
-	dark_sand: Material
+	dark_sand: Material,
+	cactus: Material,
+	rock: Material
 ) -> void:
+	# Overlap the highway edge slightly so this cannot leave a visual void.
+	var road_blend: MeshInstance3D = _add_bridge_box(
+		parent,
+		"DesertRoadBlend",
+		Vector3(4.9, 0.38, length + 0.45),
+		Vector3(side * (path_half_width + 2.43), center_y - 0.19, center_z),
+		sand
+	)
+	road_blend.rotation.x = -slope_angle
 	var inner_top: float = center_y - 0.10
 	var inner := _add_bridge_box(
 		parent,
@@ -1906,6 +1912,44 @@ func _build_desert_elevation_shelf(
 		sand
 	)
 	outer.rotation.x = -slope_angle
+	var cactus_position: Vector3 = Vector3(
+		side * (path_half_width + 17.0), terrace_top + 0.02, center_z + side * minf(length * 0.23, 6.5)
+	)
+	_build_desert_cactus_prop(parent, cactus_position, 0.85 + absf(center_z) * 0.002, cactus)
+	_build_desert_rock_cluster(
+		parent,
+		Vector3(side * (path_half_width + 27.0), outer_top + 0.1, center_z - side * minf(length * 0.18, 5.0)),
+		rock
+	)
+
+
+func _build_desert_cactus_prop(parent: Node3D, position: Vector3, scale_factor: float, material: Material) -> void:
+	var trunk_height: float = 4.8 * scale_factor
+	_add_bridge_box(
+		parent,
+		"DesertCactusProp",
+		Vector3(0.48 * scale_factor, trunk_height, 0.48 * scale_factor),
+		position + Vector3.UP * (trunk_height * 0.5),
+		material
+	)
+	for side_value in [-1.0, 1.0]:
+		var side: float = float(side_value)
+		var arm_position: Vector3 = position + Vector3(side * 0.78 * scale_factor, trunk_height * 0.56, 0.0)
+		_add_bridge_box(parent, "DesertCactusArm", Vector3(1.30 * scale_factor, 0.34 * scale_factor, 0.34 * scale_factor), arm_position, material)
+		_add_bridge_box(
+			parent,
+			"DesertCactusArmTip",
+			Vector3(0.32 * scale_factor, 1.72 * scale_factor, 0.32 * scale_factor),
+			arm_position + Vector3(side * 0.57 * scale_factor, 0.78 * scale_factor, 0.0),
+			material
+		)
+
+
+func _build_desert_rock_cluster(parent: Node3D, position: Vector3, material: Material) -> void:
+	for index in range(3):
+		var offset: Vector3 = Vector3(float(index - 1) * 0.72, 0.25 + float(index % 2) * 0.18, float(index - 1) * 0.46)
+		var rock_piece: MeshInstance3D = _add_bridge_box(parent, "DesertRockCluster", Vector3(0.9 + float(index) * 0.25, 0.7 + float(index) * 0.2, 0.8), position + offset, material)
+		rock_piece.rotation.y = 0.42 * float(index)
 
 
 func _make_desert_material(color: Color, roughness_value: float) -> StandardMaterial3D:

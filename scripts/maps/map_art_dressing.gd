@@ -570,22 +570,6 @@ func _build_desert_highway() -> void:
 				0.10 * side,
 				"desert_sand_dark"
 			)
-		for z in [-66.0, -12.0, 38.0, 78.0]:
-			var mesa_height: float = 10.0 + float(int(absf(z)) % 3) * 3.5
-			_add_box(
-				"DesertMesa",
-				Vector3(20.0, mesa_height, 18.0),
-				Vector3(side * 58.0, -15.0 + mesa_height * 0.5, z),
-				0.0,
-				"desert_rock"
-			)
-			_add_box(
-				"DesertMesaCap",
-				Vector3(22.0, 0.75, 20.0),
-				Vector3(side * 58.0, -15.0 + mesa_height + 0.36, z),
-				0.0,
-				"desert_rock_light"
-			)
 	var cactus_positions: Array[Vector3] = [
 		Vector3(-31.0, -13.9, -74.0), Vector3(34.0, -13.9, -54.0),
 		Vector3(-39.0, -13.9, -18.0), Vector3(29.0, -13.9, 10.0),
