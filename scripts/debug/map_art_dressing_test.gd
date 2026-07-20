@@ -21,7 +21,8 @@ var _map_cases: Array[Dictionary] = [
 		"id": "broken_bridge_pass",
 		"nodes": PackedStringArray([
 			"CoastalWater", "CoastalBoatHull", "CoastalBuoy", "BrokenApproachDeckRemnant",
-			"BrokenApproachDeckFragment", "BrokenApproachTornRail",
+			"BrokenApproachDeckFragment", "BrokenApproachTornRail", "BrokenBridgeEndApproachRoad",
+			"BrokenBridgeEndApproachRail",
 		]),
 	},
 	{
@@ -149,6 +150,9 @@ func _validate_broken_bridge_environment(arena: Node3D) -> void:
 	var fragments: Array[Node] = dressing.find_children("BrokenApproachDeckFragment*", "", true, false)
 	if fragments.size() < 6:
 		_fail("broken_bridge_pass must place broken approach fragments on both sides")
+	var end_roads: Array[Node] = dressing.find_children("BrokenBridgeEndApproachRoad*", "", true, false)
+	if end_roads.size() != 2:
+		_fail("broken_bridge_pass must continue its visual road beyond both map ends")
 
 
 func _fail(message: String) -> void:

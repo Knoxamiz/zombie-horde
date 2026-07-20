@@ -409,6 +409,7 @@ func _build_suburban_street_lamps(side: float) -> void:
 
 func _build_coastal_evacuation() -> void:
 	_add_box("CoastalWater", Vector3(124.0, 0.16, 220.0), Vector3(0.0, -6.4, 0.0), 0.0, "water")
+	_build_broken_bridge_end_approaches()
 	_build_broken_bridge_spawn_shoulders()
 	for side in [-1.0, 1.0]:
 		for z in [-70.0, -28.0, 18.0, 63.0]:
@@ -417,6 +418,53 @@ func _build_coastal_evacuation() -> void:
 			_build_buoy(Vector3(side * 47.0, -5.9, z))
 	_build_coastal_fadeout(Vector3(-42.0, 8.0, 95.0), 1.0)
 	_build_coastal_fadeout(Vector3(42.0, 8.0, -95.0), -1.0)
+
+
+func _build_broken_bridge_end_approaches() -> void:
+	# Continue the bridge deck out of both scene ends so the playable route reads
+	# as a bridge connecting to distant land, rather than stopping at water. The
+	# extensions are presentation-only; the map definition remains authoritative.
+	const DECK_Y: float = 6.16
+	for end_value in [-1.0, 1.0]:
+		var end_side: float = float(end_value)
+		var approach_z: float = end_side * 100.0
+		_add_box(
+			"BrokenBridgeEndApproachRoad",
+			Vector3(9.0, 0.42, 32.0),
+			Vector3(0.0, DECK_Y, approach_z),
+			0.0,
+			"asphalt"
+		)
+		_add_box(
+			"BrokenBridgeEndApproachUnderside",
+			Vector3(9.4, 0.30, 32.2),
+			Vector3(0.0, DECK_Y - 0.33, approach_z),
+			0.0,
+			"concrete_dark"
+		)
+		for side_value in [-1.0, 1.0]:
+			var side: float = float(side_value)
+			_add_box(
+				"BrokenBridgeEndApproachRail",
+				Vector3(0.24, 1.15, 32.2),
+				Vector3(side * 4.65, DECK_Y + 0.60, approach_z),
+				0.0,
+				"quarantine_steel"
+			)
+			_add_box(
+				"BrokenBridgeEndApproachEdge",
+				Vector3(0.42, 0.30, 32.2),
+				Vector3(side * 4.55, DECK_Y + 0.13, approach_z),
+				0.0,
+				"concrete_dark"
+			)
+		_add_box(
+			"BrokenBridgeEndApproachCenterLine",
+			Vector3(0.18, 0.05, 31.5),
+			Vector3(0.0, DECK_Y + 0.24, approach_z),
+			0.0,
+			"road_marking"
+		)
 
 
 func _build_broken_bridge_spawn_shoulders() -> void:
