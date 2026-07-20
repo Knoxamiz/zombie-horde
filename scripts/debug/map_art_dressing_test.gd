@@ -121,6 +121,13 @@ func _validate_suburban_environment(arena: Node3D, definition: RaceMapDefinition
 	var start_deck: Array[Node] = dressing.find_children("QuarantineStartDeck*", "", true, false)
 	if start_deck.size() != 1:
 		_fail("quarantine_boulevard must build one visual-only quarantine start deck")
+	else:
+		var deck_mesh: MeshInstance3D = start_deck[0] as MeshInstance3D
+		if deck_mesh == null or not deck_mesh.material_override is ShaderMaterial:
+			_fail("quarantine_boulevard start deck must use the shared low-memory surface shader")
+	var road_material: ShaderMaterial = load("res://assets/materials/road_asphalt.tres") as ShaderMaterial
+	if road_material == null or road_material.shader == null:
+		_fail("shared road asphalt must keep the world surface detail shader")
 
 
 func _fail(message: String) -> void:

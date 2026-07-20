@@ -1,5 +1,11 @@
-[gd_resource type="StandardMaterial3D" format=3 uid="uid://leqoq0p1opvs"]
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://leqoq0p1opvs"]
+
+[ext_resource type="Shader" path="res://assets/shaders/world_surface_detail.gdshader" id="1_surface"]
 
 [resource]
-albedo_color = Color(0.065, 0.068, 0.068, 1)
-roughness = 0.82
+shader = ExtResource("1_surface")
+shader_parameter/base_color = Color(0.065, 0.068, 0.068, 1)
+shader_parameter/roughness_value = 0.88
+shader_parameter/metallic_value = 0.0
+shader_parameter/detail_scale = 0.62
+shader_parameter/detail_strength = 0.085

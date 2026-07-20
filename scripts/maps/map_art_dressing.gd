@@ -16,6 +16,7 @@ enum Profile {
 }
 
 const VisualCollisionSanitizerScript := preload("res://scripts/core/visual_collision_sanitizer.gd")
+const WORLD_SURFACE_DETAIL_SHADER := preload("res://assets/shaders/world_surface_detail.gdshader")
 const GERMAN_SHEPHERD_SCENE := preload(
 	"res://assets/third_party/zombie_apocalypse_kit/imported/Characters/Characters_GermanShepherd.gltf"
 )
@@ -538,20 +539,49 @@ static func _get_sphere_mesh() -> SphereMesh:
 	return _sphere_mesh
 
 
-static func _get_material(key: String) -> StandardMaterial3D:
+static func _get_material(key: String) -> Material:
 	if _material_cache.has(key):
-		return _material_cache[key] as StandardMaterial3D
-	var material := StandardMaterial3D.new()
-	material.albedo_color = _get_material_color(key)
-	material.roughness = 0.78
-	material.metallic = 0.0
-	if key in ["water", "window", "lamp_glow", "construction_yellow"]:
-		material.emission_enabled = key != "water"
-		material.emission = material.albedo_color
-		material.emission_energy_multiplier = 0.28 if key == "construction_yellow" else 0.5
-	if key in ["steel", "construction_steel"]:
-		material.metallic = 0.68
-		material.roughness = 0.48
+		return _material_cache[key] as Material
+	var material := ShaderMaterial.new()
+	material.shader = WORLD_SURFACE_DETAIL_SHADER
+	var roughness: float = 0.82
+	var metallic: float = 0.0
+	var detail_scale: float = 0.45
+	var detail_strength: float = 0.055
+	var emission_energy: float = 0.0
+	if key in ["asphalt", "driveway", "concrete", "concrete_dark", "curb", "sidewalk"]:
+		roughness = 0.88
+		detail_scale = 0.62
+		detail_strength = 0.085
+	elif key in ["lawn", "suburban_ground", "hedge", "tree_light", "tree_dark"]:
+		roughness = 0.96
+		detail_scale = 0.34
+		detail_strength = 0.075
+	elif key in ["picket_wood", "privacy_wood", "tree_trunk", "door", "brick"]:
+		roughness = 0.88
+		detail_scale = 0.58
+		detail_strength = 0.10
+	elif key in ["steel", "construction_steel", "quarantine_steel", "quarantine_mesh"]:
+		roughness = 0.42
+		metallic = 0.68
+		detail_scale = 0.72
+		detail_strength = 0.09
+	elif key == "water":
+		roughness = 0.30
+		metallic = 0.12
+		detail_scale = 0.25
+		detail_strength = 0.04
+	if key in ["window", "lamp_glow", "construction_yellow"]:
+		emission_energy = 0.28 if key == "construction_yellow" else 0.50
+	elif key == "quarantine_red":
+		emission_energy = 0.20
+	material.set_shader_parameter("base_color", _get_material_color(key))
+	material.set_shader_parameter("roughness_value", roughness)
+	material.set_shader_parameter("metallic_value", metallic)
+	material.set_shader_parameter("detail_scale", detail_scale)
+	material.set_shader_parameter("detail_strength", detail_strength)
+	material.set_shader_parameter("emission_color", _get_material_color(key))
+	material.set_shader_parameter("emission_energy", emission_energy)
 	_material_cache[key] = material
 	return material
 
