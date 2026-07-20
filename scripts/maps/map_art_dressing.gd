@@ -409,6 +409,7 @@ func _build_suburban_street_lamps(side: float) -> void:
 
 func _build_coastal_evacuation() -> void:
 	_add_box("CoastalWater", Vector3(124.0, 0.16, 220.0), Vector3(0.0, -6.4, 0.0), 0.0, "water")
+	_build_broken_bridge_spawn_shoulders()
 	for side in [-1.0, 1.0]:
 		for z in [-70.0, -28.0, 18.0, 63.0]:
 			_build_coastal_boat(Vector3(side * 31.0, -5.8, z), 0.22 * side)
@@ -416,6 +417,53 @@ func _build_coastal_evacuation() -> void:
 			_build_buoy(Vector3(side * 47.0, -5.9, z))
 	_build_coastal_fadeout(Vector3(-42.0, 8.0, 95.0), 1.0)
 	_build_coastal_fadeout(Vector3(42.0, 8.0, -95.0), -1.0)
+
+
+func _build_broken_bridge_spawn_shoulders() -> void:
+	# The start is a breached bridge approach on both sides. These unsupported
+	# fragments deliberately stop short of the real deck and are visual-only: the
+	# authored KitSurfaces remain the sole walk and fall authority.
+	const DECK_Y: float = 6.18
+	for side_value in [-1.0, 1.0]:
+		var side: float = float(side_value)
+		_add_box(
+			"BrokenApproachDeckRemnant",
+			Vector3(2.8, 0.46, 17.0),
+			Vector3(side * 8.9, DECK_Y, -72.5),
+			side * 0.08,
+			"asphalt"
+		)
+		_add_box(
+			"BrokenApproachConcreteLip",
+			Vector3(3.05, 0.22, 17.2),
+			Vector3(side * 8.9, DECK_Y - 0.30, -72.5),
+			side * 0.08,
+			"concrete_dark"
+		)
+		for fragment_index in range(3):
+			var fragment_z: float = -80.0 + float(fragment_index) * 7.1
+			var fragment_x: float = side * (6.25 + float(fragment_index % 2) * 0.72)
+			_add_box(
+				"BrokenApproachDeckFragment",
+				Vector3(1.7 - float(fragment_index) * 0.18, 0.30, 3.4),
+				Vector3(fragment_x, DECK_Y + 0.10, fragment_z),
+				side * (0.18 + float(fragment_index) * 0.09),
+				"concrete_dark"
+			)
+			_add_box(
+				"BrokenApproachTornRail",
+				Vector3(0.18, 1.05, 2.3),
+				Vector3(side * 6.95, DECK_Y + 0.66, fragment_z + 0.42),
+				side * (0.26 + float(fragment_index) * 0.07),
+				"quarantine_steel"
+			)
+		_add_box(
+			"BrokenApproachWarningBoard",
+			Vector3(0.16, 0.72, 2.55),
+			Vector3(side * 7.35, DECK_Y + 0.58, -61.2),
+			side * 0.34,
+			"warning"
+		)
 
 
 func _build_coastal_boat(position: Vector3, yaw: float) -> void:

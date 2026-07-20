@@ -19,7 +19,10 @@ var _map_cases: Array[Dictionary] = [
 	},
 	{
 		"id": "broken_bridge_pass",
-		"nodes": PackedStringArray(["CoastalWater", "CoastalBoatHull", "CoastalBuoy"]),
+		"nodes": PackedStringArray([
+			"CoastalWater", "CoastalBoatHull", "CoastalBuoy", "BrokenApproachDeckRemnant",
+			"BrokenApproachDeckFragment", "BrokenApproachTornRail",
+		]),
 	},
 	{
 		"id": "spiral_descent",
@@ -72,6 +75,8 @@ func _validate_map_art(map_case: Dictionary) -> void:
 			_fail("%s did not build required art node '%s'" % [map_id, node_prefix])
 	if map_id == "quarantine_boulevard":
 		_validate_suburban_environment(arena, definition)
+	if map_id == "broken_bridge_pass":
+		_validate_broken_bridge_environment(arena)
 	_validate_visual_only(dressing, map_id)
 	arena.queue_free()
 	await process_frame
@@ -132,6 +137,18 @@ func _validate_suburban_environment(arena: Node3D, definition: RaceMapDefinition
 	var road_material: ShaderMaterial = load("res://assets/materials/road_asphalt.tres") as ShaderMaterial
 	if road_material == null or road_material.shader == null:
 		_fail("shared road asphalt must keep the world surface detail shader")
+
+
+func _validate_broken_bridge_environment(arena: Node3D) -> void:
+	var dressing: Node3D = arena.get_node_or_null("MapDressing") as Node3D
+	if dressing == null:
+		return
+	var remnants: Array[Node] = dressing.find_children("BrokenApproachDeckRemnant*", "", true, false)
+	if remnants.size() != 2:
+		_fail("broken_bridge_pass must frame its spawn with deck remnants on both sides")
+	var fragments: Array[Node] = dressing.find_children("BrokenApproachDeckFragment*", "", true, false)
+	if fragments.size() < 6:
+		_fail("broken_bridge_pass must place broken approach fragments on both sides")
 
 
 func _fail(message: String) -> void:
