@@ -424,21 +424,25 @@ func _build_broken_bridge_end_approaches() -> void:
 	# Continue the bridge deck out of both scene ends so the playable route reads
 	# as a bridge connecting to distant land, rather than stopping at water. The
 	# extensions are presentation-only; the map definition remains authoritative.
-	const DECK_Y: float = 6.16
+	# Broken Bridge's authored deck top is 6.446 m. Keep the visual approach on
+	# that exact top plane and overlap the final 2 m of both deck segments so no
+	# daylight seam can show between the continuation and the real street.
+	const ROAD_TOP_Y: float = 6.446
+	const ROAD_THICKNESS: float = 0.18
 	for end_value in [-1.0, 1.0]:
 		var end_side: float = float(end_value)
-		var approach_z: float = end_side * 100.0
+		var approach_z: float = end_side * 99.0
 		_add_box(
 			"BrokenBridgeEndApproachRoad",
-			Vector3(9.0, 0.42, 32.0),
-			Vector3(0.0, DECK_Y, approach_z),
+			Vector3(9.0, ROAD_THICKNESS, 34.0),
+			Vector3(0.0, ROAD_TOP_Y - ROAD_THICKNESS * 0.5, approach_z),
 			0.0,
 			"asphalt"
 		)
 		_add_box(
 			"BrokenBridgeEndApproachUnderside",
-			Vector3(9.4, 0.30, 32.2),
-			Vector3(0.0, DECK_Y - 0.33, approach_z),
+			Vector3(9.4, 0.30, 34.2),
+			Vector3(0.0, ROAD_TOP_Y - ROAD_THICKNESS - 0.15, approach_z),
 			0.0,
 			"concrete_dark"
 		)
@@ -446,22 +450,22 @@ func _build_broken_bridge_end_approaches() -> void:
 			var side: float = float(side_value)
 			_add_box(
 				"BrokenBridgeEndApproachRail",
-				Vector3(0.24, 1.15, 32.2),
-				Vector3(side * 4.65, DECK_Y + 0.60, approach_z),
+				Vector3(0.24, 1.15, 34.2),
+				Vector3(side * 4.65, ROAD_TOP_Y + 0.575, approach_z),
 				0.0,
 				"quarantine_steel"
 			)
 			_add_box(
 				"BrokenBridgeEndApproachEdge",
-				Vector3(0.42, 0.30, 32.2),
-				Vector3(side * 4.55, DECK_Y + 0.13, approach_z),
+				Vector3(0.42, 0.30, 34.2),
+				Vector3(side * 4.55, ROAD_TOP_Y + 0.15, approach_z),
 				0.0,
 				"concrete_dark"
 			)
 		_add_box(
 			"BrokenBridgeEndApproachCenterLine",
-			Vector3(0.18, 0.05, 31.5),
-			Vector3(0.0, DECK_Y + 0.24, approach_z),
+			Vector3(0.18, 0.05, 33.5),
+			Vector3(0.0, ROAD_TOP_Y + 0.025, approach_z),
 			0.0,
 			"road_marking"
 		)
@@ -471,20 +475,20 @@ func _build_broken_bridge_spawn_shoulders() -> void:
 	# The start is a breached bridge approach on both sides. These unsupported
 	# fragments deliberately stop short of the real deck and are visual-only: the
 	# authored KitSurfaces remain the sole walk and fall authority.
-	const DECK_Y: float = 6.18
+	const ROAD_TOP_Y: float = 6.446
 	for side_value in [-1.0, 1.0]:
 		var side: float = float(side_value)
 		_add_box(
 			"BrokenApproachDeckRemnant",
-			Vector3(2.8, 0.46, 17.0),
-			Vector3(side * 8.9, DECK_Y, -72.5),
+			Vector3(2.8, 0.18, 17.0),
+			Vector3(side * 8.9, ROAD_TOP_Y - 0.09, -72.5),
 			side * 0.08,
 			"asphalt"
 		)
 		_add_box(
 			"BrokenApproachConcreteLip",
 			Vector3(3.05, 0.22, 17.2),
-			Vector3(side * 8.9, DECK_Y - 0.30, -72.5),
+			Vector3(side * 8.9, ROAD_TOP_Y - 0.29, -72.5),
 			side * 0.08,
 			"concrete_dark"
 		)
@@ -494,21 +498,21 @@ func _build_broken_bridge_spawn_shoulders() -> void:
 			_add_box(
 				"BrokenApproachDeckFragment",
 				Vector3(1.7 - float(fragment_index) * 0.18, 0.30, 3.4),
-				Vector3(fragment_x, DECK_Y + 0.10, fragment_z),
+				Vector3(fragment_x, ROAD_TOP_Y - 0.15, fragment_z),
 				side * (0.18 + float(fragment_index) * 0.09),
 				"concrete_dark"
 			)
 			_add_box(
 				"BrokenApproachTornRail",
 				Vector3(0.18, 1.05, 2.3),
-				Vector3(side * 6.95, DECK_Y + 0.66, fragment_z + 0.42),
+				Vector3(side * 6.95, ROAD_TOP_Y + 0.52, fragment_z + 0.42),
 				side * (0.26 + float(fragment_index) * 0.07),
 				"quarantine_steel"
 			)
 		_add_box(
 			"BrokenApproachWarningBoard",
 			Vector3(0.16, 0.72, 2.55),
-			Vector3(side * 7.35, DECK_Y + 0.58, -61.2),
+			Vector3(side * 7.35, ROAD_TOP_Y + 0.42, -61.2),
 			side * 0.34,
 			"warning"
 		)
