@@ -53,6 +53,9 @@ static func build_surfaces(
 			continue
 		var length: float = z1 - z0
 		var center_z: float = (z0 + z1) * 0.5
+		# Optional lateral offset lets a map author add intact deck shoulders
+		# without widening a deliberate gap crossing at the same Z range.
+		var center_x: float = float(spec.get("x", 0.0))
 		var width: float = float(spec.get("width", default_width))
 		var shape: String = str(spec.get("shape", "deck"))
 
@@ -68,6 +71,7 @@ static func build_surfaces(
 				top_y
 			)
 
+		piece.position.x = center_x
 		piece.position.z = center_z
 		surfaces.add_child(piece)
 

@@ -32,11 +32,33 @@ static func get_preset(preset_id: String) -> Dictionary:
 
 static func _broken_bridge_pass() -> Dictionary:
 	var road_width: float = 9.0
+	var shoulder_width: float = 3.0
+	var shoulder_center_x: float = 6.0
 	# 20 ft minimum clearance above water (1 ft margin for deck thickness).
 	const FEET_TO_METERS: float = 0.3048
 	const MIN_CLEARANCE_FT: float = 20.0
 	var water_y: float = 0.0
 	var deck_elevation: float = MIN_CLEARANCE_FT * FEET_TO_METERS + 0.35
+	var surface_pieces: Array[Dictionary] = [
+		# Center race deck. The side shoulders below are separate walk surfaces so
+		# bridge gaps can remain hazardous outside their narrow crossing plank.
+		{"shape": "deck", "z0": -84.0, "z1": -48.0, "top_y": 0.0, "width": road_width},
+		{"shape": "ramp", "z0": -40.0, "z1": -32.0, "start_y": 0.0, "height_delta": 0.35, "width": road_width},
+		{"shape": "deck", "z0": -32.0, "z1": -8.0, "top_y": 0.35, "width": road_width},
+		{"shape": "deck", "z0": 0.0, "z1": 32.0, "top_y": 0.35, "width": road_width},
+		{"shape": "ramp", "z0": 40.0, "z1": 48.0, "start_y": 0.35, "height_delta": -0.35, "width": road_width},
+		{"shape": "deck", "z0": 48.0, "z1": 84.0, "top_y": 0.0, "width": road_width},
+	]
+	for side_value in [-1.0, 1.0]:
+		var shoulder_x: float = float(side_value) * shoulder_center_x
+		surface_pieces.append_array([
+			{"shape": "deck", "x": shoulder_x, "z0": -84.0, "z1": -48.0, "top_y": 0.0, "width": shoulder_width},
+			{"shape": "ramp", "x": shoulder_x, "z0": -40.0, "z1": -32.0, "start_y": 0.0, "height_delta": 0.35, "width": shoulder_width},
+			{"shape": "deck", "x": shoulder_x, "z0": -32.0, "z1": -8.0, "top_y": 0.35, "width": shoulder_width},
+			{"shape": "deck", "x": shoulder_x, "z0": 0.0, "z1": 32.0, "top_y": 0.35, "width": shoulder_width},
+			{"shape": "ramp", "x": shoulder_x, "z0": 40.0, "z1": 48.0, "start_y": 0.35, "height_delta": -0.35, "width": shoulder_width},
+			{"shape": "deck", "x": shoulder_x, "z0": 48.0, "z1": 84.0, "top_y": 0.0, "width": shoulder_width},
+		])
 	return {
 		"style": RaceMapKit.MapStyle.BROKEN_BRIDGE,
 		"seed": 8802,
@@ -65,14 +87,7 @@ static func _broken_bridge_pass() -> Dictionary:
 		# Playable center span with visible side voids. Keep below full deck width so gaps matter.
 		"gap_crossing_width_ratio": 0.58,
 		"spawn_chute_half_width": 5.0,
-		"surface_pieces": [
-			{"shape": "deck", "z0": -84.0, "z1": -48.0, "top_y": 0.0, "width": road_width},
-			{"shape": "ramp", "z0": -40.0, "z1": -32.0, "start_y": 0.0, "height_delta": 0.35, "width": road_width},
-			{"shape": "deck", "z0": -32.0, "z1": -8.0, "top_y": 0.35, "width": road_width},
-			{"shape": "deck", "z0": 0.0, "z1": 32.0, "top_y": 0.35, "width": road_width},
-			{"shape": "ramp", "z0": 40.0, "z1": 48.0, "start_y": 0.35, "height_delta": -0.35, "width": road_width},
-			{"shape": "deck", "z0": 48.0, "z1": 84.0, "top_y": 0.0, "width": road_width},
-		],
+		"surface_pieces": surface_pieces,
 	}
 
 

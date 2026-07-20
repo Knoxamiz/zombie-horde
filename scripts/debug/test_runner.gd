@@ -54,6 +54,11 @@ const MAP_TESTS: Array[Dictionary] = [
 		"script": "broken_bridge_spawn_chute_test.gd",
 		"args": [],
 	},
+	{
+		"name": "broken_bridge_shoulder_surface_test",
+		"script": "broken_bridge_shoulder_surface_test.gd",
+		"args": [],
+	},
 	{"name": "map_selection_test", "script": "map_selection_test.gd", "args": []},
 	{
 		"name": "broken_bridge_pass_completion_test",
