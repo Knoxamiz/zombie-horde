@@ -421,51 +421,69 @@ func _build_coastal_evacuation() -> void:
 
 
 func _build_broken_bridge_end_approaches() -> void:
-	# Continue the bridge deck out of both scene ends so the playable route reads
-	# as a bridge connecting to distant land, rather than stopping at water. The
-	# extensions are presentation-only; the map definition remains authoritative.
-	# Broken Bridge's authored deck top is 6.446 m. Keep the visual approach on
-	# that exact top plane and overlap the final 2 m of both deck segments so no
-	# daylight seam can show between the continuation and the real street.
+	# Join the elevated bridge to a lower city street at both scene ends. These
+	# meshes deliberately overlap the real deck by two metres, but are visual-only;
+	# the authored KitSurfaces still own every walk, gap, and fall decision.
 	const ROAD_TOP_Y: float = 6.446
+	const LOWER_STREET_TOP_Y: float = 0.16
 	const ROAD_THICKNESS: float = 0.18
+	const RAMP_RUN: float = 34.0
+	const LOWER_STREET_RUN: float = 34.0
+	const RAMP_PITCH: float = atan2(ROAD_TOP_Y - LOWER_STREET_TOP_Y, RAMP_RUN)
+	const RAMP_SPAN: float = sqrt(RAMP_RUN * RAMP_RUN + (ROAD_TOP_Y - LOWER_STREET_TOP_Y) * (ROAD_TOP_Y - LOWER_STREET_TOP_Y))
 	for end_value in [-1.0, 1.0]:
 		var end_side: float = float(end_value)
 		var approach_z: float = end_side * 99.0
-		_add_box(
+		var ramp_center_y: float = (ROAD_TOP_Y + LOWER_STREET_TOP_Y) * 0.5 - ROAD_THICKNESS * 0.5
+		_add_pitched_box(
 			"BrokenBridgeEndApproachRoad",
-			Vector3(9.0, ROAD_THICKNESS, 34.0),
-			Vector3(0.0, ROAD_TOP_Y - ROAD_THICKNESS * 0.5, approach_z),
-			0.0,
+			Vector3(9.0, ROAD_THICKNESS, RAMP_SPAN),
+			Vector3(0.0, ramp_center_y, approach_z),
+			end_side * RAMP_PITCH,
 			"asphalt"
 		)
-		_add_box(
+		_add_pitched_box(
 			"BrokenBridgeEndApproachUnderside",
-			Vector3(9.4, 0.30, 34.2),
-			Vector3(0.0, ROAD_TOP_Y - ROAD_THICKNESS - 0.15, approach_z),
-			0.0,
+			Vector3(9.4, 0.30, RAMP_SPAN + 0.2),
+			Vector3(0.0, ramp_center_y - 0.24, approach_z),
+			end_side * RAMP_PITCH,
 			"concrete_dark"
 		)
 		for side_value in [-1.0, 1.0]:
 			var side: float = float(side_value)
-			_add_box(
+			_add_pitched_box(
 				"BrokenBridgeEndApproachRail",
-				Vector3(0.24, 1.15, 34.2),
-				Vector3(side * 4.65, ROAD_TOP_Y + 0.575, approach_z),
-				0.0,
+				Vector3(0.24, 1.15, RAMP_SPAN + 0.2),
+				Vector3(side * 4.65, ramp_center_y + 0.665, approach_z),
+				end_side * RAMP_PITCH,
 				"quarantine_steel"
 			)
-			_add_box(
+			_add_pitched_box(
 				"BrokenBridgeEndApproachEdge",
-				Vector3(0.42, 0.30, 34.2),
-				Vector3(side * 4.55, ROAD_TOP_Y + 0.15, approach_z),
-				0.0,
+				Vector3(0.42, 0.30, RAMP_SPAN + 0.2),
+				Vector3(side * 4.55, ramp_center_y + 0.24, approach_z),
+				end_side * RAMP_PITCH,
 				"concrete_dark"
 			)
-		_add_box(
+		_add_pitched_box(
 			"BrokenBridgeEndApproachCenterLine",
-			Vector3(0.18, 0.05, 33.5),
-			Vector3(0.0, ROAD_TOP_Y + 0.025, approach_z),
+			Vector3(0.18, 0.05, RAMP_SPAN - 0.4),
+			Vector3(0.0, ramp_center_y + 0.115, approach_z),
+			end_side * RAMP_PITCH,
+			"road_marking"
+		)
+		var lower_street_z: float = end_side * 132.0
+		_add_box(
+			"BrokenBridgeLowerStreet",
+			Vector3(11.2, ROAD_THICKNESS, LOWER_STREET_RUN),
+			Vector3(0.0, LOWER_STREET_TOP_Y - ROAD_THICKNESS * 0.5, lower_street_z),
+			0.0,
+			"asphalt"
+		)
+		_add_box(
+			"BrokenBridgeLowerStreetLine",
+			Vector3(0.18, 0.05, LOWER_STREET_RUN - 1.0),
+			Vector3(0.0, LOWER_STREET_TOP_Y + 0.025, lower_street_z),
 			0.0,
 			"road_marking"
 		)
@@ -608,6 +626,24 @@ func _add_box(node_name: String, size: Vector3, position: Vector3, yaw: float, m
 	mesh_instance.mesh = _get_box_mesh()
 	mesh_instance.position = position
 	mesh_instance.rotation.y = yaw
+	mesh_instance.scale = size
+	mesh_instance.material_override = _get_material(material_key)
+	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mesh_instance)
+
+
+func _add_pitched_box(
+	node_name: String,
+	size: Vector3,
+	position: Vector3,
+	pitch: float,
+	material_key: String
+) -> void:
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.name = node_name
+	mesh_instance.mesh = _get_box_mesh()
+	mesh_instance.position = position
+	mesh_instance.rotation.x = pitch
 	mesh_instance.scale = size
 	mesh_instance.material_override = _get_material(material_key)
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

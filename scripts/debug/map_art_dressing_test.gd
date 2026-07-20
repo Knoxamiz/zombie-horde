@@ -22,7 +22,7 @@ var _map_cases: Array[Dictionary] = [
 		"nodes": PackedStringArray([
 			"CoastalWater", "CoastalBoatHull", "CoastalBuoy", "BrokenApproachDeckRemnant",
 			"BrokenApproachDeckFragment", "BrokenApproachTornRail", "BrokenBridgeEndApproachRoad",
-			"BrokenBridgeEndApproachRail",
+			"BrokenBridgeEndApproachRail", "BrokenBridgeLowerStreet",
 		]),
 	},
 	{
@@ -153,6 +153,9 @@ func _validate_broken_bridge_environment(arena: Node3D) -> void:
 	var end_roads: Array[Node] = dressing.find_children("BrokenBridgeEndApproachRoad*", "", true, false)
 	if end_roads.size() != 2:
 		_fail("broken_bridge_pass must continue its visual road beyond both map ends")
+	var lower_streets: Array[Node] = dressing.find_children("BrokenBridgeLowerStreet*", "", true, false)
+	if lower_streets.size() != 4:
+		_fail("broken_bridge_pass must slope into a lower street at both map ends")
 
 
 func _fail(message: String) -> void:
