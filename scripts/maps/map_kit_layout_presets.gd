@@ -270,6 +270,7 @@ static func _spiral_descent() -> Dictionary:
 		"start_gate_z": -88.0,
 		"finish_gate_z": 88.0,
 		"spiral_dressing": true,
+		"desert_highway_dressing": true,
 		"segments": [
 			{"z0": -96.0, "z1": 96.0},
 		],

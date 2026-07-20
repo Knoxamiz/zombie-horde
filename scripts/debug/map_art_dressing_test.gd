@@ -81,6 +81,8 @@ func _validate_map_art(map_case: Dictionary) -> void:
 		_validate_suburban_environment(arena, definition)
 	if map_id == "broken_bridge_pass":
 		_validate_broken_bridge_environment(arena)
+	if map_id == "spiral_descent":
+		_validate_desert_highway_environment(arena)
 	_validate_visual_only(dressing, map_id)
 	arena.queue_free()
 	await process_frame
@@ -159,6 +161,29 @@ func _validate_broken_bridge_environment(arena: Node3D) -> void:
 	var lower_streets: Array[Node] = dressing.find_children("BrokenBridgeLowerStreet*", "", true, false)
 	if lower_streets.size() != 4:
 		_fail("broken_bridge_pass must slope into a lower street at both map ends")
+
+
+func _validate_desert_highway_environment(arena: Node3D) -> void:
+	var core_road: Node3D = arena.get_node_or_null("CoreRoad") as Node3D
+	if core_road == null:
+		_fail("spiral_descent must keep its CoreRoad")
+		return
+	if core_road.get_node_or_null("Water") != null:
+		_fail("spiral_descent must not build a water backdrop")
+	var visual_kit: Node3D = core_road.get_node_or_null("VisualKit") as Node3D
+	if visual_kit == null:
+		_fail("spiral_descent must build a visual kit")
+		return
+	if visual_kit.get_node_or_null("StageAtmosphereContext") != null:
+		_fail("spiral_descent must not build the generic city stage backdrop")
+	if visual_kit.get_node_or_null("DesertHighwayContext") == null:
+		_fail("spiral_descent must build its elevation-matched desert terrain")
+	for legacy_prefix in ["SpiralCoreColumn", "SpiralOuterDeck", "SpiralLandingLink", "SpiralOuterRail", "SpiralInnerRail", "SpiralSupportPost"]:
+		if not visual_kit.find_children("%s*" % legacy_prefix, "", true, false).is_empty():
+			_fail("spiral_descent must not build legacy visual '%s'" % legacy_prefix)
+	var terrain: Array[Node] = visual_kit.find_children("DesertElevationShelf*", "", true, false)
+	if terrain.size() < 10:
+		_fail("spiral_descent must build sand shelves along every elevation section")
 
 
 func _fail(message: String) -> void:

@@ -165,7 +165,8 @@ func build_route_context(
 	track_length: float,
 	surface_pieces: Array = [],
 	gap_crossing_width_ratio: float = SURFACE_BUILDER.DEFAULT_GAP_CROSSING_WIDTH_RATIO,
-	spawn_chute_half_width: float = -1.0
+	spawn_chute_half_width: float = -1.0,
+	build_stage_context: bool = true
 ) -> void:
 	var edge_x: float = 5.4 if _style == MapStyle.BROKEN_BRIDGE else 10.5
 	var barrier_spacing: float = 5.0 if _style == MapStyle.BROKEN_BRIDGE else 6.5
@@ -200,7 +201,8 @@ func build_route_context(
 		build_gap_support_piers(gaps, path_half_width, bed_y, surface_pieces)
 	if not surface_pieces.is_empty():
 		build_elevated_deck_supports(surface_pieces, path_half_width * 2.0, bed_y)
-	_build_stage_atmosphere_context(void_width, track_length, bed_y)
+	if build_stage_context:
+		_build_stage_atmosphere_context(void_width, track_length, bed_y)
 	_reposition_environment_lights(spawn_z, goal_z)
 
 
@@ -1802,6 +1804,115 @@ func build_spiral_descent_dressing(surface_pieces: Array, path_half_width: float
 		label.position = Vector3(-side * (path_half_width + 1.2), y + 1.2, center_z - length * 0.35)
 		label.rotation_degrees.y = 0.0
 		_visual_root.add_child(label)
+
+
+func build_desert_highway_context(
+	surface_pieces: Array,
+	path_half_width: float,
+	void_width: float,
+	track_length: float
+) -> void:
+	## Replaces Straight Descent's generic water/city void with visual-only sand.
+	## The map's KitSurfaces, navigation, hazards, and OOB remain authoritative.
+	if _root == null or _visual_root == null or surface_pieces.is_empty():
+		return
+	var old_ground: MeshInstance3D = _root.get_node_or_null("GroundBed") as MeshInstance3D
+	if old_ground != null:
+		old_ground.visible = false
+	for child in _visual_root.get_children():
+		if child.name.begins_with("RouteShoulder") or child.name.begins_with("DeckSupport"):
+			child.queue_free()
+
+	var desert_root: Node3D = Node3D.new()
+	desert_root.name = "DesertHighwayContext"
+	_visual_root.add_child(desert_root)
+	var base_y: float = -14.8
+	var sand: StandardMaterial3D = _make_desert_material(Color("c68f4f"), 0.94)
+	var dark_sand: StandardMaterial3D = _make_desert_material(Color("9a6334"), 0.98)
+	var rock: StandardMaterial3D = _make_desert_material(Color("75472d"), 0.93)
+	_add_bridge_box(
+		desert_root,
+		"DesertTerrainBase",
+		Vector3(void_width + 46.0, 0.30, track_length + 44.0),
+		Vector3(0.0, base_y, 0.0),
+		sand
+	)
+	for raw_spec in surface_pieces:
+		if raw_spec is not Dictionary:
+			continue
+		var spec: Dictionary = raw_spec
+		var z0: float = float(spec.get("z0", 0.0))
+		var z1: float = float(spec.get("z1", z0))
+		if z1 <= z0:
+			continue
+		var length: float = z1 - z0
+		var center_z: float = (z0 + z1) * 0.5
+		var start_y: float = float(spec.get("start_y", spec.get("top_y", 0.0)))
+		var height_delta: float = float(spec.get("height_delta", 0.0))
+		var center_y: float = start_y + height_delta * 0.5
+		var slope_angle: float = atan2(height_delta, length)
+		for side_value in [-1.0, 1.0]:
+			var side: float = float(side_value)
+			_build_desert_elevation_shelf(
+				desert_root, side, path_half_width, center_y, center_z, length,
+				slope_angle, base_y, sand, dark_sand
+			)
+	var mesa_positions: Array[Vector3] = [
+		Vector3(-48.0, -8.2, -70.0), Vector3(51.0, -7.2, -34.0),
+		Vector3(-53.0, -8.8, 12.0), Vector3(49.0, -7.8, 58.0),
+	]
+	for mesa_position: Vector3 in mesa_positions:
+		_add_bridge_box(desert_root, "DesertCanyonMesa", Vector3(18.0, 13.0, 22.0), mesa_position, rock)
+
+
+func _build_desert_elevation_shelf(
+	parent: Node3D,
+	side: float,
+	path_half_width: float,
+	center_y: float,
+	center_z: float,
+	length: float,
+	slope_angle: float,
+	base_y: float,
+	sand: Material,
+	dark_sand: Material
+) -> void:
+	var inner_top: float = center_y - 0.10
+	var inner := _add_bridge_box(
+		parent,
+		"DesertElevationShelf",
+		Vector3(8.0, 0.52, length + 0.35),
+		Vector3(side * (path_half_width + 4.0), inner_top - 0.26, center_z),
+		sand
+	)
+	inner.rotation.x = -slope_angle
+	var terrace_top: float = center_y - 2.1
+	var terrace_height: float = maxf(terrace_top - base_y, 0.75)
+	var terrace := _add_bridge_box(
+		parent,
+		"DesertDuneTerrace",
+		Vector3(13.0, terrace_height, length + 6.0),
+		Vector3(side * (path_half_width + 14.5), base_y + terrace_height * 0.5, center_z),
+		dark_sand
+	)
+	terrace.rotation.x = -slope_angle
+	var outer_top: float = center_y - 5.0
+	var outer_height: float = maxf(outer_top - base_y, 0.55)
+	var outer := _add_bridge_box(
+		parent,
+		"DesertDuneSlope",
+		Vector3(24.0, outer_height, length + 11.0),
+		Vector3(side * (path_half_width + 33.0), base_y + outer_height * 0.5, center_z),
+		sand
+	)
+	outer.rotation.x = -slope_angle
+
+
+func _make_desert_material(color: Color, roughness_value: float) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = roughness_value
+	return material
 
 
 func _place_prop(scene: PackedScene, position: Vector3, scale_value: float, yaw_degrees: float) -> void:

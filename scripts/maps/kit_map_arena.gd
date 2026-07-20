@@ -45,6 +45,7 @@ func _build_from_preset(preset_id: String) -> void:
 	var seed: int = int(layout.get("seed", 8802))
 	var road_width: float = path_half_width * 2.0
 	var uses_surface_pieces: bool = not surface_pieces.is_empty()
+	var uses_desert_highway_dressing: bool = bool(layout.get("desert_highway_dressing", false))
 	var gap_crossing_width_ratio: float = float(
 		layout.get("gap_crossing_width_ratio", SURFACE_BUILDER.DEFAULT_GAP_CROSSING_WIDTH_RATIO)
 	)
@@ -56,7 +57,8 @@ func _build_from_preset(preset_id: String) -> void:
 	_kit.set_water_y(water_y)
 	_kit.set_void_bed_y(bed_y)
 	_kit.build_environment()
-	_kit.build_water(void_width, track_length, water_y)
+	if not uses_desert_highway_dressing:
+		_kit.build_water(void_width, track_length, water_y)
 
 	if uses_surface_pieces:
 		var surfaces: Node3D = SURFACE_BUILDER.build_surfaces(self, surface_pieces, road_width)
@@ -75,7 +77,7 @@ func _build_from_preset(preset_id: String) -> void:
 
 	if uses_surface_pieces:
 		_kit.build_ramp_visuals(SURFACE_BUILDER.collect_ramp_visual_specs(surface_pieces), road_width)
-		if bool(layout.get("spiral_dressing", false)):
+		if bool(layout.get("spiral_dressing", false)) and not uses_desert_highway_dressing:
 			_kit.build_spiral_descent_dressing(surface_pieces, path_half_width)
 	_kit.compose_map(segments, gaps)
 	_kit.build_route_context(
@@ -89,8 +91,11 @@ func _build_from_preset(preset_id: String) -> void:
 		track_length,
 		surface_pieces if uses_surface_pieces else [],
 		gap_crossing_width_ratio,
-		float(layout.get("spawn_chute_half_width", path_half_width + 0.85))
+		float(layout.get("spawn_chute_half_width", path_half_width + 0.85)),
+		not uses_desert_highway_dressing
 	)
+	if uses_desert_highway_dressing:
+		_kit.build_desert_highway_context(surface_pieces, path_half_width, void_width, track_length)
 	_kit.build_markers(visual_width, spawn_z, goal_z, start_gate_z, finish_gate_z)
 	var visual_kit: Node = get_node_or_null("VisualKit")
 	if visual_kit != null:
