@@ -54,6 +54,8 @@ var _stall_timer: float = 0.0
 var _last_progress_sample: float = 0.0
 var _death_cause: String = ""
 var _fell_visual_timer: float = 0.0
+var _water_float_timer: float = 0.0
+var _water_float_elapsed: float = 0.0
 var _race_route = RACE_ROUTE_NAVIGATOR.new()
 var _navigation_target: Vector3 = Vector3.INF
 var _safe_navigation_velocity: Vector3 = Vector3.ZERO
@@ -123,6 +125,8 @@ func configure_zombie(
 	health = _get_config().max_health
 	_death_cause = ""
 	_fell_visual_timer = 0.0
+	_water_float_timer = 0.0
+	_water_float_elapsed = 0.0
 	_is_current_leader = false
 	_assign_zombie_tint_color()
 	_select_visual_variant()
@@ -138,6 +142,10 @@ func is_alive() -> bool:
 
 func is_crawler() -> bool:
 	return mobility_state == MobilityState.CRAWLER
+
+
+func is_water_floating() -> bool:
+	return _water_float_timer > 0.0 and is_alive()
 
 func has_finished_race() -> bool:
 	return _has_finished_race
@@ -240,6 +248,10 @@ func _physics_process(delta: float) -> void:
 		_process_dead_body(delta, active_config)
 		return
 
+	if is_water_floating():
+		_process_water_float(delta, active_config)
+		return
+
 	var vertical_velocity: float = velocity.y
 	if not is_on_floor():
 		vertical_velocity -= active_config.gravity * delta
@@ -340,6 +352,46 @@ func _is_fell_visual_active() -> bool:
 		and _death_cause == "fell"
 		and _fell_visual_timer > 0.0
 	)
+
+
+func _begin_water_float(active_config: ZombieConfig) -> void:
+	if not active_config.water_fall_enabled or active_config.water_float_duration <= 0.0:
+		return
+	_water_float_timer = active_config.water_float_duration
+	_water_float_elapsed = 0.0
+	velocity = Vector3.ZERO
+	_stun_timer = 0.0
+	_boost_timer = 0.0
+	_boost_multiplier = 1.0
+	_has_safe_navigation_velocity = false
+	_safe_navigation_velocity = Vector3.ZERO
+	_set_collision_enabled(false)
+	_set_name_label_visible(false)
+	_stop_animation()
+	if _visual_root != null:
+		_visual_root.rotation.x = deg_to_rad(78.0)
+		_visual_root.rotation.z = deg_to_rad(8.0)
+	GameEvents.world_feedback_requested.emit(
+		global_position + Vector3.UP * 0.8, "SPLASH!", Color(0.42, 0.82, 1.0, 1.0)
+	)
+
+
+func _process_water_float(delta: float, active_config: ZombieConfig) -> void:
+	_water_float_timer = maxf(0.0, _water_float_timer - delta)
+	_water_float_elapsed += delta
+	var bob_phase: float = _water_float_elapsed * 3.6 + float(get_instance_id() % 17)
+	var bob_y: float = sin(bob_phase) * active_config.water_float_bob_amplitude
+	global_position.y = active_config.water_surface_y + active_config.water_float_height + bob_y
+	velocity = Vector3.ZERO
+	_set_collision_enabled(false)
+	_set_name_label_visible(false)
+	if _water_float_timer > 0.0:
+		return
+
+	GameEvents.world_feedback_requested.emit(
+		global_position + Vector3.UP * 0.8, "SUNK!", Color(0.42, 0.82, 1.0, 1.0)
+	)
+	kill("fell")
 
 
 func _get_desired_velocity(active_config: ZombieConfig) -> Vector3:
@@ -621,6 +673,14 @@ func _get_current_speed(active_config: ZombieConfig) -> float:
 
 func _check_out_of_bounds(active_config: ZombieConfig) -> void:
 	if not _round_active or not active_config.out_of_bounds_enabled or not is_alive():
+		return
+
+	if (
+		active_config.water_fall_enabled
+		and active_config.water_float_duration > 0.0
+		and global_position.y <= active_config.water_surface_y
+	):
+		_begin_water_float(active_config)
 		return
 
 	if global_position.y < active_config.out_of_bounds_min_y:

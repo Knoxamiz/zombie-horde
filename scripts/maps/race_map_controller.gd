@@ -565,6 +565,11 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		zombie_config.out_of_bounds_min_z = definition.out_of_bounds_min_z
 		zombie_config.out_of_bounds_max_z = definition.out_of_bounds_max_z
 		zombie_config.out_of_bounds_min_y = definition.out_of_bounds_min_y
+		zombie_config.water_fall_enabled = definition.water_fall_enabled
+		zombie_config.water_surface_y = definition.water_surface_y
+		zombie_config.water_float_duration = definition.water_float_duration
+		zombie_config.water_float_height = definition.water_float_height
+		zombie_config.water_float_bob_amplitude = definition.water_float_bob_amplitude
 		_apply_kit_gap_void_zones(_get_current_map())
 
 	if hazard_config != null:

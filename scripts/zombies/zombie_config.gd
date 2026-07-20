@@ -34,6 +34,14 @@ extends Resource
 @export var out_of_bounds_min_z: float = -48.0
 @export var out_of_bounds_max_z: float = 48.0
 @export var out_of_bounds_min_y: float = -3.0
+## Optional map-configured water-fall presentation. The OOB authority remains
+## Zombie._check_out_of_bounds(); enabled maps pause falling zombies at this
+## surface briefly before reporting the normal "fell" death.
+@export var water_fall_enabled: bool = false
+@export var water_surface_y: float = 0.0
+@export_range(0.0, 10.0, 0.05) var water_float_duration: float = 0.0
+@export_range(0.0, 2.0, 0.01) var water_float_height: float = 0.42
+@export_range(0.0, 1.0, 0.01) var water_float_bob_amplitude: float = 0.08
 ## Each entry: { "z0": float, "z1": float, "crossing_half_width": float, "deck_y": float }
 @export var gap_void_zones: Array[Dictionary] = []
 @export_range(0, 256, 1) var name_label_full_roster_limit: int = 24

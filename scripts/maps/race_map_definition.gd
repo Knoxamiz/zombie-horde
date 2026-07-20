@@ -16,6 +16,14 @@ extends Resource
 @export var out_of_bounds_max_z: float = 48.0
 @export var out_of_bounds_min_y: float = -3.0
 @export var deck_y: float = 0.0
+## Optional presentation layer for maps with visible water below a fall hazard.
+## Zombie remains the single OOB authority and turns this into a normal "fell"
+## death after the configured float window.
+@export var water_fall_enabled: bool = false
+@export var water_surface_y: float = 0.0
+@export_range(0.0, 10.0, 0.05) var water_float_duration: float = 0.0
+@export_range(0.0, 2.0, 0.01) var water_float_height: float = 0.42
+@export_range(0.0, 1.0, 0.01) var water_float_bob_amplitude: float = 0.08
 @export var race_environment_override: Environment
 @export var hazard_placement_half_width: float = 6.2
 @export var hazard_placement_min_z: float = -30.0
