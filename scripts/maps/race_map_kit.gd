@@ -1875,31 +1875,27 @@ func _build_desert_elevation_shelf(
 	cactus: Material,
 	rock: Material
 ) -> void:
-	# Overlap the highway edge slightly so this cannot leave a visual void.
-	var road_blend: MeshInstance3D = _add_bridge_box(
+	# The race deck is exactly 12 units wide on this map. Desert art begins
+	# outside it, rather than overlapping its edge, so sand can never clip into
+	# a playable lane at ramps or at the spawn/finish apron.
+	const DESERT_SURFACE_DROP: float = 1.0
+	const TRACK_EDGE_CLEARANCE: float = 0.75
+	var shoulder_top: float = center_y - DESERT_SURFACE_DROP
+	var shoulder_cap: MeshInstance3D = _add_bridge_box(
 		parent,
-		"DesertRoadBlend",
-		Vector3(4.9, 0.38, length + 0.45),
-		Vector3(side * (path_half_width + 2.43), center_y - 0.19, center_z),
+		"DesertRoadShoulder",
+		Vector3(6.4, 0.34, length + 1.0),
+		Vector3(side * (path_half_width + TRACK_EDGE_CLEARANCE + 3.2), shoulder_top - 0.17, center_z),
 		sand
 	)
-	road_blend.rotation.x = -slope_angle
-	var inner_top: float = center_y - 0.10
-	var inner := _add_bridge_box(
-		parent,
-		"DesertElevationShelf",
-		Vector3(8.0, 0.52, length + 0.35),
-		Vector3(side * (path_half_width + 4.0), inner_top - 0.26, center_z),
-		sand
-	)
-	inner.rotation.x = -slope_angle
+	shoulder_cap.rotation.x = -slope_angle
 	_add_desert_stepped_backing(
 		parent,
-		"DesertInnerBacking",
+		"DesertShoulderBacking",
 		side,
-		path_half_width + 10.0,
-		10.0,
-		0.10,
+		path_half_width + TRACK_EDGE_CLEARANCE + 3.2,
+		6.4,
+		DESERT_SURFACE_DROP,
 		center_y,
 		center_z,
 		length,
@@ -1907,12 +1903,12 @@ func _build_desert_elevation_shelf(
 		base_y,
 		sand
 	)
-	var terrace_top: float = center_y - 1.08
+	var terrace_top: float = center_y - 2.15
 	var terrace_cap: MeshInstance3D = _add_bridge_box(
 		parent,
 		"DesertDuneTerrace",
 		Vector3(17.0, 0.34, length + 5.0),
-		Vector3(side * (path_half_width + 16.5), terrace_top - 0.17, center_z),
+		Vector3(side * (path_half_width + 14.5), terrace_top - 0.17, center_z),
 		dark_sand
 	)
 	terrace_cap.rotation.x = -slope_angle
@@ -1920,9 +1916,9 @@ func _build_desert_elevation_shelf(
 		parent,
 		"DesertTerraceBacking",
 		side,
-		path_half_width + 16.5,
+		path_half_width + 14.5,
 		17.0,
-		1.08,
+		2.15,
 		center_y,
 		center_z,
 		length,
@@ -1930,12 +1926,12 @@ func _build_desert_elevation_shelf(
 		base_y,
 		dark_sand
 	)
-	var outer_top: float = center_y - 3.15
+	var outer_top: float = center_y - 4.25
 	var outer_cap: MeshInstance3D = _add_bridge_box(
 		parent,
 		"DesertDuneSlope",
 		Vector3(28.0, 0.34, length + 10.0),
-		Vector3(side * (path_half_width + 39.0), outer_top - 0.17, center_z),
+		Vector3(side * (path_half_width + 37.0), outer_top - 0.17, center_z),
 		sand
 	)
 	outer_cap.rotation.x = -slope_angle
@@ -1943,9 +1939,9 @@ func _build_desert_elevation_shelf(
 		parent,
 		"DesertOuterBacking",
 		side,
-		path_half_width + 39.0,
+		path_half_width + 37.0,
 		28.0,
-		3.15,
+		4.25,
 		center_y,
 		center_z,
 		length,

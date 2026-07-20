@@ -180,13 +180,11 @@ func _validate_desert_highway_environment(arena: Node3D) -> void:
 	for legacy_prefix in ["SpiralCoreColumn", "SpiralOuterDeck", "SpiralLandingLink", "SpiralOuterRail", "SpiralInnerRail", "SpiralSupportPost"]:
 		if not visual_kit.find_children("%s*" % legacy_prefix, "", true, false).is_empty():
 			_fail("spiral_descent must not build legacy visual '%s'" % legacy_prefix)
-	var terrain: Array[Node] = visual_kit.find_children("DesertElevationShelf*", "", true, false)
+	var terrain: Array[Node] = visual_kit.find_children("DesertRoadShoulder*", "", true, false)
 	if terrain.size() < 10:
-		_fail("spiral_descent must build sand shelves along every elevation section")
-	if visual_kit.find_children("DesertRoadBlend*", "", true, false).size() < 10:
-		_fail("spiral_descent must blend sand directly into both road edges")
-	if visual_kit.find_children("DesertInnerBacking*", "", true, false).size() < 40:
-		_fail("spiral_descent must build filled sand below each road-edge shelf")
+		_fail("spiral_descent must build recessed sand shoulders along every elevation section")
+	if visual_kit.find_children("DesertShoulderBacking*", "", true, false).size() < 40:
+		_fail("spiral_descent must build filled sand below each recessed road shoulder")
 	if visual_kit.find_children("DesertTerraceBacking*", "", true, false).size() < 40:
 		_fail("spiral_descent must build filled dune terraces without rotated slabs")
 	if visual_kit.find_children("DesertOuterBacking*", "", true, false).size() < 40:
