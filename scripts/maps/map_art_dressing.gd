@@ -11,7 +11,7 @@ extends Node3D
 enum Profile {
 	SUBURBAN_OUTBREAK,
 	COASTAL_EVACUATION,
-	CRUMBLED_HIGHWAY,
+	DESERT_HIGHWAY,
 	PARKING_GARAGE_CONSTRUCTION,
 }
 
@@ -60,8 +60,8 @@ func _build_profile() -> void:
 			_build_suburban_outbreak()
 		Profile.COASTAL_EVACUATION:
 			_build_coastal_evacuation()
-		Profile.CRUMBLED_HIGHWAY:
-			_build_crumbled_highway()
+		Profile.DESERT_HIGHWAY:
+			_build_desert_highway()
 		Profile.PARKING_GARAGE_CONSTRUCTION:
 			_build_parking_garage_construction()
 
@@ -553,18 +553,70 @@ func _build_coastal_fadeout(position: Vector3, sign_x: float) -> void:
 		_add_box("CoastalWarehouse", Vector3(12.0, 12.0 + float(index % 2) * 6.0, 16.0), position + offset, 0.0, "coastal_building")
 
 
-func _build_crumbled_highway() -> void:
-	# Distant support columns and broken road fragments sell the collapse without blocking the course.
-	for side in [-1.0, 1.0]:
-		for z in [-72.0, -36.0, 6.0, 48.0, 84.0]:
-			_add_box("HighwaySupport", Vector3(2.4, 17.0, 2.4), Vector3(side * 14.5, -6.2, z), 0.0, "concrete")
-			_add_box("BrokenHighwayStub", Vector3(8.0, 0.8, 11.0), Vector3(side * 19.0, 2.3 + float(int(abs(z)) % 3), z + 4.0), 0.18 * side, "asphalt")
-	for index in range(8):
-		var side: float = -1.0 if index % 2 == 0 else 1.0
-		_add_box("CollapsedBarrier", Vector3(0.38, 0.62, 5.4), Vector3(side * 9.7, 1.0, -73.0 + float(index) * 21.0), 0.32 * side, "warning")
-	for index in range(6):
-		var side: float = -1.0 if index % 2 == 0 else 1.0
-		_add_box("HighwayCityBlock", Vector3(13.0, 20.0 + float(index % 3) * 8.0, 18.0), Vector3(side * 35.0, 9.0, -70.0 + float(index) * 30.0), 0.0, "city_dark")
+func _build_desert_highway() -> void:
+	# Straight Descent is a high desert evacuation route. The actual road kit,
+	# route, hazards, and collision remain untouched; this only fills the empty
+	# world below and beyond the elevated course with a lightweight canyon scene.
+	_add_box("DesertCanyonFloor", Vector3(172.0, 0.24, 252.0), Vector3(0.0, -15.2, 0.0), 0.0, "desert_sand")
+	for side_value in [-1.0, 1.0]:
+		var side: float = float(side_value)
+		for z in [-86.0, -42.0, 4.0, 48.0, 89.0]:
+			var tier: int = int(absf(z) / 40.0) % 3
+			var dune_height: float = 2.8 + float(tier) * 1.1
+			_add_box(
+				"DesertDune",
+				Vector3(28.0 + float(tier) * 5.0, dune_height, 25.0),
+				Vector3(side * (26.0 + float(tier) * 5.0), -14.0 + dune_height * 0.5, z),
+				0.10 * side,
+				"desert_sand_dark"
+			)
+		for z in [-66.0, -12.0, 38.0, 78.0]:
+			var mesa_height: float = 10.0 + float(int(absf(z)) % 3) * 3.5
+			_add_box(
+				"DesertMesa",
+				Vector3(20.0, mesa_height, 18.0),
+				Vector3(side * 58.0, -15.0 + mesa_height * 0.5, z),
+				0.0,
+				"desert_rock"
+			)
+			_add_box(
+				"DesertMesaCap",
+				Vector3(22.0, 0.75, 20.0),
+				Vector3(side * 58.0, -15.0 + mesa_height + 0.36, z),
+				0.0,
+				"desert_rock_light"
+			)
+	var cactus_positions: Array[Vector3] = [
+		Vector3(-31.0, -13.9, -74.0), Vector3(34.0, -13.9, -54.0),
+		Vector3(-39.0, -13.9, -18.0), Vector3(29.0, -13.9, 10.0),
+		Vector3(-32.0, -13.9, 43.0), Vector3(38.0, -13.9, 71.0),
+	]
+	for cactus_position: Vector3 in cactus_positions:
+		_build_desert_cactus(cactus_position, 0.80 + absf(cactus_position.z) * 0.002)
+	var boulder_positions: Array[Vector3] = [
+		Vector3(-22.0, -14.1, -58.0), Vector3(24.0, -14.1, -31.0),
+		Vector3(-27.0, -14.1, -2.0), Vector3(22.0, -14.1, 26.0),
+		Vector3(-25.0, -14.1, 61.0), Vector3(27.0, -14.1, 91.0),
+	]
+	for boulder_position: Vector3 in boulder_positions:
+		_add_sphere("DesertBoulder", 1.05, boulder_position, "desert_rock_light")
+	for side_value in [-1.0, 1.0]:
+		var debris_side: float = float(side_value)
+		for z in [-78.0, -24.0, 31.0, 82.0]:
+			_add_box("DesertRoadsideMarker", Vector3(0.22, 1.35, 0.22), Vector3(debris_side * 12.5, -13.95, z), 0.0, "desert_marker")
+			_add_box("DesertRoadsideReflector", Vector3(0.44, 0.20, 0.10), Vector3(debris_side * 12.5, -13.35, z), 0.0, "road_marking")
+
+
+func _build_desert_cactus(position: Vector3, scale_factor: float) -> void:
+	var trunk_height: float = 5.2 * scale_factor
+	var trunk_radius: float = 0.34 * scale_factor
+	_add_cylinder("DesertCactus", trunk_radius, trunk_height, position + Vector3.UP * (trunk_height * 0.5), "cactus")
+	var arm_height: float = 2.15 * scale_factor
+	for side_value in [-1.0, 1.0]:
+		var side: float = float(side_value)
+		var arm_position: Vector3 = position + Vector3(side * 0.88 * scale_factor, trunk_height * 0.56, 0.0)
+		_add_box("DesertCactusArm", Vector3(1.55 * scale_factor, 0.34 * scale_factor, 0.34 * scale_factor), arm_position, 0.0, "cactus")
+		_add_cylinder("DesertCactusArmTip", trunk_radius * 0.78, arm_height, arm_position + Vector3(side * 0.72 * scale_factor, arm_height * 0.48, 0.0), "cactus")
 
 
 func _build_parking_garage_construction() -> void:
@@ -713,7 +765,7 @@ static func _get_material(key: String) -> Material:
 		roughness = 0.88
 		detail_scale = 0.62
 		detail_strength = 0.085
-	elif key in ["lawn", "suburban_ground", "hedge", "tree_light", "tree_dark"]:
+	elif key in ["lawn", "suburban_ground", "hedge", "tree_light", "tree_dark", "desert_sand", "desert_sand_dark", "desert_rock", "desert_rock_light", "cactus"]:
 		roughness = 0.96
 		detail_scale = 0.34
 		detail_strength = 0.075
@@ -789,6 +841,12 @@ static func _get_material_color(key: String) -> Color:
 		"concrete_dark": return Color("505652")
 		"construction_steel": return Color("435258")
 		"construction_yellow": return Color("d8a82a")
+		"desert_sand": return Color("c68f4f")
+		"desert_sand_dark": return Color("9a6334")
+		"desert_rock": return Color("75472d")
+		"desert_rock_light": return Color("a96c3e")
+		"cactus": return Color("3e6e37")
+		"desert_marker": return Color("8c6b48")
 		"steel": return Color("39464b")
 		"quarantine_steel": return Color("4a5558")
 		"quarantine_mesh": return Color("697274")

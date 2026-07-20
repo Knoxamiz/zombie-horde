@@ -1,0 +1,32 @@
+[gd_resource type="Environment" load_steps=3 format=3]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_desert"]
+sky_top_color = Color(0.105, 0.22, 0.34, 1)
+sky_horizon_color = Color(0.63, 0.46, 0.31, 1)
+sky_curve = 0.22
+ground_bottom_color = Color(0.13, 0.075, 0.04, 1)
+ground_horizon_color = Color(0.48, 0.28, 0.15, 1)
+ground_curve = 0.06
+sun_angle_max = 28.0
+sun_curve = 0.12
+
+[sub_resource type="Sky" id="Sky_desert"]
+sky_material = SubResource("ProceduralSkyMaterial_desert")
+
+[resource]
+background_mode = 2
+sky = SubResource("Sky_desert")
+ambient_light_source = 2
+ambient_light_color = Color(0.66, 0.48, 0.32, 1)
+ambient_light_energy = 0.72
+reflected_light_source = 1
+tonemap_mode = 2
+tonemap_exposure = 1.1
+glow_enabled = true
+glow_intensity = 0.22
+glow_strength = 0.32
+fog_enabled = true
+fog_light_color = Color(0.57, 0.36, 0.20, 1)
+fog_light_energy = 0.14
+fog_density = 0.0035
+fog_aerial_perspective = 0.14

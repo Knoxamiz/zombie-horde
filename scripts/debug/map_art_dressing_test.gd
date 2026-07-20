@@ -27,7 +27,10 @@ var _map_cases: Array[Dictionary] = [
 	},
 	{
 		"id": "spiral_descent",
-		"nodes": PackedStringArray(["HighwaySupport", "CollapsedBarrier", "HighwayCityBlock"]),
+		"nodes": PackedStringArray([
+			"DesertCanyonFloor", "DesertDune", "DesertMesa", "DesertMesaCap",
+			"DesertCactus", "DesertCactusArm", "DesertBoulder", "DesertRoadsideMarker",
+		]),
 	},
 	{
 		"id": "true_spiral_ramp",

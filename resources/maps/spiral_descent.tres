@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/maps/race_map_definition.gd" id="1_definition"]
 [ext_resource type="PackedScene" path="res://scenes/maps/spiral_descent.tscn" id="2_scene"]
-[ext_resource type="Environment" path="res://resources/environment/race_environment.tres" id="3_env"]
+[ext_resource type="Environment" path="res://resources/environment/straight_descent_desert_environment.tres" id="3_env"]
 
 [resource]
 script = ExtResource("1_definition")
