@@ -73,6 +73,7 @@ func _build_suburban_outbreak() -> void:
 	_add_box("SuburbanGround", Vector3(112.0, 0.12, 184.0), Vector3(0.0, -0.26, 0.0), 0.0, "suburban_ground")
 	_build_suburban_public_street_extensions()
 	_build_suburban_quarantine_breach()
+	_build_suburban_safehouse_finish()
 	for side in [-1.0, 1.0]:
 		# Neighborhood cross-section, from the race lane outward:
 		# raised curb, narrow grass verge, raised sidewalk, fenced yard.
@@ -186,6 +187,27 @@ func _build_suburban_quarantine_breach() -> void:
 	_add_box("QuarantineWarningStripe", Vector3(6.35, 0.09, 0.14), Vector3(0.0, 3.09, breach_z - 0.34), 0.0, "quarantine_red")
 
 
+func _build_suburban_safehouse_finish() -> void:
+	# The streamer base remains the sole finish authority. This is only the
+	# City Highway presentation around it: a secured safehouse checkpoint that
+	# matches the breached quarantine start without another trigger or collider.
+	var finish_z: float = 38.0
+	_add_box("QuarantineFinishApron", Vector3(14.9, 0.045, 6.0), Vector3(0.0, 0.155, 42.0), 0.0, "asphalt")
+	_add_box("QuarantineFinishLine", Vector3(14.6, 0.06, 0.22), Vector3(0.0, 0.19, finish_z), 0.0, "warning")
+	for side_value in [-1.0, 1.0]:
+		var side: float = float(side_value)
+		_add_box("SafehouseGateBase", Vector3(1.1, 0.30, 1.1), Vector3(side * 7.15, 0.15, finish_z), 0.0, "concrete_dark")
+		_add_box("SafehouseGatePost", Vector3(0.42, 3.55, 0.42), Vector3(side * 7.15, 1.92, finish_z), 0.0, "quarantine_steel")
+		_add_box("SafehouseGateBrace", Vector3(0.24, 1.15, 0.24), Vector3(side * 6.62, 2.80, finish_z), side * -0.42, "quarantine_steel")
+		_add_cylinder("SafehouseGateBeacon", 0.20, 0.26, Vector3(side * 7.15, 3.82, finish_z), "lamp_glow")
+		_add_box("SafehouseJerseyBarrier", Vector3(2.4, 0.72, 0.68), Vector3(side * 8.9, 0.36, finish_z - 2.8), 0.0, "concrete_dark")
+		_add_box("SafehouseBarrierStripe", Vector3(2.5, 0.16, 0.08), Vector3(side * 8.9, 0.58, finish_z - 2.43), 0.0, "warning")
+	_add_box("SafehouseGateBeam", Vector3(14.7, 0.46, 0.46), Vector3(0.0, 3.58, finish_z), 0.0, "quarantine_steel")
+	_add_box("SafehouseHeader", Vector3(6.9, 1.02, 0.12), Vector3(0.0, 3.46, finish_z - 0.27), 0.0, "quarantine_dark")
+	_add_box("SafehouseHeaderStripe", Vector3(6.35, 0.12, 0.14), Vector3(0.0, 3.84, finish_z - 0.34), 0.0, "warning")
+	_add_box("SafehouseHeaderStripe", Vector3(6.35, 0.09, 0.14), Vector3(0.0, 3.09, finish_z - 0.34), 0.0, "quarantine_red")
+
+
 func _remove_legacy_city_highway_dressing() -> void:
 	var arena: Node = get_parent()
 	if arena == null:
@@ -197,7 +219,9 @@ func _remove_legacy_city_highway_dressing() -> void:
 	# Highway replaces just their presentation with its quarantine checkpoint.
 	for mesh_path in [
 		"SpawnZone", "Road/StartLine", "StartGateLeftPost",
-		"StartGateRightPost", "StartGateHeader",
+		"StartGateRightPost", "StartGateHeader", "GoalGuide",
+		"Road/FinishLine", "FinishGateLeftPost", "FinishGateRightPost",
+		"FinishGateHeader",
 	]:
 		var start_visual: MeshInstance3D = core_road.get_node_or_null(mesh_path) as MeshInstance3D
 		if start_visual != null:

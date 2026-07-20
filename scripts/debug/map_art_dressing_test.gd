@@ -14,6 +14,7 @@ var _map_cases: Array[Dictionary] = [
 			"PicketFenceSlat", "BackyardPrivacyFence", "SuburbanGrassVerge", "SuburbanCurb", "SuburbanParkedCar",
 			"YardDog", "SuburbanWaterTower", "NeighborhoodEntrySign", "SuburbanStreetExtension",
 			"QuarantineFencePost", "QuarantineBreachPanel", "QuarantineWarningSign", "QuarantineStartDeck",
+			"QuarantineFinishApron", "SafehouseGateBeam", "SafehouseHeader",
 		]),
 	},
 	{
@@ -114,7 +115,10 @@ func _validate_suburban_environment(arena: Node3D, definition: RaceMapDefinition
 	var breach_panels: Array[Node] = dressing.find_children("QuarantineBreachPanel*", "", true, false)
 	if breach_panels.size() != 2:
 		_fail("quarantine_boulevard must frame its spawn with two broken fence panels")
-	for mesh_path in ["CoreRoad/SpawnZone", "CoreRoad/Road/StartLine", "CoreRoad/StartGateHeader"]:
+	for mesh_path in [
+		"CoreRoad/SpawnZone", "CoreRoad/Road/StartLine", "CoreRoad/StartGateHeader",
+		"CoreRoad/GoalGuide", "CoreRoad/Road/FinishLine", "CoreRoad/FinishGateHeader",
+	]:
 		var old_start_visual: MeshInstance3D = arena.get_node_or_null(mesh_path) as MeshInstance3D
 		if old_start_visual == null or old_start_visual.visible:
 			_fail("quarantine_boulevard must replace legacy start visual '%s'" % mesh_path)

@@ -54,9 +54,9 @@ visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.65, 2.55, -0.7)
 billboard = 1
 text = "STREAMER"
-font_size = 44
-modulate = Color(1, 0.78, 0.28, 1)
-outline_size = 8
+font_size = 30
+modulate = Color(0.90, 0.70, 0.34, 1)
+outline_size = 6
 
 [node name="TurretYaw" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0)
