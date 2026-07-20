@@ -71,6 +71,7 @@ func _build_suburban_outbreak() -> void:
 	# open so runners can spill into the fenced yards.
 	_add_box("SuburbanGround", Vector3(112.0, 0.12, 184.0), Vector3(0.0, -0.26, 0.0), 0.0, "suburban_ground")
 	_build_suburban_public_street_extensions()
+	_build_suburban_quarantine_breach()
 	for side in [-1.0, 1.0]:
 		# Neighborhood cross-section, from the race lane outward:
 		# raised curb, narrow grass verge, raised sidewalk, fenced yard.
@@ -134,6 +135,38 @@ func _build_suburban_public_street_extensions() -> void:
 				0.0,
 				"road_marking"
 			)
+
+
+func _build_suburban_quarantine_breach() -> void:
+	# The outbreak begins at the race start. Keep the course center open so the
+	# existing spawn zone and gate remain easy to read, then frame it with a
+	# torn quarantine perimeter spilling back into the neighborhood shoulders.
+	# All pieces are visual-only; RoadArena and NeighborhoodWalkableGround own
+	# the actual course and walk collision.
+	var breach_z := -38.0
+	for side in [-1.0, 1.0]:
+		var outer_x := side * 10.35
+		# A short run of steel mesh fencing along each sidewalk makes the start
+		# feel contained without sealing off the neighborhood or race lane.
+		for offset_z in [-7.0, -3.5, 3.5, 7.0]:
+			var fence_z := breach_z + offset_z
+			_add_box("QuarantineFencePost", Vector3(0.16, 2.45, 0.16), Vector3(outer_x, 1.22, fence_z), 0.0, "quarantine_steel")
+			_add_box("QuarantineFenceRail", Vector3(0.10, 0.12, 3.45), Vector3(outer_x, 1.85, fence_z), 0.0, "quarantine_steel")
+			_add_box("QuarantineFenceRail", Vector3(0.10, 0.12, 3.45), Vector3(outer_x, 0.72, fence_z), 0.0, "quarantine_steel")
+			_add_box("QuarantineFenceMesh", Vector3(0.05, 1.42, 3.1), Vector3(outer_x, 1.22, fence_z), 0.0, "quarantine_mesh")
+		# Broken panels are kicked out from the center opening, telling the
+		# story of a horde that forced its way through toward the block.
+		var panel_yaw := side * -0.58
+		_add_box("QuarantineBreachPanel", Vector3(0.12, 1.18, 4.9), Vector3(side * 6.85, 0.62, breach_z - 0.55), panel_yaw, "quarantine_steel")
+		_add_box("QuarantineBreachStripe", Vector3(0.16, 0.24, 4.7), Vector3(side * 6.85, 1.04, breach_z - 0.55), panel_yaw, "warning")
+		_add_cylinder("QuarantineWarningLight", 0.20, 0.28, Vector3(side * 8.65, 2.67, breach_z), "quarantine_red")
+		_add_box("QuarantineJerseyBarrier", Vector3(2.4, 0.72, 0.68), Vector3(side * 8.9, 0.36, breach_z + 2.8), 0.0, "concrete_dark")
+		_add_box("QuarantineBarrierStripe", Vector3(2.5, 0.16, 0.08), Vector3(side * 8.9, 0.58, breach_z + 2.43), 0.0, "warning")
+	# The dark sign backer and red warning band convert the existing start gate
+	# into a recognizable quarantine checkpoint without replacing its spawn UI.
+	_add_box("QuarantineWarningSign", Vector3(7.2, 1.05, 0.10), Vector3(0.0, 3.15, breach_z - 0.12), 0.0, "quarantine_dark")
+	_add_box("QuarantineWarningStripe", Vector3(6.65, 0.16, 0.12), Vector3(0.0, 3.52, breach_z - 0.19), 0.0, "quarantine_red")
+	_add_box("QuarantineWarningStripe", Vector3(6.65, 0.12, 0.12), Vector3(0.0, 2.78, breach_z - 0.19), 0.0, "warning")
 
 
 func _remove_legacy_city_highway_dressing() -> void:
@@ -531,4 +564,8 @@ static func _get_material_color(key: String) -> Color:
 		"construction_steel": return Color("435258")
 		"construction_yellow": return Color("d8a82a")
 		"steel": return Color("39464b")
+		"quarantine_steel": return Color("4a5558")
+		"quarantine_mesh": return Color("697274")
+		"quarantine_dark": return Color("1e2728")
+		"quarantine_red": return Color("a4362c")
 		_: return Color("777777")

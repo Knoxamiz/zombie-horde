@@ -13,6 +13,7 @@ var _map_cases: Array[Dictionary] = [
 			"SuburbanDriveway", "FencePost", "Mailbox", "SuburbanTreeCanopy",
 			"PicketFenceSlat", "BackyardPrivacyFence", "SuburbanGrassVerge", "SuburbanCurb", "SuburbanParkedCar",
 			"YardDog", "SuburbanWaterTower", "NeighborhoodEntrySign", "SuburbanStreetExtension",
+			"QuarantineFencePost", "QuarantineBreachPanel", "QuarantineWarningSign",
 		]),
 	},
 	{
@@ -110,6 +111,9 @@ func _validate_suburban_environment(arena: Node3D, definition: RaceMapDefinition
 	var street_center_lines: Array[Node] = dressing.find_children("SuburbanStreetCenterLine*", "", true, false)
 	if street_center_lines.size() != 2:
 		_fail("quarantine_boulevard street extensions must retain center-line continuity")
+	var breach_panels: Array[Node] = dressing.find_children("QuarantineBreachPanel*", "", true, false)
+	if breach_panels.size() != 2:
+		_fail("quarantine_boulevard must frame its spawn with two broken fence panels")
 
 
 func _fail(message: String) -> void:
