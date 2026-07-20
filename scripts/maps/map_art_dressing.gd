@@ -164,11 +164,25 @@ func _build_suburban_quarantine_breach() -> void:
 		_add_cylinder("QuarantineWarningLight", 0.20, 0.28, Vector3(side * 8.65, 2.67, breach_z), "quarantine_red")
 		_add_box("QuarantineJerseyBarrier", Vector3(2.4, 0.72, 0.68), Vector3(side * 8.9, 0.36, breach_z + 2.8), 0.0, "concrete_dark")
 		_add_box("QuarantineBarrierStripe", Vector3(2.5, 0.16, 0.08), Vector3(side * 8.9, 0.58, breach_z + 2.43), 0.0, "warning")
-	# The dark sign backer and red warning band convert the existing start gate
-	# into a recognizable quarantine checkpoint without replacing its spawn UI.
-	_add_box("QuarantineWarningSign", Vector3(7.2, 1.05, 0.10), Vector3(0.0, 3.15, breach_z - 0.12), 0.0, "quarantine_dark")
-	_add_box("QuarantineWarningStripe", Vector3(6.65, 0.16, 0.12), Vector3(0.0, 3.52, breach_z - 0.19), 0.0, "quarantine_red")
-	_add_box("QuarantineWarningStripe", Vector3(6.65, 0.12, 0.12), Vector3(0.0, 2.78, breach_z - 0.19), 0.0, "warning")
+	# Replace the colorful spawn marker with a restrained asphalt staging deck.
+	# It is deliberately a presentation layer only; the original spawn marker is
+	# still present but hidden, so no race-system references change.
+	_add_box("QuarantineStartDeck", Vector3(14.9, 0.045, 6.0), Vector3(0.0, 0.155, -42.0), 0.0, "asphalt")
+	for lane_x in [-4.6, 0.0, 4.6]:
+		_add_box("QuarantineStagingGrate", Vector3(0.34, 0.055, 4.95), Vector3(lane_x, 0.185, -42.0), 0.0, "quarantine_steel")
+	_add_box("QuarantineStartLine", Vector3(14.6, 0.06, 0.22), Vector3(0.0, 0.19, breach_z), 0.0, "warning")
+	# Industrial steel posts and a compact sign make the actual start line feel
+	# like a breached cordon rather than a floating arcade checkpoint.
+	for side_value in [-1.0, 1.0]:
+		var gate_side: float = float(side_value)
+		_add_box("QuarantineStartGateBase", Vector3(1.1, 0.30, 1.1), Vector3(gate_side * 7.15, 0.15, breach_z), 0.0, "concrete_dark")
+		_add_box("QuarantineStartGatePost", Vector3(0.42, 3.55, 0.42), Vector3(gate_side * 7.15, 1.92, breach_z), 0.0, "quarantine_steel")
+		_add_box("QuarantineStartGateBrace", Vector3(0.24, 1.15, 0.24), Vector3(gate_side * 6.62, 2.80, breach_z), gate_side * -0.42, "quarantine_steel")
+		_add_cylinder("QuarantineGateBeacon", 0.20, 0.26, Vector3(gate_side * 7.15, 3.82, breach_z), "quarantine_red")
+	_add_box("QuarantineStartGateBeam", Vector3(14.7, 0.46, 0.46), Vector3(0.0, 3.58, breach_z), 0.0, "quarantine_steel")
+	_add_box("QuarantineWarningSign", Vector3(6.9, 1.02, 0.12), Vector3(0.0, 3.46, breach_z - 0.27), 0.0, "quarantine_dark")
+	_add_box("QuarantineWarningStripe", Vector3(6.35, 0.12, 0.14), Vector3(0.0, 3.84, breach_z - 0.34), 0.0, "warning")
+	_add_box("QuarantineWarningStripe", Vector3(6.35, 0.09, 0.14), Vector3(0.0, 3.09, breach_z - 0.34), 0.0, "quarantine_red")
 
 
 func _remove_legacy_city_highway_dressing() -> void:
@@ -178,6 +192,26 @@ func _remove_legacy_city_highway_dressing() -> void:
 	var core_road: Node = arena.get_node_or_null("CoreRoad")
 	if core_road == null:
 		return
+	# RoadArena's colored spawn meshes are retained for every other map. City
+	# Highway replaces just their presentation with its quarantine checkpoint.
+	for mesh_path in [
+		"SpawnZone", "Road/StartLine", "StartGateLeftPost",
+		"StartGateRightPost", "StartGateHeader",
+	]:
+		var start_visual: MeshInstance3D = core_road.get_node_or_null(mesh_path) as MeshInstance3D
+		if start_visual != null:
+			start_visual.visible = false
+	for node_name in ["QuarantineBanner", "StartNeonHeader", "StartNeonLeftPost", "StartNeonRightPost"]:
+		var legacy_start_visual: Node3D = get_node_or_null(node_name) as Node3D
+		if legacy_start_visual != null:
+			legacy_start_visual.visible = false
+	var breach_label: Label3D = get_node_or_null("QuarantineLabel") as Label3D
+	if breach_label != null:
+		breach_label.text = "QUARANTINE BREACH"
+		breach_label.position = Vector3(0.0, 3.45, -38.42)
+		breach_label.font_size = 30
+		breach_label.outline_size = 6
+		breach_label.visible = true
 	# CityBackdrop owns the black towers, water tower, and industrial side props.
 	# SetDressing owns the remaining old road-side visual package. Remove both
 	# only for City Highway; neither node participates in course gameplay.
