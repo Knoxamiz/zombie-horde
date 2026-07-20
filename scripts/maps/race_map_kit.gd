@@ -1856,7 +1856,7 @@ func build_desert_highway_context(
 			var side: float = float(side_value)
 			_build_desert_elevation_shelf(
 				desert_root, side, path_half_width, center_y, center_z, length,
-				slope_angle, base_y, sand, dark_sand, cactus, rock
+				height_delta, slope_angle, base_y, sand, dark_sand, cactus, rock
 			)
 
 
@@ -1867,6 +1867,7 @@ func _build_desert_elevation_shelf(
 	center_y: float,
 	center_z: float,
 	length: float,
+	height_delta: float,
 	slope_angle: float,
 	base_y: float,
 	sand: Material,
@@ -1892,26 +1893,66 @@ func _build_desert_elevation_shelf(
 		sand
 	)
 	inner.rotation.x = -slope_angle
-	var terrace_top: float = center_y - 2.1
-	var terrace_height: float = maxf(terrace_top - base_y, 0.75)
-	var terrace := _add_bridge_box(
+	_add_desert_stepped_backing(
 		parent,
-		"DesertDuneTerrace",
-		Vector3(13.0, terrace_height, length + 6.0),
-		Vector3(side * (path_half_width + 14.5), base_y + terrace_height * 0.5, center_z),
-		dark_sand
-	)
-	terrace.rotation.x = -slope_angle
-	var outer_top: float = center_y - 5.0
-	var outer_height: float = maxf(outer_top - base_y, 0.55)
-	var outer := _add_bridge_box(
-		parent,
-		"DesertDuneSlope",
-		Vector3(24.0, outer_height, length + 11.0),
-		Vector3(side * (path_half_width + 33.0), base_y + outer_height * 0.5, center_z),
+		"DesertInnerBacking",
+		side,
+		path_half_width + 10.0,
+		10.0,
+		0.10,
+		center_y,
+		center_z,
+		length,
+		height_delta,
+		base_y,
 		sand
 	)
-	outer.rotation.x = -slope_angle
+	var terrace_top: float = center_y - 1.08
+	var terrace_cap: MeshInstance3D = _add_bridge_box(
+		parent,
+		"DesertDuneTerrace",
+		Vector3(17.0, 0.34, length + 5.0),
+		Vector3(side * (path_half_width + 16.5), terrace_top - 0.17, center_z),
+		dark_sand
+	)
+	terrace_cap.rotation.x = -slope_angle
+	_add_desert_stepped_backing(
+		parent,
+		"DesertTerraceBacking",
+		side,
+		path_half_width + 16.5,
+		17.0,
+		1.08,
+		center_y,
+		center_z,
+		length,
+		height_delta,
+		base_y,
+		dark_sand
+	)
+	var outer_top: float = center_y - 3.15
+	var outer_cap: MeshInstance3D = _add_bridge_box(
+		parent,
+		"DesertDuneSlope",
+		Vector3(28.0, 0.34, length + 10.0),
+		Vector3(side * (path_half_width + 39.0), outer_top - 0.17, center_z),
+		sand
+	)
+	outer_cap.rotation.x = -slope_angle
+	_add_desert_stepped_backing(
+		parent,
+		"DesertOuterBacking",
+		side,
+		path_half_width + 39.0,
+		28.0,
+		3.15,
+		center_y,
+		center_z,
+		length,
+		height_delta,
+		base_y,
+		sand
+	)
 	var cactus_position: Vector3 = Vector3(
 		side * (path_half_width + 17.0), terrace_top + 0.02, center_z + side * minf(length * 0.23, 6.5)
 	)
@@ -1921,6 +1962,37 @@ func _build_desert_elevation_shelf(
 		Vector3(side * (path_half_width + 27.0), outer_top + 0.1, center_z - side * minf(length * 0.18, 5.0)),
 		rock
 	)
+
+
+func _add_desert_stepped_backing(
+	parent: Node3D,
+	node_name: String,
+	side: float,
+	center_x: float,
+	width: float,
+	top_offset: float,
+	center_y: float,
+	center_z: float,
+	length: float,
+	height_delta: float,
+	base_y: float,
+	material: Material
+) -> void:
+	# Solid dune volume is built as short, overlapping steps. Rotating a tall
+	# box around a sloped road caused the old terrain to cut through itself.
+	const STEP_COUNT: int = 4
+	var step_length: float = length / float(STEP_COUNT)
+	for step_index in range(STEP_COUNT):
+		var local_z: float = -length * 0.5 + step_length * (float(step_index) + 0.5)
+		var top_y: float = center_y + height_delta * (local_z / length) - top_offset
+		var height: float = maxf(top_y - base_y, 0.45)
+		_add_bridge_box(
+			parent,
+			node_name,
+			Vector3(width, height, step_length + 0.42),
+			Vector3(side * center_x, base_y + height * 0.5, center_z + local_z),
+			material
+		)
 
 
 func _build_desert_cactus_prop(parent: Node3D, position: Vector3, scale_factor: float, material: Material) -> void:

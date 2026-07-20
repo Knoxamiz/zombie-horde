@@ -554,53 +554,10 @@ func _build_coastal_fadeout(position: Vector3, sign_x: float) -> void:
 
 
 func _build_desert_highway() -> void:
-	# Straight Descent is a high desert evacuation route. The actual road kit,
-	# route, hazards, and collision remain untouched; this only fills the empty
-	# world below and beyond the elevated course with a lightweight canyon scene.
-	_add_box("DesertCanyonFloor", Vector3(172.0, 0.24, 252.0), Vector3(0.0, -15.2, 0.0), 0.0, "desert_sand")
-	for side_value in [-1.0, 1.0]:
-		var side: float = float(side_value)
-		for z in [-86.0, -42.0, 4.0, 48.0, 89.0]:
-			var tier: int = int(absf(z) / 40.0) % 3
-			var dune_height: float = 2.8 + float(tier) * 1.1
-			_add_box(
-				"DesertDune",
-				Vector3(28.0 + float(tier) * 5.0, dune_height, 25.0),
-				Vector3(side * (26.0 + float(tier) * 5.0), -14.0 + dune_height * 0.5, z),
-				0.10 * side,
-				"desert_sand_dark"
-			)
-	var cactus_positions: Array[Vector3] = [
-		Vector3(-31.0, -13.9, -74.0), Vector3(34.0, -13.9, -54.0),
-		Vector3(-39.0, -13.9, -18.0), Vector3(29.0, -13.9, 10.0),
-		Vector3(-32.0, -13.9, 43.0), Vector3(38.0, -13.9, 71.0),
-	]
-	for cactus_position: Vector3 in cactus_positions:
-		_build_desert_cactus(cactus_position, 0.80 + absf(cactus_position.z) * 0.002)
-	var boulder_positions: Array[Vector3] = [
-		Vector3(-22.0, -14.1, -58.0), Vector3(24.0, -14.1, -31.0),
-		Vector3(-27.0, -14.1, -2.0), Vector3(22.0, -14.1, 26.0),
-		Vector3(-25.0, -14.1, 61.0), Vector3(27.0, -14.1, 91.0),
-	]
-	for boulder_position: Vector3 in boulder_positions:
-		_add_sphere("DesertBoulder", 1.05, boulder_position, "desert_rock_light")
-	for side_value in [-1.0, 1.0]:
-		var debris_side: float = float(side_value)
-		for z in [-78.0, -24.0, 31.0, 82.0]:
-			_add_box("DesertRoadsideMarker", Vector3(0.22, 1.35, 0.22), Vector3(debris_side * 12.5, -13.95, z), 0.0, "desert_marker")
-			_add_box("DesertRoadsideReflector", Vector3(0.44, 0.20, 0.10), Vector3(debris_side * 12.5, -13.35, z), 0.0, "road_marking")
-
-
-func _build_desert_cactus(position: Vector3, scale_factor: float) -> void:
-	var trunk_height: float = 5.2 * scale_factor
-	var trunk_radius: float = 0.34 * scale_factor
-	_add_cylinder("DesertCactus", trunk_radius, trunk_height, position + Vector3.UP * (trunk_height * 0.5), "cactus")
-	var arm_height: float = 2.15 * scale_factor
-	for side_value in [-1.0, 1.0]:
-		var side: float = float(side_value)
-		var arm_position: Vector3 = position + Vector3(side * 0.88 * scale_factor, trunk_height * 0.56, 0.0)
-		_add_box("DesertCactusArm", Vector3(1.55 * scale_factor, 0.34 * scale_factor, 0.34 * scale_factor), arm_position, 0.0, "cactus")
-		_add_cylinder("DesertCactusArmTip", trunk_radius * 0.78, arm_height, arm_position + Vector3(side * 0.72 * scale_factor, arm_height * 0.48, 0.0), "cactus")
+	# RaceMapKit owns Straight Descent's complete desert scene because it has the
+	# authored road elevations. Keeping this layer empty prevents a second,
+	# flat desert from intersecting or opening seams under the sloped road kit.
+	pass
 
 
 func _build_parking_garage_construction() -> void:

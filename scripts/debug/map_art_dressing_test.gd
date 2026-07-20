@@ -27,10 +27,9 @@ var _map_cases: Array[Dictionary] = [
 	},
 	{
 		"id": "spiral_descent",
-		"nodes": PackedStringArray([
-			"DesertCanyonFloor", "DesertDune",
-			"DesertCactus", "DesertCactusArm", "DesertBoulder", "DesertRoadsideMarker",
-		]),
+		# RaceMapKit owns this terrain because it is the only system that has
+		# the authored road elevation data required to keep the dunes seamless.
+		"nodes": PackedStringArray([]),
 	},
 	{
 		"id": "true_spiral_ramp",
@@ -186,6 +185,12 @@ func _validate_desert_highway_environment(arena: Node3D) -> void:
 		_fail("spiral_descent must build sand shelves along every elevation section")
 	if visual_kit.find_children("DesertRoadBlend*", "", true, false).size() < 10:
 		_fail("spiral_descent must blend sand directly into both road edges")
+	if visual_kit.find_children("DesertInnerBacking*", "", true, false).size() < 40:
+		_fail("spiral_descent must build filled sand below each road-edge shelf")
+	if visual_kit.find_children("DesertTerraceBacking*", "", true, false).size() < 40:
+		_fail("spiral_descent must build filled dune terraces without rotated slabs")
+	if visual_kit.find_children("DesertOuterBacking*", "", true, false).size() < 40:
+		_fail("spiral_descent must build a continuous outer dune backing")
 	if visual_kit.find_children("DesertCactusProp*", "", true, false).size() < 10:
 		_fail("spiral_descent must decorate the elevation-matched dunes with cacti")
 	if visual_kit.find_children("DesertRockCluster*", "", true, false).size() < 20:
