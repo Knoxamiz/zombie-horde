@@ -1,7 +1,7 @@
 extends SceneTree
 
-## Guards the Broken Bridge contract: intact visual shoulders have walk
-## collision, while the same shoulders remain absent inside declared gaps.
+## Guards the Broken Bridge contract: visible outer bridge decks remain solid
+## continuously, including alongside the intentionally broken center crossings.
 
 const PRESETS := preload("res://scripts/maps/map_kit_layout_presets.gd")
 const KIT_ARENA := preload("res://scripts/maps/kit_map_arena.gd")
@@ -9,6 +9,7 @@ const SURFACE_SCRIPT := preload("res://scripts/maps/map_surface_piece.gd")
 const PASS := 0
 const FAIL := 1
 const SHOULDER_X: float = 6.0
+const SHOULDER_SAMPLE_ZS: PackedFloat32Array = PackedFloat32Array([-62.0, -44.0, -4.0, 36.0, 62.0])
 
 var _failures: PackedStringArray = PackedStringArray()
 
@@ -30,10 +31,12 @@ func _run() -> void:
 	else:
 		for side_value in [-1.0, 1.0]:
 			var side: float = float(side_value)
-			if not _has_walk_surface_at(surfaces, side * SHOULDER_X, -62.0):
-				_fail("intact bridge shoulder on side %.0f is missing walk collision" % side)
-			if _has_walk_surface_at(surfaces, side * SHOULDER_X, -44.0):
-				_fail("bridge gap shoulder on side %.0f must remain a fall hazard" % side)
+			for sample_z: float in SHOULDER_SAMPLE_ZS:
+				if not _has_walk_surface_at(surfaces, side * SHOULDER_X, sample_z):
+					_fail(
+						"solid bridge shoulder on side %.0f is missing walk collision at z %.1f"
+						% [side, sample_z]
+					)
 
 	arena.queue_free()
 	if _failures.is_empty():

@@ -38,7 +38,9 @@ func _run() -> void:
 	var crossing_half: float = SURFACE_BUILDER.gap_crossing_half_width(
 		path_half_width, crossing_ratio
 	)
-	var edge_probe_x: float = path_half_width - 0.2
+	# This probe stays in the intentionally open water lane between the narrow
+	# center crossing and the new continuous outer bridge deck.
+	var gap_void_probe_x: float = crossing_half + 0.85
 
 	var packed: PackedScene = BOOT.load_main_game_scene()
 	if packed == null:
@@ -106,14 +108,14 @@ func _run() -> void:
 		round_manager,
 		zombie_manager,
 		debug_join,
-		Vector3(edge_probe_x, deck_y + 0.45, gap_center_z),
+		Vector3(gap_void_probe_x, deck_y + 0.45, gap_center_z),
 		true,
-		"lane edge void"
+		"open gap water lane"
 	)
-	if edge_probe_x <= crossing_half + 0.12:
+	if gap_void_probe_x <= crossing_half + 0.12:
 		_fail(
-			"edge probe %.2f must exceed crossing safe zone %.2f or gaps are not hazardous"
-			% [edge_probe_x, crossing_half + 0.12]
+			"water-lane probe %.2f must exceed crossing safe zone %.2f or gaps are not hazardous"
+			% [gap_void_probe_x, crossing_half + 0.12]
 		)
 
 	main_game.queue_free()

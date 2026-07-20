@@ -40,8 +40,9 @@ static func _broken_bridge_pass() -> Dictionary:
 	var water_y: float = 0.0
 	var deck_elevation: float = MIN_CLEARANCE_FT * FEET_TO_METERS + 0.35
 	var surface_pieces: Array[Dictionary] = [
-		# Center race deck. The side shoulders below are separate walk surfaces so
-		# bridge gaps can remain hazardous outside their narrow crossing plank.
+	# Center race deck. The side shoulders below are separate, continuous walk
+	# surfaces that match the visible outer bridge decks. Central gap crossings
+	# and the water between them remain the only fall hazards.
 		{"shape": "deck", "z0": -84.0, "z1": -48.0, "top_y": 0.0, "width": road_width},
 		{"shape": "ramp", "z0": -40.0, "z1": -32.0, "start_y": 0.0, "height_delta": 0.35, "width": road_width},
 		{"shape": "deck", "z0": -32.0, "z1": -8.0, "top_y": 0.35, "width": road_width},
@@ -53,9 +54,12 @@ static func _broken_bridge_pass() -> Dictionary:
 		var shoulder_x: float = float(side_value) * shoulder_center_x
 		surface_pieces.append_array([
 			{"shape": "deck", "x": shoulder_x, "z0": -84.0, "z1": -48.0, "top_y": 0.0, "width": shoulder_width},
+			{"shape": "deck", "x": shoulder_x, "z0": -48.0, "z1": -40.0, "top_y": 0.0, "width": shoulder_width},
 			{"shape": "ramp", "x": shoulder_x, "z0": -40.0, "z1": -32.0, "start_y": 0.0, "height_delta": 0.35, "width": shoulder_width},
 			{"shape": "deck", "x": shoulder_x, "z0": -32.0, "z1": -8.0, "top_y": 0.35, "width": shoulder_width},
+			{"shape": "deck", "x": shoulder_x, "z0": -8.0, "z1": 0.0, "top_y": 0.35, "width": shoulder_width},
 			{"shape": "deck", "x": shoulder_x, "z0": 0.0, "z1": 32.0, "top_y": 0.35, "width": shoulder_width},
+			{"shape": "deck", "x": shoulder_x, "z0": 32.0, "z1": 40.0, "top_y": 0.35, "width": shoulder_width},
 			{"shape": "ramp", "x": shoulder_x, "z0": 40.0, "z1": 48.0, "start_y": 0.35, "height_delta": -0.35, "width": shoulder_width},
 			{"shape": "deck", "x": shoulder_x, "z0": 48.0, "z1": 84.0, "top_y": 0.0, "width": shoulder_width},
 		])
@@ -84,7 +88,8 @@ static func _broken_bridge_pass() -> Dictionary:
 			{"z0": -8.0, "z1": 0.0},
 			{"z0": 32.0, "z1": 40.0},
 		],
-		# Playable center span with visible side voids. Keep below full deck width so gaps matter.
+		# Playable center span plus solid outer decks. The open lane between these
+		# surfaces remains visible water and retains its fall-hazard behavior.
 		"gap_crossing_width_ratio": 0.58,
 		"spawn_chute_half_width": 5.0,
 		"surface_pieces": surface_pieces,
