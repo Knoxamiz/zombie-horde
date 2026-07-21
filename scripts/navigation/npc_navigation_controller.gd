@@ -129,7 +129,10 @@ func get_diagnostics() -> Dictionary:
 
 
 func _apply_agent_profile() -> void:
-	if _agent == null:
+	# A spawned CharacterBody can enter its ready callback before the manager
+	# supplies map configuration. Apply the profile only once both dependencies
+	# exist; configure() will call this again after it assigns the profile.
+	if _agent == null or _profile == null:
 		return
 	_agent.path_desired_distance = _profile.path_desired_distance
 	_agent.target_desired_distance = _profile.target_desired_distance
