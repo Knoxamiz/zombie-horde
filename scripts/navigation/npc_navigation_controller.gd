@@ -21,6 +21,7 @@ var _safe_velocity: Vector3 = Vector3.ZERO
 var _has_safe_velocity: bool = false
 var _last_path_direction: Vector3 = Vector3.FORWARD
 var _fallback_active: bool = true
+var _agent_direction_accepted: bool = false
 
 
 func configure(
@@ -41,6 +42,7 @@ func configure(
 	_has_safe_velocity = false
 	_last_path_direction = _route.get_forward_direction()
 	_fallback_active = true
+	_agent_direction_accepted = false
 
 	var lane_rng := RandomNumberGenerator.new()
 	lane_rng.seed = random_seed ^ 0x6E6176
@@ -59,7 +61,17 @@ func update(position: Vector3, lane_half_width: float, delta: float) -> Vector3:
 
 	_route.advance(position, _profile.checkpoint_reach_radius)
 	_target_refresh_timer = maxf(0.0, _target_refresh_timer - delta)
-	var target: Vector3 = _build_active_target(lane_half_width)
+	# The ordered race route is the movement authority. NavigationAgent3D can
+	# refine a route around nearby walkable geometry, but it must never replace
+	# the course with a result that points sideways, backwards, or nowhere.
+	var course_target: Vector3 = _build_active_target(lane_half_width)
+	var course_direction: Vector3 = _direction_to(
+		course_target,
+		position,
+		_route.get_forward_direction()
+	)
+	var target: Vector3 = course_target
+	_agent_direction_accepted = false
 	if _can_query_navigation():
 		var navigation_map: RID = _agent.get_navigation_map()
 		target = NavigationServer3D.map_get_closest_point(navigation_map, target)
@@ -68,14 +80,20 @@ func update(position: Vector3, lane_half_width: float, delta: float) -> Vector3:
 			_target_refresh_timer = _profile.target_refresh_interval
 			_agent.target_position = target
 		var next_path_point: Vector3 = _agent.get_next_path_position()
-		var path_direction: Vector3 = _direction_to(next_path_point, position, _last_path_direction)
-		if not _agent.is_navigation_finished() and path_direction.length_squared() > 0.001:
+		var path_direction: Vector3 = _direction_to(next_path_point, position, course_direction)
+		var points_along_course: bool = path_direction.dot(course_direction) >= 0.15
+		if (
+			not _agent.is_navigation_finished()
+			and path_direction.length_squared() > 0.001
+			and points_along_course
+		):
 			_last_path_direction = path_direction
 			_fallback_active = false
+			_agent_direction_accepted = true
 			return path_direction
 
 	_fallback_active = true
-	_last_path_direction = _direction_to(target, position, _last_path_direction)
+	_last_path_direction = course_direction
 	return _last_path_direction
 
 
@@ -131,6 +149,7 @@ func get_diagnostics() -> Dictionary:
 		"requested_target": _requested_target,
 		"path_direction": _last_path_direction,
 		"fallback_active": _fallback_active,
+		"agent_direction_accepted": _agent_direction_accepted,
 		"navigation_ready": _can_query_navigation(),
 	}
 
