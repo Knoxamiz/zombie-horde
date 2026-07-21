@@ -35,6 +35,7 @@ const CORE_TESTS: Array[Dictionary] = [
 ]
 
 const MAP_TESTS: Array[Dictionary] = [
+	{"name": "map_gameplay_contract_test", "script": "map_gameplay_contract_test.gd", "args": []},
 	{"name": "city_highway_collision_contract_test", "script": "city_highway_collision_contract_test.gd", "args": []},
 	{"name": "map_camera_limits_test", "script": "map_camera_limits_test.gd", "args": []},
 	{"name": "map_art_dressing_test", "script": "map_art_dressing_test.gd", "args": []},
@@ -81,6 +82,7 @@ const MAP_TESTS: Array[Dictionary] = [
 ]
 
 const CERTIFICATION_TESTS: Array[Dictionary] = [
+	{"name": "map_gameplay_contract_test", "script": "map_gameplay_contract_test.gd", "args": []},
 	{"name": "map_selection_test", "script": "map_selection_test.gd", "args": []},
 	{"name": "map_certification_test", "script": "map_certification_test.gd", "args": []},
 ]

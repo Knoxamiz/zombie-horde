@@ -41,12 +41,7 @@ func _build_race_course_path() -> void:
 		_race_course_path.name = "RaceCoursePath"
 		_map_root.add_child(_race_course_path)
 
-	var authored_points: PackedVector3Array = _definition.race_path_points
-	if authored_points.size() < 2:
-		authored_points = PackedVector3Array([
-			_definition.spawn_origin,
-			_definition.goal_position,
-		])
+	var authored_points: PackedVector3Array = _definition.get_effective_race_path()
 
 	var curve := Curve3D.new()
 	curve.bake_interval = 0.5

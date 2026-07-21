@@ -193,16 +193,20 @@ func _build_active_target(position: Vector3) -> Vector3:
 		return _goal_position + route_side * finish_offset
 
 	# Project the runner's lateral offset onto the active route, then carry that
-	# offset ahead along the course. A runner knocked onto a sidewalk keeps making
-	# forward progress instead of trying to snap back to the track centerline.
+	# offset ahead along the course. A stable seeded lane preference gives a
+	# dense horde room to fan out, but is deliberately blended with the runner's
+	# current location so a launch into a wide playable area does not rubber-band
+	# it back to the centerline.
 	var center: Vector3 = _route.get_center_point()
 	var lateral_offset: float = clampf(
 		(position - center).dot(route_side),
 		-_navigation_half_width,
 		_navigation_half_width
 	)
+	var preferred_lane: float = _lane_seed * _navigation_half_width * _profile.checkpoint_lane_spread
+	var carried_offset: float = lerpf(lateral_offset, preferred_lane, 0.22)
 	var lookahead: Vector3 = _route.get_target_point(_profile.route_lookahead_distance)
-	return lookahead + route_side * lateral_offset
+	return lookahead + route_side * carried_offset
 
 
 func _should_refresh_target(target: Vector3) -> bool:

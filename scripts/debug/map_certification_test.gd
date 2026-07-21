@@ -120,6 +120,16 @@ func _certify_map_runtime(map_id: String) -> void:
 			map_id
 		)
 	)
+	failures.append_array(
+		MapCertification.certify_course_wiring(
+			definition,
+			zombie_manager,
+			map_controller.hazard_config,
+			map_controller.powerup_config,
+			map_controller.human_defender_config,
+			map_id
+		)
+	)
 	if not map_controller.is_finish_contract_valid():
 		failures.append("finish contract invalid after map load")
 

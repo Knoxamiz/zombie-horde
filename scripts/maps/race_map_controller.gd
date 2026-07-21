@@ -552,12 +552,13 @@ func _apply_map_geometry(definition: RaceMapDefinition, map: Node3D) -> void:
 func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 	if definition == null:
 		return
+	var race_path: PackedVector3Array = definition.get_effective_race_path()
 
 	if _zombie_manager != null:
 		_zombie_manager.spawn_origin = definition.spawn_origin
 		_zombie_manager.spawn_area_size = definition.spawn_area_size
 		_zombie_manager.goal_position = definition.goal_position
-		_zombie_manager.race_path_points = definition.race_path_points
+		_zombie_manager.race_path_points = race_path
 		_zombie_manager.navigation_profile = definition.navigation_profile
 		_zombie_manager.npc_navigation_half_width = definition.resolve_npc_navigation_half_width()
 
@@ -601,7 +602,7 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		human_defender_config.placement_surface_y = definition.resolve_hazard_surface_y()
 
 	definition.apply_hazard_profile_to(hazard_config, powerup_config, human_defender_config)
-	_apply_path_placement(definition.race_path_points)
+	_apply_path_placement(race_path)
 	_apply_kit_surface_placement_zones(definition, _get_current_map())
 
 	if _base_goal != null:

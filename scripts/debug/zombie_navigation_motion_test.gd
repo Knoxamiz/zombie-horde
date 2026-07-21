@@ -11,7 +11,7 @@ const MAP_IDS := PackedStringArray([
 	"spiral_descent",
 	"true_spiral_ramp",
 ])
-const RUNNER_COUNT := 14
+const RUNNER_COUNT := 24
 
 var _failures: PackedStringArray = PackedStringArray()
 
@@ -84,23 +84,42 @@ func _verify_map_motion(
 	if zombies.size() < RUNNER_COUNT:
 		_fail("%s expected %d live runners, got %d" % [map_id, RUNNER_COUNT, zombies.size()])
 		return false
+	# Start the entire test crowd in one valid location. This reproduces the
+	# worst-case pile created by a shared explosion or vehicle launch and proves
+	# that course steering plus local avoidance can fan the horde back out.
+	var active_definition: RaceMapDefinition = map_controller.get_active_map_definition()
+	if active_definition == null:
+		_fail("%s movement test could not resolve its active map definition" % map_id)
+		return false
+	var shared_start: Vector3 = active_definition.spawn_origin
+	for runner in zombies:
+		runner.global_position = shared_start
+		runner.velocity = Vector3.ZERO
+	await create_timer(0.05).timeout
+
 	var start_positions: Dictionary = {}
 	var goals: Dictionary = {}
 	for runner in zombies:
 		start_positions[runner] = runner.global_position
 		goals[runner] = runner.goal_position
-	await create_timer(1.25).timeout
+	# A shipped map must move a real crowd, not merely prove a single runner can
+	# receive a direction. Hazards and defenders are disabled above so this is a
+	# route/crowd integration contract.
+	await create_timer(2.5).timeout
 	var advancing_count := 0
 	for runner in zombies:
 		if not is_instance_valid(runner):
 			continue
 		var start_position: Vector3 = start_positions.get(runner, runner.global_position) as Vector3
 		var goal_position: Vector3 = goals.get(runner, runner.goal_position) as Vector3
-		if runner.global_position.distance_to(goal_position) <= start_position.distance_to(goal_position) - 0.55:
+		var displaced: bool = runner.global_position.distance_to(start_position) >= 0.75
+		var route_advanced: bool = runner.get_progress() >= 0.002
+		var goal_advanced: bool = runner.global_position.distance_to(goal_position) <= start_position.distance_to(goal_position) - 0.55
+		if route_advanced and (displaced or goal_advanced):
 			advancing_count += 1
-	if advancing_count < 10:
+	if advancing_count < 18:
 		_fail(
-			"%s crowd navigation stalled: only %d/%d runners advanced toward the goal"
+			"%s crowd navigation stalled: only %d/%d runners advanced along the authored course"
 			% [map_id, advancing_count, RUNNER_COUNT]
 		)
 		return false

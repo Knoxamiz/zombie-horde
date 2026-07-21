@@ -514,7 +514,7 @@ func _get_crowd_separation(active_config: ZombieConfig, side: Vector3) -> Vector
 		var offset: Vector3 = global_position - other_zombie.global_position
 		offset.y = 0.0
 		var distance_squared: float = offset.length_squared()
-		if distance_squared <= 0.001 or distance_squared > radius_squared:
+		if distance_squared > radius_squared:
 			continue
 
 		var lateral_distance: float = offset.dot(side)
@@ -522,7 +522,11 @@ func _get_crowd_separation(active_config: ZombieConfig, side: Vector3) -> Vector
 		if is_zero_approx(lateral_sign):
 			lateral_sign = -1.0 if get_instance_id() < other_zombie.get_instance_id() else 1.0
 
-		var distance: float = sqrt(distance_squared)
+		# Vehicle hits and explosions can place several CharacterBodies at nearly
+		# the same point. Zero-distance pairs still need a deterministic sideways
+		# escape; skipping them leaves a permanent horde knot with no separating
+		# force to recover from it.
+		var distance: float = sqrt(maxf(distance_squared, 0.0))
 		var falloff: float = 1.0 - clamp(distance / radius, 0.0, 1.0)
 		separation += side * lateral_sign * falloff
 		checked_neighbors += 1

@@ -18,6 +18,7 @@ func _run() -> void:
 	_test_stacked_course_does_not_shortcut_to_finish_below()
 	_test_navigation_fallback_reports_its_state()
 	_test_wide_map_runner_keeps_forward_progress()
+	_test_crowd_lane_preferences_diverge_without_centerline_snap()
 	_finish()
 
 
@@ -109,6 +110,27 @@ func _test_wide_map_runner_keeps_forward_progress() -> void:
 	var side_runner_direction: Vector3 = controller.update(Vector3(-24.0, 0.0, -12.0), 0.1)
 	if side_runner_direction.z <= 0.92 or absf(side_runner_direction.x) >= 0.2:
 		_fail("Wide-map runners must keep advancing toward the goal instead of snapping to the centerline")
+
+
+func _test_crowd_lane_preferences_diverge_without_centerline_snap() -> void:
+	var profile := NAVIGATION_PROFILE.new()
+	profile.route_lookahead_distance = 8.0
+	profile.checkpoint_lane_spread = 0.8
+	var route := PackedVector3Array([
+		Vector3(0.0, 0.0, -40.0),
+		Vector3(0.0, 0.0, 40.0),
+	])
+	var left_runner = NPC_NAVIGATION_CONTROLLER.new()
+	var right_runner = NPC_NAVIGATION_CONTROLLER.new()
+	left_runner.configure(null, profile, route, route[0], route[1], 101, 6.0)
+	right_runner.configure(null, profile, route, route[0], route[1], 202, 6.0)
+	var shared_position := Vector3(0.0, 0.0, -30.0)
+	var left_direction: Vector3 = left_runner.update(shared_position, 0.1)
+	var right_direction: Vector3 = right_runner.update(shared_position, 0.1)
+	if left_direction.z <= 0.8 or right_direction.z <= 0.8:
+		_fail("Crowd lane preferences must preserve forward race progress")
+	if absf(left_direction.x - right_direction.x) <= 0.02:
+		_fail("Crowd lane preferences must split identical runners into distinct lateral lanes")
 
 
 func _fail(message: String) -> void:

@@ -53,6 +53,16 @@ extends Resource
 func resolve_npc_navigation_half_width() -> float:
 	return npc_navigation_half_width if npc_navigation_half_width > 0.0 else lane_half_width
 
+
+## The single course source for runners, navigation, hazards, powerups, and
+## defenders. Turning maps author their route explicitly; a straight map can
+## deliberately use its spawn-to-goal line without every downstream system
+## inventing a different fallback.
+func get_effective_race_path() -> PackedVector3Array:
+	if race_path_points.size() >= 2:
+		return race_path_points.duplicate()
+	return PackedVector3Array([spawn_origin, goal_position])
+
 ## Spectator-camera space is map data, not gameplay collision. Each AABB is a
 ## safe free-flight volume; together they can describe a long route, a bridge,
 ## or an exterior frame around a multi-level map without trapping the camera

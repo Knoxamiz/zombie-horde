@@ -47,6 +47,7 @@ static func certify_definition(definition: RaceMapDefinition, map_id: String) ->
 		return failures
 	if definition.scene == null:
 		failures.append("[%s] RaceMapDefinition.scene is null" % map_id)
+	failures.append_array(MapGameplayContract.validate_definition(definition, map_id))
 
 	if definition.race_path_points.is_empty():
 		if definition.spawn_origin.z >= definition.goal_position.z:
@@ -184,6 +185,42 @@ static func certify_oob_applied(
 	if not is_equal_approx(zombie_config.out_of_bounds_max_z, definition.out_of_bounds_max_z):
 		failures.append("[%s] zombie_config.out_of_bounds_max_z was not applied" % map_id)
 
+	return failures
+
+
+## Runtime wiring gate for map gameplay. Map definitions are authored once and
+## RaceMapController must propagate that exact course to every system that
+## creates or moves gameplay actors. This keeps future maps from quietly
+## routing runners one way while hazards or defenders are placed somewhere else.
+static func certify_course_wiring(
+	definition: RaceMapDefinition,
+	zombie_manager: ZombieManager,
+	hazard_config: HazardConfig,
+	powerup_config: PowerupConfig,
+	human_defender_config: HumanDefenderConfig,
+	map_id: String
+) -> Array[String]:
+	var failures: Array[String] = []
+	if definition == null:
+		failures.append("[%s] course wiring check is missing definition" % map_id)
+		return failures
+	var expected_route: PackedVector3Array = definition.get_effective_race_path()
+	if zombie_manager == null:
+		failures.append("[%s] course wiring check is missing ZombieManager" % map_id)
+	elif zombie_manager.race_path_points != expected_route:
+		failures.append("[%s] ZombieManager route does not match map course" % map_id)
+	if hazard_config == null:
+		failures.append("[%s] course wiring check is missing HazardConfig" % map_id)
+	elif hazard_config.placement_path_points != expected_route:
+		failures.append("[%s] hazard placement route does not match map course" % map_id)
+	if powerup_config == null:
+		failures.append("[%s] course wiring check is missing PowerupConfig" % map_id)
+	elif powerup_config.placement_path_points != expected_route:
+		failures.append("[%s] powerup placement route does not match map course" % map_id)
+	if human_defender_config == null:
+		failures.append("[%s] course wiring check is missing HumanDefenderConfig" % map_id)
+	elif human_defender_config.placement_path_points != expected_route:
+		failures.append("[%s] defender placement route does not match map course" % map_id)
 	return failures
 
 
