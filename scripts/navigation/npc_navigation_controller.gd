@@ -91,9 +91,16 @@ func resolve_avoidance(preferred_velocity: Vector3) -> Vector3:
 	var safe := Vector3(_safe_velocity.x, 0.0, _safe_velocity.z)
 	if desired.length_squared() <= 0.001 or safe.length_squared() <= 0.001:
 		return preferred_velocity
-	if safe.dot(desired.normalized()) <= desired.length() * 0.10:
+	var desired_heading := desired.normalized()
+	if safe.dot(desired_heading) <= desired.length() * 0.35:
 		return preferred_velocity
-	return preferred_velocity.lerp(_safe_velocity, _profile.avoidance_blend)
+	var adjusted := desired.lerp(safe, _profile.avoidance_blend)
+	# RVO is a local crowd tool, not a movement authority. It must never reduce
+	# a live runner below a meaningful forward speed toward the active course
+	# checkpoint, otherwise a dense spawn pile can animate in place forever.
+	if adjusted.dot(desired_heading) < desired.length() * 0.65:
+		return preferred_velocity
+	return adjusted
 
 
 func accept_safe_velocity(safe_velocity: Vector3) -> void:

@@ -286,8 +286,11 @@ func _physics_process(delta: float) -> void:
 		delta
 	)
 	var desired_velocity: Vector3 = _get_desired_velocity(active_config, path_direction)
-	_npc_navigation.submit_preferred_velocity(desired_velocity)
+	# Use the previous physics tick's RVO response, then submit this frame's
+	# course velocity. This avoids a stale spawn-time response blocking a newly
+	# active runner on the first live frame.
 	var steering_velocity: Vector3 = _npc_navigation.resolve_avoidance(desired_velocity)
+	_npc_navigation.submit_preferred_velocity(desired_velocity)
 	velocity = Vector3(
 		move_toward(velocity.x, steering_velocity.x, active_config.acceleration * delta),
 		vertical_velocity,

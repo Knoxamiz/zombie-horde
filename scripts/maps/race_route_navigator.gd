@@ -22,6 +22,9 @@ func configure(
 	_points = authored_points.duplicate()
 	if _points.size() < 2:
 		_points = PackedVector3Array([spawn_position, goal_position])
+	# Every race starts at the first authored segment. The previous version only
+	# initialized these values for the fallback two-point route, leaving valid
+	# authored routes with a zero length and therefore no course to follow.
 	_segment_index = 0
 	_distance_along_route = 0.0
 	_total_length = _calculate_total_length()

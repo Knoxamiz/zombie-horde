@@ -29,6 +29,9 @@ func _test_checkpoint_sequence_preserves_turn_order() -> void:
 		Vector3(10.0, 0.8, 10.0),
 	])
 	controller.configure(null, profile, route, route[0], route[2], 42)
+	if not controller.has_route():
+		_fail("Authored race routes must initialize their total length")
+		return
 
 	var first_direction: Vector3 = controller.update(route[0], 5.0, 0.1)
 	if first_direction.x <= 0.8 or absf(first_direction.z) > 0.4:
