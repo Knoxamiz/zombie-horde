@@ -15,6 +15,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_test_checkpoint_sequence_preserves_turn_order()
+	_test_stacked_course_does_not_shortcut_to_finish_below()
 	_test_navigation_fallback_reports_its_state()
 	_test_wide_map_runner_keeps_forward_progress()
 	_finish()
@@ -41,6 +42,37 @@ func _test_checkpoint_sequence_preserves_turn_order() -> void:
 	var turned_direction: Vector3 = controller.update(route[1], 0.1)
 	if turned_direction.z <= 0.8 or absf(turned_direction.x) > 0.4:
 		_fail("Checkpoint sequencing should advance to the authored turn")
+
+
+func _test_stacked_course_does_not_shortcut_to_finish_below() -> void:
+	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id("true_spiral_ramp")
+	if definition == null:
+		_fail("Square Spiral Ramp definition failed to load for stacked navigation coverage")
+		return
+	var controller = NPC_NAVIGATION_CONTROLLER.new()
+	var profile = NAVIGATION_PROFILE.new()
+	profile.route_lookahead_distance = 8.0
+	profile.finish_rejoin_distance = 12.0
+	controller.configure(
+		null,
+		profile,
+		definition.race_path_points,
+		definition.spawn_origin,
+		definition.goal_position,
+		91,
+		definition.resolve_npc_navigation_half_width()
+	)
+
+	# This is the production failure case: same X/Z as the Square Spiral Ramp
+	# finish, four stories up. The runner must turn south on the top deck, never
+	# target the finish below or wait in place.
+	var top_finish_overlook := Vector3(54.0, 42.0, -54.0)
+	var direction: Vector3 = controller.update(top_finish_overlook, 0.1)
+	if direction.z <= 0.8 or absf(direction.x) > 0.4:
+		_fail("Stacked routes must follow their next checkpoint when directly above the finish")
+	var diagnostics: Dictionary = controller.get_diagnostics()
+	if int(diagnostics.get("segment_index", -1)) != 1:
+		_fail("A stacked runner above the finish must remain on its top-deck segment")
 
 
 func _test_navigation_fallback_reports_its_state() -> void:

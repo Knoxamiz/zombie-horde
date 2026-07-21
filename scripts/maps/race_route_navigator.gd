@@ -115,6 +115,13 @@ func get_current_segment_index() -> int:
 	return _segment_index
 
 
+## The finish can share horizontal coordinates with an earlier deck on a
+## stacked map. Consumers must use route order, not world-space proximity, to
+## decide when it is valid to hand movement off to the final goal.
+func is_on_final_segment() -> bool:
+	return has_route() and _segment_index >= _points.size() - 2
+
+
 func _calculate_total_length() -> float:
 	var total: float = 0.0
 	for index in range(_points.size() - 1):

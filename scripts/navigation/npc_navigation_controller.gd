@@ -180,7 +180,14 @@ func _build_active_target(position: Vector3) -> Vector3:
 		position.x - _goal_position.x,
 		position.z - _goal_position.z
 	).length()
-	var approaching_finish: bool = distance_to_goal <= _profile.finish_rejoin_distance
+	# A stacked course can pass directly above its finish on an earlier deck.
+	# World-space proximity alone would then make a runner abandon the authored
+	# turns and aim vertically through the structure. Route completion is the
+	# authority; the distance check only refines the final segment's target.
+	var approaching_finish: bool = (
+		_route.is_on_final_segment()
+		and distance_to_goal <= _profile.finish_rejoin_distance
+	)
 	if approaching_finish:
 		var finish_offset: float = _lane_seed * _navigation_half_width * _profile.finish_lane_spread
 		return _goal_position + route_side * finish_offset
