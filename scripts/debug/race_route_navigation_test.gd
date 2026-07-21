@@ -12,6 +12,7 @@ func _initialize() -> void:
 func _run() -> void:
 	_test_straight_route_fallback()
 	_test_square_spiral_stays_on_its_authored_segment()
+	_test_outer_lane_clears_every_spiral_checkpoint()
 	_finish()
 
 
@@ -52,6 +53,40 @@ func _test_square_spiral_stays_on_its_authored_segment() -> void:
 		_fail("Route navigator should advance exactly one segment at the first corner")
 	elif corner_target.z <= -50.0 or absf(corner_target.x - 54.0) > 0.5:
 		_fail("Route navigator should follow the authored turn after the first corner")
+
+
+func _test_outer_lane_clears_every_spiral_checkpoint() -> void:
+	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id("true_spiral_ramp")
+	if definition == null:
+		_fail("Square Spiral Ramp definition failed to load for lane transition test")
+		return
+	var navigator = ROUTE_NAVIGATOR.new()
+	navigator.configure(definition.race_path_points, definition.spawn_origin, definition.goal_position)
+	var corridor_half_width: float = definition.lane_half_width
+	var route: PackedVector3Array = definition.race_path_points
+	for segment_index in range(route.size() - 1):
+		var start: Vector3 = route[segment_index]
+		var finish: Vector3 = route[segment_index + 1]
+		var horizontal: Vector3 = Vector3(finish.x - start.x, 0.0, finish.z - start.z)
+		if horizontal.length_squared() <= 0.001:
+			continue
+		var side: Vector3 = Vector3(horizontal.z, 0.0, -horizontal.x).normalized()
+		# This is deliberately outside the profile's small checkpoint radius but
+		# inside the map's playable lane. It must still advance the course.
+		# A live CharacterBody's origin rides above the collision surface. The
+		# checkpoint math must still clear a downhill corner from either lane.
+		var outer_lane_position: Vector3 = (
+			finish
+			+ side * (corridor_half_width - 0.05)
+			+ Vector3.UP * 0.8
+		)
+		navigator.advance(outer_lane_position, 2.4, corridor_half_width)
+		if navigator.get_current_segment_index() != segment_index + 1:
+			_fail(
+				"Outer lane runner failed to clear Square Spiral Ramp checkpoint %d"
+				% segment_index
+			)
+			return
 
 
 func _fail(message: String) -> void:

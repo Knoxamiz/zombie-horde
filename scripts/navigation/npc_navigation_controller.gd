@@ -62,7 +62,11 @@ func update(position: Vector3, delta: float) -> Vector3:
 	if not _route.has_route():
 		return _direction_to(_goal_position, position, _last_path_direction)
 
-	_route.advance(position, _profile.checkpoint_reach_radius)
+	_route.advance(
+		position,
+		_profile.checkpoint_reach_radius,
+		_navigation_half_width
+	)
 	_target_refresh_timer = maxf(0.0, _target_refresh_timer - delta)
 	# The ordered race route is the movement authority. NavigationAgent3D can
 	# refine a route around nearby walkable geometry, but it must never replace

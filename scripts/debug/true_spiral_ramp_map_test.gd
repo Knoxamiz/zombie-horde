@@ -106,6 +106,7 @@ func _test_scene_builds() -> void:
 		_fail("True Spiral Ramp should wall exposed corner deck edges")
 	elif _count_named_descendants(surfaces, "SpiralCornerBarrierPost") < 60:
 		_fail("True Spiral Ramp should reinforce corner walls with pylons")
+	_assert_route_joint_collision(surfaces, definition.race_path_points)
 
 	var visual_kit: Node = core_road.get_node_or_null("VisualKit")
 	if visual_kit == null:
@@ -153,6 +154,33 @@ func _count_named_descendants(node: Node, node_name: String) -> int:
 			count += 1
 		count += _count_named_descendants(child, node_name)
 	return count
+
+
+func _assert_route_joint_collision(surfaces: Node, route_points: PackedVector3Array) -> void:
+	var corner_decks: Array[StaticBody3D] = []
+	_collect_corner_decks(surfaces, corner_decks)
+	for route_index in range(route_points.size()):
+		var route_point: Vector3 = route_points[route_index]
+		var has_matching_deck: bool = false
+		for deck in corner_decks:
+			if deck.global_position.distance_to(route_point) > 0.05:
+				continue
+			if (deck.collision_layer & 1) == 0:
+				continue
+			has_matching_deck = true
+			break
+		if not has_matching_deck:
+			_fail(
+				"True Spiral Ramp route joint %d is missing a solid walk collision deck"
+				% route_index
+			)
+
+
+func _collect_corner_decks(node: Node, result: Array[StaticBody3D]) -> void:
+	if node is StaticBody3D and str(node.name).begins_with("SpiralCornerDeck"):
+		result.append(node as StaticBody3D)
+	for child: Node in node.get_children():
+		_collect_corner_decks(child, result)
 
 
 func _fail(message: String) -> void:

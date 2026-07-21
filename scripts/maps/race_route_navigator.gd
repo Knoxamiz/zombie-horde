@@ -34,11 +34,20 @@ func has_route() -> bool:
 	return _points.size() >= 2 and _total_length > 0.001
 
 
-func advance(world_position: Vector3, corridor_radius: float) -> void:
+func advance(
+	world_position: Vector3,
+	checkpoint_reach_radius: float,
+	corridor_half_width: float = 0.0
+) -> void:
 	if not has_route():
 		return
 
-	var safe_radius: float = maxf(corridor_radius, 0.5)
+	var safe_reach_radius: float = maxf(checkpoint_reach_radius, 0.5)
+	# Checkpoints sequence the route; they are not narrow centerline gates.  A
+	# runner using a legitimate outer lane must be allowed to clear a turn while
+	# it is still inside the map-authored corridor, otherwise it will turn back
+	# toward the center point and form a permanent crowd pile at that joint.
+	var safe_corridor_half_width: float = maxf(corridor_half_width, safe_reach_radius)
 	while _segment_index < _points.size() - 1:
 		var segment_start: Vector3 = _points[_segment_index]
 		var segment_end: Vector3 = _points[_segment_index + 1]
@@ -48,18 +57,37 @@ func advance(world_position: Vector3, corridor_radius: float) -> void:
 			_segment_index += 1
 			continue
 
+		# Race checkpoints live on the horizontal track plane. Character origins
+		# sit above that plane, and using the vertical ramp slope in this
+		# projection makes a grounded runner look short of a downhill corner.
+		# Keep the route's Y value for targets, but sequence turns from horizontal
+		# course progress so the same contract works for flat, ramped, and stacked
+		# maps.
+		var horizontal_segment := Vector3(segment.x, 0.0, segment.z)
+		var horizontal_position := Vector3(
+			world_position.x - segment_start.x,
+			0.0,
+			world_position.z - segment_start.z
+		)
+		var horizontal_segment_length_squared: float = horizontal_segment.length_squared()
 		var local_t: float = clampf(
-			(world_position - segment_start).dot(segment) / segment.length_squared(),
+			horizontal_position.dot(horizontal_segment) / maxf(horizontal_segment_length_squared, 0.001),
 			0.0,
 			1.0
 		)
 		var projected: Vector3 = segment_start + segment * local_t
 		var corridor_offset: Vector3 = world_position - projected
 		var horizontal_offset := Vector3(corridor_offset.x, 0.0, corridor_offset.z)
-		var reached_endpoint: bool = world_position.distance_to(segment_end) <= safe_radius
+		var reached_endpoint: bool = (
+			world_position.distance_to(segment_end) <= safe_reach_radius
+			or (
+			local_t >= 0.94
+			and horizontal_offset.length() <= safe_corridor_half_width
+			)
+		)
 		var passed_endpoint: bool = (
 			local_t >= 0.985
-			and horizontal_offset.length() <= safe_radius
+			and horizontal_offset.length() <= safe_corridor_half_width
 		)
 
 		if not reached_endpoint and not passed_endpoint:
