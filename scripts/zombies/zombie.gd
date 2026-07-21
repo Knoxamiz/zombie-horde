@@ -3,8 +3,8 @@ extends CharacterBody3D
 
 signal died(zombie: Zombie, cause: String)
 
-const RACE_ROUTE_NAVIGATOR := preload("res://scripts/maps/race_route_navigator.gd")
 const RACE_STEERING := preload("res://scripts/zombies/race_steering.gd")
+const NPC_NAVIGATION_CONTROLLER := preload("res://scripts/navigation/npc_navigation_controller.gd")
 
 enum MobilityState {
 	RUNNER,
@@ -49,17 +49,13 @@ var _glow_pulse_time: float = 0.0
 var _base_name_font_size: int = 28
 var _total_zombie_count: int = 0
 var _is_current_leader: bool = false
-var _lane_offset: float = 0.0
 var _stall_timer: float = 0.0
 var _last_progress_sample: float = 0.0
 var _death_cause: String = ""
 var _fell_visual_timer: float = 0.0
 var _water_float_timer: float = 0.0
 var _water_float_elapsed: float = 0.0
-var _race_route = RACE_ROUTE_NAVIGATOR.new()
-var _navigation_target: Vector3 = Vector3.INF
-var _safe_navigation_velocity: Vector3 = Vector3.ZERO
-var _has_safe_navigation_velocity: bool = false
+var _npc_navigation = NPC_NAVIGATION_CONTROLLER.new()
 
 const _STALL_SECONDS: float = 2.0
 const _STALL_PROGRESS_EPSILON: float = 0.004
@@ -90,6 +86,7 @@ func _ready() -> void:
 	_apply_state_visuals()
 	if _navigation_agent != null:
 		_navigation_agent.velocity_computed.connect(_on_navigation_velocity_computed)
+		_npc_navigation.set_agent(_navigation_agent)
 	GameEvents.leader_changed.connect(_on_leader_changed)
 	GameEvents.zombie_count_changed.connect(_on_zombie_count_changed)
 
@@ -104,22 +101,26 @@ func configure_zombie(
 	new_start_position: Vector3,
 	random_seed: int,
 	join_info: ParticipantJoinInfo = null,
-	new_race_path_points: PackedVector3Array = PackedVector3Array()
+	new_race_path_points: PackedVector3Array = PackedVector3Array(),
+	new_navigation_profile: NpcNavigationProfile = null
 ) -> void:
 	display_name = new_display_name
 	config = new_config
 	goal_position = new_goal_position
 	race_path_points = new_race_path_points
 	_start_position = new_start_position
-	_race_route.configure(race_path_points, _start_position, goal_position)
-	_navigation_target = Vector3.INF
-	_safe_navigation_velocity = Vector3.ZERO
-	_has_safe_navigation_velocity = false
 	_rng.seed = random_seed
+	_npc_navigation.configure(
+		_navigation_agent,
+		new_navigation_profile,
+		race_path_points,
+		_start_position,
+		goal_position,
+		random_seed
+	)
 	_join_info = join_info if join_info != null else ParticipantJoinInfo.for_name(new_display_name)
 	_has_finished_race = false
 	_finish_place = 0
-	_lane_offset = _compute_lane_offset(random_seed)
 	_stall_timer = 0.0
 	_last_progress_sample = 0.0
 	health = _get_config().max_health
@@ -169,7 +170,7 @@ func get_progress() -> float:
 		return 1.0
 
 	if _has_race_path():
-		return _race_route.get_progress_ratio()
+		return _npc_navigation.get_progress_ratio()
 
 	var path: Vector3 = goal_position - _start_position
 	path.y = 0.0
@@ -278,18 +279,21 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_update_drift(delta)
-	_race_route.advance(global_position, active_config.lane_half_width + 1.0)
-	_sync_navigation_target()
 	_update_stall_timer(delta)
-	var desired_velocity: Vector3 = _get_desired_velocity(active_config)
-	_submit_navigation_velocity(desired_velocity)
-	var steering_velocity: Vector3 = _resolve_navigation_velocity(desired_velocity)
+	var path_direction: Vector3 = _npc_navigation.update(
+		global_position,
+		active_config.lane_half_width,
+		delta
+	)
+	var desired_velocity: Vector3 = _get_desired_velocity(active_config, path_direction)
+	_npc_navigation.submit_preferred_velocity(desired_velocity)
+	var steering_velocity: Vector3 = _npc_navigation.resolve_avoidance(desired_velocity)
 	velocity = Vector3(
 		move_toward(velocity.x, steering_velocity.x, active_config.acceleration * delta),
 		vertical_velocity,
 		move_toward(velocity.z, steering_velocity.z, active_config.acceleration * delta)
 	)
-	_update_visual_facing(delta, steering_velocity)
+	_update_visual_facing(delta, velocity)
 	_move_and_slide_with_audit()
 	_check_out_of_bounds(active_config)
 
@@ -363,8 +367,6 @@ func _begin_water_float(active_config: ZombieConfig) -> void:
 	_stun_timer = 0.0
 	_boost_timer = 0.0
 	_boost_multiplier = 1.0
-	_has_safe_navigation_velocity = false
-	_safe_navigation_velocity = Vector3.ZERO
 	_set_collision_enabled(false)
 	_set_name_label_visible(false)
 	_stop_animation()
@@ -394,43 +396,15 @@ func _process_water_float(delta: float, active_config: ZombieConfig) -> void:
 	kill("fell")
 
 
-func _get_desired_velocity(active_config: ZombieConfig) -> Vector3:
-	var race_forward: Vector3 = _get_race_forward()
-	var side: Vector3 = _get_race_side(race_forward)
+func _get_desired_velocity(active_config: ZombieConfig, path_direction: Vector3) -> Vector3:
+	var side: Vector3 = _get_race_side(path_direction)
 	return RACE_STEERING.calculate_desired_velocity(
-		global_position,
-		_get_route_center_point(),
-		race_forward,
-		_get_course_follow_target(active_config),
-		_lane_offset,
-		active_config.lane_half_width,
+		path_direction,
 		_drift_direction,
 		active_config.drift_strength,
-		active_config.edge_recovery_strength,
 		_get_crowd_separation(active_config, side) * active_config.crowd_separation_strength,
 		_get_current_speed(active_config)
 	)
-
-
-func _sync_navigation_target() -> void:
-	if _navigation_agent == null or not _has_race_path():
-		return
-	var checkpoint: Vector3 = _race_route.get_current_segment_end()
-	if checkpoint.distance_squared_to(_navigation_target) <= 0.0025:
-		return
-	_navigation_target = checkpoint
-	_navigation_agent.target_position = checkpoint
-	_has_safe_navigation_velocity = false
-
-
-func _get_course_follow_target(active_config: ZombieConfig) -> Vector3:
-	# The route resource is the movement authority. NavigationAgent3D still
-	# receives each checkpoint so its RVO solver can safely separate runners,
-	# but its path query must never override an authored elevated/spiral course.
-	if _has_race_path():
-		var lookahead_distance: float = maxf(_get_current_speed(active_config) * 0.6, 3.0)
-		return _race_route.get_target_point(lookahead_distance)
-	return _get_route_target_point()
 
 
 func _update_visual_facing(delta: float, steering_velocity: Vector3) -> void:
@@ -447,36 +421,8 @@ func _update_visual_facing(delta: float, steering_velocity: Vector3) -> void:
 	_visual_root.rotation.y = lerp_angle(_visual_root.rotation.y, desired_yaw, turn_weight)
 
 
-func _submit_navigation_velocity(desired_velocity: Vector3) -> void:
-	if _navigation_agent == null or not _is_navigation_map_ready():
-		return
-	_navigation_agent.velocity = Vector3(desired_velocity.x, 0.0, desired_velocity.z)
-
-
-func _resolve_navigation_velocity(desired_velocity: Vector3) -> Vector3:
-	if _navigation_agent != null and _is_navigation_map_ready() and _has_safe_navigation_velocity:
-		return RACE_STEERING.preserve_forward_avoidance(desired_velocity, _safe_navigation_velocity)
-	return desired_velocity
-
-
-func _is_navigation_map_ready() -> bool:
-	if _navigation_agent == null:
-		return false
-	var navigation_map: RID = _navigation_agent.get_navigation_map()
-	return navigation_map.is_valid() and NavigationServer3D.map_get_iteration_id(navigation_map) > 0
-
-
 func _on_navigation_velocity_computed(safe_velocity: Vector3) -> void:
-	_safe_navigation_velocity = Vector3(safe_velocity.x, 0.0, safe_velocity.z)
-	_has_safe_navigation_velocity = true
-
-
-func _compute_lane_offset(random_seed: int) -> float:
-	var active_config: ZombieConfig = _get_config()
-	var usable_half_width: float = maxf(active_config.lane_half_width - 0.6, 0.4)
-	var offset_rng := RandomNumberGenerator.new()
-	offset_rng.seed = random_seed ^ 0x5F3759DF
-	return offset_rng.randf_range(-usable_half_width, usable_half_width)
+	_npc_navigation.accept_safe_velocity(safe_velocity)
 
 
 func _update_stall_timer(delta: float) -> void:
@@ -541,7 +487,7 @@ func _apply_anti_clump_nudge(active_config: ZombieConfig) -> void:
 
 func _get_race_forward() -> Vector3:
 	if _has_race_path():
-		return _race_route.get_forward_direction()
+		return _npc_navigation.get_route_forward()
 	var z_direction: float = sign(goal_position.z - _start_position.z)
 	if is_zero_approx(z_direction):
 		z_direction = 1.0
@@ -549,16 +495,6 @@ func _get_race_forward() -> Vector3:
 
 func _get_race_side(race_forward: Vector3) -> Vector3:
 	return Vector3(race_forward.z, 0.0, -race_forward.x).normalized()
-
-func _get_edge_recovery(active_config: ZombieConfig, side: Vector3) -> Vector3:
-	var lane_half_width: float = max(active_config.lane_half_width, 0.1)
-	var lateral_anchor: Vector3 = _get_route_center_point()
-	var lateral_position: float = (global_position - lateral_anchor).dot(side)
-	var overage: float = abs(lateral_position) - lane_half_width
-	if overage <= 0.0:
-		return Vector3.ZERO
-
-	return -side * sign(lateral_position) * clamp(overage / 2.0, 0.0, 1.0)
 
 func _get_crowd_separation(active_config: ZombieConfig, side: Vector3) -> Vector3:
 	var radius: float = max(active_config.crowd_separation_radius, 0.01)
@@ -651,19 +587,17 @@ func _apply_crowd_bump(active_config: ZombieConfig) -> void:
 
 
 func _has_race_path() -> bool:
-	return _race_route.has_route()
-
-
-func _get_route_center_point() -> Vector3:
-	if not _has_race_path():
-		return goal_position
-	return _race_route.get_center_point()
+	return _npc_navigation.has_route()
 
 
 func _get_route_target_point() -> Vector3:
 	if not _has_race_path():
 		return goal_position
-	return _race_route.get_current_segment_end()
+	return _npc_navigation.get_checkpoint_target()
+
+
+func get_navigation_diagnostics() -> Dictionary:
+	return _npc_navigation.get_diagnostics()
 
 func _get_current_speed(active_config: ZombieConfig) -> float:
 	var speed: float = active_config.runner_speed

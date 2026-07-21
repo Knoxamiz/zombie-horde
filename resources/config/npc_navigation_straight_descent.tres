@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="NpcNavigationProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/navigation/npc_navigation_profile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+checkpoint_reach_radius = 3.8
+checkpoint_lane_spread = 0.72
+finish_lane_spread = 0.85
+neighbor_distance = 5.5
+max_neighbors = 16

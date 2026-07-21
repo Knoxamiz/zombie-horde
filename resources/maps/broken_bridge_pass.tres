@@ -1,12 +1,14 @@
-[gd_resource type="Resource" script_class="RaceMapDefinition" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="RaceMapDefinition" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/maps/race_map_definition.gd" id="1_definition"]
 [ext_resource type="PackedScene" path="res://scenes/maps/broken_bridge_pass.tscn" id="2_scene"]
 [ext_resource type="Environment" path="res://resources/environment/broken_bridge_race_environment.tres" id="3_env"]
+[ext_resource type="Resource" path="res://resources/config/npc_navigation_broken_bridge.tres" id="4_navigation"]
 
 [resource]
 script = ExtResource("1_definition")
 display_name = "Broken Bridge"
+navigation_profile = ExtResource("4_navigation")
 scene = ExtResource("2_scene")
 premium_only = false
 spawn_origin = Vector3(0, 7.3, -80)

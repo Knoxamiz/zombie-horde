@@ -41,6 +41,11 @@ extends Resource
 @export var defender_placement_max_z: float = 28.0
 @export var race_path_points: PackedVector3Array = PackedVector3Array()
 
+## NPC navigation uses Godot NavigationAgent3D for path selection while these
+## points preserve checkpoint order on stacked or multi-turn maps.
+@export_category("NPC Navigation")
+@export var navigation_profile: NpcNavigationProfile
+
 ## Spectator-camera space is map data, not gameplay collision. Each AABB is a
 ## safe free-flight volume; together they can describe a long route, a bridge,
 ## or an exterior frame around a multi-level map without trapping the camera

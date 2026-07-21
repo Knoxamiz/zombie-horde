@@ -24,6 +24,9 @@ func _test_map_navigation_surface_coverage(map_id: String) -> void:
 	if definition == null or definition.scene == null:
 		_fail("%s definition must load for navigation coverage" % map_id)
 		return
+	if definition.navigation_profile == null:
+		_fail("%s must reference an editable NPC navigation profile" % map_id)
+		return
 	var arena: Node3D = definition.scene.instantiate() as Node3D
 	if arena == null:
 		_fail("%s scene did not instantiate" % map_id)
@@ -70,6 +73,9 @@ func _test_square_spiral_route() -> void:
 	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id("true_spiral_ramp")
 	if definition == null or definition.scene == null:
 		_fail("Square Spiral Ramp definition must load for navigation coverage")
+		return
+	if definition.navigation_profile == null:
+		_fail("Square Spiral Ramp must reference an editable NPC navigation profile")
 		return
 
 	var arena: Node3D = definition.scene.instantiate() as Node3D

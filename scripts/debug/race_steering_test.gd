@@ -10,33 +10,29 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	_test_lane_offsets_do_not_snap_to_center()
-	_test_edge_recovery_keeps_forward_progress()
+	_test_path_direction_is_movement_authority()
+	_test_local_drift_preserves_path_progress()
 	_test_avoidance_cannot_reverse_a_runner()
 	_test_visual_facing_matches_forward_velocity()
 	_finish()
 
 
-func _test_lane_offsets_do_not_snap_to_center() -> void:
+func _test_path_direction_is_movement_authority() -> void:
 	var velocity := RACE_STEERING.calculate_desired_velocity(
-		Vector3(4.0, 0.0, 0.0), Vector3.ZERO, Vector3(0.0, 0.0, 1.0), Vector3(0.0, 0.0, 4.0),
-		3.0, 6.1, 0.0, 0.0, 1.15, Vector3.ZERO, 4.0
+		Vector3(1.0, 0.0, 0.0), 0.0, 0.0, Vector3.ZERO, 4.0
 	)
-	if velocity.x >= -0.05:
-		_fail("A displaced runner should recover toward its own lane, not the centerline")
-	if velocity.z <= 2.5:
-		_fail("Lane recovery must preserve strong forward movement")
+	if velocity.x <= 3.5 or absf(velocity.z) > 0.05:
+		_fail("Local steering must follow the navigation path direction")
 
 
-func _test_edge_recovery_keeps_forward_progress() -> void:
+func _test_local_drift_preserves_path_progress() -> void:
 	var velocity := RACE_STEERING.calculate_desired_velocity(
-		Vector3(10.0, 0.0, 0.0), Vector3.ZERO, Vector3(0.0, 0.0, 1.0), Vector3(0.0, 0.0, 4.0),
-		0.0, 6.1, 0.0, 0.0, 1.15, Vector3.ZERO, 4.0
+		Vector3(0.0, 0.0, 1.0), 1.0, 0.55, Vector3.ZERO, 4.0
 	)
-	if velocity.x >= -0.2:
-		_fail("A runner beyond the lane should steer inward")
-	if velocity.z <= 2.0:
-		_fail("Edge recovery must arc forward instead of rubber-banding sideways")
+	if velocity.x <= 0.2:
+		_fail("Local drift should create a small natural lateral variation")
+	if velocity.z <= 3.5:
+		_fail("Local drift must preserve forward path progress")
 
 
 func _test_avoidance_cannot_reverse_a_runner() -> void:
