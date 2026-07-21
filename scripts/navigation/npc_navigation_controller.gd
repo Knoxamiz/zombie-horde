@@ -15,6 +15,7 @@ var _agent: NavigationAgent3D
 var _profile: NpcNavigationProfile
 var _lane_seed: float = 0.0
 var _goal_position: Vector3 = Vector3.ZERO
+var _navigation_half_width: float = 0.0
 var _requested_target: Vector3 = Vector3.INF
 var _target_refresh_timer: float = 0.0
 var _safe_velocity: Vector3 = Vector3.ZERO
@@ -30,11 +31,13 @@ func configure(
 	authored_points: PackedVector3Array,
 	spawn_position: Vector3,
 	goal_position: Vector3,
-	random_seed: int
+	random_seed: int,
+	navigation_half_width: float
 ) -> void:
 	_agent = agent
 	_profile = profile if profile != null else NpcNavigationProfile.new()
 	_goal_position = goal_position
+	_navigation_half_width = maxf(navigation_half_width, 0.5)
 	_route.configure(authored_points, spawn_position, goal_position)
 	_requested_target = Vector3.INF
 	_target_refresh_timer = 0.0
@@ -55,7 +58,7 @@ func set_agent(agent: NavigationAgent3D) -> void:
 	_apply_agent_profile()
 
 
-func update(position: Vector3, lane_half_width: float, delta: float) -> Vector3:
+func update(position: Vector3, delta: float) -> Vector3:
 	if not _route.has_route():
 		return _direction_to(_goal_position, position, _last_path_direction)
 
@@ -64,7 +67,7 @@ func update(position: Vector3, lane_half_width: float, delta: float) -> Vector3:
 	# The ordered race route is the movement authority. NavigationAgent3D can
 	# refine a route around nearby walkable geometry, but it must never replace
 	# the course with a result that points sideways, backwards, or nowhere.
-	var course_target: Vector3 = _build_active_target(lane_half_width)
+	var course_target: Vector3 = _build_active_target(position)
 	var course_direction: Vector3 = _direction_to(
 		course_target,
 		position,
@@ -151,6 +154,7 @@ func get_diagnostics() -> Dictionary:
 		"fallback_active": _fallback_active,
 		"agent_direction_accepted": _agent_direction_accepted,
 		"navigation_ready": _can_query_navigation(),
+		"navigation_half_width": _navigation_half_width,
 	}
 
 
@@ -169,13 +173,29 @@ func _apply_agent_profile() -> void:
 	_agent.time_horizon_agents = _profile.time_horizon_agents
 
 
-func _build_active_target(lane_half_width: float) -> Vector3:
+func _build_active_target(position: Vector3) -> Vector3:
 	var route_forward: Vector3 = _route.get_forward_direction()
 	var route_side := Vector3(route_forward.z, 0.0, -route_forward.x).normalized()
-	var spread: float = _profile.finish_lane_spread if _route.get_progress_ratio() >= 0.999 else _profile.checkpoint_lane_spread
-	var offset: float = _lane_seed * maxf(lane_half_width, 0.5) * spread
-	var checkpoint: Vector3 = _goal_position if _route.get_progress_ratio() >= 0.999 else _route.get_current_segment_end()
-	return checkpoint + route_side * offset
+	var distance_to_goal: float = Vector2(
+		position.x - _goal_position.x,
+		position.z - _goal_position.z
+	).length()
+	var approaching_finish: bool = distance_to_goal <= _profile.finish_rejoin_distance
+	if approaching_finish:
+		var finish_offset: float = _lane_seed * _navigation_half_width * _profile.finish_lane_spread
+		return _goal_position + route_side * finish_offset
+
+	# Project the runner's lateral offset onto the active route, then carry that
+	# offset ahead along the course. A runner knocked onto a sidewalk keeps making
+	# forward progress instead of trying to snap back to the track centerline.
+	var center: Vector3 = _route.get_center_point()
+	var lateral_offset: float = clampf(
+		(position - center).dot(route_side),
+		-_navigation_half_width,
+		_navigation_half_width
+	)
+	var lookahead: Vector3 = _route.get_target_point(_profile.route_lookahead_distance)
+	return lookahead + route_side * lateral_offset
 
 
 func _should_refresh_target(target: Vector3) -> bool:

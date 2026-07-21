@@ -11,6 +11,8 @@ extends Resource
 @export_range(0.5, 12.0, 0.1) var checkpoint_reach_radius: float = 3.0
 @export_range(0.0, 1.0, 0.05) var checkpoint_lane_spread: float = 0.58
 @export_range(0.0, 1.0, 0.05) var finish_lane_spread: float = 0.82
+@export_range(0.5, 24.0, 0.1) var route_lookahead_distance: float = 6.0
+@export_range(0.5, 32.0, 0.1) var finish_rejoin_distance: float = 10.0
 
 @export_category("Path Queries")
 @export_range(0.05, 2.0, 0.01) var target_refresh_interval: float = 0.20

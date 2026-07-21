@@ -8,6 +8,7 @@
 script = ExtResource("1_definition")
 display_name = "City Highway"
 navigation_profile = ExtResource("3_navigation")
+npc_navigation_half_width = 30.0
 scene = ExtResource("2_scene")
 premium_only = false
 road_core_scale = Vector3(1, 1, 1)

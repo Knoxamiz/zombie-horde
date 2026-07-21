@@ -16,6 +16,7 @@ func _initialize() -> void:
 func _run() -> void:
 	_test_checkpoint_sequence_preserves_turn_order()
 	_test_navigation_fallback_reports_its_state()
+	_test_wide_map_runner_keeps_forward_progress()
 	_finish()
 
 
@@ -28,16 +29,16 @@ func _test_checkpoint_sequence_preserves_turn_order() -> void:
 		Vector3(10.0, 0.8, -10.0),
 		Vector3(10.0, 0.8, 10.0),
 	])
-	controller.configure(null, profile, route, route[0], route[2], 42)
+	controller.configure(null, profile, route, route[0], route[2], 42, 5.0)
 	if not controller.has_route():
 		_fail("Authored race routes must initialize their total length")
 		return
 
-	var first_direction: Vector3 = controller.update(route[0], 5.0, 0.1)
+	var first_direction: Vector3 = controller.update(route[0], 0.1)
 	if first_direction.x <= 0.8 or absf(first_direction.z) > 0.4:
 		_fail("Initial navigation direction should follow the first authored segment")
 
-	var turned_direction: Vector3 = controller.update(route[1], 5.0, 0.1)
+	var turned_direction: Vector3 = controller.update(route[1], 0.1)
 	if turned_direction.z <= 0.8 or absf(turned_direction.x) > 0.4:
 		_fail("Checkpoint sequencing should advance to the authored turn")
 
@@ -50,12 +51,32 @@ func _test_navigation_fallback_reports_its_state() -> void:
 		PackedVector3Array([Vector3.ZERO, Vector3(0.0, 0.0, 10.0)]),
 		Vector3.ZERO,
 		Vector3(0.0, 0.0, 10.0),
-		7
+		7,
+		5.0
 	)
-	controller.update(Vector3.ZERO, 5.0, 0.1)
+	controller.update(Vector3.ZERO, 0.1)
 	var diagnostics: Dictionary = controller.get_diagnostics()
 	if not bool(diagnostics.get("fallback_active", false)):
 		_fail("Navigation diagnostics should expose fallback state before a map is ready")
+
+
+func _test_wide_map_runner_keeps_forward_progress() -> void:
+	var controller = NPC_NAVIGATION_CONTROLLER.new()
+	var profile = NAVIGATION_PROFILE.new()
+	profile.route_lookahead_distance = 8.0
+	profile.finish_rejoin_distance = 8.0
+	controller.configure(
+		null,
+		profile,
+		PackedVector3Array([Vector3(0.0, 0.0, -40.0), Vector3(0.0, 0.0, 40.0)]),
+		Vector3(0.0, 0.0, -40.0),
+		Vector3(0.0, 0.0, 40.0),
+		12,
+		30.0
+	)
+	var side_runner_direction: Vector3 = controller.update(Vector3(-24.0, 0.0, -12.0), 0.1)
+	if side_runner_direction.z <= 0.92 or absf(side_runner_direction.x) >= 0.2:
+		_fail("Wide-map runners must keep advancing toward the goal instead of snapping to the centerline")
 
 
 func _fail(message: String) -> void:

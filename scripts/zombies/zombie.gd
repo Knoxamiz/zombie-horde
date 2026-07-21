@@ -102,7 +102,8 @@ func configure_zombie(
 	random_seed: int,
 	join_info: ParticipantJoinInfo = null,
 	new_race_path_points: PackedVector3Array = PackedVector3Array(),
-	new_navigation_profile: NpcNavigationProfile = null
+	new_navigation_profile: NpcNavigationProfile = null,
+	new_navigation_half_width: float = 0.0
 ) -> void:
 	display_name = new_display_name
 	config = new_config
@@ -116,7 +117,8 @@ func configure_zombie(
 		race_path_points,
 		_start_position,
 		goal_position,
-		random_seed
+		random_seed,
+		new_navigation_half_width
 	)
 	_join_info = join_info if join_info != null else ParticipantJoinInfo.for_name(new_display_name)
 	_has_finished_race = false
@@ -282,7 +284,6 @@ func _physics_process(delta: float) -> void:
 	_update_stall_timer(delta)
 	var path_direction: Vector3 = _npc_navigation.update(
 		global_position,
-		active_config.lane_half_width,
 		delta
 	)
 	var desired_velocity: Vector3 = _get_desired_velocity(active_config, path_direction)

@@ -45,6 +45,13 @@ extends Resource
 ## points preserve checkpoint order on stacked or multi-turn maps.
 @export_category("NPC Navigation")
 @export var navigation_profile: NpcNavigationProfile
+## Zero keeps runners within the race lane. Wider playable maps can opt in to
+## preserve a runner's lateral position across sidewalks or other walkable space.
+@export_range(0.0, 128.0, 0.1) var npc_navigation_half_width: float = 0.0
+
+
+func resolve_npc_navigation_half_width() -> float:
+	return npc_navigation_half_width if npc_navigation_half_width > 0.0 else lane_half_width
 
 ## Spectator-camera space is map data, not gameplay collision. Each AABB is a
 ## safe free-flight volume; together they can describe a long route, a bridge,

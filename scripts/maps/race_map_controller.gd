@@ -559,6 +559,7 @@ func _apply_gameplay_dimensions(definition: RaceMapDefinition) -> void:
 		_zombie_manager.goal_position = definition.goal_position
 		_zombie_manager.race_path_points = definition.race_path_points
 		_zombie_manager.navigation_profile = definition.navigation_profile
+		_zombie_manager.npc_navigation_half_width = definition.resolve_npc_navigation_half_width()
 
 	if zombie_config != null:
 		zombie_config.lane_half_width = definition.lane_half_width
