@@ -13,6 +13,7 @@ func _run() -> void:
 	_test_straight_route_fallback()
 	_test_square_spiral_stays_on_its_authored_segment()
 	_test_outer_lane_clears_every_spiral_checkpoint()
+	_test_runner_past_turn_plane_is_never_pulled_backward()
 	_finish()
 
 
@@ -87,6 +88,26 @@ func _test_outer_lane_clears_every_spiral_checkpoint() -> void:
 				% segment_index
 			)
 			return
+
+
+func _test_runner_past_turn_plane_is_never_pulled_backward() -> void:
+	var navigator = ROUTE_NAVIGATOR.new()
+	var route := PackedVector3Array([
+		Vector3(0.0, 0.0, 0.0),
+		Vector3(0.0, 0.0, 20.0),
+		Vector3(20.0, 0.0, 20.0),
+	])
+	navigator.configure(route, route[0], route[2])
+	# This runner has crossed the first turn plane but sits outside the nominal
+	# lane after a knockback. It should recover forward onto the next segment,
+	# never be retargeted behind itself toward the old center checkpoint.
+	navigator.advance(Vector3(4.8, 0.8, 20.4), 2.4, 3.3)
+	if navigator.get_current_segment_index() != 1:
+		_fail("A runner past a turn plane must advance instead of being pulled backward")
+		return
+	var recovery_target: Vector3 = navigator.get_target_point(6.0)
+	if recovery_target.x <= 0.5:
+		_fail("Recovered runner must target forward along the next route segment")
 
 
 func _fail(message: String) -> void:

@@ -48,6 +48,12 @@ func advance(
 	# it is still inside the map-authored corridor, otherwise it will turn back
 	# toward the center point and form a permanent crowd pile at that joint.
 	var safe_corridor_half_width: float = maxf(corridor_half_width, safe_reach_radius)
+	# Launches, avoidance and wide turns can carry a runner just outside its
+	# nominal lane as it crosses a checkpoint plane. Give it a bounded recovery
+	# margin so route progress remains monotonic instead of pulling it backward
+	# to the old waypoint. This is intentionally derived from map/profile data,
+	# not a map-specific coordinate or special case.
+	var transition_half_width: float = safe_corridor_half_width + safe_reach_radius
 	while _segment_index < _points.size() - 1:
 		var segment_start: Vector3 = _points[_segment_index]
 		var segment_end: Vector3 = _points[_segment_index + 1]
@@ -82,12 +88,12 @@ func advance(
 			world_position.distance_to(segment_end) <= safe_reach_radius
 			or (
 			local_t >= 0.94
-			and horizontal_offset.length() <= safe_corridor_half_width
+			and horizontal_offset.length() <= transition_half_width
 			)
 		)
 		var passed_endpoint: bool = (
 			local_t >= 0.985
-			and horizontal_offset.length() <= safe_corridor_half_width
+			and horizontal_offset.length() <= transition_half_width
 		)
 
 		if not reached_endpoint and not passed_endpoint:
