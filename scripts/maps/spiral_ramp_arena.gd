@@ -21,7 +21,11 @@ const BOTTOM_Y: float = 0.0
 const LAYER_COUNT: int = 4
 const EDGE_BARRIER_HEIGHT: float = 0.86
 const EDGE_BARRIER_THICKNESS: float = 0.34
-const SEGMENT_END_INSET: float = 3.8
+# Every sloped road segment must overlap its flat turn deck by a real landing
+# area, not merely touch its edge. A shallow overlap produces a repeatable
+# physics snag at the same downhill corner when a CharacterBody crosses it.
+const MIN_CORNER_DECK_OVERLAP: float = 1.25
+const SEGMENT_END_INSET: float = ROAD_WIDTH * 0.5 - MIN_CORNER_DECK_OVERLAP
 const RAIL_END_INSET: float = 6.4
 
 var _visual_root: Node3D
@@ -51,6 +55,13 @@ static func build_path_points() -> PackedVector3Array:
 		points.append(Vector3(-HALF_EXTENT, next_y, -HALF_EXTENT))
 	points.append(Vector3(HALF_EXTENT, BOTTOM_Y, -HALF_EXTENT))
 	return points
+
+
+static func get_corner_deck_overlap() -> float:
+	# The 8m square deck extends ROAD_WIDTH / 2 from its route point. Road
+	# segments end SEGMENT_END_INSET before that point, so their difference is
+	# the continuous, collision-backed landing overlap at every transition.
+	return ROAD_WIDTH * 0.5 - SEGMENT_END_INSET
 
 
 func _build() -> void:

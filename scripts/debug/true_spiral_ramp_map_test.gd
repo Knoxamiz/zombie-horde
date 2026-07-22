@@ -33,6 +33,8 @@ func _test_catalog_entry() -> void:
 	var generated_points: PackedVector3Array = SpiralRampArena.build_path_points()
 	if not _points_match(definition.race_path_points, generated_points):
 		_fail("True Spiral Ramp resource route should match generated scene route")
+	if SpiralRampArena.get_corner_deck_overlap() < 1.0:
+		_fail("True Spiral Ramp road segments must overlap every turn deck by at least 1m")
 	if definition.spawn_origin.y < 40.0:
 		_fail("True Spiral Ramp should have expanded vertical level spacing")
 	if definition.spawn_origin.distance_to(definition.race_path_points[0] + Vector3.UP * 0.8) > 0.1:
