@@ -80,8 +80,12 @@ func update(position: Vector3, delta: float) -> Vector3:
 	var target: Vector3 = course_target
 	_agent_direction_accepted = false
 	if _can_query_navigation():
-		var navigation_map: RID = _agent.get_navigation_map()
-		target = NavigationServer3D.map_get_closest_point(navigation_map, target)
+		# The authored course target is already on the active map surface. Do not
+		# snap it to NavigationServer's globally nearest point: on stacked maps
+		# that can select a lower deck directly below this route segment and make
+		# the agent fight the prescribed turn. NavigationAgent3D still supplies
+		# local path refinement and avoidance after receiving this route-owned
+		# target.
 		if _should_refresh_target(target):
 			_requested_target = target
 			_target_refresh_timer = _profile.target_refresh_interval
