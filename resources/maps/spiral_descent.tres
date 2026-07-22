@@ -36,7 +36,10 @@ powerup_placement_max_z = 78.0
 defender_placement_half_width = 5.0
 defender_placement_min_z = -78.0
 defender_placement_max_z = 78.0
-free_camera_safe_regions = [AABB(-30, 8, -116, 60, 62, 232)]
+# Parking Garage needs one continuous flight envelope: the streamer camera must
+# be able to inspect the lower decks, center shaft, and outer ramp approaches.
+# Keep this map-specific so other maps can retain their tighter camera spaces.
+free_camera_safe_regions = [AABB(-44, -1, -128, 88, 72, 256)]
 uses_map_hazard_profile = true
 map_mechanic_hook = "four-level top-to-bottom descent"
 map_mine_count = 8

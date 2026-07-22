@@ -75,6 +75,20 @@ func _test_map_camera_limits(map_id: String, expected_region_count: int) -> void
 			if not limits.is_position_inside_active_limits(city_overview_point):
 				_fail("quarantine_boulevard: free camera must cover the full suburban neighborhood")
 
+	if map_id == "spiral_descent":
+		# The Parking Garage route descends from the upper deck to ground level.
+		# The camera must remain free in the central volume, rather than clamping
+		# operators to the upper deck as they follow the horde downstairs.
+		var garage_inspection_points: Array[Vector3] = [
+			Vector3(0.0, 1.0, 64.0),
+			Vector3(0.0, 6.0, 0.0),
+			Vector3(-32.0, 32.0, -96.0),
+			Vector3(32.0, 48.0, 96.0),
+		]
+		for garage_inspection_point: Vector3 in garage_inspection_points:
+			if not limits.is_position_inside_active_limits(garage_inspection_point):
+				_fail("spiral_descent: garage camera cannot reach inspection point %s" % garage_inspection_point)
+
 
 func _fail(message: String) -> void:
 	_failures.append(message)
