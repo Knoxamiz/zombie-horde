@@ -53,6 +53,24 @@ corner_radius_bottom_left = 14
 shadow_color = Color(1, 0.7, 0.18, 0.36)
 shadow_size = 26
 
+[sub_resource type="StyleBoxFlat" id="StyleBox_map_glow"]
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+bg_color = Color(0.012, 0.032, 0.025, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.9, 0.18, 0.72)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.18, 0.95, 0.2, 0.28)
+shadow_size = 18
+
 [node name="PreRoundUI" type="CanvasLayer"]
 layer = 12
 script = ExtResource("1_script")
@@ -78,13 +96,13 @@ mouse_filter = 2
 color = Color(0.004, 0.008, 0.005, 0.22)
 
 [node name="LobbyPanel" type="PanelContainer" parent="Root"]
-custom_minimum_size = Vector2(400, 620)
+custom_minimum_size = Vector2(380, 520)
 layout_mode = 1
 anchors_preset = 0
 offset_left = 40.0
 offset_top = 40.0
-offset_right = 440.0
-offset_bottom = 660.0
+offset_right = 420.0
+offset_bottom = 560.0
 theme_override_styles/panel = SubResource("StyleBox_lobby_glow")
 
 [node name="Margin" type="MarginContainer" parent="Root/LobbyPanel"]
@@ -114,7 +132,7 @@ theme_override_font_sizes/font_size = 18
 text = "JOINING"
 
 [node name="LobbyNamesScroll" type="ScrollContainer" parent="Root/LobbyPanel/Margin/VBox"]
-custom_minimum_size = Vector2(0, 260)
+custom_minimum_size = Vector2(0, 280)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -147,11 +165,85 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 24
 text = "Ready"
 
-[node name="SecondaryButtonRow" type="HBoxContainer" parent="Root/LobbyPanel/Margin/VBox"]
+[node name="MapSelectPanel" type="PanelContainer" parent="Root"]
+custom_minimum_size = Vector2(520, 118)
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -260.0
+offset_top = 36.0
+offset_right = 260.0
+offset_bottom = 154.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBox_map_glow")
+
+[node name="Margin" type="MarginContainer" parent="Root/MapSelectPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="Root/MapSelectPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="Root/MapSelectPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 1, 0.32, 1)
+theme_override_font_sizes/font_size = 24
+text = "MAP SELECT"
+horizontal_alignment = 1
+
+[node name="MapSelectButton" type="Button" parent="Root/MapSelectPanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "CHOOSE COURSE"
+
+[node name="MapStatusLabel" type="Label" parent="Root/MapSelectPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.84, 0.72, 1)
+theme_override_font_sizes/font_size = 14
+text = "Open map select before staging the race."
+horizontal_alignment = 1
+
+[node name="DevPanel" type="PanelContainer" parent="Root"]
+custom_minimum_size = Vector2(380, 220)
+layout_mode = 1
+anchors_preset = 3
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = -270.0
+offset_right = 420.0
+offset_bottom = -50.0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBox_lobby_glow")
+
+[node name="Margin" type="MarginContainer" parent="Root/DevPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="Root/DevPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="Root/DevPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.7, 0.22, 1)
+theme_override_font_sizes/font_size = 18
+text = "DEV TOOLS"
+
+[node name="SecondaryButtonRow" type="HBoxContainer" parent="Root/DevPanel/Margin/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ResetButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/SecondaryButtonRow"]
+[node name="ResetButton" type="Button" parent="Root/DevPanel/Margin/VBox/SecondaryButtonRow"]
 custom_minimum_size = Vector2(108, 40)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -159,62 +251,62 @@ script = ExtResource("3_hold_button")
 hold_seconds = 3.0
 text = "Hold Reset"
 
-[node name="AddNpcButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/SecondaryButtonRow"]
+[node name="AddNpcButton" type="Button" parent="Root/DevPanel/Margin/VBox/SecondaryButtonRow"]
 custom_minimum_size = Vector2(108, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Add NPC"
 
-[node name="AutoRepeatButton" type="CheckButton" parent="Root/LobbyPanel/Margin/VBox/SecondaryButtonRow"]
+[node name="AutoRepeatButton" type="CheckButton" parent="Root/DevPanel/Margin/VBox/SecondaryButtonRow"]
 custom_minimum_size = Vector2(132, 40)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 text = "Auto Repeat"
 
-[node name="TestJoinSection" type="VBoxContainer" parent="Root/LobbyPanel/Margin/VBox"]
+[node name="TestJoinSection" type="VBoxContainer" parent="Root/DevPanel/Margin/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="TestJoinLabel" type="Label" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection"]
+[node name="TestJoinLabel" type="Label" parent="Root/DevPanel/Margin/VBox/TestJoinSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.82, 0.7, 1)
 theme_override_font_sizes/font_size = 14
 text = "Test Join (supporter tiers)"
 
-[node name="TestJoinRow" type="HBoxContainer" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection"]
+[node name="TestJoinRow" type="HBoxContainer" parent="Root/DevPanel/Margin/VBox/TestJoinSection"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="JoinViewerButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow"]
+[node name="JoinViewerButton" type="Button" parent="Root/DevPanel/Margin/VBox/TestJoinSection/TestJoinRow"]
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 text = "Viewer"
 
-[node name="JoinSubButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow"]
+[node name="JoinSubButton" type="Button" parent="Root/DevPanel/Margin/VBox/TestJoinSection/TestJoinRow"]
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 text = "Sub"
 
-[node name="JoinGiftButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow"]
+[node name="JoinGiftButton" type="Button" parent="Root/DevPanel/Margin/VBox/TestJoinSection/TestJoinRow"]
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 text = "Gift"
 
-[node name="JoinBitsButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow"]
+[node name="JoinBitsButton" type="Button" parent="Root/DevPanel/Margin/VBox/TestJoinSection/TestJoinRow"]
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 text = "Bits"
 
-[node name="TestMineButton" type="Button" parent="Root/LobbyPanel/Margin/VBox/TestJoinSection"]
+[node name="TestMineButton" type="Button" parent="Root/DevPanel/Margin/VBox/TestJoinSection"]
 custom_minimum_size = Vector2(0, 34)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14

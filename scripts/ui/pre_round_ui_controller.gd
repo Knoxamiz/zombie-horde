@@ -39,15 +39,17 @@ var _chat_detail_text: String = ""
 ) as Label
 @onready var _lobby_chat_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyChatLabel") as Label
 @onready var _ready_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ReadyButton") as Button
-@onready var _reset_button: HoldToConfirmButton = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/ResetButton") as HoldToConfirmButton
-@onready var _lobby_join_button: Button = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/AddNpcButton") as Button
-@onready var _auto_repeat_button: CheckButton = get_node("Root/LobbyPanel/Margin/VBox/SecondaryButtonRow/AutoRepeatButton") as CheckButton
-@onready var _join_viewer_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinViewerButton") as Button
-@onready var _join_sub_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinSubButton") as Button
-@onready var _join_gift_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinGiftButton") as Button
-@onready var _join_bits_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinBitsButton") as Button
-@onready var _test_mine_button: Button = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection/TestMineButton") as Button
-@onready var _test_join_section: VBoxContainer = get_node("Root/LobbyPanel/Margin/VBox/TestJoinSection") as VBoxContainer
+@onready var _map_select_button: Button = get_node("Root/MapSelectPanel/Margin/VBox/MapSelectButton") as Button
+@onready var _map_status_label: Label = get_node("Root/MapSelectPanel/Margin/VBox/MapStatusLabel") as Label
+@onready var _dev_panel: PanelContainer = get_node("Root/DevPanel") as PanelContainer
+@onready var _reset_button: HoldToConfirmButton = get_node("Root/DevPanel/Margin/VBox/SecondaryButtonRow/ResetButton") as HoldToConfirmButton
+@onready var _lobby_join_button: Button = get_node("Root/DevPanel/Margin/VBox/SecondaryButtonRow/AddNpcButton") as Button
+@onready var _auto_repeat_button: CheckButton = get_node("Root/DevPanel/Margin/VBox/SecondaryButtonRow/AutoRepeatButton") as CheckButton
+@onready var _join_viewer_button: Button = get_node("Root/DevPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinViewerButton") as Button
+@onready var _join_sub_button: Button = get_node("Root/DevPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinSubButton") as Button
+@onready var _join_gift_button: Button = get_node("Root/DevPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinGiftButton") as Button
+@onready var _join_bits_button: Button = get_node("Root/DevPanel/Margin/VBox/TestJoinSection/TestJoinRow/JoinBitsButton") as Button
+@onready var _test_mine_button: Button = get_node("Root/DevPanel/Margin/VBox/TestJoinSection/TestMineButton") as Button
 @onready var _screen_wash: ColorRect = get_node("Root/ScreenWash") as ColorRect
 @onready var _options_button: Button = get_node("Root/OptionsButton") as Button
 @onready var _main_menu_button: Button = get_node("Root/MainMenuButton") as Button
@@ -75,6 +77,7 @@ func _ready() -> void:
 	_test_mine_button.pressed.connect(_on_test_mine_pressed)
 	_ready_button.pressed.connect(_on_ready_pressed)
 	_reset_button.hold_confirmed.connect(_on_reset_confirmed)
+	_map_select_button.pressed.connect(_on_options_pressed)
 	_options_button.pressed.connect(_on_options_pressed)
 	_main_menu_button.pressed.connect(_on_main_menu_pressed)
 	_fastest_times_button.pressed.connect(_on_fastest_times_pressed)
@@ -90,6 +93,9 @@ func _ready() -> void:
 	GameEvents.round_reset.connect(_on_round_reset)
 	if _leaderboard_store != null:
 		_leaderboard_store.leaderboard_changed.connect(_on_leaderboard_changed)
+	var streamer_menu: StreamerMenuController = get_parent().get_node_or_null("StreamerMenu") as StreamerMenuController
+	if streamer_menu != null and not streamer_menu.menu_closed.is_connected(refresh_map_selection):
+		streamer_menu.menu_closed.connect(refresh_map_selection)
 
 	if _round_manager != null:
 		_queued_names = _round_manager.get_pending_names()
@@ -98,18 +104,30 @@ func _ready() -> void:
 	_refresh_labels()
 	_refresh_scoreboards()
 	_update_title_from_command(_command_text)
+	_refresh_map_selection()
 	apply_stream_capture_visuals()
 	_command_text = TwitchConfigResolver.get_join_command_text()
 
 func apply_stream_capture_visuals() -> void:
+	if _dev_panel != null:
+		_dev_panel.visible = OS.is_debug_build()
 	var game_settings: GameSettingsController = get_node_or_null("/root/GameSettings") as GameSettingsController
 	if game_settings == null:
 		return
 
 	if _screen_wash != null:
 		_screen_wash.visible = not game_settings.should_hide_screen_wash()
-	if _test_join_section != null:
-		_test_join_section.visible = game_settings.should_show_debug_lobby_controls()
+	if _dev_panel != null:
+		_dev_panel.visible = OS.is_debug_build() and game_settings.should_show_debug_lobby_controls()
+
+func refresh_map_selection() -> void:
+	if _map_status_label == null:
+		return
+	var streamer_menu: StreamerMenuController = get_parent().get_node_or_null("StreamerMenu") as StreamerMenuController
+	if streamer_menu == null:
+		_map_status_label.text = "Choose the course before staging the race."
+		return
+	_map_status_label.text = "CURRENT COURSE: %s" % streamer_menu.get_selected_map_name()
 
 func set_screen_mode(mode: String) -> void:
 	var should_show: bool = mode != "hidden"

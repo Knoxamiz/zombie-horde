@@ -858,6 +858,10 @@ func _get_selected_map_name() -> String:
 	var entry: Dictionary = MapCatalog.get_settings_entry(settings_index)
 	return str(entry.get("display_name", "City Highway"))
 
+
+func get_selected_map_name() -> String:
+	return _get_selected_map_name()
+
 func _has_premium_access() -> bool:
 	return feature_config != null and feature_config.has_premium_access()
 
