@@ -104,7 +104,7 @@ func _ready() -> void:
 	_refresh_labels()
 	_refresh_scoreboards()
 	_update_title_from_command(_command_text)
-	_refresh_map_selection()
+	refresh_map_selection()
 	apply_stream_capture_visuals()
 	_command_text = TwitchConfigResolver.get_join_command_text()
 
