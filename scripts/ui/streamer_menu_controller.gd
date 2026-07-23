@@ -862,6 +862,35 @@ func _get_selected_map_name() -> String:
 func get_selected_map_name() -> String:
 	return _get_selected_map_name()
 
+
+func get_selected_settings_map_index() -> int:
+	return _profile.get_selected_settings_map_index()
+
+
+func get_lobby_map_entries() -> Array[Dictionary]:
+	var entries: Array[Dictionary] = MapCatalog.get_selectable_entries_for_settings()
+	if _has_premium_access():
+		return entries
+	if entries.is_empty():
+		return []
+	return [entries[0]]
+
+
+func select_map_from_lobby(settings_index: int) -> bool:
+	if _is_map_change_locked():
+		_set_status("Map locked during round")
+		return false
+	if not _has_premium_access() and settings_index != 0:
+		_set_status("Map selection requires Paid Premium")
+		return false
+	if _round_manager != null and _round_manager.state == RoundManager.RoundState.ENDED:
+		_round_manager.reset_round()
+	_profile.set_selected_settings_map_index(settings_index)
+	_apply_profile_to_game(true)
+	_refresh_controls()
+	_save_profile("Saved map: %s" % _get_selected_map_name())
+	return true
+
 func _has_premium_access() -> bool:
 	return feature_config != null and feature_config.has_premium_access()
 

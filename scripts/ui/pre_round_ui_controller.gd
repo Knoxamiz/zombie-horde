@@ -39,7 +39,7 @@ var _chat_detail_text: String = ""
 ) as Label
 @onready var _lobby_chat_label: Label = get_node("Root/LobbyPanel/Margin/VBox/LobbyChatLabel") as Label
 @onready var _ready_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ReadyButton") as Button
-@onready var _map_select_button: Button = get_node("Root/MapSelectPanel/Margin/VBox/MapSelectButton") as Button
+@onready var _map_option: OptionButton = get_node("Root/MapSelectPanel/Margin/VBox/MapOption") as OptionButton
 @onready var _map_status_label: Label = get_node("Root/MapSelectPanel/Margin/VBox/MapStatusLabel") as Label
 @onready var _dev_panel: PanelContainer = get_node("Root/DevPanel") as PanelContainer
 @onready var _reset_button: HoldToConfirmButton = get_node("Root/DevPanel/Margin/VBox/SecondaryButtonRow/ResetButton") as HoldToConfirmButton
@@ -77,7 +77,7 @@ func _ready() -> void:
 	_test_mine_button.pressed.connect(_on_test_mine_pressed)
 	_ready_button.pressed.connect(_on_ready_pressed)
 	_reset_button.hold_confirmed.connect(_on_reset_confirmed)
-	_map_select_button.pressed.connect(_on_options_pressed)
+	_map_option.item_selected.connect(_on_map_option_selected)
 	_options_button.pressed.connect(_on_options_pressed)
 	_main_menu_button.pressed.connect(_on_main_menu_pressed)
 	_fastest_times_button.pressed.connect(_on_fastest_times_pressed)
@@ -104,6 +104,7 @@ func _ready() -> void:
 	_refresh_labels()
 	_refresh_scoreboards()
 	_update_title_from_command(_command_text)
+	_populate_map_options()
 	refresh_map_selection()
 	apply_stream_capture_visuals()
 	_command_text = TwitchConfigResolver.get_join_command_text()
@@ -121,13 +122,40 @@ func apply_stream_capture_visuals() -> void:
 		_dev_panel.visible = OS.is_debug_build() and game_settings.should_show_debug_lobby_controls()
 
 func refresh_map_selection() -> void:
-	if _map_status_label == null:
+	if _map_status_label == null or _map_option == null:
 		return
 	var streamer_menu: StreamerMenuController = get_parent().get_node_or_null("StreamerMenu") as StreamerMenuController
 	if streamer_menu == null:
-		_map_status_label.text = "Choose the course before staging the race."
+		_map_status_label.text = "Course selection unavailable."
 		return
-	_map_status_label.text = "CURRENT COURSE: %s" % streamer_menu.get_selected_map_name()
+	var selected_settings_index: int = streamer_menu.get_selected_settings_map_index()
+	for option_index in range(_map_option.item_count):
+		if _map_option.get_item_id(option_index) == selected_settings_index:
+			_map_option.select(option_index)
+			break
+	_map_status_label.text = "Ready to stage: %s" % streamer_menu.get_selected_map_name()
+
+func _populate_map_options() -> void:
+	if _map_option == null:
+		return
+	_map_option.clear()
+	var streamer_menu: StreamerMenuController = get_parent().get_node_or_null("StreamerMenu") as StreamerMenuController
+	if streamer_menu == null:
+		_map_option.add_item("Loading courses...")
+		_map_option.disabled = true
+		return
+	for entry in streamer_menu.get_lobby_map_entries():
+		_map_option.add_item(str(entry.get("display_name", "Race Map")), int(entry.get("settings_index", 0)))
+	_map_option.disabled = _map_option.item_count <= 1
+
+func _on_map_option_selected(option_index: int) -> void:
+	if _map_option == null:
+		return
+	var streamer_menu: StreamerMenuController = get_parent().get_node_or_null("StreamerMenu") as StreamerMenuController
+	if streamer_menu == null:
+		return
+	streamer_menu.select_map_from_lobby(int(_map_option.get_item_id(option_index)))
+	refresh_map_selection()
 
 func set_screen_mode(mode: String) -> void:
 	var should_show: bool = mode != "hidden"
