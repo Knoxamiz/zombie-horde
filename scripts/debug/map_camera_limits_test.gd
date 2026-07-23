@@ -7,7 +7,7 @@ const EXPECTED_REGION_COUNTS := {
 	"quarantine_boulevard": 1,
 	"broken_bridge_pass": 1,
 	"spiral_descent": 1,
-	"true_spiral_ramp": 5,
+	"true_spiral_ramp": 1,
 }
 
 var _failures: PackedStringArray = PackedStringArray()
@@ -56,11 +56,8 @@ func _test_map_camera_limits(map_id: String, expected_region_count: int) -> void
 
 	if map_id == "true_spiral_ramp":
 		var stacked_road_interior := Vector3(0.0, 21.0, 0.0)
-		if limits.is_position_inside_active_limits(stacked_road_interior):
-			_fail("true_spiral_ramp: stacked-road interior must not be free-camera space")
-		var spiral_clamped: Vector3 = limits.clamp_position(stacked_road_interior)
-		if spiral_clamped.is_equal_approx(stacked_road_interior):
-			_fail("true_spiral_ramp: interior camera position was not redirected")
+		if not limits.is_position_inside_active_limits(stacked_road_interior):
+			_fail("true_spiral_ramp: compact garage center must be free-camera space")
 
 	if map_id == "quarantine_boulevard":
 		var city_start_view: Dictionary = RaceMapControllerScript.compute_race_camera_view_for_definition(definition)

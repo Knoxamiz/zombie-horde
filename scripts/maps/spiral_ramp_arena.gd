@@ -15,18 +15,23 @@ const MAT_GOAL := preload("res://assets/materials/goal_zone.tres")
 
 const ROAD_WIDTH: float = 8.0
 const ROAD_THICKNESS: float = 0.42
-const HALF_EXTENT: float = 54.0
+## A compact garage keeps the action visible and makes every floor feel like a
+## deliberate turn, rather than a long exposed straight that routinely drops
+## runners onto the deck below. The four deck heights remain unchanged.
+const HALF_EXTENT: float = 30.0
 const TOP_Y: float = 42.0
 const BOTTOM_Y: float = 0.0
 const LAYER_COUNT: int = 4
-const EDGE_BARRIER_HEIGHT: float = 0.86
+## Tall enough to absorb normal traffic and lighter launch impulses. Strong
+## explosions can still clear the rail, preserving the occasional dramatic fall.
+const EDGE_BARRIER_HEIGHT: float = 1.45
 const EDGE_BARRIER_THICKNESS: float = 0.34
 # Every sloped road segment must overlap its flat turn deck by a real landing
 # area, not merely touch its edge. A shallow overlap produces a repeatable
 # physics snag at the same downhill corner when a CharacterBody crosses it.
 const MIN_CORNER_DECK_OVERLAP: float = 1.25
 const SEGMENT_END_INSET: float = ROAD_WIDTH * 0.5 - MIN_CORNER_DECK_OVERLAP
-const RAIL_END_INSET: float = 6.4
+const RAIL_END_INSET: float = 3.8
 
 var _visual_root: Node3D
 var _collision_root: Node3D

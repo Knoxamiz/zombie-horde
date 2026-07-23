@@ -35,20 +35,22 @@ func _test_catalog_entry() -> void:
 		_fail("True Spiral Ramp resource route should match generated scene route")
 	if SpiralRampArena.get_corner_deck_overlap() < 1.0:
 		_fail("True Spiral Ramp road segments must overlap every turn deck by at least 1m")
+	if SpiralRampArena.EDGE_BARRIER_HEIGHT < 1.4:
+		_fail("True Spiral Ramp needs tall collision-backed edge barriers")
 	if definition.spawn_origin.y < 40.0:
 		_fail("True Spiral Ramp should have expanded vertical level spacing")
 	if definition.spawn_origin.distance_to(definition.race_path_points[0] + Vector3.UP * 0.8) > 0.1:
 		_fail("True Spiral Ramp spawn should sit on the top route point")
 	if definition.goal_position.distance_to(definition.race_path_points[definition.race_path_points.size() - 1] + Vector3.UP * 0.8) > 0.1:
 		_fail("True Spiral Ramp goal should sit on the bottom finish point")
-	if absf(definition.race_path_points[0].x) < 50.0:
-		_fail("True Spiral Ramp should have expanded horizontal footprint")
+	if absf(definition.race_path_points[0].x) > 32.0:
+		_fail("True Spiral Ramp should keep its compact 60m parking-garage footprint")
 	if definition.spawn_origin.y <= definition.goal_position.y:
 		_fail("True Spiral Ramp should spawn at the top and finish at the bottom")
-	if definition.out_of_bounds_half_width < 70.0:
-		_fail("True Spiral Ramp OOB width should cover the expanded footprint")
-	if definition.out_of_bounds_min_z > -70.0 or definition.out_of_bounds_max_z < 60.0:
-		_fail("True Spiral Ramp OOB depth should cover the expanded footprint")
+	if definition.out_of_bounds_half_width < 46.0:
+		_fail("True Spiral Ramp OOB width should cover the compact garage footprint")
+	if definition.out_of_bounds_min_z > -46.0 or definition.out_of_bounds_max_z < 46.0:
+		_fail("True Spiral Ramp OOB depth should cover the compact garage footprint")
 	if definition.out_of_bounds_min_y > -5.0:
 		_fail("True Spiral Ramp fall plane should sit below the bottom layer")
 	if not definition.uses_map_hazard_profile:
