@@ -166,15 +166,15 @@ theme_override_font_sizes/font_size = 24
 text = "Ready"
 
 [node name="MapSelectPanel" type="PanelContainer" parent="Root"]
-custom_minimum_size = Vector2(520, 118)
+custom_minimum_size = Vector2(560, 198)
 layout_mode = 1
 anchors_preset = 10
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -260.0
+offset_left = -280.0
 offset_top = 36.0
-offset_right = 260.0
-offset_bottom = 154.0
+offset_right = 280.0
+offset_bottom = 234.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleBox_map_glow")
 
@@ -205,7 +205,27 @@ theme_override_font_sizes/font_size = 18
 layout_mode = 2
 theme_override_colors/font_color = Color(0.78, 0.84, 0.72, 1)
 theme_override_font_sizes/font_size = 14
-text = "Changes apply before staging the race."
+text = "Current course"
+horizontal_alignment = 1
+
+[node name="BriefingSeparator" type="HSeparator" parent="Root/MapSelectPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="BriefingLabel" type="Label" parent="Root/MapSelectPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.9, 0.94, 0.84, 1)
+theme_override_font_sizes/font_size = 15
+text = "Course briefing"
+autowrap_mode = 3
+max_lines_visible = 2
+
+[node name="MapMetaLabel" type="Label" parent="Root/MapSelectPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 0.72, 0.24, 1)
+theme_override_font_sizes/font_size = 14
+text = "DIFFICULTY: STANDARD  |  FEATURES: NONE"
 horizontal_alignment = 1
 
 [node name="DevPanel" type="PanelContainer" parent="Root"]

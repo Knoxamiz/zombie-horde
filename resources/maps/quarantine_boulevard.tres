@@ -7,6 +7,9 @@
 [resource]
 script = ExtResource("1_definition")
 display_name = "City Highway"
+lobby_summary = "A fenced suburban outbreak tears down a residential block. Wide lanes reward risky detours."
+lobby_difficulty = "Standard"
+lobby_hazard_tags = PackedStringArray("Open lawns", "Mines", "Defenders")
 navigation_profile = ExtResource("3_navigation")
 npc_navigation_half_width = 30.0
 scene = ExtResource("2_scene")

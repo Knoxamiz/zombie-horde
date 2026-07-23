@@ -8,6 +8,9 @@
 [resource]
 script = ExtResource("1_definition")
 display_name = "Square Spiral Ramp"
+lobby_summary = "A multi-level construction ramp. Tight turns and stacked roads reward survivors who keep moving."
+lobby_difficulty = "Expert"
+lobby_hazard_tags = PackedStringArray("Tight turns", "Vertical route", "Fall hazards")
 navigation_profile = ExtResource("4_navigation")
 scene = ExtResource("2_scene")
 premium_only = true

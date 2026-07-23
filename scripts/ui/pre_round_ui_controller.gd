@@ -41,6 +41,8 @@ var _chat_detail_text: String = ""
 @onready var _ready_button: Button = get_node("Root/LobbyPanel/Margin/VBox/ReadyButton") as Button
 @onready var _map_option: OptionButton = get_node("Root/MapSelectPanel/Margin/VBox/MapOption") as OptionButton
 @onready var _map_status_label: Label = get_node("Root/MapSelectPanel/Margin/VBox/MapStatusLabel") as Label
+@onready var _map_briefing_label: Label = get_node("Root/MapSelectPanel/Margin/VBox/BriefingLabel") as Label
+@onready var _map_meta_label: Label = get_node("Root/MapSelectPanel/Margin/VBox/MapMetaLabel") as Label
 @onready var _dev_panel: PanelContainer = get_node("Root/DevPanel") as PanelContainer
 @onready var _reset_button: HoldToConfirmButton = get_node("Root/DevPanel/Margin/VBox/SecondaryButtonRow/ResetButton") as HoldToConfirmButton
 @onready var _lobby_join_button: Button = get_node("Root/DevPanel/Margin/VBox/SecondaryButtonRow/AddNpcButton") as Button
@@ -133,7 +135,18 @@ func refresh_map_selection() -> void:
 		if _map_option.get_item_id(option_index) == selected_settings_index:
 			_map_option.select(option_index)
 			break
-	_map_status_label.text = "Ready to stage: %s" % streamer_menu.get_selected_map_name()
+	var map_definition: RaceMapDefinition = streamer_menu.get_selected_map_definition()
+	_map_status_label.text = "CURRENT COURSE: %s" % streamer_menu.get_selected_map_name().to_upper()
+	if map_definition == null:
+		if _map_briefing_label != null:
+			_map_briefing_label.text = "Course briefing unavailable."
+		if _map_meta_label != null:
+			_map_meta_label.text = ""
+		return
+	if _map_briefing_label != null:
+		_map_briefing_label.text = map_definition.lobby_summary
+	if _map_meta_label != null:
+		_map_meta_label.text = _format_map_meta(map_definition)
 
 func _populate_map_options() -> void:
 	if _map_option == null:
@@ -156,6 +169,16 @@ func _on_map_option_selected(option_index: int) -> void:
 		return
 	streamer_menu.select_map_from_lobby(int(_map_option.get_item_id(option_index)))
 	refresh_map_selection()
+
+
+func _format_map_meta(map_definition: RaceMapDefinition) -> String:
+	var feature_labels: Array[String] = []
+	for tag in map_definition.lobby_hazard_tags:
+		feature_labels.append(str(tag).to_upper())
+	var feature_text: String = _join_strings(feature_labels, "  |  ")
+	if feature_text.is_empty():
+		feature_text = "NO SPECIAL HAZARDS"
+	return "DIFFICULTY: %s  |  %s" % [map_definition.lobby_difficulty.to_upper(), feature_text]
 
 func set_screen_mode(mode: String) -> void:
 	var should_show: bool = mode != "hidden"
@@ -371,8 +394,8 @@ func _format_board_row(rank: int, display_name: String, value_text: String) -> S
 
 func _format_queue_summary() -> String:
 	if _queued_names.is_empty():
-		return "QUEUE: waiting for viewers"
-	return "QUEUE: %d viewers ready — press Stage Race" % _queued_names.size()
+		return "READY PLAYERS: 0  |  ROUND: WAITING FOR VIEWERS"
+	return "READY PLAYERS: %d  |  ROUND: READY TO STAGE" % _queued_names.size()
 
 
 func _should_show_chat_status(chat_text: String) -> bool:
@@ -426,9 +449,9 @@ func _refresh_ready_button() -> void:
 	var can_ready: bool = _state_text == "Joining" and not _queued_names.is_empty()
 	_ready_button.disabled = not can_ready
 	if _queued_names.is_empty():
-		_ready_button.text = "Waiting for viewers"
+		_ready_button.text = "STAGE RACE - WAITING FOR PLAYERS"
 	else:
-		_ready_button.text = "Stage Race (%d)" % _queued_names.size()
+		_ready_button.text = "STAGE RACE - %d READY" % _queued_names.size()
 	if _main_menu_button != null:
 		_main_menu_button.disabled = _state_text != "Joining"
 	if _auto_repeat_button != null and _round_manager != null:

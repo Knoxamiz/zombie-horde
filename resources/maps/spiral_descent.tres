@@ -8,6 +8,9 @@
 [resource]
 script = ExtResource("1_definition")
 display_name = "Spiral Descent"
+lobby_summary = "A desert freeway descent with long sightlines, open shoulders, and a growing storm of road hazards."
+lobby_difficulty = "Advanced"
+lobby_hazard_tags = PackedStringArray("Long course", "Open shoulders", "Mine fields")
 navigation_profile = ExtResource("4_navigation")
 scene = ExtResource("2_scene")
 premium_only = true

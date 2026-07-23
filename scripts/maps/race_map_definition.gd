@@ -2,6 +2,13 @@ class_name RaceMapDefinition
 extends Resource
 
 @export var display_name: String = "Race Map"
+## Concise, authored copy for the pre-round map briefing. This stays with the
+## map definition so lobby UI never needs a parallel list of map facts.
+@export_category("Lobby Presentation")
+@export_multiline var lobby_summary: String = ""
+@export_enum("Casual", "Standard", "Advanced", "Expert") var lobby_difficulty: String = "Standard"
+@export var lobby_hazard_tags: PackedStringArray = PackedStringArray()
+@export_category("Race Setup")
 @export var scene: PackedScene
 @export var premium_only: bool = true
 @export var road_core_scale: Vector3 = Vector3.ONE

@@ -863,6 +863,10 @@ func get_selected_map_name() -> String:
 	return _get_selected_map_name()
 
 
+func get_selected_map_definition() -> RaceMapDefinition:
+	return MapCatalog.load_definition_for_settings_index(_profile.get_selected_settings_map_index())
+
+
 func get_selected_settings_map_index() -> int:
 	return _profile.get_selected_settings_map_index()
 
