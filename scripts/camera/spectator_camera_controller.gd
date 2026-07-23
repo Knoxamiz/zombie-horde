@@ -21,7 +21,10 @@ const FreeCameraFlightLimitsScript := preload("res://scripts/camera/free_camera_
 @export var director_rotation_smoothing: float = 7.0
 @export var overview_position: Vector3 = Vector3(0.0, 23.0, -46.0)
 @export var overview_rotation_degrees: Vector3 = Vector3(-31.0, 180.0, 0.0)
-@export var position_limits_enabled: bool = true
+## Streamers must be able to inspect any map volume while directing a race.
+## Map camera regions remain authored for framing diagnostics, but they never
+## constrain free flight at runtime.
+@export var position_limits_enabled: bool = false
 @export var camera_bounds_min: Vector3 = Vector3(-18.0, 2.2, -52.0)
 @export var camera_bounds_max: Vector3 = Vector3(18.0, 38.0, 52.0)
 
@@ -42,6 +45,9 @@ var _free_camera_flight_limits = FreeCameraFlightLimitsScript.new()
 
 func _ready() -> void:
 	_rng.randomize()
+	# Do not let an inspector override, map reload, or legacy scene state put
+	# the spectator back into a small authored camera envelope.
+	position_limits_enabled = false
 	_zombie_manager = get_node_or_null(zombie_manager_path) as ZombieManager
 	global_position = _clamp_to_bounds(global_position)
 	_yaw_degrees = rotation_degrees.y
@@ -170,6 +176,7 @@ func configure_free_camera_limits(definition: RaceMapDefinition) -> void:
 	_free_camera_flight_limits.configure_for_map_definition(definition)
 	camera_bounds_min = _free_camera_flight_limits.get_enclosing_bounds_min()
 	camera_bounds_max = _free_camera_flight_limits.get_enclosing_bounds_max()
+	position_limits_enabled = false
 
 
 func update_bounds_for_map_definition(definition: RaceMapDefinition) -> void:
@@ -182,6 +189,8 @@ func get_free_camera_safe_region_count() -> int:
 
 
 func is_position_within_active_free_camera_limits(target_position: Vector3) -> bool:
+	if not position_limits_enabled:
+		return true
 	return _free_camera_flight_limits.is_position_inside_active_limits(target_position)
 
 
