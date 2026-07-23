@@ -6,6 +6,9 @@
 transform = Transform3D(1, 0, 0, 0, 0.906308, 0.422618, 0, -0.422618, 0.906308, 0, 18, -34)
 script = ExtResource("1_script")
 capture_mouse_on_start = false
+# Temporary streamer-authoring mode: camera envelopes remain authored per map,
+# but free flight is intentionally unrestricted across every playable map.
+position_limits_enabled = false
 
 [node name="Camera3D" type="Camera3D" parent="."]
 fov = 64.0
