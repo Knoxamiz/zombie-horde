@@ -58,6 +58,17 @@ func _test_map_camera_limits(map_id: String, expected_region_count: int) -> void
 		var stacked_road_interior := Vector3(0.0, 21.0, 0.0)
 		if not limits.is_position_inside_active_limits(stacked_road_interior):
 			_fail("true_spiral_ramp: compact garage center must be free-camera space")
+		var garage_race_view: Dictionary = RaceMapControllerScript.compute_race_camera_view_for_definition(definition)
+		var garage_start_position: Vector3 = garage_race_view.get("position", Vector3.ZERO) as Vector3
+		var garage_min: Vector3 = limits.get_enclosing_bounds_min()
+		var garage_max: Vector3 = limits.get_enclosing_bounds_max()
+		var garage_start_margin: float = minf(
+			minf(garage_start_position.x - garage_min.x, garage_max.x - garage_start_position.x),
+			minf(garage_start_position.y - garage_min.y, garage_max.y - garage_start_position.y),
+			minf(garage_start_position.z - garage_min.z, garage_max.z - garage_start_position.z)
+		)
+		if garage_start_margin < 18.0:
+			_fail("true_spiral_ramp: initial free camera needs at least 18m of flight margin")
 
 	if map_id == "quarantine_boulevard":
 		var city_start_view: Dictionary = RaceMapControllerScript.compute_race_camera_view_for_definition(definition)

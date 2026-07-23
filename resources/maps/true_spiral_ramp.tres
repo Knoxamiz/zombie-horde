@@ -38,9 +38,10 @@ defender_placement_half_width = 3.8
 defender_placement_min_z = -38.0
 defender_placement_max_z = 38.0
 race_path_points = PackedVector3Array(-30.0, 42.0, -30.0, 30.0, 42.0, -30.0, 30.0, 42.0, 30.0, -30.0, 42.0, 30.0, -30.0, 31.5, -30.0, 30.0, 31.5, -30.0, 30.0, 31.5, 30.0, -30.0, 31.5, 30.0, -30.0, 21.0, -30.0, 30.0, 21.0, -30.0, 30.0, 21.0, 30.0, -30.0, 21.0, 30.0, -30.0, 10.5, -30.0, 30.0, 10.5, -30.0, 30.0, 10.5, 30.0, -30.0, 10.5, 30.0, -30.0, 0.0, -30.0, 30.0, 0.0, -30.0)
-# Presentation-only space: operators can inspect the garage center, every deck,
-# and every turn without the flight controller snapping them to an outer ring.
-free_camera_safe_regions = [AABB(-48, -1, -48, 96, 76, 96)]
+# Presentation-only space. The automatic race framing starts above the upper
+# corner, so this must include generous exterior air around all decks rather
+# than placing the camera on three clamp faces at once.
+free_camera_safe_regions = [AABB(-78, -6, -78, 156, 110, 156)]
 uses_map_hazard_profile = true
 map_mechanic_hook = "square stairwell descent route"
 map_mine_count = 6
