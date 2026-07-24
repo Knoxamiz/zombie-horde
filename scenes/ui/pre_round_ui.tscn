@@ -229,6 +229,7 @@ text = "DIFFICULTY: STANDARD  |  FEATURES: NONE"
 horizontal_alignment = 1
 
 [node name="DevPanel" type="PanelContainer" parent="Root"]
+visible = false
 custom_minimum_size = Vector2(380, 220)
 layout_mode = 1
 anchors_preset = 3

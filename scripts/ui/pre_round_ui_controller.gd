@@ -113,15 +113,15 @@ func _ready() -> void:
 
 func apply_stream_capture_visuals() -> void:
 	if _dev_panel != null:
-		_dev_panel.visible = OS.is_debug_build()
+		# The complete developer control panel owns F3. Keep this legacy lobby
+		# test-control cluster hidden so it never competes with release UI.
+		_dev_panel.visible = false
 	var game_settings: GameSettingsController = get_node_or_null("/root/GameSettings") as GameSettingsController
 	if game_settings == null:
 		return
 
 	if _screen_wash != null:
 		_screen_wash.visible = not game_settings.should_hide_screen_wash()
-	if _dev_panel != null:
-		_dev_panel.visible = OS.is_debug_build() and game_settings.should_show_debug_lobby_controls()
 
 func refresh_map_selection() -> void:
 	if _map_status_label == null or _map_option == null:
