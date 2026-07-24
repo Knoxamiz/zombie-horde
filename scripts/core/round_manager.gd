@@ -169,6 +169,23 @@ func is_race_paused() -> bool:
 	return state == RoundState.PAUSED
 
 
+func remove_runner_for_director(display_name: String) -> bool:
+	if state != RoundState.RUNNING and state != RoundState.PAUSED:
+		return false
+	if _zombie_manager == null:
+		return false
+	var zombie: Zombie = _zombie_manager.get_zombie_by_display_name(display_name)
+	if zombie == null or not zombie.is_alive() or zombie.has_finished_race():
+		return false
+	GameEvents.world_feedback_requested.emit(
+		zombie.global_position + Vector3.UP * 1.35,
+		"REMOVED",
+		Color(1.0, 0.34, 0.12, 1.0)
+	)
+	zombie.kill("director_removed")
+	return true
+
+
 func reset_round(return_to_lobby: bool = true) -> void:
 	_round_token += 1
 	_auto_repeat_token += 1
@@ -759,6 +776,8 @@ func _format_cause(cause: String) -> String:
 			return "Sewer"
 		"out_of_bounds":
 			return "Out of Bounds"
+		"director_removed":
+			return "Director Removed"
 		_:
 			return cause.capitalize()
 

@@ -37,6 +37,7 @@ var _shake_strength: float = 0.0
 var _camera_rest_position: Vector3 = Vector3.ZERO
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _director_enabled: bool = false
+var _director_target: Zombie
 var _annotation_paint_active: bool = false
 var _zombie_manager: ZombieManager
 var _free_camera_flight_limits = FreeCameraFlightLimitsScript.new()
@@ -117,7 +118,7 @@ func _process(delta: float) -> void:
 		input_direction.y -= 1.0
 
 	if input_direction != Vector3.ZERO:
-		_set_director_enabled(false)
+		_clear_director_target()
 		var speed: float = move_speed
 		if Input.is_action_pressed("camera_boost"):
 			speed *= boost_multiplier
@@ -147,7 +148,7 @@ func _snap_to_overview() -> void:
 	_apply_rotation()
 
 func set_view(new_global_position: Vector3, new_rotation_degrees: Vector3, enable_mouse_look: bool) -> void:
-	_set_director_enabled(false)
+	_clear_director_target()
 	global_position = _clamp_to_bounds(new_global_position)
 	_pitch_degrees = clamp(new_rotation_degrees.x, min_pitch_degrees, max_pitch_degrees)
 	_yaw_degrees = new_rotation_degrees.y
@@ -160,7 +161,7 @@ func set_view(new_global_position: Vector3, new_rotation_degrees: Vector3, enabl
 func set_lobby_view(new_global_position: Vector3, new_rotation_degrees: Vector3) -> void:
 	# Race-map bounds belong to the active course. The lobby cage lives outside
 	# those bounds, so its fixed presentation camera must not be clamped by them.
-	_set_director_enabled(false)
+	_clear_director_target()
 	global_position = new_global_position
 	_pitch_degrees = clamp(new_rotation_degrees.x, min_pitch_degrees, max_pitch_degrees)
 	_yaw_degrees = new_rotation_degrees.y
@@ -200,14 +201,14 @@ func clamp_position_to_active_free_camera_limits(target_position: Vector3) -> Ve
 func set_mouse_capture_allowed(allowed: bool) -> void:
 	recapture_on_click = allowed
 	if not allowed:
-		_set_director_enabled(false)
+		_clear_director_target()
 		_set_look_enabled(false)
 
 
 func set_annotation_paint_active(active: bool) -> void:
 	_annotation_paint_active = active
 	if active:
-		_set_director_enabled(false)
+		_clear_director_target()
 		_set_look_enabled(false)
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	elif recapture_on_click:
@@ -255,7 +256,47 @@ func _handle_annotation_paint_input(event: InputEvent) -> void:
 			return
 
 func set_director_enabled(enabled: bool) -> void:
+	if not enabled:
+		_director_target = null
 	_set_director_enabled(enabled)
+
+
+func follow_runner(runner: Zombie) -> bool:
+	if runner == null or not is_instance_valid(runner) or not runner.is_alive():
+		return false
+	_director_target = runner
+	_director_enabled = true
+	_set_look_enabled(false)
+	_snap_to_director_target(runner)
+	return true
+
+
+func stop_following_runner() -> void:
+	_clear_director_target()
+
+
+func get_followed_runner() -> Zombie:
+	if _director_target != null and is_instance_valid(_director_target) and _director_target.is_alive():
+		return _director_target
+	return null
+
+
+func _snap_to_director_target(runner: Zombie) -> void:
+	var race_forward: Vector3 = runner.get_race_forward_direction()
+	if race_forward.length_squared() < 0.001:
+		race_forward = Vector3.FORWARD
+	var target_position: Vector3 = runner.global_position
+	var focus_position: Vector3 = target_position + Vector3.UP * director_focus_height + race_forward * director_look_ahead_distance
+	var camera_side: Vector3 = Vector3(race_forward.z, 0.0, -race_forward.x).normalized()
+	var desired_position: Vector3 = target_position + camera_side * director_side_offset + Vector3.UP * director_follow_height - race_forward * director_follow_distance
+	global_position = _clamp_to_bounds(desired_position)
+	var direction: Vector3 = focus_position - global_position
+	if direction.length_squared() < 0.001:
+		return
+	direction = direction.normalized()
+	_pitch_degrees = clamp(rad_to_deg(asin(clamp(direction.y, -1.0, 1.0))), min_pitch_degrees, max_pitch_degrees)
+	_yaw_degrees = rad_to_deg(atan2(-direction.x, -direction.z))
+	_apply_rotation()
 
 func _clamp_to_bounds(target_position: Vector3) -> Vector3:
 	if not position_limits_enabled:
@@ -272,10 +313,10 @@ func _on_round_started(_round_number: int) -> void:
 		_set_director_enabled(true)
 
 func _on_round_ended(_winner_name: String, _base_won: bool) -> void:
-	_set_director_enabled(false)
+	_clear_director_target()
 
 func _on_round_reset() -> void:
-	_set_director_enabled(false)
+	_clear_director_target()
 
 func _update_camera_shake(delta: float) -> void:
 	if _camera == null:
@@ -303,19 +344,32 @@ func _update_camera_shake(delta: float) -> void:
 
 func _set_director_enabled(enabled: bool) -> void:
 	_director_enabled = enabled and recapture_on_click and _zombie_manager != null
+	if not _director_enabled:
+		_director_target = null
+
+
+func _clear_director_target() -> void:
+	_director_target = null
+	_director_enabled = false
 
 func _update_director_camera(delta: float) -> void:
 	if _zombie_manager == null:
 		_set_director_enabled(false)
 		return
 
-	var leader: Zombie = _zombie_manager.get_leader_zombie()
-	if leader == null or not leader.is_alive():
+	var runner: Zombie = get_followed_runner()
+	if runner == null:
+		runner = _zombie_manager.get_leader_zombie()
+	if runner == null or not runner.is_alive():
 		return
 
-	var target_position: Vector3 = leader.global_position
-	var focus_position: Vector3 = target_position + Vector3(0.0, director_focus_height, director_look_ahead_distance)
-	var desired_position: Vector3 = target_position + Vector3(director_side_offset, director_follow_height, -director_follow_distance)
+	var race_forward: Vector3 = runner.get_race_forward_direction()
+	if race_forward.length_squared() < 0.001:
+		race_forward = Vector3.FORWARD
+	var target_position: Vector3 = runner.global_position
+	var focus_position: Vector3 = target_position + Vector3.UP * director_focus_height + race_forward * director_look_ahead_distance
+	var camera_side: Vector3 = Vector3(race_forward.z, 0.0, -race_forward.x).normalized()
+	var desired_position: Vector3 = target_position + camera_side * director_side_offset + Vector3.UP * director_follow_height - race_forward * director_follow_distance
 	desired_position = _clamp_to_bounds(desired_position)
 
 	var position_weight: float = 1.0 - exp(-max(director_position_smoothing, 0.01) * delta)

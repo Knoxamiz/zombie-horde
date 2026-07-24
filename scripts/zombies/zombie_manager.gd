@@ -168,6 +168,17 @@ func has_display_name(display_name: String) -> bool:
 			return true
 	return false
 
+
+func get_zombie_by_display_name(display_name: String) -> Zombie:
+	var lower_name: String = display_name.strip_edges().to_lower()
+	if lower_name.is_empty():
+		return null
+	_remove_invalid_all()
+	for zombie in _all_zombies:
+		if zombie.display_name.to_lower() == lower_name:
+			return zombie
+	return null
+
 func _get_spawn_position() -> Vector3:
 	var half_width: float = spawn_area_size.x * 0.5
 	var half_depth: float = spawn_area_size.y * 0.5

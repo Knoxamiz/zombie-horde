@@ -298,6 +298,130 @@ text = "—"
 horizontal_alignment = 1
 autowrap_mode = 2
 
+[node name="StandingsRows" type="VBoxContainer" parent="Root/LeaderboardPanel/Margin/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="LeaderCamButton" type="Button" parent="Root/LeaderboardPanel/Margin/VBox"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 36)
+theme_override_font_sizes/font_size = 17
+text = "LEADER CAM"
+
+[node name="DirectorButton" type="Button" parent="Root/LeaderboardPanel/Margin/VBox"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 36)
+theme_override_font_sizes/font_size = 17
+text = "RACE DIRECTOR"
+
+[node name="RaceDirectorOverlay" type="Control" parent="Root"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+
+[node name="Dim" type="ColorRect" parent="Root/RaceDirectorOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Panel" type="PanelContainer" parent="Root/RaceDirectorOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -310.0
+offset_right = 280.0
+offset_bottom = 310.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBox_scores_glow")
+
+[node name="Margin" type="MarginContainer" parent="Root/RaceDirectorOverlay/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="Root/RaceDirectorOverlay/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Root/RaceDirectorOverlay/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 1, 0.22, 1)
+theme_override_font_sizes/font_size = 28
+text = "RACE DIRECTOR"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="Root/RaceDirectorOverlay/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Select an active runner to lock Leader Cam. Emergency removal is hold-to-confirm."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Root/RaceDirectorOverlay/Panel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 310)
+
+[node name="RosterRows" type="VBoxContainer" parent="Root/RaceDirectorOverlay/Panel/Margin/VBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="SelectionLabel" type="Label" parent="Root/RaceDirectorOverlay/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
+theme_override_font_sizes/font_size = 18
+text = "Select an active runner to follow or remove."
+horizontal_alignment = 1
+
+[node name="Actions" type="HBoxContainer" parent="Root/RaceDirectorOverlay/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="FollowButton" type="Button" parent="Root/RaceDirectorOverlay/Panel/Margin/VBox/Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 42)
+theme_override_font_sizes/font_size = 18
+text = "FOLLOW SELECTED"
+
+[node name="RemoveButton" type="Button" parent="Root/RaceDirectorOverlay/Panel/Margin/VBox/Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 42)
+theme_override_colors/font_color = Color(1, 0.45, 0.3, 1)
+theme_override_font_sizes/font_size = 18
+text = "HOLD REMOVE"
+script = ExtResource("6_hold_button")
+hold_seconds = 1.25
+
+[node name="CloseButton" type="Button" parent="Root/RaceDirectorOverlay/Panel/Margin/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+theme_override_font_sizes/font_size = 18
+text = "CLOSE"
+
 [node name="CommandPanel" type="Control" parent="Root"]
 layout_mode = 0
 offset_left = 40.0

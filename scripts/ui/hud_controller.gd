@@ -23,6 +23,7 @@ const PANEL_PATHS: Dictionary = {
 @export var twitch_join_source_path: NodePath
 @export var leaderboard_store_path: NodePath
 @export var zombie_manager_path: NodePath
+@export var spectator_camera_path: NodePath
 @export var world_status_board_path: NodePath
 @export var world_feed_board_path: NodePath
 @export var world_leaders_board_path: NodePath
@@ -38,6 +39,7 @@ var _debug_join_source: DebugJoinSource
 var _twitch_join_source: TwitchJoinSource
 var _leaderboard_store: LeaderboardStore
 var _zombie_manager: ZombieManager
+var _spectator_camera: SpectatorCameraController
 var _world_status_board: WorldTextBoard
 var _world_feed_board: WorldTextBoard
 var _world_leaders_board: WorldTextBoard
@@ -73,6 +75,9 @@ var _layout_edit_snapshot
 var _pre_round_hidden_for_layout_edit: bool = false
 var _hud_layer_before_layout_edit: int = 6
 var _hud_visible_before_layout_edit: bool = false
+var _selected_director_runner_name: String = ""
+var _standings_signature: String = ""
+var _director_roster_signature: String = ""
 
 @onready var _root: Control = get_node("Root") as Control
 @onready var _screen_wash: ColorRect = get_node("Root/ScreenWash") as ColorRect
@@ -88,6 +93,15 @@ var _hud_visible_before_layout_edit: bool = false
 	get_node("Root/LeaderboardPanel/Margin/VBox/HeaderBar/HeaderLabel") as Label
 )
 @onready var _leaderboard_label: Label = get_node("Root/LeaderboardPanel/Margin/VBox/LeaderboardLabel") as Label
+@onready var _standings_rows: VBoxContainer = get_node("Root/LeaderboardPanel/Margin/VBox/StandingsRows") as VBoxContainer
+@onready var _leader_cam_button: Button = get_node("Root/LeaderboardPanel/Margin/VBox/LeaderCamButton") as Button
+@onready var _open_director_button: Button = get_node("Root/LeaderboardPanel/Margin/VBox/DirectorButton") as Button
+@onready var _director_overlay: Control = get_node("Root/RaceDirectorOverlay") as Control
+@onready var _director_roster_rows: VBoxContainer = get_node("Root/RaceDirectorOverlay/Panel/Margin/VBox/Scroll/RosterRows") as VBoxContainer
+@onready var _director_selection_label: Label = get_node("Root/RaceDirectorOverlay/Panel/Margin/VBox/SelectionLabel") as Label
+@onready var _director_follow_button: Button = get_node("Root/RaceDirectorOverlay/Panel/Margin/VBox/Actions/FollowButton") as Button
+@onready var _director_remove_button: HoldToConfirmButton = get_node("Root/RaceDirectorOverlay/Panel/Margin/VBox/Actions/RemoveButton") as HoldToConfirmButton
+@onready var _director_close_button: Button = get_node("Root/RaceDirectorOverlay/Panel/Margin/VBox/CloseButton") as Button
 @onready var _countdown_panel: HudLayoutPanel = get_node("Root/CountdownPanel") as HudLayoutPanel
 @onready var _countdown_label: Label = get_node("Root/CountdownPanel/Margin/VBox/CountdownLabel") as Label
 @onready var _podium_overlay: PodiumOverlay = get_node("Root/PodiumOverlay") as PodiumOverlay
@@ -106,6 +120,7 @@ func _ready() -> void:
 	_twitch_join_source = get_node_or_null(twitch_join_source_path) as TwitchJoinSource
 	_leaderboard_store = get_node_or_null(leaderboard_store_path) as LeaderboardStore
 	_zombie_manager = get_node_or_null(zombie_manager_path) as ZombieManager
+	_spectator_camera = get_node_or_null(spectator_camera_path) as SpectatorCameraController
 	if _zombie_manager == null:
 		var systems: Node = get_parent().get_node_or_null("Systems")
 		if systems != null:
@@ -160,6 +175,18 @@ func _ready() -> void:
 		_hold_reset_button.hold_confirmed.connect(_on_hold_reset_confirmed)
 	if _main_menu_button != null:
 		_main_menu_button.pressed.connect(_on_main_menu_pressed)
+	if _open_director_button != null:
+		_open_director_button.pressed.connect(_on_open_director_pressed)
+	if _leader_cam_button != null:
+		_leader_cam_button.pressed.connect(_on_leader_cam_pressed)
+	if _director_follow_button != null:
+		_director_follow_button.pressed.connect(_on_director_follow_pressed)
+	if _director_remove_button != null:
+		_director_remove_button.hold_confirmed.connect(_on_director_remove_confirmed)
+	if _director_close_button != null:
+		_director_close_button.pressed.connect(_on_director_close_pressed)
+	if _director_overlay != null:
+		_director_overlay.visible = false
 
 	if _round_manager != null:
 		_queued_count = _round_manager.get_pending_count()
@@ -174,6 +201,7 @@ func _ready() -> void:
 	_refresh_leaderboard()
 	_refresh_static_labels()
 	_refresh_roster()
+	_refresh_director_ui()
 	_refresh_world_command_board()
 	_refresh_control_buttons()
 	_setup_layout_editor()
@@ -750,6 +778,8 @@ func _format_kill_cause(cause: String) -> String:
 			return "fell off track"
 		"out_of_bounds":
 			return "left the lane"
+		"director_removed":
+			return "removed by race director"
 	return cause.capitalize()
 
 func _format_finish_time(seconds: float) -> String:
@@ -825,6 +855,7 @@ func _refresh_world_leaders_board() -> void:
 			_leaderboard_label.text = live_body
 		if _world_leaders_board != null:
 			_world_leaders_board.set_board_text("TOP 10 STANDINGS", live_body)
+		_refresh_director_ui()
 		return
 
 	var body: String = _leaderboard_text
@@ -844,6 +875,151 @@ func _refresh_world_leaders_board() -> void:
 		_leaderboard_label.text = body
 	if _world_leaders_board != null:
 		_world_leaders_board.set_board_text("FASTEST WINNERS", body)
+	_refresh_director_ui()
+
+
+func _refresh_director_ui() -> void:
+	if _standings_rows == null:
+		return
+	var live_results: Array[Dictionary] = _get_live_results(STANDINGS_MAX_RESULTS)
+	var show_live_standings: bool = _is_race_live() and not live_results.is_empty()
+	if _leaderboard_label != null:
+		_leaderboard_label.visible = not show_live_standings
+	_standings_rows.visible = show_live_standings
+	var standings_signature: String = _build_runner_signature(live_results, true)
+	if standings_signature != _standings_signature:
+		_rebuild_runner_rows(_standings_rows, live_results, true)
+		_standings_signature = standings_signature
+	if _open_director_button != null:
+		_open_director_button.visible = show_live_standings
+		_open_director_button.disabled = not show_live_standings
+	if _leader_cam_button != null:
+		_leader_cam_button.visible = show_live_standings
+		_leader_cam_button.disabled = not show_live_standings
+	if _director_overlay != null and _director_overlay.visible:
+		_refresh_director_roster()
+
+
+func _get_live_results(max_results: int) -> Array[Dictionary]:
+	if _zombie_manager == null:
+		return []
+	return _zombie_manager.get_ranked_results(max_results)
+
+
+func _rebuild_runner_rows(container: VBoxContainer, results: Array[Dictionary], include_rank: bool) -> void:
+	for child in container.get_children():
+		child.queue_free()
+	for index in range(results.size()):
+		var result: Dictionary = results[index]
+		var display_name: String = str(result.get("display_name", "Zombie"))
+		var progress_percent: int = int(round(float(result.get("progress", 0.0)) * 100.0))
+		var alive: bool = bool(result.get("alive", false))
+		var suffix: String = "%d%%" % progress_percent if alive else "OUT"
+		var row: Button = Button.new()
+		row.custom_minimum_size = Vector2(0.0, 32.0)
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		row.theme_override_font_sizes.font_size = 18
+		row.text = "%d. %s  %s" % [index + 1, display_name, suffix] if include_rank else "%s  %s" % [display_name, suffix]
+		row.disabled = not alive
+		row.tooltip_text = "Follow %s" % display_name if alive else "%s is no longer racing" % display_name
+		row.pressed.connect(_on_runner_selected.bind(display_name))
+		container.add_child(row)
+
+
+func _build_runner_signature(results: Array[Dictionary], include_rank: bool) -> String:
+	var entries: Array[String] = []
+	for index in range(results.size()):
+		var result: Dictionary = results[index]
+		entries.append("%d:%s:%d:%s" % [
+			index if include_rank else -1,
+			str(result.get("display_name", "")),
+			int(round(float(result.get("progress", 0.0)) * 100.0)),
+			"1" if bool(result.get("alive", false)) else "0",
+		])
+	return "|".join(entries)
+
+
+func _on_runner_selected(display_name: String) -> void:
+	_selected_director_runner_name = display_name
+	_follow_selected_runner()
+	_refresh_director_ui()
+
+
+func _on_open_director_pressed() -> void:
+	if _director_overlay == null:
+		return
+	_director_overlay.visible = true
+	_refresh_director_roster()
+
+
+func _on_leader_cam_pressed() -> void:
+	if _zombie_manager == null:
+		return
+	var leader: Zombie = _zombie_manager.get_leader_zombie()
+	if leader == null:
+		return
+	_selected_director_runner_name = leader.display_name
+	_follow_selected_runner()
+	_refresh_director_ui()
+
+
+func _on_director_close_pressed() -> void:
+	if _director_overlay != null:
+		_director_overlay.visible = false
+
+
+func _refresh_director_roster() -> void:
+	if _director_roster_rows == null:
+		return
+	var total_count: int = _zombie_manager.get_total_count() if _zombie_manager != null else 0
+	var roster_results: Array[Dictionary] = _get_live_results(total_count)
+	var roster_signature: String = _build_runner_signature(roster_results, false)
+	if roster_signature != _director_roster_signature:
+		_rebuild_runner_rows(_director_roster_rows, roster_results, false)
+		_director_roster_signature = roster_signature
+	var selected: Zombie = _get_selected_director_runner()
+	if _director_selection_label != null:
+		if selected != null:
+			_director_selection_label.text = "Selected: %s" % _selected_director_runner_name
+		else:
+			_director_selection_label.text = "Select an active runner to follow or remove."
+	if _director_follow_button != null:
+		_director_follow_button.disabled = selected == null
+	if _director_remove_button != null:
+		var removal_allowed: bool = _round_manager != null and (
+			_round_manager.is_race_running() or _round_manager.is_race_paused()
+		)
+		_director_remove_button.disabled = selected == null or not removal_allowed
+		_director_remove_button.set_base_text("HOLD REMOVE")
+
+
+func _get_selected_director_runner() -> Zombie:
+	if _zombie_manager == null or _selected_director_runner_name.is_empty():
+		return null
+	var runner: Zombie = _zombie_manager.get_zombie_by_display_name(_selected_director_runner_name)
+	if runner == null or not runner.is_alive() or runner.has_finished_race():
+		return null
+	return runner
+
+
+func _on_director_follow_pressed() -> void:
+	_follow_selected_runner()
+
+
+func _follow_selected_runner() -> void:
+	var runner: Zombie = _get_selected_director_runner()
+	if runner == null or _spectator_camera == null:
+		return
+	_spectator_camera.follow_runner(runner)
+
+
+func _on_director_remove_confirmed() -> void:
+	if _round_manager == null or _selected_director_runner_name.is_empty():
+		return
+	if _round_manager.remove_runner_for_director(_selected_director_runner_name):
+		_selected_director_runner_name = ""
+		_refresh_director_ui()
 
 func _format_live_standings_body() -> String:
 	if _zombie_manager == null:
