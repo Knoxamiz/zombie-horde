@@ -111,9 +111,10 @@ func _input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	# A streamer-picked runner owns the camera until explicitly released. This
-	# is checked before free-camera input so a held key cannot break the lock.
-	if is_following_runner():
-		_update_director_camera(delta)
+	# is a physical chase attachment, not a smoothed director look-at.
+	var attached_runner: Zombie = get_followed_runner()
+	if attached_runner != null:
+		_attach_camera_to_runner(attached_runner)
 		_update_camera_shake(delta)
 		return
 
@@ -281,7 +282,7 @@ func follow_runner(runner: Zombie) -> bool:
 	_director_target = runner
 	_director_enabled = true
 	_set_look_enabled(false)
-	_snap_to_director_target(runner)
+	_attach_camera_to_runner(runner)
 	return true
 
 
@@ -299,7 +300,9 @@ func is_following_runner() -> bool:
 	return get_followed_runner() != null
 
 
-func _snap_to_director_target(runner: Zombie) -> void:
+func _attach_camera_to_runner(runner: Zombie) -> void:
+	# Keep the rig at the exact chase offset each frame. Camera shake remains
+	# local to Camera3D, so it does not create visible lag behind the runner.
 	var race_forward: Vector3 = runner.get_race_forward_direction()
 	if race_forward.length_squared() < 0.001:
 		race_forward = Vector3.FORWARD
@@ -375,9 +378,7 @@ func _update_director_camera(delta: float) -> void:
 		_set_director_enabled(false)
 		return
 
-	var runner: Zombie = get_followed_runner()
-	if runner == null:
-		runner = _zombie_manager.get_leader_zombie()
+	var runner: Zombie = _zombie_manager.get_leader_zombie()
 	if runner == null or not runner.is_alive():
 		return
 
