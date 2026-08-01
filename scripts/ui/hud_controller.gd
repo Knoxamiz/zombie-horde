@@ -919,7 +919,7 @@ func _rebuild_runner_rows(container: VBoxContainer, results: Array[Dictionary], 
 		row.custom_minimum_size = Vector2(0.0, 32.0)
 		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		row.theme_override_font_sizes.font_size = 18
+		row.add_theme_font_size_override("font_size", 18)
 		row.text = "%d. %s  %s" % [index + 1, display_name, suffix] if include_rank else "%s  %s" % [display_name, suffix]
 		row.disabled = not alive
 		row.tooltip_text = "Follow %s" % display_name if alive else "%s is no longer racing" % display_name
