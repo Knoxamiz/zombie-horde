@@ -896,6 +896,9 @@ func _refresh_director_ui() -> void:
 	if _leader_cam_button != null:
 		_leader_cam_button.visible = show_live_standings
 		_leader_cam_button.disabled = not show_live_standings
+		var following_runner: bool = _spectator_camera != null and _spectator_camera.is_following_runner()
+		_leader_cam_button.text = "STOP FOLLOWING" if following_runner else "LEADER CAM"
+		_leader_cam_button.tooltip_text = "Return to free camera" if following_runner else "Lock onto the current race leader"
 	if _director_overlay != null and _director_overlay.visible:
 		_refresh_director_roster()
 
@@ -954,6 +957,10 @@ func _on_open_director_pressed() -> void:
 
 
 func _on_leader_cam_pressed() -> void:
+	if _spectator_camera != null and _spectator_camera.is_following_runner():
+		_spectator_camera.stop_following_runner()
+		_refresh_director_ui()
+		return
 	if _zombie_manager == null:
 		return
 	var leader: Zombie = _zombie_manager.get_leader_zombie()

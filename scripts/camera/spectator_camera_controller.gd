@@ -75,7 +75,12 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("camera_director"):
-		_set_director_enabled(not _director_enabled)
+		# F is the deliberate exit for a locked runner. Normal camera input must
+		# never silently drop a streamer-selected target.
+		if is_following_runner():
+			_clear_director_target()
+		else:
+			_set_director_enabled(not _director_enabled)
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("camera_overview"):
@@ -87,6 +92,8 @@ func _input(event: InputEvent) -> void:
 	var mouse_button: InputEventMouseButton = event as InputEventMouseButton
 	if mouse_button != null and mouse_button.pressed and recapture_on_click and not _look_enabled:
 		if get_viewport().gui_get_hovered_control() != null:
+			return
+		if is_following_runner():
 			return
 		_set_director_enabled(false)
 		_set_look_enabled(true)
@@ -103,6 +110,13 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
+	# A streamer-picked runner owns the camera until explicitly released. This
+	# is checked before free-camera input so a held key cannot break the lock.
+	if is_following_runner():
+		_update_director_camera(delta)
+		_update_camera_shake(delta)
+		return
+
 	var input_direction: Vector3 = Vector3.ZERO
 	if Input.is_action_pressed("camera_forward"):
 		input_direction.z -= 1.0
@@ -279,6 +293,10 @@ func get_followed_runner() -> Zombie:
 	if _director_target != null and is_instance_valid(_director_target) and _director_target.is_alive():
 		return _director_target
 	return null
+
+
+func is_following_runner() -> bool:
+	return get_followed_runner() != null
 
 
 func _snap_to_director_target(runner: Zombie) -> void:
