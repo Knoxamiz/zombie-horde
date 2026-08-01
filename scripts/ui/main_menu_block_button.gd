@@ -78,7 +78,8 @@ func _process(delta: float) -> void:
 
 	var hover_offset: float = hover_lift if _hovered and interactable and not _pressed_down else 0.0
 	var press_offset: float = -press_depth if _pressed_down and interactable else 0.0
-	var float_offset: float = sin(_time * 1.1 + idle_phase) * 0.003
+	# Quarantine signs stay locked in place. Motion is reserved for deliberate hover/press feedback.
+	var float_offset: float = 0.0 if use_quarantine_sign_style else sin(_time * 1.1 + idle_phase) * 0.003
 	var target_position: Vector3 = _base_position + Vector3(0.0, float_offset, hover_offset + press_offset)
 	position = position.lerp(target_position, 1.0 - exp(-18.0 * delta))
 
@@ -189,6 +190,8 @@ func _apply_layout() -> void:
 	_set_box(_top_bevel, Vector3(block_size.x * 0.96, block_size.y * 0.1, 0.03), Vector3(0.0, block_size.y * 0.42, face_z + 0.012))
 	_set_box(_bottom_shade, Vector3(block_size.x * 0.96, block_size.y * 0.08, 0.03), Vector3(0.0, -block_size.y * 0.42, face_z + 0.01))
 	_set_box(_drop_shadow, Vector3(block_size.x * 1.02, 0.03, block_size.z * 0.92), Vector3(0.0, -block_size.y * 0.52, -0.02))
+	_top_bevel.visible = not use_quarantine_sign_style
+	_bottom_shade.visible = not use_quarantine_sign_style
 	_layout_quarantine_sign(face_z)
 
 	# Labels must sit above the sign hardware, while the backing stays physically behind the face.
@@ -211,7 +214,8 @@ func _apply_layout() -> void:
 	_label_shadow.modulate = Color(0.0, 0.0, 0.0, 0.42)
 	_label_shadow.outline_size = 0
 	_label_shadow.position = Vector3(0.014, -0.016, -0.006)
-	_label.render_priority = 12 + extrusion_layers
+	_label_shadow.visible = not use_quarantine_sign_style
+	_label.render_priority = 100
 	_label_shadow.render_priority = 11
 
 	_build_extrusion_labels(menu_font)
@@ -294,6 +298,8 @@ func _build_extrusion_labels(menu_font: Font) -> void:
 		if old_label != null and is_instance_valid(old_label):
 			old_label.queue_free()
 	_extrusion_labels.clear()
+	if use_quarantine_sign_style:
+		return
 
 	var step: float = 0.012
 	var extrude_color: Color = _darken(base_color, 0.4)
@@ -356,13 +362,13 @@ func _apply_visuals(force: bool) -> void:
 		if glow_tint.a <= 0.0:
 			glow_tint = _brighten(base_color, 0.12)
 		_glow_pulse = 0.5 + 0.5 * sin(_time * 2.4 + idle_phase)
-		var base_glow_alpha: float = 0.7 + _glow_pulse * 0.2
+		var base_glow_alpha: float = 0.32 if use_quarantine_sign_style else 0.7 + _glow_pulse * 0.2
 		var glow_alpha: float = 1.0 if _hovered and interactable else base_glow_alpha
 		if not interactable:
 			glow_alpha = 0.25
 		_glow_material.albedo_color = Color(glow_tint.r, glow_tint.g, glow_tint.b, glow_alpha)
-		_glow_material.emission = Color(glow_tint.r, glow_tint.g, glow_tint.b) * (3.0 if _hovered and interactable else 1.8)
-		_glow_material.emission_energy_multiplier = 2.2 if _hovered and interactable else 1.4
+		_glow_material.emission = Color(glow_tint.r, glow_tint.g, glow_tint.b) * (2.2 if _hovered and interactable else 0.7 if use_quarantine_sign_style else 1.8)
+		_glow_material.emission_energy_multiplier = 1.8 if _hovered and interactable else 0.8 if use_quarantine_sign_style else 1.4
 
 	var label_target: Color = _brighten(text_color, 0.06) if _hovered and interactable else text_color
 	_label.modulate = label_target if interactable else Color(text_color.r, text_color.g, text_color.b, 0.45)
