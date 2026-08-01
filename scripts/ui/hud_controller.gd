@@ -906,7 +906,7 @@ func _refresh_director_ui() -> void:
 func _get_live_results(max_results: int) -> Array[Dictionary]:
 	if _zombie_manager == null:
 		return []
-	return _zombie_manager.get_ranked_results(max_results)
+	return _zombie_manager.get_live_ranked_results(max_results)
 
 
 func _rebuild_runner_rows(container: VBoxContainer, results: Array[Dictionary], include_rank: bool) -> void:
@@ -980,7 +980,12 @@ func _refresh_director_roster() -> void:
 	if _director_roster_rows == null:
 		return
 	var total_count: int = _zombie_manager.get_total_count() if _zombie_manager != null else 0
-	var roster_results: Array[Dictionary] = _get_live_results(total_count)
+	# The director roster is a complete race roster. Eliminated runners remain
+	# visible as OUT for accountability, but only active entries can be followed
+	# or removed. The public Top 10 uses the live-only list above.
+	var roster_results: Array[Dictionary] = (
+		_zombie_manager.get_ranked_results(total_count) if _zombie_manager != null else []
+	)
 	var roster_signature: String = _build_runner_signature(roster_results, false)
 	if roster_signature != _director_roster_signature:
 		_rebuild_runner_rows(_director_roster_rows, roster_results, false)
@@ -1032,7 +1037,7 @@ func _format_live_standings_body() -> String:
 	if _zombie_manager == null:
 		return "-"
 
-	var results: Array[Dictionary] = _zombie_manager.get_ranked_results(STANDINGS_MAX_RESULTS)
+	var results: Array[Dictionary] = _zombie_manager.get_live_ranked_results(STANDINGS_MAX_RESULTS)
 	if results.is_empty():
 		return "-"
 

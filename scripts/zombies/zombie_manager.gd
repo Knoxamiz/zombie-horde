@@ -135,13 +135,35 @@ func get_leader_zombie() -> Zombie:
 	var leader: Zombie = null
 	var leader_progress: float = -1.0
 	for zombie in _living_zombies:
-		if zombie.has_finished_race():
+		if not zombie.is_alive() or zombie.has_finished_race():
 			continue
 		var progress: float = zombie.get_progress()
 		if leader == null or progress > leader_progress:
 			leader = zombie
 			leader_progress = progress
 	return leader
+
+
+## Returns only runners that are actively competing in the current race.
+##
+## Live standings must never reuse post-round results: those intentionally retain
+## finished and eliminated runners for history, while race leadership is defined
+## by monotonic progress through the authored course route.
+func get_live_ranked_results(max_results: int) -> Array[Dictionary]:
+	_remove_invalid_living()
+	var results: Array[Dictionary] = []
+	for zombie in _living_zombies:
+		if not is_instance_valid(zombie):
+			continue
+		if not zombie.is_alive() or zombie.has_finished_race():
+			continue
+		results.append(_build_result_entry(zombie))
+
+	results.sort_custom(_sort_live_result_by_route_progress)
+	while results.size() > max_results:
+		results.remove_at(results.size() - 1)
+	return results
+
 
 func get_ranked_results(max_results: int, excluded_display_name: String = "") -> Array[Dictionary]:
 	_remove_invalid_all()
@@ -290,3 +312,15 @@ func _sort_result_by_progress(a: Dictionary, b: Dictionary) -> bool:
 	if b_place > 0:
 		return false
 	return float(a.get("progress", 0.0)) > float(b.get("progress", 0.0))
+
+
+func _sort_live_result_by_route_progress(a: Dictionary, b: Dictionary) -> bool:
+	var a_progress: float = float(a.get("progress", 0.0))
+	var b_progress: float = float(b.get("progress", 0.0))
+	if not is_equal_approx(a_progress, b_progress):
+		return a_progress > b_progress
+	# Stable, predictable ordering avoids leaderboard flicker when runners share
+	# the same authored-route progress at a checkpoint.
+	return str(a.get("display_name", "")).naturalnocasecmp_to(
+		str(b.get("display_name", ""))
+	) < 0

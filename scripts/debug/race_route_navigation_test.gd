@@ -12,6 +12,7 @@ func _initialize() -> void:
 func _run() -> void:
 	_test_straight_route_fallback()
 	_test_square_spiral_stays_on_its_authored_segment()
+	_test_stacked_course_progress_uses_route_order()
 	_test_outer_lane_clears_every_spiral_checkpoint()
 	_test_runner_past_turn_plane_is_never_pulled_backward()
 	_finish()
@@ -54,6 +55,25 @@ func _test_square_spiral_stays_on_its_authored_segment() -> void:
 		_fail("Route navigator should advance exactly one segment at the first corner")
 	elif corner_target.z <= -50.0 or absf(corner_target.x - 54.0) > 0.5:
 		_fail("Route navigator should follow the authored turn after the first corner")
+
+
+func _test_stacked_course_progress_uses_route_order() -> void:
+	var definition: RaceMapDefinition = MapCatalog.load_definition_by_id("true_spiral_ramp")
+	if definition == null:
+		_fail("Square Spiral Ramp definition failed to load for route-progress coverage")
+		return
+	var navigator = ROUTE_NAVIGATOR.new()
+	navigator.configure(definition.race_path_points, definition.spawn_origin, definition.goal_position)
+
+	# The first top-deck turn shares horizontal space with lower levels. Progress
+	# must only account for the first authored segment, never jump toward the
+	# finish because an upper deck sits near or above it in world space.
+	navigator.advance(Vector3(54.0, 42.0, -54.0), definition.lane_half_width + 1.0)
+	if navigator.get_current_segment_index() != 1:
+		_fail("Stacked-route progress must remain on the next authored segment")
+		return
+	if navigator.get_progress_ratio() >= 0.5:
+		_fail("Stacked-route progress must not promote an upper deck near the finish")
 
 
 func _test_outer_lane_clears_every_spiral_checkpoint() -> void:
