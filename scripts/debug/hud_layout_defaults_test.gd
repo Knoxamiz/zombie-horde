@@ -49,6 +49,11 @@ func _run_test() -> void:
 		if rect.size.distance_to(want.size) > 2.0:
 			_fail("%s size mismatch: got %s want %s" % [panel_id, rect.size, want.size])
 
+	var offscreen_profile: HudLayoutProfile = HudLayoutProfile.create_default_profile(viewport_size)
+	offscreen_profile.panels["top"] = HudLayoutProfile._panel_dict(-20.0, 24.0, 290.0, 284.0, true)
+	if offscreen_profile.is_valid_for_viewport(viewport_size):
+		_fail("Off-screen saved layout was accepted")
+
 	if _failures.is_empty():
 		print("PASS: default corner layout applied")
 		_finish(PASS)

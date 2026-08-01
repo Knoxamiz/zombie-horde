@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://klfmkohhxs15"]
+[gd_scene load_steps=14 format=3 uid="uid://klfmkohhxs15"]
 
 [ext_resource type="Script" uid="uid://u81cp382hnt1" path="res://scripts/ui/hud_controller.gd" id="1_script"]
 [ext_resource type="Theme" path="res://assets/ui/zombie_horde_theme.tres" id="2_theme"]
@@ -8,51 +8,58 @@
 [ext_resource type="Script" path="res://scripts/ui/hold_to_confirm_button.gd" id="6_hold_button"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_board_header"]
-content_margin_left = 16.0
-content_margin_top = 10.0
-content_margin_right = 16.0
-content_margin_bottom = 10.0
-bg_color = Color(0.95, 0.5, 0.08, 0.95)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-shadow_color = Color(1, 0.6, 0.12, 0.4)
-shadow_size = 14
+content_margin_left = 12.0
+content_margin_top = 7.0
+content_margin_right = 12.0
+content_margin_bottom = 7.0
+bg_color = Color(0.78, 0.31, 0.035, 0.98)
+border_width_bottom = 2
+border_color = Color(1, 0.68, 0.14, 0.9)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0, 0, 0, 0.42)
+shadow_size = 5
+shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_lobby_glow"]
 content_margin_left = 8.0
 content_margin_top = 8.0
 content_margin_right = 8.0
 content_margin_bottom = 8.0
-bg_color = Color(0.016, 0.026, 0.018, 0.9)
-border_width_left = 0
-border_width_top = 0
-border_width_right = 0
-border_width_bottom = 0
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
-shadow_color = Color(0.28, 0.95, 0.24, 0.4)
-shadow_size = 26
+bg_color = Color(0.012, 0.02, 0.014, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.38, 0.78, 0.19, 0.72)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 10
+shadow_offset = Vector2(0, 4)
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_scores_glow"]
 content_margin_left = 8.0
 content_margin_top = 8.0
 content_margin_right = 8.0
 content_margin_bottom = 8.0
-bg_color = Color(0.026, 0.02, 0.012, 0.9)
-border_width_left = 0
-border_width_top = 0
-border_width_right = 0
-border_width_bottom = 0
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
-shadow_color = Color(1, 0.7, 0.18, 0.36)
-shadow_size = 26
+bg_color = Color(0.018, 0.014, 0.008, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.4, 0.07, 0.76)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 10
+shadow_offset = Vector2(0, 4)
 
 [sub_resource type="StyleBoxFlat" id="StyleBox_countdown_glow"]
 content_margin_left = 8.0
@@ -70,6 +77,60 @@ corner_radius_bottom_right = 14
 corner_radius_bottom_left = 14
 shadow_color = Color(1, 0.7, 0.18, 0.42)
 shadow_size = 30
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_compact_action"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.055, 0.05, 0.028, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 3
+border_color = Color(1, 0.48, 0.08, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_compact_action_hover"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.12, 0.09, 0.035, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 3
+border_color = Color(0.72, 0.95, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0.24, 0.75, 0.1, 0.25)
+shadow_size = 6
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_compact_action_pressed"]
+content_margin_left = 12.0
+content_margin_top = 7.0
+content_margin_right = 12.0
+content_margin_bottom = 5.0
+bg_color = Color(0.025, 0.03, 0.018, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 1
+border_color = Color(0.72, 0.95, 0.2, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="HUD" type="CanvasLayer"]
 layer = 6
@@ -124,14 +185,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 22
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 22
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
 
 [node name="VBox" type="VBoxContainer" parent="Root/TopPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="HeaderBar" type="PanelContainer" parent="Root/TopPanel/Margin/VBox"]
 layout_mode = 2
@@ -142,35 +203,35 @@ theme_override_styles/panel = SubResource("StyleBox_board_header")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.06, 0.04, 0.02, 1)
 theme_override_colors/font_shadow_color = Color(1, 0.85, 0.4, 0.3)
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 20
 text = "RACE STATUS"
 horizontal_alignment = 1
 
 [node name="StateLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.82, 1, 0.45, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
 text = "State: Idle | Queued: 0"
 
 [node name="CountLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 15
 text = "Zombies: 0 alive / 0 total"
 
 [node name="LeaderLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 15
 text = "Leader: -"
 
 [node name="WinnerLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 15
 text = "Winner: -"
 
 [node name="ChatStatusLabel" type="Label" parent="Root/TopPanel/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 14
 text = "Chat: Debug only"
 
 [node name="RosterPanel" type="Control" parent="Root"]
@@ -201,14 +262,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 14
 
 [node name="VBox" type="VBoxContainer" parent="Root/RosterPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 6
 
 [node name="HeaderBar" type="PanelContainer" parent="Root/RosterPanel/Margin/VBox"]
 layout_mode = 2
@@ -219,14 +280,14 @@ theme_override_styles/panel = SubResource("StyleBox_board_header")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.06, 0.04, 0.02, 1)
 theme_override_colors/font_shadow_color = Color(1, 0.85, 0.4, 0.3)
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 20
 text = "LIVE FEED"
 horizontal_alignment = 1
 
 [node name="QueueLabel" type="Label" parent="Root/RosterPanel/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.94, 0.96, 0.86, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 15
 text = "Lotto: waiting for !brains"
 autowrap_mode = 2
 
@@ -234,7 +295,7 @@ autowrap_mode = 2
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_colors/font_color = Color(1, 0.78, 0.28, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 15
 text = "Kills:
 -"
 autowrap_mode = 2
@@ -267,14 +328,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 18
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 18
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
 
 [node name="VBox" type="VBoxContainer" parent="Root/LeaderboardPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 8
 
 [node name="HeaderBar" type="PanelContainer" parent="Root/LeaderboardPanel/Margin/VBox"]
 layout_mode = 2
@@ -285,7 +346,7 @@ theme_override_styles/panel = SubResource("StyleBox_board_header")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.06, 0.04, 0.02, 1)
 theme_override_colors/font_shadow_color = Color(1, 0.85, 0.4, 0.3)
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 19
 text = "TOP 10 STANDINGS"
 horizontal_alignment = 1
 
@@ -302,20 +363,28 @@ autowrap_mode = 2
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 4
+theme_override_constants/separation = 5
 
 [node name="LeaderCamButton" type="Button" parent="Root/LeaderboardPanel/Margin/VBox"]
 visible = false
 layout_mode = 2
-custom_minimum_size = Vector2(0, 36)
-theme_override_font_sizes/font_size = 17
+custom_minimum_size = Vector2(0, 32)
+theme_override_colors/font_color = Color(0.95, 0.94, 0.84, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBox_compact_action")
+theme_override_styles/hover = SubResource("StyleBox_compact_action_hover")
+theme_override_styles/pressed = SubResource("StyleBox_compact_action_pressed")
 text = "LEADER CAM"
 
 [node name="DirectorButton" type="Button" parent="Root/LeaderboardPanel/Margin/VBox"]
 visible = false
 layout_mode = 2
-custom_minimum_size = Vector2(0, 36)
-theme_override_font_sizes/font_size = 17
+custom_minimum_size = Vector2(0, 32)
+theme_override_colors/font_color = Color(0.95, 0.94, 0.84, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBox_compact_action")
+theme_override_styles/hover = SubResource("StyleBox_compact_action_hover")
+theme_override_styles/pressed = SubResource("StyleBox_compact_action_pressed")
 text = "RACE DIRECTOR"
 
 [node name="RaceDirectorOverlay" type="Control" parent="Root"]

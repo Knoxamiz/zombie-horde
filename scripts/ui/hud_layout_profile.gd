@@ -3,7 +3,8 @@ extends RefCounted
 
 const SAVE_PATH := "user://hud_layout.cfg"
 const SECTION := "hud_layout"
-const SAVE_VERSION := 4
+# Version 5 resets the legacy broad layout that could restore panels beyond the viewport.
+const SAVE_VERSION := 5
 const MIN_PANEL_WIDTH := 120.0
 const MIN_PANEL_HEIGHT := 48.0
 
@@ -44,20 +45,20 @@ static func load_from_disk(viewport_size: Vector2 = Vector2(1600.0, 900.0)):
 
 static func create_default_profile(viewport_size: Vector2 = Vector2(1600.0, 900.0)) -> HudLayoutProfile:
 	var profile: HudLayoutProfile = HudLayoutProfile.new()
-	var margin: float = 40.0
+	var margin: float = 24.0
 	var right: float = viewport_size.x - margin
 	var bottom: float = viewport_size.y - margin
 
-	# Corner layout matching the streamer default screenshot (1600x900).
+	# Compact broadcast layout: the race remains the primary visual on every resolution.
 	profile.panels = {
-		# Top-left tall: Race Status
-		"top": _panel_dict(margin, margin, margin + 360.0, margin + 380.0, true),
-		# Bottom-left strip: Chat Command
-		"command": _panel_dict(margin, bottom - 56.0, margin + 420.0, bottom, true),
-		# Top-right wide: Live Feed
-		"roster": _panel_dict(right - 680.0, margin, right, margin + 220.0, true),
-		# Bottom-right tall: Top 10 Standings
-		"leaderboard": _panel_dict(right - 360.0, margin + 240.0, right, bottom - 72.0, true),
+		# Top-left: concise round state.
+		"top": _panel_dict(margin, margin, margin + 310.0, margin + 260.0, true),
+		# Bottom-left: one-line chat call to action.
+		"command": _panel_dict(margin, bottom - 52.0, margin + 330.0, bottom, true),
+		# Top-right: recent events, deliberately secondary to the race.
+		"roster": _panel_dict(right - 410.0, margin, right, margin + 168.0, true),
+		# Bottom-right: readable live standings and race-director actions.
+		"leaderboard": _panel_dict(right - 310.0, margin + 188.0, right, bottom - 64.0, true),
 		# Countdown stays centered; hidden during layout edit
 		"countdown": _panel_dict(
 			viewport_size.x * 0.5 - 110.0,
@@ -179,11 +180,17 @@ static func get_absolute_rect_from_data(data: Dictionary) -> Rect2:
 
 
 static func _is_panel_data_valid(data: Dictionary, viewport_size: Vector2) -> bool:
-	var width: float = float(data.get("offset_right", 0.0)) - float(data.get("offset_left", 0.0))
-	var height: float = float(data.get("offset_bottom", 0.0)) - float(data.get("offset_top", 0.0))
+	var left: float = float(data.get("offset_left", 0.0))
+	var top: float = float(data.get("offset_top", 0.0))
+	var right: float = float(data.get("offset_right", 0.0))
+	var bottom: float = float(data.get("offset_bottom", 0.0))
+	var width: float = right - left
+	var height: float = bottom - top
 	if width < MIN_PANEL_WIDTH or height < MIN_PANEL_HEIGHT:
 		return false
 	if width > viewport_size.x or height > viewport_size.y:
+		return false
+	if left < 0.0 or top < 0.0 or right > viewport_size.x or bottom > viewport_size.y:
 		return false
 	return true
 

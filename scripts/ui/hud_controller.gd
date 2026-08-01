@@ -915,19 +915,115 @@ func _rebuild_runner_rows(container: VBoxContainer, results: Array[Dictionary], 
 	for index in range(results.size()):
 		var result: Dictionary = results[index]
 		var display_name: String = str(result.get("display_name", "Zombie"))
-		var progress_percent: int = int(round(float(result.get("progress", 0.0)) * 100.0))
+		var progress_percent: int = clampi(int(round(float(result.get("progress", 0.0)) * 100.0)), 0, 100)
 		var alive: bool = bool(result.get("alive", false))
-		var suffix: String = "%d%%" % progress_percent if alive else "OUT"
-		var row: Button = Button.new()
-		row.custom_minimum_size = Vector2(0.0, 32.0)
-		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		row.add_theme_font_size_override("font_size", 18)
-		row.text = "%d. %s  %s" % [index + 1, display_name, suffix] if include_rank else "%s  %s" % [display_name, suffix]
-		row.disabled = not alive
-		row.tooltip_text = "Follow %s" % display_name if alive else "%s is no longer racing" % display_name
-		row.pressed.connect(_on_runner_selected.bind(display_name))
+		var row: Button = _create_runner_row(index + 1, display_name, progress_percent, alive, include_rank)
+		if alive:
+			row.pressed.connect(_on_runner_selected.bind(display_name))
 		container.add_child(row)
+
+
+func _create_runner_row(rank: int, display_name: String, progress_percent: int, alive: bool, include_rank: bool) -> Button:
+	var is_leader: bool = include_rank and rank == 1 and alive
+	var accent: Color = Color(0.68, 0.94, 0.22, 1.0) if is_leader else Color(1.0, 0.48, 0.08, 1.0)
+	var row: Button = Button.new()
+	row.custom_minimum_size = Vector2(0.0, 37.0)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.text = ""
+	row.disabled = not alive
+	row.tooltip_text = "Follow %s" % display_name if alive else "%s is out of the race" % display_name
+	row.focus_mode = Control.FOCUS_ALL
+	row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if alive else Control.CURSOR_ARROW
+	_apply_runner_row_style(row, accent, alive, is_leader)
+
+	var progress: ProgressBar = ProgressBar.new()
+	progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	progress.show_percentage = false
+	progress.min_value = 0.0
+	progress.max_value = 100.0
+	progress.value = float(progress_percent)
+	progress.set_anchors_preset(Control.PRESET_FULL_RECT)
+	progress.offset_left = 8.0
+	progress.offset_top = 28.0
+	progress.offset_right = -8.0
+	progress.offset_bottom = -5.0
+	progress.add_theme_stylebox_override("background", _runner_progress_style(Color(0.05, 0.06, 0.045, 0.9)))
+	progress.add_theme_stylebox_override("fill", _runner_progress_style(accent.darkened(0.22)))
+	row.add_child(progress)
+
+	var line: HBoxContainer = HBoxContainer.new()
+	line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	line.set_anchors_preset(Control.PRESET_FULL_RECT)
+	line.offset_left = 10.0
+	line.offset_top = 4.0
+	line.offset_right = -10.0
+	line.offset_bottom = -8.0
+	line.add_theme_constant_override("separation", 6)
+	row.add_child(line)
+
+	if include_rank:
+		var rank_label: Label = _runner_row_label("%02d" % rank, 13, accent)
+		rank_label.custom_minimum_size = Vector2(28.0, 0.0)
+		line.add_child(rank_label)
+	var name_label: Label = _runner_row_label(display_name, 14, Color(0.96, 0.94, 0.82, 1.0))
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.clip_text = true
+	line.add_child(name_label)
+	var progress_label: Label = _runner_row_label("%d%%" % progress_percent if alive else "OUT", 13, accent)
+	progress_label.custom_minimum_size = Vector2(42.0, 0.0)
+	progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	line.add_child(progress_label)
+	return row
+
+
+func _runner_row_label(value: String, font_size: int, color: Color) -> Label:
+	var label: Label = Label.new()
+	label.text = value
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.7))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+	return label
+
+
+func _apply_runner_row_style(row: Button, accent: Color, alive: bool, is_leader: bool) -> void:
+	var fill: Color = Color(0.05, 0.05, 0.035, 0.94) if alive else Color(0.025, 0.025, 0.022, 0.8)
+	var border: Color = accent if alive else Color(0.28, 0.28, 0.23, 0.65)
+	row.add_theme_stylebox_override("normal", _runner_row_style(fill, border, 2 if is_leader else 1, false))
+	row.add_theme_stylebox_override("hover", _runner_row_style(fill.lightened(0.08), border.lightened(0.12), 2, false))
+	row.add_theme_stylebox_override("pressed", _runner_row_style(fill.darkened(0.12), border, 2, true))
+	row.add_theme_stylebox_override("disabled", _runner_row_style(fill, border, 1, true))
+
+
+func _runner_row_style(fill: Color, border: Color, border_width: int, pressed: bool) -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = border
+	style.border_width_left = 4
+	style.border_width_top = border_width
+	style.border_width_right = border_width
+	style.border_width_bottom = border_width
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_right = 4
+	style.corner_radius_bottom_left = 4
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.35)
+	style.shadow_size = 3 if not pressed else 0
+	style.shadow_offset = Vector2(0.0, 2.0 if not pressed else 0.0)
+	return style
+
+
+func _runner_progress_style(fill: Color) -> StyleBoxFlat:
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = fill
+	style.corner_radius_top_left = 2
+	style.corner_radius_top_right = 2
+	style.corner_radius_bottom_right = 2
+	style.corner_radius_bottom_left = 2
+	return style
 
 
 func _build_runner_signature(results: Array[Dictionary], include_rank: bool) -> String:
