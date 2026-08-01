@@ -191,7 +191,8 @@ func _apply_layout() -> void:
 	_set_box(_drop_shadow, Vector3(block_size.x * 1.02, 0.03, block_size.z * 0.92), Vector3(0.0, -block_size.y * 0.52, -0.02))
 	_layout_quarantine_sign(face_z)
 
-	_text_anchor.position = Vector3(0.0, 0.0, face_z + 0.002)
+	# Labels must sit above the sign hardware, while the backing stays physically behind the face.
+	_text_anchor.position = Vector3(0.0, 0.0, face_z + 0.105)
 
 	var menu_font: Font = _get_menu_font()
 	for label_node: Label3D in [_label, _label_shadow]:
@@ -203,7 +204,7 @@ func _apply_layout() -> void:
 		label_node.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		label_node.position = Vector3.ZERO
 		label_node.billboard = BaseMaterial3D.BILLBOARD_DISABLED
-		label_node.no_depth_test = false
+		label_node.no_depth_test = true
 
 	_label.modulate = text_color
 	_label.outline_modulate = Color(0.04, 0.04, 0.04, 1.0)
@@ -224,39 +225,40 @@ func _layout_quarantine_sign(face_z: float) -> void:
 	if not use_quarantine_sign_style:
 		return
 	_ensure_quarantine_sign_nodes()
-	var frame_depth: float = face_z + 0.018
+	# The oversized backing is deliberately recessed so only its steel border is visible.
+	var frame_depth: float = face_z - 0.07
 	_set_box(
 		_sign_frame,
 		Vector3(block_size.x + 0.16, block_size.y + 0.16, 0.055),
-		Vector3(0.0, 0.0, face_z - 0.02)
+		Vector3(0.0, 0.0, frame_depth)
 	)
 	_set_box(
 		_left_cap,
 		Vector3(0.13, block_size.y + 0.28, 0.09),
-		Vector3(-block_size.x * 0.5 - 0.04, 0.0, frame_depth)
+		Vector3(-block_size.x * 0.5 - 0.045, 0.0, face_z + 0.015)
 	)
 	_set_box(
 		_right_cap,
 		Vector3(0.13, block_size.y + 0.28, 0.09),
-		Vector3(block_size.x * 0.5 + 0.04, 0.0, frame_depth)
+		Vector3(block_size.x * 0.5 + 0.045, 0.0, face_z + 0.015)
 	)
 	_set_box(
 		_accent_top,
 		Vector3(block_size.x + 0.06, 0.052, 0.07),
-		Vector3(0.0, block_size.y * 0.5 + 0.035, frame_depth + 0.006)
+		Vector3(0.0, block_size.y * 0.5 + 0.035, face_z + 0.025)
 	)
 	_set_box(
 		_accent_bottom,
 		Vector3(block_size.x + 0.06, 0.04, 0.07),
-		Vector3(0.0, -block_size.y * 0.5 - 0.027, frame_depth + 0.006)
+		Vector3(0.0, -block_size.y * 0.5 - 0.027, face_z + 0.025)
 	)
 	var bolt_x: float = block_size.x * 0.5 - 0.13
 	var bolt_y: float = block_size.y * 0.5 - 0.10
 	var bolt_positions: Array[Vector3] = [
-		Vector3(-bolt_x, -bolt_y, frame_depth + 0.03),
-		Vector3(bolt_x, -bolt_y, frame_depth + 0.03),
-		Vector3(-bolt_x, bolt_y, frame_depth + 0.03),
-		Vector3(bolt_x, bolt_y, frame_depth + 0.03),
+		Vector3(-bolt_x, -bolt_y, face_z + 0.06),
+		Vector3(bolt_x, -bolt_y, face_z + 0.06),
+		Vector3(-bolt_x, bolt_y, face_z + 0.06),
+		Vector3(bolt_x, bolt_y, face_z + 0.06),
 	]
 	for index in range(_bolt_meshes.size()):
 		_bolt_meshes[index].position = bolt_positions[index]
@@ -304,7 +306,7 @@ func _build_extrusion_labels(menu_font: Font) -> void:
 		depth_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		depth_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		depth_label.billboard = BaseMaterial3D.BILLBOARD_DISABLED
-		depth_label.no_depth_test = false
+		depth_label.no_depth_test = true
 		var t: float = float(layer + 1) / float(extrusion_layers)
 		depth_label.position = Vector3(-step * float(layer + 1), -step * float(layer + 1), -0.004 * float(layer + 1))
 		depth_label.modulate = _darken(extrude_color, t * 0.25)
