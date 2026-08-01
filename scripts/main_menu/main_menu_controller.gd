@@ -10,8 +10,9 @@ const MENU_ART: Texture2D = preload("res://assets/ui/main_menu/zombie_chat_horde
 @export var twitch_join_source_path: NodePath
 @export_range(0.0, 1.0, 0.01) var camera_idle_strength: float = 0.06
 @export_range(0.0, 1.0, 0.01) var logo_wobble_strength: float = 1.0
-@export var button_stack_start_y: float = -0.72
-@export var button_stack_gap: float = 0.1
+@export var button_stack_x: float = -3.05
+@export var button_stack_start_y: float = -0.28
+@export var button_stack_gap: float = 0.14
 @export var button_depth_z: float = -6.85
 @export var corner_x: float = 3.55
 
@@ -379,24 +380,29 @@ func _layout_menu_buttons() -> void:
 	await get_tree().process_frame
 
 	var stack_y: float = button_stack_start_y
-	if _button_rack != null:
-		for child in _button_rack.get_children():
-			var button: MainMenuBlockButton = child as MainMenuBlockButton
-			if button == null:
-				continue
-			var placed: Vector3 = Vector3(0.0, stack_y, button_depth_z)
-			button.set_base_position(placed)
-			stack_y -= button.get_block_height() + button_stack_gap
+	for button in _get_ordered_menu_stack():
+		if button == null:
+			continue
+		var placed: Vector3 = Vector3(button_stack_x, stack_y, button_depth_z)
+		button.set_base_position(placed)
+		stack_y -= button.get_block_height() + button_stack_gap
 
-	if _settings_button != null:
-		var settings_y: float = -2.72
-		_settings_button.set_base_position(Vector3(corner_x, settings_y, button_depth_z))
-		if _version_label != null:
-			_version_label.position = Vector3(
-				corner_x,
-				settings_y - _settings_button.get_block_height() - 0.22,
-				button_depth_z - 0.05
-			)
+	if _version_label != null:
+		_version_label.position = Vector3(
+			button_stack_x - 1.58,
+			stack_y - 0.08,
+			button_depth_z - 0.05
+		)
+
+
+func _get_ordered_menu_stack() -> Array[MainMenuBlockButton]:
+	var ordered: Array[MainMenuBlockButton] = []
+	for action_id in [&"start", &"streamer", &"settings", &"quit"]:
+		for button in _menu_buttons:
+			if button != null and button.action_id == action_id:
+				ordered.append(button)
+				break
+	return ordered
 
 func _fit_layout() -> void:
 	var viewport_size: Vector2 = get_viewport_rect().size
