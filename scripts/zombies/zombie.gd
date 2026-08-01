@@ -31,6 +31,8 @@ var _drift_timer: float = 0.0
 var _stun_timer: float = 0.0
 var _boost_timer: float = 0.0
 var _crowd_bump_timer: float = 0.0
+var _wall_recovery_timer: float = 0.0
+var _stall_recovery_timer: float = 0.0
 var _boost_multiplier: float = 1.0
 var _start_position: Vector3 = Vector3.ZERO
 var _active_animation_player: AnimationPlayer
@@ -125,6 +127,8 @@ func configure_zombie(
 	_finish_place = 0
 	_stall_timer = 0.0
 	_last_progress_sample = 0.0
+	_wall_recovery_timer = 0.0
+	_stall_recovery_timer = 0.0
 	health = _get_config().max_health
 	_death_cause = ""
 	_fell_visual_timer = 0.0
@@ -322,6 +326,7 @@ func _physics_process(delta: float) -> void:
 		vertical_velocity,
 		move_toward(velocity.z, steering_velocity.z, active_config.acceleration * delta)
 	)
+	_apply_stall_recovery(active_config)
 	_update_visual_facing(delta, velocity)
 	_move_and_slide_with_audit()
 	_check_out_of_bounds(active_config)
@@ -619,6 +624,32 @@ func _apply_crowd_bump(active_config: ZombieConfig) -> void:
 	_crowd_bump_timer = active_config.crowd_bump_cooldown * _rng.randf_range(0.75, 1.25)
 
 
+func _apply_stall_recovery(active_config: ZombieConfig) -> void:
+	if (
+		_stall_timer < active_config.stall_recovery_delay
+		or _stall_recovery_timer > 0.0
+		or not is_on_floor()
+	):
+		return
+
+	# The normal route controller remains authoritative. This is a short,
+	# randomized recovery hop for a runner that has stopped making course
+	# progress, allowing it to clear a crowd knot or a shallow obstacle edge.
+	_apply_anti_clump_nudge(active_config)
+	_apply_crowd_bump(active_config)
+	var forward: Vector3 = _get_race_forward()
+	var side: Vector3 = _get_race_side(forward)
+	var lateral_direction: float = -1.0 if _rng.randi() % 2 == 0 else 1.0
+	var lateral_scale: float = _rng.randf_range(0.45, 1.0)
+	velocity += forward * active_config.stall_recovery_forward_strength
+	velocity += side * lateral_direction * active_config.stall_recovery_lateral_strength * lateral_scale
+	velocity.y = maxf(velocity.y, active_config.stall_recovery_hop_strength)
+	_stall_recovery_timer = _rng.randf_range(
+		maxf(0.05, active_config.stall_recovery_cooldown_min),
+		maxf(active_config.stall_recovery_cooldown_min, active_config.stall_recovery_cooldown_max)
+	)
+
+
 func _has_race_path() -> bool:
 	return _npc_navigation.has_route()
 
@@ -711,6 +742,12 @@ func _update_timers(delta: float) -> void:
 
 	if _crowd_bump_timer > 0.0:
 		_crowd_bump_timer = max(0.0, _crowd_bump_timer - delta)
+
+	if _wall_recovery_timer > 0.0:
+		_wall_recovery_timer = max(0.0, _wall_recovery_timer - delta)
+
+	if _stall_recovery_timer > 0.0:
+		_stall_recovery_timer = max(0.0, _stall_recovery_timer - delta)
 
 func _update_drift(delta: float) -> void:
 	_drift_timer -= delta
@@ -1089,6 +1126,35 @@ func _report_side_collisions() -> void:
 		var collider: Object = collision.get_collider()
 		if collider != null:
 			GameEvents.report_race_blocker(collider, collision.get_position())
+			_apply_wall_recovery(collider, normal, _get_config())
+
+
+func _apply_wall_recovery(
+	collider: Object,
+	collision_normal: Vector3,
+	active_config: ZombieConfig
+) -> void:
+	if (
+		_wall_recovery_timer > 0.0
+		or not _round_active
+		or _has_finished_race
+		or not is_alive()
+		or collider == self
+		or collider is Zombie
+		or collider is Area3D
+		or active_config.wall_recovery_strength <= 0.0
+	):
+		return
+
+	var away_from_wall := Vector3(collision_normal.x, 0.0, collision_normal.z)
+	if away_from_wall.length_squared() <= 0.001:
+		return
+	away_from_wall = away_from_wall.normalized()
+	var forward: Vector3 = _get_race_forward()
+	velocity += away_from_wall * active_config.wall_recovery_strength
+	velocity += forward * active_config.wall_recovery_forward_bias
+	velocity.y = maxf(velocity.y, active_config.wall_recovery_hop_strength)
+	_wall_recovery_timer = maxf(0.05, active_config.wall_recovery_cooldown)
 
 func _get_status_text() -> String:
 	match mobility_state:

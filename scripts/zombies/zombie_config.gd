@@ -17,6 +17,20 @@ extends Resource
 @export var crowd_bump_upward_strength: float = 0.28
 @export var crowd_bump_forward_bias: float = 0.18
 @export var crowd_bump_cooldown: float = 0.28
+## Recovery values are shared across every map. They only activate when a
+## runner has actually stalled or hits solid collision, never during normal
+## route following.
+@export_category("Mobility Recovery")
+@export var wall_recovery_strength: float = 2.35
+@export var wall_recovery_forward_bias: float = 0.65
+@export var wall_recovery_hop_strength: float = 1.15
+@export var wall_recovery_cooldown: float = 0.42
+@export var stall_recovery_delay: float = 1.15
+@export var stall_recovery_forward_strength: float = 1.1
+@export var stall_recovery_lateral_strength: float = 0.9
+@export var stall_recovery_hop_strength: float = 0.82
+@export var stall_recovery_cooldown_min: float = 0.7
+@export var stall_recovery_cooldown_max: float = 1.15
 @export var gravity: float = 24.0
 @export var launch_damping: float = 6.5
 @export var body_settle_damping: float = 10.0
