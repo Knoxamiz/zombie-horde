@@ -168,6 +168,13 @@ func get_race_forward_direction() -> Vector3:
 	return _get_race_forward()
 
 func get_progress() -> float:
+	return get_race_course_progress()
+
+
+## The public race-progress value is map route progress, not a direct line to
+## the finish. Keeping this here lets standings, Leader Cam, and gameplay read
+## the same course position across flat, turning, and stacked maps.
+func get_race_course_progress() -> float:
 	if _has_finished_race:
 		return 1.0
 
@@ -183,6 +190,24 @@ func get_progress() -> float:
 	var traveled: Vector3 = global_position - _start_position
 	traveled.y = 0.0
 	return clamp(traveled.dot(path.normalized()) / path_length, 0.0, 1.0)
+
+
+func get_race_course_distance() -> float:
+	if _has_race_path():
+		return _npc_navigation.get_course_distance()
+
+	var path: Vector3 = goal_position - _start_position
+	path.y = 0.0
+	return path.length() * get_race_course_progress()
+
+
+func get_race_course_length() -> float:
+	if _has_race_path():
+		return _npc_navigation.get_course_length()
+
+	var path: Vector3 = goal_position - _start_position
+	path.y = 0.0
+	return path.length()
 
 func apply_launch(impulse: Vector3, stun_duration: float) -> void:
 	if not is_alive():

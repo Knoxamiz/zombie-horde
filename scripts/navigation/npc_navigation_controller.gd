@@ -141,6 +141,17 @@ func get_progress_ratio() -> float:
 	return _route.get_progress_ratio()
 
 
+## Race-position accessors are intentionally separate from movement targets.
+## HUD and scoring can use this map-authored course meter without interpreting
+## a runner's 3D height or straight-line distance to the finish.
+func get_course_distance() -> float:
+	return _route.get_course_distance()
+
+
+func get_course_length() -> float:
+	return _route.get_course_length()
+
+
 func get_route_forward() -> Vector3:
 	return _route.get_forward_direction()
 

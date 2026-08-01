@@ -12,6 +12,7 @@ var _points: PackedVector3Array = PackedVector3Array()
 var _segment_index: int = 0
 var _distance_along_route: float = 0.0
 var _total_length: float = 0.0
+var _segment_start_distances: PackedFloat32Array = PackedFloat32Array()
 
 
 func configure(
@@ -27,7 +28,7 @@ func configure(
 	# authored routes with a zero length and therefore no course to follow.
 	_segment_index = 0
 	_distance_along_route = 0.0
-	_total_length = _calculate_total_length()
+	_rebuild_course_meter()
 
 
 func has_route() -> bool:
@@ -142,7 +143,18 @@ func get_forward_direction() -> Vector3:
 func get_progress_ratio() -> float:
 	if not has_route():
 		return 0.0
-	return clampf(_distance_along_route / _total_length, 0.0, 1.0)
+	return clampf(get_course_distance() / get_course_length(), 0.0, 1.0)
+
+
+## Authoritative race distance measured along the authored course, never by
+## world-space distance to the goal. This remains meaningful when roads overlap
+## vertically, such as parking garages and stacked bridge decks.
+func get_course_distance() -> float:
+	return clampf(_distance_along_route, 0.0, _total_length)
+
+
+func get_course_length() -> float:
+	return _total_length
 
 
 func get_current_segment_index() -> int:
@@ -156,18 +168,20 @@ func is_on_final_segment() -> bool:
 	return has_route() and _segment_index >= _points.size() - 2
 
 
-func _calculate_total_length() -> float:
+func _rebuild_course_meter() -> void:
+	_segment_start_distances = PackedFloat32Array()
 	var total: float = 0.0
-	for index in range(_points.size() - 1):
+	for index in range(maxi(_points.size() - 1, 0)):
+		_segment_start_distances.append(total)
 		total += _points[index].distance_to(_points[index + 1])
-	return total
+	_total_length = total
 
 
 func _distance_before_segment(segment_index: int) -> float:
-	var distance: float = 0.0
-	for index in range(mini(segment_index, _points.size() - 1)):
-		distance += _points[index].distance_to(_points[index + 1])
-	return distance
+	if _segment_start_distances.is_empty():
+		return 0.0
+	var safe_index: int = clampi(segment_index, 0, _segment_start_distances.size() - 1)
+	return _segment_start_distances[safe_index]
 
 
 func _point_at_distance(distance: float) -> Vector3:

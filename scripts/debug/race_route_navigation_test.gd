@@ -11,6 +11,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_test_straight_route_fallback()
+	_test_course_meter_uses_cumulative_route_distance()
 	_test_square_spiral_stays_on_its_authored_segment()
 	_test_stacked_course_progress_uses_route_order()
 	_test_outer_lane_clears_every_spiral_checkpoint()
@@ -27,6 +28,26 @@ func _test_straight_route_fallback() -> void:
 	var target: Vector3 = navigator.get_target_point(3.0)
 	if target.z <= -9.5 or target.z >= 0.0:
 		_fail("Straight-route lookahead should move forward from spawn")
+
+
+func _test_course_meter_uses_cumulative_route_distance() -> void:
+	var navigator = ROUTE_NAVIGATOR.new()
+	var route := PackedVector3Array([
+		Vector3(0.0, 0.0, 0.0),
+		Vector3(0.0, 0.0, 10.0),
+		Vector3(30.0, 0.0, 10.0),
+	])
+	navigator.configure(route, route[0], route[2])
+	navigator.advance(Vector3(0.0, 0.8, 5.0), 1.0, 4.0)
+	if not is_equal_approx(navigator.get_course_distance(), 5.0):
+		_fail("Course meter must measure distance along the active authored segment")
+		return
+	navigator.advance(route[1] + Vector3.UP * 0.8, 1.0, 4.0)
+	navigator.advance(Vector3(15.0, 0.8, 10.0), 1.0, 4.0)
+	if not is_equal_approx(navigator.get_course_distance(), 25.0):
+		_fail("Course meter must retain prior segments instead of measuring goal proximity")
+	if not is_equal_approx(navigator.get_progress_ratio(), 0.625):
+		_fail("Course meter percentage must derive from cumulative route distance")
 
 
 func _test_square_spiral_stays_on_its_authored_segment() -> void:

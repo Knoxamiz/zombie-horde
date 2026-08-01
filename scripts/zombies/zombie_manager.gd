@@ -294,7 +294,9 @@ func _build_result_entry(zombie: Zombie) -> Dictionary:
 
 	return {
 		"display_name": zombie.display_name,
-		"progress": zombie.get_progress(),
+		"progress": zombie.get_race_course_progress(),
+		"course_distance": zombie.get_race_course_distance(),
+		"course_length": zombie.get_race_course_length(),
 		"alive": zombie.is_alive(),
 		"finish_place": zombie.get_finish_place(),
 		"tier": tier,
@@ -315,10 +317,10 @@ func _sort_result_by_progress(a: Dictionary, b: Dictionary) -> bool:
 
 
 func _sort_live_result_by_route_progress(a: Dictionary, b: Dictionary) -> bool:
-	var a_progress: float = float(a.get("progress", 0.0))
-	var b_progress: float = float(b.get("progress", 0.0))
-	if not is_equal_approx(a_progress, b_progress):
-		return a_progress > b_progress
+	var a_distance: float = float(a.get("course_distance", 0.0))
+	var b_distance: float = float(b.get("course_distance", 0.0))
+	if not is_equal_approx(a_distance, b_distance):
+		return a_distance > b_distance
 	# Stable, predictable ordering avoids leaderboard flicker when runners share
 	# the same authored-route progress at a checkpoint.
 	return str(a.get("display_name", "")).naturalnocasecmp_to(
