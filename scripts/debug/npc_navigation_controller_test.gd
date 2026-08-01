@@ -67,7 +67,11 @@ func _test_stacked_course_does_not_shortcut_to_finish_below() -> void:
 	# This is the production failure case: same X/Z as the Square Spiral Ramp
 	# finish, four stories up. The runner must turn south on the top deck, never
 	# target the finish below or wait in place.
-	var top_finish_overlook := Vector3(54.0, 42.0, -54.0)
+	var top_finish_overlook := Vector3(
+		definition.goal_position.x,
+		definition.race_path_points[1].y + 0.8,
+		definition.goal_position.z
+	)
 	var direction: Vector3 = controller.update(top_finish_overlook, 0.1)
 	if direction.z <= 0.8 or absf(direction.x) > 0.4:
 		_fail("Stacked routes must follow their next checkpoint when directly above the finish")

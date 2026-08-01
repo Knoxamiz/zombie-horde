@@ -57,6 +57,17 @@ func advance(
 	# to the old waypoint. This is intentionally derived from map/profile data,
 	# not a map-specific coordinate or special case.
 	var transition_half_width: float = safe_corridor_half_width + safe_reach_radius
+	# A launch can land a runner on a later, lower deck that is already part of
+	# this exact authored course. Recovering that landing by its matching route
+	# segment is not a shortcut: it gives the runner the same ordered course
+	# distance it would have earned by travelling there normally. The vertical
+	# check is essential on stacked maps so an upper road never borrows progress
+	# from a visually aligned lower road.
+	_try_reacquire_forward_course_segment(
+		world_position,
+		safe_corridor_half_width,
+		safe_vertical_tolerance
+	)
 	while _segment_index < _points.size() - 1:
 		var segment_start: Vector3 = _points[_segment_index]
 		var segment_end: Vector3 = _points[_segment_index + 1]
@@ -117,6 +128,61 @@ func advance(
 
 		_distance_along_route = _distance_before_segment(_segment_index) + segment_length
 		_segment_index += 1
+
+
+func _try_reacquire_forward_course_segment(
+	world_position: Vector3,
+	corridor_half_width: float,
+	vertical_tolerance: float
+) -> void:
+	var best_segment_index: int = _segment_index
+	var best_distance: float = _distance_along_route
+	for candidate_index in range(_segment_index + 1, _points.size() - 1):
+		var segment_start: Vector3 = _points[candidate_index]
+		var segment_end: Vector3 = _points[candidate_index + 1]
+		var segment: Vector3 = segment_end - segment_start
+		var segment_length: float = segment.length()
+		if segment_length <= 0.001:
+			continue
+
+		# This is the course's authoritative 0-100 lookup: project the runner
+		# against every later authored segment, select only a physically valid
+		# deck match, then use that segment's cumulative route distance. It is
+		# deliberately not a goal-distance or centerline shortcut.
+		var horizontal_segment := Vector3(segment.x, 0.0, segment.z)
+		var horizontal_length_squared: float = horizontal_segment.length_squared()
+		if horizontal_length_squared <= 0.001:
+			continue
+		var horizontal_position := Vector3(
+			world_position.x - segment_start.x,
+			0.0,
+			world_position.z - segment_start.z
+		)
+		var local_t: float = clampf(
+			horizontal_position.dot(horizontal_segment) / horizontal_length_squared,
+			0.0,
+			1.0
+		)
+		var projected: Vector3 = segment_start + segment * local_t
+		var lateral_offset := Vector2(
+			world_position.x - projected.x,
+			world_position.z - projected.z
+		).length()
+		var vertical_offset: float = absf(world_position.y - projected.y)
+		if lateral_offset > corridor_half_width or vertical_offset > vertical_tolerance:
+			continue
+
+		var candidate_distance: float = (
+			_distance_before_segment(candidate_index)
+			+ segment_length * local_t
+		)
+		if candidate_distance > best_distance + 0.05:
+			best_segment_index = candidate_index
+			best_distance = candidate_distance
+
+	if best_segment_index > _segment_index:
+		_segment_index = best_segment_index
+		_distance_along_route = best_distance
 
 
 func get_target_point(lookahead_distance: float) -> Vector3:

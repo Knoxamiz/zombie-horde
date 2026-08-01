@@ -29,7 +29,7 @@ const EDGE_BARRIER_THICKNESS: float = 0.34
 # Every sloped road segment must overlap its flat turn deck by a real landing
 # area, not merely touch its edge. A shallow overlap produces a repeatable
 # physics snag at the same downhill corner when a CharacterBody crosses it.
-const MIN_CORNER_DECK_OVERLAP: float = 1.25
+const MIN_CORNER_DECK_OVERLAP: float = 1.75
 const SEGMENT_END_INSET: float = ROAD_WIDTH * 0.5 - MIN_CORNER_DECK_OVERLAP
 const RAIL_END_INSET: float = 3.8
 

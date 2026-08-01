@@ -1,6 +1,7 @@
 extends SceneTree
 
 const ROUTE_NAVIGATOR := preload("res://scripts/maps/race_route_navigator.gd")
+const MAP_CATALOG := preload("res://scripts/maps/map_catalog.gd")
 
 var _failures: PackedStringArray = PackedStringArray()
 
@@ -18,6 +19,8 @@ func _run() -> void:
 	_test_runner_past_turn_plane_is_never_pulled_backward()
 	_test_wide_runner_crossing_turn_plane_keeps_progress()
 	_test_lower_deck_does_not_advance_upper_route()
+	_test_forward_lower_deck_landing_recovers_course_progress()
+	_test_true_spiral_lower_deck_landing_uses_authored_progress()
 	_finish()
 
 
@@ -64,10 +67,10 @@ func _test_square_spiral_stays_on_its_authored_segment() -> void:
 		_fail("Square Spiral Ramp should have an authored race route")
 		return
 
-	# A point directly below the starting deck must not cause a route jump to a
-	# lower, nearby layer. The active segment remains the top eastbound run.
+	# A point suspended between the starting deck and the lower roads must not
+	# cause a route jump. A real lower-deck landing is covered separately below.
 	navigator.advance(
-		Vector3(route[0].x, 0.8, route[0].z),
+		Vector3(route[0].x, 26.8, route[0].z),
 		definition.lane_half_width + 1.0
 	)
 	var initial_target: Vector3 = navigator.get_target_point(8.0)
@@ -193,6 +196,59 @@ func _test_lower_deck_does_not_advance_upper_route() -> void:
 		_fail("Lower deck runner must not advance a route checkpoint above it")
 	if navigator.get_course_distance() > 0.01:
 		_fail("Lower deck runner must not receive upper-route progress")
+
+
+func _test_forward_lower_deck_landing_recovers_course_progress() -> void:
+	var navigator = ROUTE_NAVIGATOR.new()
+	var route := PackedVector3Array([
+		Vector3(-20.0, 20.0, 0.0),
+		Vector3(20.0, 20.0, 0.0),
+		Vector3(20.0, 20.0, 20.0),
+		Vector3(-20.0, 10.0, 20.0),
+		Vector3(-20.0, 10.0, 0.0),
+		Vector3(20.0, 10.0, 0.0),
+	])
+	navigator.configure(route, route[0], route[route.size() - 1])
+	# The runner was blown from the upper road and safely landed on the later,
+	# lower road. It must now be ranked by that lower road's course distance,
+	# not by its abandoned upper-deck checkpoint.
+	navigator.advance(Vector3(8.0, 10.8, 0.0), 2.4, 3.3, 3.0)
+	if navigator.get_current_segment_index() != 4:
+		_fail("Forward lower-deck landing must recover onto the matching later route segment")
+		return
+	if navigator.get_progress_ratio() < 0.8:
+		_fail("Forward lower-deck landing must receive its authoritative later-route progress")
+
+
+func _test_true_spiral_lower_deck_landing_uses_authored_progress() -> void:
+	var definition: RaceMapDefinition = MAP_CATALOG.load_definition_by_id("true_spiral_ramp")
+	if definition == null or definition.race_path_points.size() < 18:
+		_fail("True Spiral Ramp must provide the authored stacked route for landing recovery")
+		return
+	var navigator = ROUTE_NAVIGATOR.new()
+	navigator.configure(
+		definition.race_path_points,
+		definition.spawn_origin,
+		definition.goal_position
+	)
+	# This is an actual lower road on the production spiral. Its X/Z alignment
+	# overlaps earlier decks, so only the authored route plus deck height can
+	# distinguish the correct 0-100 course position.
+	var lower_segment_index := 16
+	var lower_start: Vector3 = definition.race_path_points[lower_segment_index]
+	var lower_end: Vector3 = definition.race_path_points[lower_segment_index + 1]
+	var lower_deck_landing: Vector3 = lower_start.lerp(lower_end, 0.5) + Vector3.UP * 0.8
+	navigator.advance(
+		lower_deck_landing,
+		definition.lane_half_width,
+		3.3,
+		3.0
+	)
+	if navigator.get_current_segment_index() != lower_segment_index:
+		_fail("True Spiral lower-deck landing must resume from its later authored segment")
+		return
+	if navigator.get_progress_ratio() < 0.85:
+		_fail("True Spiral lower-deck landing must rank beyond its upper decks")
 
 
 func _fail(message: String) -> void:
