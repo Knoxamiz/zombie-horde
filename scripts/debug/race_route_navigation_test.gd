@@ -16,6 +16,8 @@ func _run() -> void:
 	_test_stacked_course_progress_uses_route_order()
 	_test_outer_lane_clears_every_spiral_checkpoint()
 	_test_runner_past_turn_plane_is_never_pulled_backward()
+	_test_wide_runner_crossing_turn_plane_keeps_progress()
+	_test_lower_deck_does_not_advance_upper_route()
 	_finish()
 
 
@@ -57,24 +59,28 @@ func _test_square_spiral_stays_on_its_authored_segment() -> void:
 		return
 	var navigator = ROUTE_NAVIGATOR.new()
 	navigator.configure(definition.race_path_points, definition.spawn_origin, definition.goal_position)
+	var route: PackedVector3Array = definition.race_path_points
 	if not navigator.has_route():
 		_fail("Square Spiral Ramp should have an authored race route")
 		return
 
 	# A point directly below the starting deck must not cause a route jump to a
 	# lower, nearby layer. The active segment remains the top eastbound run.
-	navigator.advance(Vector3(-54.0, 0.8, -54.0), definition.lane_half_width + 1.0)
+	navigator.advance(
+		Vector3(route[0].x, 0.8, route[0].z),
+		definition.lane_half_width + 1.0
+	)
 	var initial_target: Vector3 = navigator.get_target_point(8.0)
-	if initial_target.y < 40.0 or initial_target.x <= -50.0:
+	if initial_target.y < route[0].y - 2.0 or initial_target.x <= route[0].x + 1.0:
 		_fail("Stacked-route navigation should stay on the top segment before its first corner")
 
 	# After reaching the first corner, the next target must turn south along the
 	# authored route instead of aiming through the map toward the final goal.
-	navigator.advance(Vector3(54.0, 42.0, -54.0), definition.lane_half_width + 1.0)
+	navigator.advance(route[1] + Vector3.UP * 0.8, definition.lane_half_width + 1.0)
 	var corner_target: Vector3 = navigator.get_target_point(8.0)
 	if navigator.get_current_segment_index() != 1:
 		_fail("Route navigator should advance exactly one segment at the first corner")
-	elif corner_target.z <= -50.0 or absf(corner_target.x - 54.0) > 0.5:
+	elif corner_target.z <= route[1].z + 1.0 or absf(corner_target.x - route[1].x) > 0.5:
 		_fail("Route navigator should follow the authored turn after the first corner")
 
 
@@ -85,11 +91,12 @@ func _test_stacked_course_progress_uses_route_order() -> void:
 		return
 	var navigator = ROUTE_NAVIGATOR.new()
 	navigator.configure(definition.race_path_points, definition.spawn_origin, definition.goal_position)
+	var route: PackedVector3Array = definition.race_path_points
 
 	# The first top-deck turn shares horizontal space with lower levels. Progress
 	# must only account for the first authored segment, never jump toward the
 	# finish because an upper deck sits near or above it in world space.
-	navigator.advance(Vector3(54.0, 42.0, -54.0), definition.lane_half_width + 1.0)
+	navigator.advance(route[1] + Vector3.UP * 0.8, definition.lane_half_width + 1.0)
 	if navigator.get_current_segment_index() != 1:
 		_fail("Stacked-route progress must remain on the next authored segment")
 		return
@@ -149,6 +156,43 @@ func _test_runner_past_turn_plane_is_never_pulled_backward() -> void:
 	var recovery_target: Vector3 = navigator.get_target_point(6.0)
 	if recovery_target.x <= 0.5:
 		_fail("Recovered runner must target forward along the next route segment")
+
+
+func _test_wide_runner_crossing_turn_plane_keeps_progress() -> void:
+	var navigator = ROUTE_NAVIGATOR.new()
+	var route := PackedVector3Array([
+		Vector3(0.0, 0.0, 0.0),
+		Vector3(0.0, 0.0, 20.0),
+		Vector3(20.0, 0.0, 20.0),
+	])
+	navigator.configure(route, route[0], route[2])
+	# This runner is far outside the nominal race lane after a launch, but has
+	# crossed the first turn plane on the same deck. Its course meter must not
+	# remain on the old segment or the leaderboard will under-report it.
+	navigator.advance(Vector3(14.0, 0.8, 20.4), 2.4, 3.3, 3.0)
+	if navigator.get_current_segment_index() != 1:
+		_fail("Wide runner past a turn plane must advance its authored course")
+		return
+	navigator.advance(Vector3(10.0, 0.8, 20.0), 2.4, 3.3, 3.0)
+	if navigator.get_course_distance() < 29.5:
+		_fail("Wide runner route meter must continue from the cleared checkpoint")
+
+
+func _test_lower_deck_does_not_advance_upper_route() -> void:
+	var navigator = ROUTE_NAVIGATOR.new()
+	var route := PackedVector3Array([
+		Vector3(0.0, 10.0, 0.0),
+		Vector3(20.0, 10.0, 0.0),
+		Vector3(20.0, 0.0, 20.0),
+	])
+	navigator.configure(route, route[0], route[2])
+	# The X/Z position crosses the upper endpoint, but this runner is directly
+	# below it on a different deck and must not receive upper-route credit.
+	navigator.advance(Vector3(20.2, 0.8, 0.0), 2.4, 3.3, 3.0)
+	if navigator.get_current_segment_index() != 0:
+		_fail("Lower deck runner must not advance a route checkpoint above it")
+	if navigator.get_course_distance() > 0.01:
+		_fail("Lower deck runner must not receive upper-route progress")
 
 
 func _fail(message: String) -> void:

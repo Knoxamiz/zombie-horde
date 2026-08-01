@@ -33,6 +33,7 @@ var _boost_timer: float = 0.0
 var _crowd_bump_timer: float = 0.0
 var _wall_recovery_timer: float = 0.0
 var _stall_recovery_timer: float = 0.0
+var _ambient_hop_timer: float = 0.0
 var _boost_multiplier: float = 1.0
 var _start_position: Vector3 = Vector3.ZERO
 var _active_animation_player: AnimationPlayer
@@ -129,6 +130,7 @@ func configure_zombie(
 	_last_progress_sample = 0.0
 	_wall_recovery_timer = 0.0
 	_stall_recovery_timer = 0.0
+	_schedule_next_ambient_hop(_get_config())
 	health = _get_config().max_health
 	_death_cause = ""
 	_fell_visual_timer = 0.0
@@ -326,6 +328,7 @@ func _physics_process(delta: float) -> void:
 		vertical_velocity,
 		move_toward(velocity.z, steering_velocity.z, active_config.acceleration * delta)
 	)
+	_apply_ambient_hop(active_config)
 	_apply_stall_recovery(active_config)
 	_update_visual_facing(delta, velocity)
 	_move_and_slide_with_audit()
@@ -650,6 +653,32 @@ func _apply_stall_recovery(active_config: ZombieConfig) -> void:
 	)
 
 
+func _apply_ambient_hop(active_config: ZombieConfig) -> void:
+	if (
+		not active_config.ambient_hops_enabled
+		or _ambient_hop_timer > 0.0
+		or not is_on_floor()
+		or _stun_timer > 0.0
+	):
+		return
+
+	var forward: Vector3 = _get_race_forward()
+	var side: Vector3 = _get_race_side(forward)
+	var lateral_sign: float = -1.0 if _rng.randi() % 2 == 0 else 1.0
+	velocity += side * lateral_sign * _rng.randf_range(0.2, 1.0) * active_config.ambient_hop_lateral_strength
+	velocity.y = maxf(velocity.y, active_config.ambient_hop_strength)
+	_schedule_next_ambient_hop(active_config)
+
+
+func _schedule_next_ambient_hop(active_config: ZombieConfig) -> void:
+	if not active_config.ambient_hops_enabled:
+		_ambient_hop_timer = 0.0
+		return
+	var minimum: float = maxf(0.2, active_config.ambient_hop_interval_min)
+	var maximum: float = maxf(minimum, active_config.ambient_hop_interval_max)
+	_ambient_hop_timer = _rng.randf_range(minimum, maximum)
+
+
 func _has_race_path() -> bool:
 	return _npc_navigation.has_route()
 
@@ -748,6 +777,9 @@ func _update_timers(delta: float) -> void:
 
 	if _stall_recovery_timer > 0.0:
 		_stall_recovery_timer = max(0.0, _stall_recovery_timer - delta)
+
+	if _ambient_hop_timer > 0.0:
+		_ambient_hop_timer = max(0.0, _ambient_hop_timer - delta)
 
 func _update_drift(delta: float) -> void:
 	_drift_timer -= delta

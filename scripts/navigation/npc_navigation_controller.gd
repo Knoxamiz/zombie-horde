@@ -65,7 +65,8 @@ func update(position: Vector3, delta: float) -> Vector3:
 	_route.advance(
 		position,
 		_profile.checkpoint_reach_radius,
-		_navigation_half_width
+		_navigation_half_width,
+		_profile.checkpoint_vertical_tolerance
 	)
 	_target_refresh_timer = maxf(0.0, _target_refresh_timer - delta)
 	# The ordered race route is the movement authority. NavigationAgent3D can

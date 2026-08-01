@@ -38,7 +38,8 @@ func has_route() -> bool:
 func advance(
 	world_position: Vector3,
 	checkpoint_reach_radius: float,
-	corridor_half_width: float = 0.0
+	corridor_half_width: float = 0.0,
+	checkpoint_vertical_tolerance: float = 3.0
 ) -> void:
 	if not has_route():
 		return
@@ -49,6 +50,7 @@ func advance(
 	# it is still inside the map-authored corridor, otherwise it will turn back
 	# toward the center point and form a permanent crowd pile at that joint.
 	var safe_corridor_half_width: float = maxf(corridor_half_width, safe_reach_radius)
+	var safe_vertical_tolerance: float = maxf(checkpoint_vertical_tolerance, 0.5)
 	# Launches, avoidance and wide turns can carry a runner just outside its
 	# nominal lane as it crosses a checkpoint plane. Give it a bounded recovery
 	# margin so route progress remains monotonic instead of pulling it backward
@@ -85,23 +87,32 @@ func advance(
 		var projected: Vector3 = segment_start + segment * local_t
 		var corridor_offset: Vector3 = world_position - projected
 		var horizontal_offset := Vector3(corridor_offset.x, 0.0, corridor_offset.z)
+		var vertical_offset: float = absf(corridor_offset.y)
 		var reached_endpoint: bool = (
 			world_position.distance_to(segment_end) <= safe_reach_radius
 			or (
 			local_t >= 0.94
 			and horizontal_offset.length() <= transition_half_width
+			and vertical_offset <= safe_vertical_tolerance
 			)
 		)
+		# A route checkpoint is a forward-crossing plane, not a narrow centerline
+		# gate. A launch or an open playable shoulder can put a legitimate runner
+		# beyond the lane corridor; once it has crossed the endpoint plane on the
+		# correct deck, preserve its route order and let the next segment recover
+		# its heading. The vertical check still protects stacked maps from granting
+		# credit to a runner on a lower or upper road at the same X/Z coordinate.
 		var passed_endpoint: bool = (
 			local_t >= 0.985
-			and horizontal_offset.length() <= transition_half_width
+			and vertical_offset <= safe_vertical_tolerance
 		)
 
 		if not reached_endpoint and not passed_endpoint:
-			_distance_along_route = maxf(
-				_distance_along_route,
-				_distance_before_segment(_segment_index) + segment_length * local_t
-			)
+			if vertical_offset <= safe_vertical_tolerance:
+				_distance_along_route = maxf(
+					_distance_along_route,
+					_distance_before_segment(_segment_index) + segment_length * local_t
+				)
 			return
 
 		_distance_along_route = _distance_before_segment(_segment_index) + segment_length

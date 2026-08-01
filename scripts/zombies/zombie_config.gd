@@ -31,6 +31,14 @@ extends Resource
 @export var stall_recovery_hop_strength: float = 0.82
 @export var stall_recovery_cooldown_min: float = 0.7
 @export var stall_recovery_cooldown_max: float = 1.15
+@export_category("Movement Variety")
+## Short hops keep a horde from reading like synchronized marching. The hop is
+## intentionally low and uses a randomized per-runner interval.
+@export var ambient_hops_enabled: bool = true
+@export var ambient_hop_interval_min: float = 3.0
+@export var ambient_hop_interval_max: float = 5.5
+@export var ambient_hop_strength: float = 2.7
+@export var ambient_hop_lateral_strength: float = 0.32
 @export var gravity: float = 24.0
 @export var launch_damping: float = 6.5
 @export var body_settle_damping: float = 10.0
