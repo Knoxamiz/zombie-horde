@@ -22,6 +22,7 @@ signal pressed(action_id: StringName)
 @export var press_scale: float = 0.95
 @export var idle_phase: float = 0.0
 @export var interactable: bool = true
+@export var use_quarantine_sign_style: bool = true
 
 var _hovered: bool = false
 var _pressed_down: bool = false
@@ -37,6 +38,15 @@ var _shadow_material: StandardMaterial3D
 var _glow_material: StandardMaterial3D
 var _glow_pulse: float = 0.0
 var _extrusion_labels: Array[Label3D] = []
+var _sign_frame: MeshInstance3D
+var _left_cap: MeshInstance3D
+var _right_cap: MeshInstance3D
+var _accent_top: MeshInstance3D
+var _accent_bottom: MeshInstance3D
+var _bolt_meshes: Array[MeshInstance3D] = []
+var _frame_material: StandardMaterial3D
+var _accent_material: StandardMaterial3D
+var _bolt_material: StandardMaterial3D
 
 @onready var _visual_root: Node3D = get_node("VisualRoot") as Node3D
 @onready var _glow_back: MeshInstance3D = get_node_or_null("VisualRoot/GlowBack") as MeshInstance3D
@@ -170,7 +180,7 @@ func _apply_layout() -> void:
 
 	if _glow_back != null:
 		var glow_mesh: QuadMesh = QuadMesh.new()
-		glow_mesh.size = Vector2(block_size.x * 1.9 + 1.8, block_size.y * 4.6 + 1.8)
+		glow_mesh.size = Vector2(block_size.x * 1.25 + 0.45, block_size.y * 1.8 + 0.34)
 		_glow_back.mesh = glow_mesh
 		_glow_back.position = Vector3(0.0, 0.0, -depth_offset - 0.04)
 
@@ -179,6 +189,7 @@ func _apply_layout() -> void:
 	_set_box(_top_bevel, Vector3(block_size.x * 0.96, block_size.y * 0.1, 0.03), Vector3(0.0, block_size.y * 0.42, face_z + 0.012))
 	_set_box(_bottom_shade, Vector3(block_size.x * 0.96, block_size.y * 0.08, 0.03), Vector3(0.0, -block_size.y * 0.42, face_z + 0.01))
 	_set_box(_drop_shadow, Vector3(block_size.x * 1.02, 0.03, block_size.z * 0.92), Vector3(0.0, -block_size.y * 0.52, -0.02))
+	_layout_quarantine_sign(face_z)
 
 	_text_anchor.position = Vector3(0.0, 0.0, face_z + 0.002)
 
@@ -207,6 +218,74 @@ func _apply_layout() -> void:
 	var box_shape: BoxShape3D = BoxShape3D.new()
 	box_shape.size = Vector3(block_size.x + 0.04, block_size.y + 0.06, block_size.z + 0.18)
 	_shape.shape = box_shape
+
+
+func _layout_quarantine_sign(face_z: float) -> void:
+	if not use_quarantine_sign_style:
+		return
+	_ensure_quarantine_sign_nodes()
+	var frame_depth: float = face_z + 0.018
+	_set_box(
+		_sign_frame,
+		Vector3(block_size.x + 0.16, block_size.y + 0.16, 0.055),
+		Vector3(0.0, 0.0, face_z - 0.02)
+	)
+	_set_box(
+		_left_cap,
+		Vector3(0.13, block_size.y + 0.28, 0.09),
+		Vector3(-block_size.x * 0.5 - 0.04, 0.0, frame_depth)
+	)
+	_set_box(
+		_right_cap,
+		Vector3(0.13, block_size.y + 0.28, 0.09),
+		Vector3(block_size.x * 0.5 + 0.04, 0.0, frame_depth)
+	)
+	_set_box(
+		_accent_top,
+		Vector3(block_size.x + 0.06, 0.052, 0.07),
+		Vector3(0.0, block_size.y * 0.5 + 0.035, frame_depth + 0.006)
+	)
+	_set_box(
+		_accent_bottom,
+		Vector3(block_size.x + 0.06, 0.04, 0.07),
+		Vector3(0.0, -block_size.y * 0.5 - 0.027, frame_depth + 0.006)
+	)
+	var bolt_x: float = block_size.x * 0.5 - 0.13
+	var bolt_y: float = block_size.y * 0.5 - 0.10
+	var bolt_positions: Array[Vector3] = [
+		Vector3(-bolt_x, -bolt_y, frame_depth + 0.03),
+		Vector3(bolt_x, -bolt_y, frame_depth + 0.03),
+		Vector3(-bolt_x, bolt_y, frame_depth + 0.03),
+		Vector3(bolt_x, bolt_y, frame_depth + 0.03),
+	]
+	for index in range(_bolt_meshes.size()):
+		_bolt_meshes[index].position = bolt_positions[index]
+
+
+func _ensure_quarantine_sign_nodes() -> void:
+	if _sign_frame != null:
+		return
+	_sign_frame = _create_sign_mesh("SteelFrame")
+	_left_cap = _create_sign_mesh("LeftEndCap")
+	_right_cap = _create_sign_mesh("RightEndCap")
+	_accent_top = _create_sign_mesh("AccentTopRail")
+	_accent_bottom = _create_sign_mesh("AccentBottomRail")
+	for index in range(4):
+		var bolt := MeshInstance3D.new()
+		bolt.name = "Bolt%d" % (index + 1)
+		var sphere := SphereMesh.new()
+		sphere.radius = 0.055
+		sphere.height = 0.05
+		bolt.mesh = sphere
+		_visual_root.add_child(bolt)
+		_bolt_meshes.append(bolt)
+
+
+func _create_sign_mesh(node_name: String) -> MeshInstance3D:
+	var mesh_node := MeshInstance3D.new()
+	mesh_node.name = node_name
+	_visual_root.add_child(mesh_node)
+	return mesh_node
 
 func _build_extrusion_labels(menu_font: Font) -> void:
 	for old_label in _extrusion_labels:
@@ -254,19 +333,19 @@ func _apply_visuals(force: bool) -> void:
 
 	var target: Color = hover_color if _hovered and interactable else base_color
 	var blend_speed: float = 1.0 if force else 0.28
-	var current: Color = target if force else _face_material.albedo_color.lerp(target, blend_speed)
-
-	_face_material.albedo_color = _darken(current, 0.06)
-	_face_material.emission = _brighten(current, 0.02) * (0.12 if _hovered and interactable else 0.03)
-
-	_depth_material.albedo_color = _darken(current, 0.32)
-	_depth_material.emission = _darken(current, 0.24) * 0.04
-
-	_top_bevel_material.albedo_color = _brighten(current, 0.22 if _hovered else 0.14)
-	_top_bevel_material.emission = _brighten(current, 0.14) * (0.14 if _hovered and interactable else 0.05)
-
-	_bottom_shade_material.albedo_color = _darken(current, 0.26)
-	_bottom_shade_material.emission = _darken(current, 0.34) * 0.02
+	var source_color: Color = _accent_material.albedo_color if use_quarantine_sign_style else _face_material.albedo_color
+	var current: Color = target if force else source_color.lerp(target, blend_speed)
+	if use_quarantine_sign_style:
+		_apply_quarantine_sign_visuals(current)
+	else:
+		_face_material.albedo_color = _darken(current, 0.06)
+		_face_material.emission = _brighten(current, 0.02) * (0.12 if _hovered and interactable else 0.03)
+		_depth_material.albedo_color = _darken(current, 0.32)
+		_depth_material.emission = _darken(current, 0.24) * 0.04
+		_top_bevel_material.albedo_color = _brighten(current, 0.22 if _hovered else 0.14)
+		_top_bevel_material.emission = _brighten(current, 0.14) * (0.14 if _hovered and interactable else 0.05)
+		_bottom_shade_material.albedo_color = _darken(current, 0.26)
+		_bottom_shade_material.emission = _darken(current, 0.34) * 0.02
 
 	_shadow_material.albedo_color = Color(0.0, 0.0, 0.0, 0.42 if _hovered and interactable else 0.3)
 
@@ -286,7 +365,42 @@ func _apply_visuals(force: bool) -> void:
 	var label_target: Color = _brighten(text_color, 0.06) if _hovered and interactable else text_color
 	_label.modulate = label_target if interactable else Color(text_color.r, text_color.g, text_color.b, 0.45)
 
+
+func _apply_quarantine_sign_visuals(accent: Color) -> void:
+	var active: bool = _hovered and interactable
+	var face_color: Color = Color(0.055, 0.072, 0.062, 1.0)
+	if active:
+		face_color = face_color.lightened(0.075)
+	_face_material.albedo_color = face_color
+	_face_material.emission = _brighten(accent, 0.08) * (0.08 if active else 0.025)
+	_face_material.metallic = 0.48
+	_face_material.roughness = 0.56
+
+	_depth_material.albedo_color = Color(0.018, 0.025, 0.022, 1.0)
+	_depth_material.emission = Color(0.0, 0.0, 0.0, 1.0)
+	_top_bevel_material.albedo_color = Color(0.12, 0.14, 0.13, 1.0)
+	_top_bevel_material.emission = Color(0.0, 0.0, 0.0, 1.0)
+	_bottom_shade_material.albedo_color = Color(0.015, 0.02, 0.018, 1.0)
+	_bottom_shade_material.emission = Color(0.0, 0.0, 0.0, 1.0)
+
+	_frame_material.albedo_color = Color(0.11, 0.13, 0.12, 1.0)
+	_frame_material.emission = Color(0.0, 0.0, 0.0, 1.0)
+	_frame_material.metallic = 0.74
+	_frame_material.roughness = 0.42
+
+	_accent_material.albedo_color = accent
+	_accent_material.emission = _brighten(accent, 0.08) * (0.32 if active else 0.12)
+	_accent_material.metallic = 0.32
+	_accent_material.roughness = 0.46
+
+	_bolt_material.albedo_color = Color(0.5, 0.54, 0.5, 1.0)
+	_bolt_material.emission = Color(0.0, 0.0, 0.0, 1.0)
+	_bolt_material.metallic = 0.88
+	_bolt_material.roughness = 0.32
+
 func _ensure_materials() -> void:
+	if use_quarantine_sign_style:
+		_ensure_quarantine_sign_nodes()
 	if _face_material == null:
 		_face_material = _make_surface_material()
 		_face.set_surface_override_material(0, _face_material)
@@ -315,6 +429,17 @@ func _ensure_materials() -> void:
 		_glow_material.albedo_texture = _make_radial_glow_texture()
 		_glow_material.emission_texture = _glow_material.albedo_texture
 		_glow_back.set_surface_override_material(0, _glow_material)
+	if use_quarantine_sign_style and _frame_material == null:
+		_frame_material = _make_surface_material()
+		_accent_material = _make_surface_material()
+		_bolt_material = _make_surface_material()
+		_sign_frame.set_surface_override_material(0, _frame_material)
+		_left_cap.set_surface_override_material(0, _frame_material)
+		_right_cap.set_surface_override_material(0, _frame_material)
+		_accent_top.set_surface_override_material(0, _accent_material)
+		_accent_bottom.set_surface_override_material(0, _accent_material)
+		for bolt: MeshInstance3D in _bolt_meshes:
+			bolt.set_surface_override_material(0, _bolt_material)
 
 func _make_radial_glow_texture() -> Texture2D:
 	var size: int = 128
