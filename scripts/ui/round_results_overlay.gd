@@ -20,10 +20,35 @@ var _tween: Tween
 @onready var _return_button: Button = get_node("ResultCard/Margin/VBox/ButtonRow/ReturnLobbyButton") as Button
 
 func _ready() -> void:
+	_apply_release_ui_theme()
 	if _restart_button != null:
 		_restart_button.pressed.connect(_on_restart_pressed)
 	_return_button.pressed.connect(_on_return_lobby_pressed)
 	hide_results(true)
+
+func _apply_release_ui_theme() -> void:
+	ControlRoomTheme.apply_panel(_card, ControlRoomTheme.COLOR_ORANGE, Color(0.012, 0.016, 0.012, 0.98))
+	var runner_panel := get_node_or_null("ResultCard/Margin/VBox/Columns/RunnerUpsPanel") as PanelContainer
+	var stats_panel := get_node_or_null("ResultCard/Margin/VBox/Columns/StatsPanel") as PanelContainer
+	ControlRoomTheme.apply_panel(runner_panel, ControlRoomTheme.COLOR_GREEN, Color(0.02, 0.03, 0.022, 0.98))
+	ControlRoomTheme.apply_panel(stats_panel, ControlRoomTheme.COLOR_BLUE, Color(0.018, 0.025, 0.028, 0.98))
+	ControlRoomTheme.apply_section_header(_title_label, ControlRoomTheme.COLOR_GREEN)
+	ControlRoomTheme.apply_label(_winner_label, 30, ControlRoomTheme.COLOR_TEXT)
+	ControlRoomTheme.apply_label(_summary_label, 18, ControlRoomTheme.COLOR_MUTED)
+	ControlRoomTheme.apply_button(
+		_restart_button,
+		Color(0.12, 0.22, 0.07, 1.0),
+		Color(0.2, 0.36, 0.1, 1.0),
+		ControlRoomTheme.COLOR_GREEN,
+		19
+	)
+	ControlRoomTheme.apply_button(
+		_return_button,
+		Color(0.1, 0.07, 0.03, 1.0),
+		Color(0.18, 0.11, 0.04, 1.0),
+		ControlRoomTheme.COLOR_ORANGE,
+		19
+	)
 
 func show_results(winner_name: String, base_won: bool, stats: Dictionary) -> void:
 	_current_winner_name = winner_name

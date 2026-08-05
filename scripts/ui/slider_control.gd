@@ -7,3 +7,4 @@ func _ready() -> void:
 	max_value = 100.0
 	step = 1.0
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ControlRoomTheme.apply_slider(self, ControlRoomTheme.COLOR_GREEN)

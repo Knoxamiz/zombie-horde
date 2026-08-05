@@ -108,8 +108,57 @@ func _ready() -> void:
 	_update_title_from_command(_command_text)
 	_populate_map_options()
 	refresh_map_selection()
+	_apply_release_ui_theme()
 	apply_stream_capture_visuals()
 	_command_text = TwitchConfigResolver.get_join_command_text()
+
+func _apply_release_ui_theme() -> void:
+	# The lobby is a release-facing race desk. Dev controls remain isolated in F3.
+	var lobby_panel := get_node_or_null("Root/LobbyPanel") as PanelContainer
+	var map_panel := get_node_or_null("Root/MapSelectPanel") as PanelContainer
+	var scores_panel := get_node_or_null("Root/ScoresPanel") as PanelContainer
+	ControlRoomTheme.apply_panel(lobby_panel, ControlRoomTheme.COLOR_GREEN, Color(0.008, 0.018, 0.012, 0.95))
+	ControlRoomTheme.apply_panel(map_panel, ControlRoomTheme.COLOR_GREEN, Color(0.012, 0.02, 0.014, 0.96))
+	ControlRoomTheme.apply_panel(scores_panel, ControlRoomTheme.COLOR_ORANGE, Color(0.018, 0.014, 0.008, 0.96))
+
+	var lobby_title := get_node_or_null("Root/LobbyPanel/Margin/VBox/TitleLabel") as Label
+	var map_title := get_node_or_null("Root/MapSelectPanel/Margin/VBox/TitleLabel") as Label
+	var score_title := get_node_or_null("Root/ScoresPanel/Margin/VBox/HeaderBar/HeaderLabel") as Label
+	ControlRoomTheme.apply_section_header(lobby_title, ControlRoomTheme.COLOR_GREEN)
+	ControlRoomTheme.apply_section_header(map_title, ControlRoomTheme.COLOR_GREEN)
+	ControlRoomTheme.apply_section_header(score_title, ControlRoomTheme.COLOR_ORANGE)
+	if score_title != null:
+		score_title.add_theme_color_override("font_color", Color(0.08, 0.05, 0.01, 1.0))
+
+	ControlRoomTheme.apply_button(
+		_ready_button,
+		Color(0.12, 0.22, 0.07, 1.0),
+		Color(0.2, 0.36, 0.1, 1.0),
+		ControlRoomTheme.COLOR_GREEN,
+		20
+	)
+	ControlRoomTheme.apply_option(_map_option, ControlRoomTheme.COLOR_ORANGE, 17)
+	ControlRoomTheme.apply_button(
+		_fastest_times_button,
+		Color(0.09, 0.065, 0.025, 1.0),
+		Color(0.17, 0.11, 0.035, 1.0),
+		ControlRoomTheme.COLOR_ORANGE,
+		17
+	)
+	ControlRoomTheme.apply_button(
+		_options_button,
+		Color(0.1, 0.07, 0.16, 1.0),
+		Color(0.17, 0.1, 0.25, 1.0),
+		ControlRoomTheme.COLOR_PURPLE,
+		16
+	)
+	ControlRoomTheme.apply_button(
+		_main_menu_button,
+		Color(0.1, 0.07, 0.03, 1.0),
+		Color(0.18, 0.11, 0.04, 1.0),
+		ControlRoomTheme.COLOR_ORANGE,
+		16
+	)
 
 func apply_stream_capture_visuals() -> void:
 	if _dev_panel != null:

@@ -18,6 +18,46 @@ const COLOR_BLUE := Color(0.28, 0.78, 1.0, 1.0)
 const COLOR_ORANGE := Color(1.0, 0.48, 0.08, 1.0)
 const COLOR_PURPLE := Color(0.72, 0.38, 1.0, 1.0)
 const COLOR_RED := Color(1.0, 0.25, 0.18, 1.0)
+const COLOR_METAL := Color(0.09, 0.105, 0.095, 1.0)
+const COLOR_METAL_HIGHLIGHT := Color(0.16, 0.18, 0.16, 1.0)
+
+static func apply_panel(panel: PanelContainer, accent: Color = COLOR_ORANGE, fill_color: Color = COLOR_PANEL) -> void:
+	if panel == null:
+		return
+	panel.add_theme_stylebox_override("panel", panel_style(accent, fill_color, 2))
+
+static func apply_option(option: OptionButton, accent: Color = COLOR_BLUE, font_size: int = 18) -> void:
+	if option == null:
+		return
+	apply_button(option, COLOR_METAL, COLOR_METAL_HIGHLIGHT, accent, font_size)
+
+static func apply_slider(slider: Range, accent: Color = COLOR_GREEN) -> void:
+	if slider == null:
+		return
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color(0.035, 0.045, 0.038, 1.0)
+	track.border_color = Color(0.22, 0.28, 0.23, 1.0)
+	track.border_width_top = 1
+	track.border_width_bottom = 1
+	track.corner_radius_top_left = 3
+	track.corner_radius_top_right = 3
+	track.corner_radius_bottom_left = 3
+	track.corner_radius_bottom_right = 3
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = accent.darkened(0.18)
+	fill.corner_radius_top_left = 3
+	fill.corner_radius_top_right = 3
+	fill.corner_radius_bottom_left = 3
+	fill.corner_radius_bottom_right = 3
+	slider.add_theme_stylebox_override("slider", track)
+	slider.add_theme_stylebox_override("grabber_area", fill)
+
+static func apply_section_header(label: Label, accent: Color = COLOR_GREEN) -> void:
+	if label == null:
+		return
+	apply_label(label, 24, accent)
+	label.add_theme_constant_override("outline_size", 1)
+	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
 
 static func panel_style(border_color: Color = COLOR_ORANGE, fill_color: Color = COLOR_PANEL, border_width: int = 2) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -27,13 +67,17 @@ static func panel_style(border_color: Color = COLOR_ORANGE, fill_color: Color = 
 	style.border_width_top = border_width
 	style.border_width_right = border_width
 	style.border_width_bottom = border_width
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_right = 6
-	style.corner_radius_bottom_left = 6
-	style.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
-	style.shadow_size = 10
-	style.shadow_offset = Vector2(0, 5)
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_right = 8
+	style.corner_radius_bottom_left = 8
+	style.shadow_color = Color(0.0, 0.0, 0.0, 0.62)
+	style.shadow_size = 12
+	style.shadow_offset = Vector2(0, 6)
+	style.content_margin_left = 4
+	style.content_margin_top = 4
+	style.content_margin_right = 4
+	style.content_margin_bottom = 4
 	return style
 
 static func button_style(base_color: Color, border_color: Color, pressed: bool = false) -> StyleBoxFlat:
@@ -44,10 +88,10 @@ static func button_style(base_color: Color, border_color: Color, pressed: bool =
 	style.border_width_top = 3
 	style.border_width_right = 3
 	style.border_width_bottom = 5 if not pressed else 2
-	style.corner_radius_top_left = 5
-	style.corner_radius_top_right = 5
-	style.corner_radius_bottom_right = 5
-	style.corner_radius_bottom_left = 5
+	style.corner_radius_top_left = 4
+	style.corner_radius_top_right = 4
+	style.corner_radius_bottom_right = 4
+	style.corner_radius_bottom_left = 4
 	style.shadow_color = Color(0.0, 0.0, 0.0, 0.48)
 	style.shadow_size = 8 if not pressed else 3
 	style.shadow_offset = Vector2(0, 5 if not pressed else 1)
@@ -66,6 +110,8 @@ static func apply_button(button: BaseButton, base_color: Color, hover_color: Col
 	button.add_theme_color_override("font_hover_color", Color.WHITE)
 	button.add_theme_color_override("font_disabled_color", Color(0.52, 0.52, 0.46, 1.0))
 	button.add_theme_font_size_override("font_size", font_size)
+	button.add_theme_constant_override("outline_size", 1)
+	button.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.85))
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.focus_mode = Control.FOCUS_ALL
 
