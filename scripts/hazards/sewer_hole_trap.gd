@@ -24,8 +24,8 @@ func _on_body_entered(body: Node3D) -> void:
 	if zombie == null or not zombie.is_alive():
 		return
 
-	GameEvents.impact_mark_requested.emit(global_position, "scuff")
-	GameEvents.world_feedback_requested.emit(global_position + Vector3.UP * 1.15, "SEWER!", Color(0.42, 0.95, 0.65, 1.0))
+	GameEventBus.instance().impact_mark_requested.emit(global_position, "scuff")
+	GameEventBus.instance().world_feedback_requested.emit(global_position + Vector3.UP * 1.15, "SEWER!", Color(0.42, 0.95, 0.65, 1.0))
 	zombie.kill("sewer")
 
 	if _cover != null:

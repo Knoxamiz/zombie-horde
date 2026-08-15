@@ -70,7 +70,7 @@ func _ready() -> void:
 		_chat_status_text = "Chat unavailable"
 		_chat_status_detail = "Twitch join source not configured."
 
-	GameEvents.chat_connection_status_changed.connect(_on_chat_connection_status_changed)
+	GameEventBus.instance().chat_connection_status_changed.connect(_on_chat_connection_status_changed)
 
 	if _feed_connect_button != null:
 		_feed_connect_button.pressed.connect(_on_connect_channel_pressed)
@@ -253,7 +253,7 @@ func _launch_lobby(debug_joins_to_seed: int) -> void:
 
 	_transitioning = true
 	_set_buttons_enabled(false)
-	LaunchState.request_lobby(debug_joins_to_seed, false)
+	LaunchStateService.instance().request_lobby(debug_joins_to_seed, false)
 
 	var packed: PackedScene = _take_preloaded_game_scene()
 	var error: Error

@@ -8,6 +8,13 @@ var _requested_phase: String = PHASE_INTRO
 var _debug_joins_to_seed: int = 0
 var _open_settings_on_launch: bool = false
 
+
+static func instance() -> LaunchStateService:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("LaunchState") as LaunchStateService
+
 func request_intro() -> void:
 	_requested_phase = PHASE_INTRO
 	_debug_joins_to_seed = 0

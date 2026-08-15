@@ -61,32 +61,32 @@ func play_ui_select() -> void:
 	_play_stream(ui_select_stream, "ui_select", -2.0, Vector2(0.98, 1.04), 0.03)
 
 func _connect_game_events() -> void:
-	if not GameEvents.participant_registered.is_connected(_on_participant_registered):
-		GameEvents.participant_registered.connect(_on_participant_registered)
-	if not GameEvents.round_countdown_changed.is_connected(_on_round_countdown_changed):
-		GameEvents.round_countdown_changed.connect(_on_round_countdown_changed)
-	if not GameEvents.round_started.is_connected(_on_round_started):
-		GameEvents.round_started.connect(_on_round_started)
-	if not GameEvents.round_ended.is_connected(_on_round_ended):
-		GameEvents.round_ended.connect(_on_round_ended)
-	if not GameEvents.zombie_died.is_connected(_on_zombie_died):
-		GameEvents.zombie_died.connect(_on_zombie_died)
-	if not GameEvents.zombie_became_crawler.is_connected(_on_zombie_became_crawler):
-		GameEvents.zombie_became_crawler.connect(_on_zombie_became_crawler)
-	if not GameEvents.zombie_reached_base.is_connected(_on_zombie_reached_base):
-		GameEvents.zombie_reached_base.connect(_on_zombie_reached_base)
-	if not GameEvents.minigun_fired.is_connected(_on_minigun_fired):
-		GameEvents.minigun_fired.connect(_on_minigun_fired)
-	if not GameEvents.human_defender_fired.is_connected(_on_human_defender_fired):
-		GameEvents.human_defender_fired.connect(_on_human_defender_fired)
-	if not GameEvents.human_defender_died.is_connected(_on_human_defender_died):
-		GameEvents.human_defender_died.connect(_on_human_defender_died)
-	if not GameEvents.mine_triggered.is_connected(_on_mine_triggered):
-		GameEvents.mine_triggered.connect(_on_mine_triggered)
-	if not GameEvents.obstacle_triggered.is_connected(_on_obstacle_triggered):
-		GameEvents.obstacle_triggered.connect(_on_obstacle_triggered)
-	if not GameEvents.boost_pad_triggered.is_connected(_on_boost_pad_triggered):
-		GameEvents.boost_pad_triggered.connect(_on_boost_pad_triggered)
+	if not GameEventBus.instance().participant_registered.is_connected(_on_participant_registered):
+		GameEventBus.instance().participant_registered.connect(_on_participant_registered)
+	if not GameEventBus.instance().round_countdown_changed.is_connected(_on_round_countdown_changed):
+		GameEventBus.instance().round_countdown_changed.connect(_on_round_countdown_changed)
+	if not GameEventBus.instance().round_started.is_connected(_on_round_started):
+		GameEventBus.instance().round_started.connect(_on_round_started)
+	if not GameEventBus.instance().round_ended.is_connected(_on_round_ended):
+		GameEventBus.instance().round_ended.connect(_on_round_ended)
+	if not GameEventBus.instance().zombie_died.is_connected(_on_zombie_died):
+		GameEventBus.instance().zombie_died.connect(_on_zombie_died)
+	if not GameEventBus.instance().zombie_became_crawler.is_connected(_on_zombie_became_crawler):
+		GameEventBus.instance().zombie_became_crawler.connect(_on_zombie_became_crawler)
+	if not GameEventBus.instance().zombie_reached_base.is_connected(_on_zombie_reached_base):
+		GameEventBus.instance().zombie_reached_base.connect(_on_zombie_reached_base)
+	if not GameEventBus.instance().minigun_fired.is_connected(_on_minigun_fired):
+		GameEventBus.instance().minigun_fired.connect(_on_minigun_fired)
+	if not GameEventBus.instance().human_defender_fired.is_connected(_on_human_defender_fired):
+		GameEventBus.instance().human_defender_fired.connect(_on_human_defender_fired)
+	if not GameEventBus.instance().human_defender_died.is_connected(_on_human_defender_died):
+		GameEventBus.instance().human_defender_died.connect(_on_human_defender_died)
+	if not GameEventBus.instance().mine_triggered.is_connected(_on_mine_triggered):
+		GameEventBus.instance().mine_triggered.connect(_on_mine_triggered)
+	if not GameEventBus.instance().obstacle_triggered.is_connected(_on_obstacle_triggered):
+		GameEventBus.instance().obstacle_triggered.connect(_on_obstacle_triggered)
+	if not GameEventBus.instance().boost_pad_triggered.is_connected(_on_boost_pad_triggered):
+		GameEventBus.instance().boost_pad_triggered.connect(_on_boost_pad_triggered)
 
 func _rebuild_player_pool() -> void:
 	_ensure_audio_bus(sfx_bus_name)

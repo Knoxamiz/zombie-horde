@@ -72,8 +72,8 @@ func _enter_tree() -> void:
 		queue_free()
 		return
 	_rng.randomize()
-	if not GameEvents.round_reset.is_connected(_on_round_reset):
-		GameEvents.round_reset.connect(_on_round_reset)
+	if not GameEventBus.instance().round_reset.is_connected(_on_round_reset):
+		GameEventBus.instance().round_reset.connect(_on_round_reset)
 
 
 func _exit_tree() -> void:

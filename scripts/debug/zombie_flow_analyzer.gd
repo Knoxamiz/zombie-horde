@@ -125,41 +125,41 @@ func _is_enabled_from_settings() -> bool:
 
 
 func _connect_signals() -> void:
-	if not GameEvents.zombie_spawned.is_connected(_on_zombie_spawned):
-		GameEvents.zombie_spawned.connect(_on_zombie_spawned)
-	if not GameEvents.zombie_died.is_connected(_on_zombie_died):
-		GameEvents.zombie_died.connect(_on_zombie_died)
-	if not GameEvents.zombie_reached_base.is_connected(_on_zombie_reached_base):
-		GameEvents.zombie_reached_base.connect(_on_zombie_reached_base)
-	if not GameEvents.mine_triggered.is_connected(_on_mine_triggered):
-		GameEvents.mine_triggered.connect(_on_mine_triggered)
-	if not GameEvents.obstacle_triggered.is_connected(_on_obstacle_triggered):
-		GameEvents.obstacle_triggered.connect(_on_obstacle_triggered)
-	if not GameEvents.round_started.is_connected(_on_round_started):
-		GameEvents.round_started.connect(_on_round_started)
-	if not GameEvents.round_reset.is_connected(_on_round_reset):
-		GameEvents.round_reset.connect(_on_round_reset)
-	if not GameEvents.round_ended.is_connected(_on_round_ended):
-		GameEvents.round_ended.connect(_on_round_ended)
+	if not GameEventBus.instance().zombie_spawned.is_connected(_on_zombie_spawned):
+		GameEventBus.instance().zombie_spawned.connect(_on_zombie_spawned)
+	if not GameEventBus.instance().zombie_died.is_connected(_on_zombie_died):
+		GameEventBus.instance().zombie_died.connect(_on_zombie_died)
+	if not GameEventBus.instance().zombie_reached_base.is_connected(_on_zombie_reached_base):
+		GameEventBus.instance().zombie_reached_base.connect(_on_zombie_reached_base)
+	if not GameEventBus.instance().mine_triggered.is_connected(_on_mine_triggered):
+		GameEventBus.instance().mine_triggered.connect(_on_mine_triggered)
+	if not GameEventBus.instance().obstacle_triggered.is_connected(_on_obstacle_triggered):
+		GameEventBus.instance().obstacle_triggered.connect(_on_obstacle_triggered)
+	if not GameEventBus.instance().round_started.is_connected(_on_round_started):
+		GameEventBus.instance().round_started.connect(_on_round_started)
+	if not GameEventBus.instance().round_reset.is_connected(_on_round_reset):
+		GameEventBus.instance().round_reset.connect(_on_round_reset)
+	if not GameEventBus.instance().round_ended.is_connected(_on_round_ended):
+		GameEventBus.instance().round_ended.connect(_on_round_ended)
 
 
 func _disconnect_signals() -> void:
-	if GameEvents.zombie_spawned.is_connected(_on_zombie_spawned):
-		GameEvents.zombie_spawned.disconnect(_on_zombie_spawned)
-	if GameEvents.zombie_died.is_connected(_on_zombie_died):
-		GameEvents.zombie_died.disconnect(_on_zombie_died)
-	if GameEvents.zombie_reached_base.is_connected(_on_zombie_reached_base):
-		GameEvents.zombie_reached_base.disconnect(_on_zombie_reached_base)
-	if GameEvents.mine_triggered.is_connected(_on_mine_triggered):
-		GameEvents.mine_triggered.disconnect(_on_mine_triggered)
-	if GameEvents.obstacle_triggered.is_connected(_on_obstacle_triggered):
-		GameEvents.obstacle_triggered.disconnect(_on_obstacle_triggered)
-	if GameEvents.round_started.is_connected(_on_round_started):
-		GameEvents.round_started.disconnect(_on_round_started)
-	if GameEvents.round_reset.is_connected(_on_round_reset):
-		GameEvents.round_reset.disconnect(_on_round_reset)
-	if GameEvents.round_ended.is_connected(_on_round_ended):
-		GameEvents.round_ended.disconnect(_on_round_ended)
+	if GameEventBus.instance().zombie_spawned.is_connected(_on_zombie_spawned):
+		GameEventBus.instance().zombie_spawned.disconnect(_on_zombie_spawned)
+	if GameEventBus.instance().zombie_died.is_connected(_on_zombie_died):
+		GameEventBus.instance().zombie_died.disconnect(_on_zombie_died)
+	if GameEventBus.instance().zombie_reached_base.is_connected(_on_zombie_reached_base):
+		GameEventBus.instance().zombie_reached_base.disconnect(_on_zombie_reached_base)
+	if GameEventBus.instance().mine_triggered.is_connected(_on_mine_triggered):
+		GameEventBus.instance().mine_triggered.disconnect(_on_mine_triggered)
+	if GameEventBus.instance().obstacle_triggered.is_connected(_on_obstacle_triggered):
+		GameEventBus.instance().obstacle_triggered.disconnect(_on_obstacle_triggered)
+	if GameEventBus.instance().round_started.is_connected(_on_round_started):
+		GameEventBus.instance().round_started.disconnect(_on_round_started)
+	if GameEventBus.instance().round_reset.is_connected(_on_round_reset):
+		GameEventBus.instance().round_reset.disconnect(_on_round_reset)
+	if GameEventBus.instance().round_ended.is_connected(_on_round_ended):
+		GameEventBus.instance().round_ended.disconnect(_on_round_ended)
 
 
 func _process(delta: float) -> void:

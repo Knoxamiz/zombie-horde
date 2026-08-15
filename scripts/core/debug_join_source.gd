@@ -12,7 +12,7 @@ var _test_join_counts: Dictionary = {}
 func _ready() -> void:
 	_rng.randomize()
 	_reset_test_join_counts()
-	GameEvents.round_reset.connect(_on_round_reset)
+	GameEventBus.instance().round_reset.connect(_on_round_reset)
 
 
 func _on_round_reset() -> void:
@@ -36,7 +36,7 @@ func request_test_tier_join(tier: ParticipantJoinInfo.SupporterTier) -> void:
 
 
 func request_test_bits_cheer(bits_amount: int = 1) -> void:
-	GameEvents.bits_cheer_received.emit("TestCheerer", max(bits_amount, 1))
+	GameEventBus.instance().bits_cheer_received.emit("TestCheerer", max(bits_amount, 1))
 
 func seed_default_participants() -> void:
 	if round_config == null or not round_config.auto_seed_debug_roster:

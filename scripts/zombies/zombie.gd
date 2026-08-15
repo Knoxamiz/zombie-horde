@@ -90,8 +90,8 @@ func _ready() -> void:
 	if _navigation_agent != null:
 		_navigation_agent.velocity_computed.connect(_on_navigation_velocity_computed)
 		_npc_navigation.set_agent(_navigation_agent)
-	GameEvents.leader_changed.connect(_on_leader_changed)
-	GameEvents.zombie_count_changed.connect(_on_zombie_count_changed)
+	GameEventBus.instance().leader_changed.connect(_on_leader_changed)
+	GameEventBus.instance().zombie_count_changed.connect(_on_zombie_count_changed)
 
 func get_join_info() -> ParticipantJoinInfo:
 	return _join_info
@@ -239,8 +239,8 @@ func convert_to_crawler(cause: String) -> void:
 	mobility_state = MobilityState.CRAWLER
 	health = max(health, _get_config().dismember_survivor_health)
 	_apply_state_visuals()
-	GameEvents.zombie_became_crawler.emit(self, cause)
-	GameEvents.impact_mark_requested.emit(global_position, "blood")
+	GameEventBus.instance().zombie_became_crawler.emit(self, cause)
+	GameEventBus.instance().impact_mark_requested.emit(global_position, "blood")
 
 func take_damage(amount: float, cause: String) -> void:
 	if not is_alive():
@@ -267,7 +267,7 @@ func kill(cause: String) -> void:
 	else:
 		velocity = Vector3.ZERO
 		_stop_animation()
-	GameEvents.impact_mark_requested.emit(global_position, "death_blood")
+	GameEventBus.instance().impact_mark_requested.emit(global_position, "death_blood")
 	_apply_state_visuals()
 	died.emit(self, cause)
 
@@ -410,7 +410,7 @@ func _begin_water_float(active_config: ZombieConfig) -> void:
 	if _visual_root != null:
 		_visual_root.rotation.x = deg_to_rad(78.0)
 		_visual_root.rotation.z = deg_to_rad(8.0)
-	GameEvents.world_feedback_requested.emit(
+	GameEventBus.instance().world_feedback_requested.emit(
 		global_position + Vector3.UP * 0.8, "SPLASH!", Color(0.42, 0.82, 1.0, 1.0)
 	)
 
@@ -427,7 +427,7 @@ func _process_water_float(delta: float, active_config: ZombieConfig) -> void:
 	if _water_float_timer > 0.0:
 		return
 
-	GameEvents.world_feedback_requested.emit(
+	GameEventBus.instance().world_feedback_requested.emit(
 		global_position + Vector3.UP * 0.8, "SUNK!", Color(0.42, 0.82, 1.0, 1.0)
 	)
 	kill("fell")
@@ -711,7 +711,7 @@ func _check_out_of_bounds(active_config: ZombieConfig) -> void:
 		return
 
 	if global_position.y < active_config.out_of_bounds_min_y:
-		GameEvents.world_feedback_requested.emit(
+		GameEventBus.instance().world_feedback_requested.emit(
 			global_position + Vector3.UP * 1.2, "FELL!", Color(0.7, 0.92, 1.0, 1.0)
 		)
 		kill("fell")
@@ -728,7 +728,7 @@ func _check_out_of_bounds(active_config: ZombieConfig) -> void:
 	if not is_lateral_out_of_bounds:
 		return
 
-	GameEvents.world_feedback_requested.emit(
+	GameEventBus.instance().world_feedback_requested.emit(
 		global_position + Vector3.UP * 1.2, "OUT!", Color(0.7, 0.92, 1.0, 1.0)
 	)
 	kill("out_of_bounds")
@@ -750,7 +750,7 @@ func _check_gap_void(active_config: ZombieConfig) -> bool:
 			continue
 		if zone.has("deck_y") and global_position.y >= active_config.out_of_bounds_min_y:
 			return false
-		GameEvents.world_feedback_requested.emit(
+		GameEventBus.instance().world_feedback_requested.emit(
 			global_position + Vector3.UP * 1.2, "VOID!", Color(0.55, 0.78, 1.0, 1.0)
 		)
 		kill("fell")
@@ -1027,11 +1027,11 @@ func _try_survive_as_dismembered_crawler(cause: String) -> bool:
 
 	health = active_config.dismember_survivor_health
 	mobility_state = MobilityState.CRAWLER
-	GameEvents.impact_mark_requested.emit(global_position, "blood")
-	GameEvents.world_feedback_requested.emit(global_position + Vector3.UP * 1.1, "STILL CRAWLING!", Color(0.96, 0.18, 0.08, 1.0))
+	GameEventBus.instance().impact_mark_requested.emit(global_position, "blood")
+	GameEventBus.instance().world_feedback_requested.emit(global_position + Vector3.UP * 1.1, "STILL CRAWLING!", Color(0.96, 0.18, 0.08, 1.0))
 	_apply_state_visuals()
-	GameEvents.zombie_survived_dismemberment.emit(self, cause)
-	GameEvents.zombie_became_crawler.emit(self, cause)
+	GameEventBus.instance().zombie_survived_dismemberment.emit(self, cause)
+	GameEventBus.instance().zombie_became_crawler.emit(self, cause)
 	return true
 
 func _is_dismemberment_cause(cause: String, active_config: ZombieConfig) -> bool:
@@ -1157,7 +1157,7 @@ func _report_side_collisions() -> void:
 
 		var collider: Object = collision.get_collider()
 		if collider != null:
-			GameEvents.report_race_blocker(collider, collision.get_position())
+			GameEventBus.instance().report_race_blocker(collider, collision.get_position())
 			_apply_wall_recovery(collider, normal, _get_config())
 
 

@@ -123,10 +123,10 @@ func _fire_at(target: Zombie) -> void:
 
 	if hit:
 		target.take_damage(total_damage, "defender")
-		GameEvents.impact_mark_requested.emit(target.global_position, "blood")
-		GameEvents.world_feedback_requested.emit(target.global_position + Vector3.UP * 1.2, active_config.get_gun_name(_active_gun_type).to_upper(), Color(0.95, 0.72, 0.24, 1.0))
+		GameEventBus.instance().impact_mark_requested.emit(target.global_position, "blood")
+		GameEventBus.instance().world_feedback_requested.emit(target.global_position + Vector3.UP * 1.2, active_config.get_gun_name(_active_gun_type).to_upper(), Color(0.95, 0.72, 0.24, 1.0))
 
-	GameEvents.human_defender_fired.emit(str(name), target.display_name, hit)
+	GameEventBus.instance().human_defender_fired.emit(str(name), target.display_name, hit)
 
 func _aim_at_position(target_position: Vector3, delta: float, immediate: bool) -> void:
 	if _pivot == null:
@@ -189,8 +189,8 @@ func _die(_zombie_name: String) -> void:
 		_pivot.position.y = 0.12
 	if _muzzle_flash != null:
 		_muzzle_flash.visible = false
-	GameEvents.world_feedback_requested.emit(global_position + Vector3.UP * 1.6, "HUMAN DOWN", Color(0.98, 0.18, 0.12, 1.0))
-	GameEvents.human_defender_died.emit(str(name))
+	GameEventBus.instance().world_feedback_requested.emit(global_position + Vector3.UP * 1.6, "HUMAN DOWN", Color(0.98, 0.18, 0.12, 1.0))
+	GameEventBus.instance().human_defender_died.emit(str(name))
 	defender_died.emit(self)
 
 func _select_visual_variant() -> void:

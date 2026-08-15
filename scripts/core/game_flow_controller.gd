@@ -89,9 +89,9 @@ func _initialize_flow() -> void:
 	if _race_map_controller != null:
 		_race_map_controller.active_map_changed.connect(_on_active_map_changed)
 
-	GameEvents.round_state_changed.connect(_on_round_state_changed)
-	GameEvents.round_reset.connect(_on_round_reset)
-	GameEvents.round_ended.connect(_on_round_ended)
+	GameEventBus.instance().round_state_changed.connect(_on_round_state_changed)
+	GameEventBus.instance().round_reset.connect(_on_round_reset)
+	GameEventBus.instance().round_ended.connect(_on_round_ended)
 	_prepare_transition_overlay()
 	_apply_phase("lobby")
 	_apply_launch_request()
@@ -125,7 +125,7 @@ func _on_main_menu_requested() -> void:
 		return
 
 	_returning_to_main_menu = true
-	LaunchState.request_intro()
+	LaunchStateService.instance().request_intro()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var error: Error = get_tree().change_scene_to_file(main_menu_scene_path)
 	if error != OK:
@@ -270,7 +270,7 @@ func _apply_phase(phase_name: String) -> void:
 			_apply_race_camera_view()
 
 func _apply_launch_request() -> void:
-	var request: Dictionary = LaunchState.consume_request()
+	var request: Dictionary = LaunchStateService.instance().consume_request()
 	if str(request.get("phase", "intro")) != "lobby":
 		return
 

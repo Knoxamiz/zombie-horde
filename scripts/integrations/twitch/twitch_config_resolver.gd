@@ -26,7 +26,7 @@ static func get_join_command_text(config: TwitchChatConfig = null) -> String:
 
 
 static func publish_join_command(config: TwitchChatConfig = null) -> void:
-	GameEvents.command_text_changed.emit(get_join_command_text(config))
+	GameEventBus.instance().command_text_changed.emit(get_join_command_text(config))
 
 
 static func normalize_channel_name(raw_channel: String) -> String:

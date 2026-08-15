@@ -23,7 +23,7 @@ func _warn_if_twitch_channel_missing() -> void:
 		"Twitch chat is enabled but channel_name is empty. "
 		+ "Set your channel in user://twitch_chat_config.local.tres or resources/config/twitch_chat_config.tres."
 	)
-	GameEvents.chat_connection_status_changed.emit(
+	GameEventBus.instance().chat_connection_status_changed.emit(
 		"Twitch needs channel",
 		"Enter your Twitch channel name in the menu."
 	)

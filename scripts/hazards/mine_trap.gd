@@ -45,10 +45,10 @@ func _trigger(zombie: Zombie) -> void:
 		_collision_shape.set_deferred("disabled", true)
 	_apply_visual()
 	_spawn_explosion()
-	GameEvents.impact_mark_requested.emit(global_position, "scorch")
-	GameEvents.camera_shake_requested.emit(0.54, 0.34)
-	GameEvents.mine_triggered.emit(zombie.display_name, global_position)
-	GameEvents.world_feedback_requested.emit(global_position + Vector3.UP * 1.2, "MINE!", Color(1.0, 0.22, 0.12, 1.0))
+	GameEventBus.instance().impact_mark_requested.emit(global_position, "scorch")
+	GameEventBus.instance().camera_shake_requested.emit(0.54, 0.34)
+	GameEventBus.instance().mine_triggered.emit(zombie.display_name, global_position)
+	GameEventBus.instance().world_feedback_requested.emit(global_position + Vector3.UP * 1.2, "MINE!", Color(1.0, 0.22, 0.12, 1.0))
 	_apply_blast(active_config, zombie)
 
 func _apply_blast(active_config: HazardConfig, trigger_zombie: Zombie) -> void:

@@ -57,10 +57,10 @@ func _ready() -> void:
 	if _camera != null:
 		_camera.current = true
 		_camera_rest_position = _camera.position
-	GameEvents.camera_shake_requested.connect(_on_camera_shake_requested)
-	GameEvents.round_started.connect(_on_round_started)
-	GameEvents.round_ended.connect(_on_round_ended)
-	GameEvents.round_reset.connect(_on_round_reset)
+	GameEventBus.instance().camera_shake_requested.connect(_on_camera_shake_requested)
+	GameEventBus.instance().round_started.connect(_on_round_started)
+	GameEventBus.instance().round_ended.connect(_on_round_ended)
+	GameEventBus.instance().round_reset.connect(_on_round_reset)
 	if capture_mouse_on_start:
 		call_deferred("_capture_mouse_after_start")
 

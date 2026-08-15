@@ -1,4 +1,12 @@
+class_name GameEventBus
 extends Node
+
+
+static func instance() -> GameEventBus:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("GameEvents") as GameEventBus
 
 signal join_requested(display_name: String)
 signal participant_registered(join_info: ParticipantJoinInfo, queued_count: int)

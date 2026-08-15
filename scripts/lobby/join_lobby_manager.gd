@@ -27,11 +27,11 @@ func _ready() -> void:
 	_rng.randomize()
 	_round_manager = get_node_or_null(round_manager_path) as RoundManager
 
-	GameEvents.participant_queue_changed.connect(_on_participant_queue_changed)
-	GameEvents.round_state_changed.connect(_on_round_state_changed)
-	GameEvents.round_reset.connect(_on_round_reset)
-	GameEvents.round_started.connect(_on_round_started)
-	GameEvents.bits_cheer_received.connect(_on_bits_cheer_received)
+	GameEventBus.instance().participant_queue_changed.connect(_on_participant_queue_changed)
+	GameEventBus.instance().round_state_changed.connect(_on_round_state_changed)
+	GameEventBus.instance().round_reset.connect(_on_round_reset)
+	GameEventBus.instance().round_started.connect(_on_round_started)
+	GameEventBus.instance().bits_cheer_received.connect(_on_bits_cheer_received)
 
 	if _zombie_container == null:
 		_zombie_container = self
@@ -98,7 +98,7 @@ func _on_bits_cheer_received(_display_name: String, bits_amount: int) -> void:
 	if mine == null:
 		return
 
-	GameEvents.world_feedback_requested.emit(
+	GameEventBus.instance().world_feedback_requested.emit(
 		mine.global_position + Vector3.UP * 0.9,
 		BITS_CAGE_MINE_MESSAGE,
 		ZombieCharacterVisuals.GLOW_BITS_PULSE

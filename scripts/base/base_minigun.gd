@@ -43,7 +43,7 @@ func _ready() -> void:
 	set_streamer_avatar_index(streamer_avatar_index)
 	KitCharacterVisuals.set_weapon_nodes_visible(_avatar_root)
 	set_streamer_name(streamer_name)
-	GameEvents.leader_changed.connect(_on_leader_changed)
+	GameEventBus.instance().leader_changed.connect(_on_leader_changed)
 
 func set_round_active(active: bool) -> void:
 	_round_active = active
@@ -113,10 +113,10 @@ func _fire_single_shot() -> void:
 	_spawn_tracer(target.global_position + Vector3.UP * 0.6)
 	if hit:
 		target.take_damage(_get_config().damage_per_hit, "minigun")
-		GameEvents.impact_mark_requested.emit(target.global_position, "blood")
-		GameEvents.world_feedback_requested.emit(target.global_position + Vector3.UP * 1.25, "HIT", Color(1.0, 0.86, 0.18, 1.0))
+		GameEventBus.instance().impact_mark_requested.emit(target.global_position, "blood")
+		GameEventBus.instance().world_feedback_requested.emit(target.global_position + Vector3.UP * 1.25, "HIT", Color(1.0, 0.86, 0.18, 1.0))
 
-	GameEvents.minigun_fired.emit(target.display_name, hit)
+	GameEventBus.instance().minigun_fired.emit(target.display_name, hit)
 
 func _spawn_tracer(target_position: Vector3) -> void:
 	if _muzzle == null:

@@ -18,5 +18,5 @@ func _on_body_entered(body: Node3D) -> void:
 	if zombie == null or not zombie.is_alive() or zombie.has_finished_race():
 		return
 
-	GameEvents.zombie_reached_base.emit(zombie)
+	GameEventBus.instance().zombie_reached_base.emit(zombie)
 

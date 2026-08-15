@@ -66,18 +66,18 @@ func _launch_zombie(zombie: Zombie) -> void:
 
 	if damage > 0.0:
 		zombie.take_damage(damage, "obstacle")
-		GameEvents.impact_mark_requested.emit(zombie.global_position, "blood")
-		GameEvents.camera_shake_requested.emit(clamp(damage / 70.0, 0.08, 0.18), 0.14)
+		GameEventBus.instance().impact_mark_requested.emit(zombie.global_position, "blood")
+		GameEventBus.instance().camera_shake_requested.emit(clamp(damage / 70.0, 0.08, 0.18), 0.14)
 	else:
-		GameEvents.impact_mark_requested.emit(zombie.global_position, "scuff")
+		GameEventBus.instance().impact_mark_requested.emit(zombie.global_position, "scuff")
 	if crawler_chance > 0.0 and _rng.randf() <= crawler_chance:
 		zombie.convert_to_crawler("obstacle")
 
 	_visual_kick_timer = 0.18
 	_visual_kick_direction = 1.0 if bounce_direction.x >= 0.0 else -1.0
 
-	GameEvents.obstacle_triggered.emit(zombie.display_name, name, global_position)
-	GameEvents.world_feedback_requested.emit(zombie.global_position + Vector3.UP * 1.1, feedback_text, feedback_color)
+	GameEventBus.instance().obstacle_triggered.emit(zombie.display_name, name, global_position)
+	GameEventBus.instance().world_feedback_requested.emit(zombie.global_position + Vector3.UP * 1.1, feedback_text, feedback_color)
 
 func _get_bounce_direction(zombie: Zombie) -> Vector3:
 	var away: Vector3 = zombie.global_position - global_position

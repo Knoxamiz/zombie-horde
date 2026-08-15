@@ -27,8 +27,8 @@ func _on_body_entered(body: Node3D) -> void:
 	var active_config: PowerupConfig = _get_config()
 	_recent_zombie_ids[zombie_id] = true
 	zombie.apply_boost(active_config.boost_multiplier, active_config.boost_duration)
-	GameEvents.boost_pad_triggered.emit(zombie.display_name, global_position)
-	GameEvents.world_feedback_requested.emit(zombie.global_position + Vector3.UP * 1.2, "BOOST", Color(0.25, 0.72, 1.0, 1.0))
+	GameEventBus.instance().boost_pad_triggered.emit(zombie.display_name, global_position)
+	GameEventBus.instance().world_feedback_requested.emit(zombie.global_position + Vector3.UP * 1.2, "BOOST", Color(0.25, 0.72, 1.0, 1.0))
 	_release_cooldown_later(zombie_id, active_config.per_zombie_cooldown)
 
 func _release_cooldown_later(zombie_id: int, duration: float) -> void:

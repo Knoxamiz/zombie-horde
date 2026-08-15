@@ -172,7 +172,7 @@ func _ready() -> void:
 	_shaun_button.pressed.connect(_on_character_button_pressed.bind(3))
 	_tower_gun_option.item_selected.connect(_on_tower_gun_selected)
 	_tower_weapon_check.toggled.connect(_on_tower_weapon_toggled)
-	GameEvents.round_ended.connect(_on_round_ended)
+	GameEventBus.instance().round_ended.connect(_on_round_ended)
 	_connect_world_button(_world_close_button)
 	_connect_world_button(_world_map_button)
 	_connect_world_button(_world_balance_down_button)

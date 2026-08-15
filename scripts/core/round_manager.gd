@@ -65,13 +65,13 @@ func _ready() -> void:
 	if _debug_join_source != null and _debug_join_source != _join_source:
 		_debug_join_source.participant_join_requested.connect(_on_participant_join_requested)
 
-	GameEvents.zombie_reached_base.connect(_on_zombie_reached_base)
-	GameEvents.zombie_died.connect(_on_zombie_died)
-	GameEvents.zombie_spawned.connect(_on_zombie_spawned)
-	GameEvents.zombie_became_crawler.connect(_on_zombie_became_crawler)
-	GameEvents.zombie_survived_dismemberment.connect(_on_zombie_survived_dismemberment)
-	GameEvents.minigun_fired.connect(_on_minigun_fired)
-	GameEvents.mine_triggered.connect(_on_mine_triggered)
+	GameEventBus.instance().zombie_reached_base.connect(_on_zombie_reached_base)
+	GameEventBus.instance().zombie_died.connect(_on_zombie_died)
+	GameEventBus.instance().zombie_spawned.connect(_on_zombie_spawned)
+	GameEventBus.instance().zombie_became_crawler.connect(_on_zombie_became_crawler)
+	GameEventBus.instance().zombie_survived_dismemberment.connect(_on_zombie_survived_dismemberment)
+	GameEventBus.instance().minigun_fired.connect(_on_minigun_fired)
+	GameEventBus.instance().mine_triggered.connect(_on_mine_triggered)
 
 	_setup_preview_board()
 	_publish_state()
@@ -108,7 +108,7 @@ func start_round() -> void:
 		minimum_count = round_config.min_participants_to_start
 
 	if pending_participants.size() < minimum_count:
-		GameEvents.command_text_changed.emit(
+		GameEventBus.instance().command_text_changed.emit(
 			"Waiting for viewers. %s" % TwitchConfigResolver.get_join_command_text()
 		)
 		return
@@ -150,7 +150,7 @@ func start_round() -> void:
 	if _should_auto_launch():
 		_launch_round()
 	else:
-		GameEvents.command_text_changed.emit("Race staged — press Go or Enter when ready.")
+		GameEventBus.instance().command_text_changed.emit("Race staged — press Go or Enter when ready.")
 
 func launch_round() -> void:
 	if state != RoundState.COUNTDOWN:
@@ -177,7 +177,7 @@ func remove_runner_for_director(display_name: String) -> bool:
 	var zombie: Zombie = _zombie_manager.get_zombie_by_display_name(display_name)
 	if zombie == null or not zombie.is_alive() or zombie.has_finished_race():
 		return false
-	GameEvents.world_feedback_requested.emit(
+	GameEventBus.instance().world_feedback_requested.emit(
 		zombie.global_position + Vector3.UP * 1.35,
 		"REMOVED",
 		Color(1.0, 0.34, 0.12, 1.0)
@@ -217,9 +217,9 @@ func reset_round(return_to_lobby: bool = true) -> void:
 	if _base_goal != null:
 		_base_goal.set_goal_enabled(false)
 
-	GameEvents.round_countdown_changed.emit(0)
+	GameEventBus.instance().round_countdown_changed.emit(0)
 	if return_to_lobby:
-		GameEvents.round_reset.emit()
+		GameEventBus.instance().round_reset.emit()
 	_publish_queue()
 	_publish_stats()
 	_publish_state()
@@ -228,42 +228,42 @@ func reset_round(return_to_lobby: bool = true) -> void:
 func _on_participant_join_requested(join_info: ParticipantJoinInfo) -> void:
 	var clean_name: String = join_info.display_name.strip_edges()
 	if clean_name.is_empty():
-		GameEvents.join_rejected.emit("", "invalid_name")
+		GameEventBus.instance().join_rejected.emit("", "invalid_name")
 		return
 	if _has_participant_name(clean_name):
-		GameEvents.join_rejected.emit(clean_name, "duplicate_name")
+		GameEventBus.instance().join_rejected.emit(clean_name, "duplicate_name")
 		return
 
 	if state == RoundState.COUNTDOWN and _zombie_manager != null:
 		var spawned_zombie: Zombie = _zombie_manager.spawn_zombie(clean_name, join_info)
 		if spawned_zombie != null:
 			spawned_zombie.set_round_active(false)
-			GameEvents.participant_registered.emit(join_info, pending_participants.size())
-			GameEvents.join_accepted_late.emit(clean_name)
+			GameEventBus.instance().participant_registered.emit(join_info, pending_participants.size())
+			GameEventBus.instance().join_accepted_late.emit(clean_name)
 			_publish_queue()
 			return
-		GameEvents.join_rejected.emit(clean_name, "countdown_spawn_failed")
+		GameEventBus.instance().join_rejected.emit(clean_name, "countdown_spawn_failed")
 		return
 
 	if state == RoundState.ENDED:
-		GameEvents.join_rejected.emit(clean_name, "race_ended")
+		GameEventBus.instance().join_rejected.emit(clean_name, "race_ended")
 		_emit_post_round_recovery_hint()
 		return
 	if state != RoundState.IDLE:
-		GameEvents.join_rejected.emit(clean_name, "race_running")
-		GameEvents.command_text_changed.emit("Race in progress — joins reopen after reset.")
+		GameEventBus.instance().join_rejected.emit(clean_name, "race_running")
+		GameEventBus.instance().command_text_changed.emit("Race in progress — joins reopen after reset.")
 		return
 
 	var max_pending: int = 128
 	if round_config != null:
 		max_pending = round_config.max_pending_participants
 	if pending_participants.size() >= max_pending:
-		GameEvents.join_rejected.emit(clean_name, "queue_full")
+		GameEventBus.instance().join_rejected.emit(clean_name, "queue_full")
 		return
 
 	pending_participants.append(clean_name)
 	_pending_join_info[clean_name.to_lower()] = join_info
-	GameEvents.participant_registered.emit(join_info, pending_participants.size())
+	GameEventBus.instance().participant_registered.emit(join_info, pending_participants.size())
 	_publish_queue()
 
 func get_join_info_for_name(display_name: String) -> ParticipantJoinInfo:
@@ -306,9 +306,9 @@ func _on_zombie_reached_base(zombie_node: Node) -> void:
 
 	if _race_winner_name.is_empty():
 		_race_winner_name = zombie.display_name
-		GameEvents.camera_shake_requested.emit(0.26, 0.28)
+		GameEventBus.instance().camera_shake_requested.emit(0.26, 0.28)
 
-	GameEvents.zombie_status_changed.emit(
+	GameEventBus.instance().zombie_status_changed.emit(
 		zombie.display_name,
 		"Finished #%d" % zombie.get_finish_place()
 	)
@@ -321,7 +321,7 @@ func _on_zombie_died(zombie_node: Node, cause: String) -> void:
 
 	var zombie: Zombie = zombie_node as Zombie
 	if zombie != null:
-		GameEvents.zombie_status_changed.emit(zombie.display_name, "Dead - %s" % _format_cause(cause))
+		GameEventBus.instance().zombie_status_changed.emit(zombie.display_name, "Dead - %s" % _format_cause(cause))
 	_stats.record_death(cause)
 	_publish_stats()
 
@@ -367,12 +367,12 @@ func _end_round(winner_name: String, base_won: bool) -> void:
 	if _leaderboard_store != null:
 		_leaderboard_store.submit_result(winner_name, elapsed_seconds, round_number, base_won)
 	if not base_won:
-		GameEvents.zombie_status_changed.emit(winner_name, "Winner")
+		GameEventBus.instance().zombie_status_changed.emit(winner_name, "Winner")
 	_publish_stats()
 	if base_won:
-		GameEvents.camera_shake_requested.emit(0.18, 0.28)
-	GameEvents.round_countdown_changed.emit(0)
-	GameEvents.round_ended.emit(winner_name, base_won)
+		GameEventBus.instance().camera_shake_requested.emit(0.18, 0.28)
+	GameEventBus.instance().round_countdown_changed.emit(0)
+	GameEventBus.instance().round_ended.emit(winner_name, base_won)
 	_publish_state()
 
 	var roster_snapshot: Array[Dictionary] = []
@@ -381,7 +381,7 @@ func _end_round(winner_name: String, base_won: bool) -> void:
 
 	if _auto_repeat_enabled and not roster_snapshot.is_empty():
 		_cancel_post_round_auto_reset()
-		GameEvents.command_text_changed.emit(
+		GameEventBus.instance().command_text_changed.emit(
 			"Auto repeat on — restarting with %d NPCs in %.0fs"
 			% [roster_snapshot.size(), AUTO_REPEAT_DELAY_SEC]
 		)
@@ -419,7 +419,7 @@ func _resolve_race_timeout() -> void:
 		if not leader.has_finished_race():
 			leader.mark_race_finished(_next_finish_place)
 			_next_finish_place += 1
-			GameEvents.zombie_status_changed.emit(leader.display_name, "Winner (time limit)")
+			GameEventBus.instance().zombie_status_changed.emit(leader.display_name, "Winner (time limit)")
 
 	_finalize_unfinished_zombies_for_timeout()
 	if _race_winner_name.is_empty():
@@ -440,7 +440,7 @@ func _finalize_unfinished_zombies_for_timeout() -> void:
 	for zombie in unfinished:
 		zombie.mark_race_finished(_next_finish_place)
 		_next_finish_place += 1
-		GameEvents.zombie_status_changed.emit(zombie.display_name, "DNF (time limit)")
+		GameEventBus.instance().zombie_status_changed.emit(zombie.display_name, "DNF (time limit)")
 
 func _sort_zombies_by_progress_desc(a: Zombie, b: Zombie) -> bool:
 	return a.get_progress() > b.get_progress()
@@ -457,7 +457,7 @@ func _run_post_round_auto_reset(token: int, auto_reset_seconds: float) -> void:
 	while remaining > 0.0:
 		if token != _post_round_reset_token or state != RoundState.ENDED:
 			return
-		GameEvents.post_round_auto_reset_tick.emit(int(ceil(remaining)))
+		GameEventBus.instance().post_round_auto_reset_tick.emit(int(ceil(remaining)))
 		var step: float = min(1.0, remaining)
 		await get_tree().create_timer(step).timeout
 		remaining -= step
@@ -467,7 +467,7 @@ func _run_post_round_auto_reset(token: int, auto_reset_seconds: float) -> void:
 
 func _cancel_post_round_auto_reset() -> void:
 	_post_round_reset_token += 1
-	GameEvents.post_round_auto_reset_tick.emit(0)
+	GameEventBus.instance().post_round_auto_reset_tick.emit(0)
 
 
 func restart_same_race() -> bool:
@@ -513,7 +513,7 @@ func queue_roster_snapshot(roster: Array[Dictionary]) -> void:
 func _schedule_same_race_restart(roster: Array[Dictionary]) -> void:
 	_auto_repeat_token += 1
 	var token: int = _auto_repeat_token
-	GameEvents.command_text_changed.emit(
+	GameEventBus.instance().command_text_changed.emit(
 		"Restarting same race with %d racers..." % roster.size()
 	)
 	_run_same_race_restart_sequence(token, roster.duplicate(true))
@@ -553,7 +553,7 @@ func _run_auto_repeat_sequence(token: int, roster: Array[Dictionary]) -> void:
 	start_round()
 
 func _emit_post_round_recovery_hint() -> void:
-	GameEvents.command_text_changed.emit(
+	GameEventBus.instance().command_text_changed.emit(
 		"Race over! Press Enter to restart same race, or R to return to lobby."
 	)
 
@@ -585,9 +585,9 @@ func debug_clear_pending_participants() -> void:
 	_publish_queue()
 
 func _publish_state() -> void:
-	GameEvents.round_state_changed.emit(get_state_text())
+	GameEventBus.instance().round_state_changed.emit(get_state_text())
 	if state == RoundState.IDLE:
-		GameEvents.command_text_changed.emit(TwitchConfigResolver.get_join_command_text())
+		GameEventBus.instance().command_text_changed.emit(TwitchConfigResolver.get_join_command_text())
 
 func _state_to_text(value: RoundState) -> String:
 	match value:
@@ -634,7 +634,7 @@ func _launch_round() -> void:
 	if _zombie_manager != null:
 		_zombie_manager.set_round_active(true)
 		for zombie in _zombie_manager.get_living_zombies():
-			GameEvents.zombie_status_changed.emit(zombie.display_name, "Runner")
+			GameEventBus.instance().zombie_status_changed.emit(zombie.display_name, "Runner")
 	if _minigun != null:
 		_minigun.set_round_active(true)
 	if _defender_manager != null:
@@ -642,8 +642,8 @@ func _launch_round() -> void:
 	if _base_goal != null:
 		_base_goal.set_goal_enabled(true)
 
-	GameEvents.round_countdown_changed.emit(0)
-	GameEvents.round_started.emit(round_number)
+	GameEventBus.instance().round_countdown_changed.emit(0)
+	GameEventBus.instance().round_started.emit(round_number)
 	_publish_state()
 	_publish_stats()
 
@@ -656,7 +656,7 @@ func _on_zombie_spawned(zombie_node: Node) -> void:
 		return
 
 	_stats.record_spawn()
-	GameEvents.zombie_status_changed.emit(zombie.display_name, "Ready" if state == RoundState.COUNTDOWN else "Runner")
+	GameEventBus.instance().zombie_status_changed.emit(zombie.display_name, "Ready" if state == RoundState.COUNTDOWN else "Runner")
 	_publish_stats()
 
 func _on_zombie_became_crawler(zombie_node: Node, _cause: String) -> void:
@@ -665,7 +665,7 @@ func _on_zombie_became_crawler(zombie_node: Node, _cause: String) -> void:
 
 	var zombie: Zombie = zombie_node as Zombie
 	if zombie != null:
-		GameEvents.zombie_status_changed.emit(zombie.display_name, "Crawler")
+		GameEventBus.instance().zombie_status_changed.emit(zombie.display_name, "Crawler")
 	_stats.record_crawler_created()
 	_publish_stats()
 
@@ -675,7 +675,7 @@ func _on_zombie_survived_dismemberment(zombie_node: Node, _cause: String) -> voi
 
 	var zombie: Zombie = zombie_node as Zombie
 	if zombie != null:
-		GameEvents.zombie_status_changed.emit(zombie.display_name, "Crawler survivor")
+		GameEventBus.instance().zombie_status_changed.emit(zombie.display_name, "Crawler survivor")
 	_stats.record_dismember_survival()
 	_publish_stats()
 
@@ -694,13 +694,13 @@ func _on_mine_triggered(_target_name: String, _world_position: Vector3) -> void:
 	_publish_stats()
 
 func _publish_queue() -> void:
-	GameEvents.participant_queue_changed.emit(get_pending_names())
+	GameEventBus.instance().participant_queue_changed.emit(get_pending_names())
 
 func _publish_stats() -> void:
 	var living_count: int = 0
 	if _zombie_manager != null:
 		living_count = _zombie_manager.get_living_count()
-	GameEvents.round_stats_changed.emit(_stats.to_dictionary(living_count))
+	GameEventBus.instance().round_stats_changed.emit(_stats.to_dictionary(living_count))
 
 func _should_auto_launch() -> bool:
 	if round_config == null:
@@ -723,7 +723,7 @@ func _pause_race() -> void:
 		_minigun.set_round_active(false)
 	if _defender_manager != null:
 		_defender_manager.set_round_active(false)
-	GameEvents.command_text_changed.emit("Race paused.")
+	GameEventBus.instance().command_text_changed.emit("Race paused.")
 	_publish_state()
 
 
@@ -743,7 +743,7 @@ func _resume_race() -> void:
 		_minigun.set_round_active(true)
 	if _defender_manager != null:
 		_defender_manager.set_round_active(true)
-	GameEvents.command_text_changed.emit("Race resumed.")
+	GameEventBus.instance().command_text_changed.emit("Race resumed.")
 	_publish_state()
 
 func _get_max_race_duration_seconds() -> float:

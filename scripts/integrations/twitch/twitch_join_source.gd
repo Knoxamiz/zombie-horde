@@ -256,7 +256,7 @@ func _emit_bits_cheer(line: String, tags: Dictionary, bits_amount: int) -> void:
 		display_name = TwitchIrcTags.get_login_name(tags)
 	if display_name.is_empty():
 		display_name = "Cheerer"
-	GameEvents.bits_cheer_received.emit(display_name, bits_amount)
+	GameEventBus.instance().bits_cheer_received.emit(display_name, bits_amount)
 
 func _is_recent_bits_donor(tags: Dictionary) -> bool:
 	var login_name: String = TwitchIrcTags.get_login_name(tags)
@@ -332,7 +332,7 @@ func _schedule_reconnect() -> void:
 func _publish_status(status_text: String, detail: String) -> void:
 	_status_text = status_text
 	_status_detail = detail
-	GameEvents.chat_connection_status_changed.emit(status_text, detail)
+	GameEventBus.instance().chat_connection_status_changed.emit(status_text, detail)
 
 func _get_nick() -> String:
 	if config.anonymous_mode:

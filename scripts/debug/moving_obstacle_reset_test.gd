@@ -99,7 +99,7 @@ func _test_round_reset_signal_resets_obstacle() -> void:
 	events.round_reset.emit()
 	await create_timer(0.05).timeout
 	if obstacle.position.distance_to(origin) > 0.05:
-		_fail("GameEvents.round_reset did not reset obstacle transform")
+		_fail("GameEventBus.instance().round_reset did not reset obstacle transform")
 	host.queue_free()
 
 

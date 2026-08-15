@@ -51,8 +51,8 @@ func _ready() -> void:
 	_base_goal = get_node_or_null(base_goal_path) as Node3D
 	_minigun = get_node_or_null(minigun_path) as Node3D
 	_spectator_camera = get_node_or_null(spectator_camera_path) as SpectatorCameraController
-	if not GameEvents.round_started.is_connected(_on_round_started):
-		GameEvents.round_started.connect(_on_round_started)
+	if not GameEventBus.instance().round_started.is_connected(_on_round_started):
+		GameEventBus.instance().round_started.connect(_on_round_started)
 
 func apply_profile(profile: StreamerSettingsProfile) -> bool:
 	var settings_index: int = 0

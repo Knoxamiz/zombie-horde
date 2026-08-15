@@ -75,7 +75,7 @@ func spawn_zombie(display_name: String, join_info: ParticipantJoinInfo = null) -
 
 	_all_zombies.append(zombie)
 	_living_zombies.append(zombie)
-	GameEvents.zombie_spawned.emit(zombie)
+	GameEventBus.instance().zombie_spawned.emit(zombie)
 	_publish_counts()
 	_publish_leader()
 	return zombie
@@ -89,7 +89,7 @@ func clear_all_zombies() -> void:
 	_living_zombies.clear()
 	_last_leader_name = ""
 	_publish_counts()
-	GameEvents.leader_changed.emit("", 0.0)
+	GameEventBus.instance().leader_changed.emit("", 0.0)
 
 func set_round_active(active: bool) -> void:
 	_round_active = active
@@ -214,17 +214,17 @@ func _on_zombie_died(zombie: Zombie, cause: String) -> void:
 	_living_zombies.erase(zombie)
 	_publish_counts()
 	_publish_leader()
-	GameEvents.zombie_died.emit(zombie, cause)
+	GameEventBus.instance().zombie_died.emit(zombie, cause)
 
 func _publish_counts() -> void:
-	GameEvents.zombie_count_changed.emit(get_living_count(), get_total_count())
+	GameEventBus.instance().zombie_count_changed.emit(get_living_count(), get_total_count())
 
 func _publish_leader() -> void:
 	_remove_invalid_living()
 	if _living_zombies.is_empty():
 		if not _last_leader_name.is_empty():
 			_last_leader_name = ""
-			GameEvents.leader_changed.emit("", 0.0)
+			GameEventBus.instance().leader_changed.emit("", 0.0)
 		return
 
 	var leader: Zombie = get_leader_zombie()
@@ -233,7 +233,7 @@ func _publish_leader() -> void:
 	var leader_progress: float = leader.get_progress()
 
 	_last_leader_name = leader.display_name
-	GameEvents.leader_changed.emit(leader.display_name, leader_progress)
+	GameEventBus.instance().leader_changed.emit(leader.display_name, leader_progress)
 
 func _remove_invalid_living() -> void:
 	for index in range(_living_zombies.size() - 1, -1, -1):

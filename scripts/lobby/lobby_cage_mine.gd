@@ -57,9 +57,9 @@ func _trigger(lobby_zombie: LobbyZombie) -> void:
 	monitoring = false
 	_apply_visual()
 	_spawn_explosion()
-	GameEvents.camera_shake_requested.emit(0.28, 0.18)
-	GameEvents.mine_triggered.emit(lobby_zombie.display_name, global_position)
-	GameEvents.world_feedback_requested.emit(
+	GameEventBus.instance().camera_shake_requested.emit(0.28, 0.18)
+	GameEventBus.instance().mine_triggered.emit(lobby_zombie.display_name, global_position)
+	GameEventBus.instance().world_feedback_requested.emit(
 		global_position + Vector3.UP * 0.8,
 		"MINE!",
 		Color(1.0, 0.22, 0.12, 1.0)
