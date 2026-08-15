@@ -258,6 +258,26 @@ static func _boost_rush() -> Dictionary:
 
 static func _spiral_descent() -> Dictionary:
 	var road_width: float = 12.0
+	var surface_pieces: Array[Dictionary] = [
+		{"shape": "deck", "z0": -96.0, "z1": -64.0, "top_y": 12.0, "width": road_width},
+		{"shape": "ramp", "z0": -64.0, "z1": -48.0, "start_y": 12.0, "height_delta": -4.0, "width": road_width},
+		{"shape": "deck", "z0": -48.0, "z1": -16.0, "top_y": 8.0, "width": road_width},
+		{"shape": "ramp", "z0": -16.0, "z1": 0.0, "start_y": 8.0, "height_delta": -4.0, "width": road_width},
+		{"shape": "deck", "z0": 0.0, "z1": 32.0, "top_y": 4.0, "width": road_width},
+		{"shape": "ramp", "z0": 32.0, "z1": 48.0, "start_y": 4.0, "height_delta": -4.0, "width": road_width},
+		{"shape": "deck", "z0": 48.0, "z1": 96.0, "top_y": 0.0, "width": road_width},
+	]
+	var shoulder_surface_pieces: Array[Dictionary] = []
+	for raw_spec in surface_pieces:
+		for side_value in [-1.0, 1.0]:
+			var shoulder_spec: Dictionary = raw_spec.duplicate(true)
+			shoulder_spec["x"] = float(side_value) * 9.575
+			shoulder_spec["width"] = 7.15
+			if str(shoulder_spec.get("shape", "deck")) == "ramp":
+				shoulder_spec["start_y"] = float(shoulder_spec.get("start_y", 0.0)) - 1.0
+			else:
+				shoulder_spec["top_y"] = float(shoulder_spec.get("top_y", 0.0)) - 1.0
+			shoulder_surface_pieces.append(shoulder_spec)
 	return {
 		"style": RaceMapKit.MapStyle.LONG_ROAD,
 		"seed": 9614,
@@ -275,13 +295,6 @@ static func _spiral_descent() -> Dictionary:
 			{"z0": -96.0, "z1": 96.0},
 		],
 		"gaps": [],
-		"surface_pieces": [
-			{"shape": "deck", "z0": -96.0, "z1": -64.0, "top_y": 12.0, "width": road_width},
-			{"shape": "ramp", "z0": -64.0, "z1": -48.0, "start_y": 12.0, "height_delta": -4.0, "width": road_width},
-			{"shape": "deck", "z0": -48.0, "z1": -16.0, "top_y": 8.0, "width": road_width},
-			{"shape": "ramp", "z0": -16.0, "z1": 0.0, "start_y": 8.0, "height_delta": -4.0, "width": road_width},
-			{"shape": "deck", "z0": 0.0, "z1": 32.0, "top_y": 4.0, "width": road_width},
-			{"shape": "ramp", "z0": 32.0, "z1": 48.0, "start_y": 4.0, "height_delta": -4.0, "width": road_width},
-			{"shape": "deck", "z0": 48.0, "z1": 96.0, "top_y": 0.0, "width": road_width},
-		],
+		"surface_pieces": surface_pieces,
+		"supplemental_surface_pieces": shoulder_surface_pieces,
 	}

@@ -31,6 +31,7 @@ func _build_from_preset(preset_id: String) -> void:
 	var segments: Array[Dictionary] = _to_segment_array(layout.get("segments", []))
 	var gaps: Array[Dictionary] = _to_segment_array(layout.get("gaps", []))
 	var surface_pieces: Array = SURFACE_BUILDER.resolve_layout_surface_pieces(layout)
+	var supplemental_surface_pieces: Array = layout.get("supplemental_surface_pieces", [])
 	var deck_elevation: float = float(layout.get("deck_elevation", 0.0))
 	var water_y: float = float(layout.get("water_y", -6.0 + deck_elevation))
 	var bed_y: float = float(layout.get("bed_y", water_y - 2.75))
@@ -61,7 +62,9 @@ func _build_from_preset(preset_id: String) -> void:
 		_kit.build_water(void_width, track_length, water_y)
 
 	if uses_surface_pieces:
-		var surfaces: Node3D = SURFACE_BUILDER.build_surfaces(self, surface_pieces, road_width)
+		var walk_surface_pieces: Array = surface_pieces.duplicate(true)
+		walk_surface_pieces.append_array(supplemental_surface_pieces)
+		var surfaces: Node3D = SURFACE_BUILDER.build_surfaces(self, walk_surface_pieces, road_width)
 		if style == RaceMapKit.MapStyle.BROKEN_BRIDGE and not gaps.is_empty():
 			SURFACE_BUILDER.build_gap_crossings(
 				surfaces, gaps, path_half_width, surface_pieces, gap_crossing_width_ratio

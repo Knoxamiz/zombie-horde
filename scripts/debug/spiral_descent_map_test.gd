@@ -39,6 +39,7 @@ func _test_catalog_entry() -> void:
 func _test_layout_shape() -> void:
 	var layout: Dictionary = MapKitLayoutPresetsScript.get_preset(MAP_ID)
 	var surface_pieces: Array = KitMapSurfaceBuilderScript.resolve_layout_surface_pieces(layout)
+	var shoulder_surface_pieces: Array = layout.get("supplemental_surface_pieces", [])
 	var zones: Array[Dictionary] = KitMapSurfaceBuilderScript.build_elevation_zones_from_pieces(surface_pieces)
 	var deck_heights: Array[float] = []
 	var ramp_count: int = 0
@@ -62,6 +63,8 @@ func _test_layout_shape() -> void:
 			break
 	if zones.size() != surface_pieces.size():
 		_fail("Spiral Descent hazard elevation zones should match surface pieces")
+	if shoulder_surface_pieces.size() != surface_pieces.size() * 2:
+		_fail("Straight Descent should provide solid walk surfaces under both desert shoulders")
 
 	var spawn_y: float = KitMapSurfaceBuilderScript.get_top_y_at_z(surface_pieces, -92.0, -999.0)
 	var finish_y: float = KitMapSurfaceBuilderScript.get_top_y_at_z(surface_pieces, 92.0, -999.0)
@@ -87,8 +90,8 @@ func _test_scene_builds_surfaces() -> void:
 	var surfaces: Node = scene_root.get_node_or_null("CoreRoad/KitSurfaces")
 	if surfaces == null:
 		_fail("Spiral Descent did not build KitSurfaces")
-	elif surfaces.get_child_count() < 7:
-		_fail("Spiral Descent should build all deck/ramp surface pieces")
+	elif surfaces.get_child_count() < 21:
+		_fail("Straight Descent should build its road and both desert shoulder surfaces")
 
 	var visual_kit: Node = scene_root.get_node_or_null("CoreRoad/VisualKit")
 	if visual_kit == null:
