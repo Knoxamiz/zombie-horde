@@ -198,7 +198,7 @@ static func _collect_collision_entries_recursive(node: Node, entries: Array[Dict
 		var shape_info: Dictionary = _shape_info(shape_node)
 		var body_node: Node3D = body as Node3D
 		var entry: Dictionary = {
-			"path": str(body.get_path()),
+			"path": _diagnostic_node_path(body),
 			"layer_bucket": _layer_bucket_name(body),
 			"global_position": body_node.position if body_node != null else Vector3.ZERO,
 			"scale": body_node.scale if body_node != null else Vector3.ONE,
@@ -217,7 +217,7 @@ static func _collect_collision_entries_recursive(node: Node, entries: Array[Dict
 		if node.get_child_count() == 0:
 			entries.append(
 				{
-					"path": str(node.get_path()),
+					"path": _diagnostic_node_path(node),
 					"layer_bucket": _layer_bucket_name(node),
 					"global_position": (node as Node3D).global_position,
 					"scale": (node as Node3D).scale,
@@ -231,6 +231,17 @@ static func _collect_collision_entries_recursive(node: Node, entries: Array[Dict
 
 	for child in node.get_children():
 		_collect_collision_entries_recursive(child, entries)
+
+
+static func _diagnostic_node_path(node: Node) -> String:
+	if node.is_inside_tree():
+		return str(node.get_path())
+	var path_parts := PackedStringArray()
+	var current: Node = node
+	while current != null:
+		path_parts.insert(0, str(current.name))
+		current = current.get_parent()
+	return "/" + "/".join(path_parts)
 
 
 static func _validate_surface_piece(piece: Node, definition: RaceMapDefinition, blueprint) -> Array[String]:
