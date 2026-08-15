@@ -7,7 +7,10 @@ const AIMapRouteLayoutScript := preload("res://scripts/maps/ai_map_route_layout.
 const AIMapBlueprintRegistryScript := preload("res://scripts/maps/ai_map_blueprint_registry.gd")
 
 
-static func export_validated_blueprint_prototype(blueprint_id: String) -> Dictionary:
+static func export_validated_blueprint_prototype(
+	blueprint_id: String,
+	definition_path_override: String = ""
+) -> Dictionary:
 	var trimmed_id: String = blueprint_id.strip_edges()
 	if trimmed_id.is_empty():
 		return _failure_result("", "", "", ["blueprint_id is empty"])
@@ -30,11 +33,14 @@ static func export_validated_blueprint_prototype(blueprint_id: String) -> Dictio
 			["failed to resolve blueprint factory for '%s'" % trimmed_id]
 		)
 
+	var definition_path: String = definition_path_override.strip_edges()
+	if definition_path.is_empty():
+		definition_path = str(registry_entry.get("definition_path", ""))
 	return export_blueprint(
 		blueprint,
 		str(registry_entry.get("generated_map_id", "")),
 		str(registry_entry.get("scene_path", "")),
-		str(registry_entry.get("definition_path", ""))
+		definition_path
 	)
 
 

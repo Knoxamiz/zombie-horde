@@ -566,8 +566,10 @@ func _test_exporter_unknown_blueprint_fails() -> void:
 func _test_exporter_registered_prototypes() -> void:
 	print("-- exporter registered prototypes --")
 	for blueprint_id in AIMapBlueprintRegistry.get_all_blueprint_ids():
+		var test_definition_path := "user://ai_map_pipeline_%s.tres" % blueprint_id
 		var result: Dictionary = AIMapBlueprintExporter.export_validated_blueprint_prototype(
-			blueprint_id
+			blueprint_id,
+			test_definition_path
 		)
 		if not bool(result.get("ok", false)):
 			_fail(
