@@ -47,9 +47,12 @@ func configure(
 	_fallback_active = true
 	_agent_direction_accepted = false
 
-	var lane_rng := RandomNumberGenerator.new()
-	lane_rng.seed = random_seed ^ 0x6E6176
-	_lane_seed = lane_rng.randf_range(-1.0, 1.0)
+	# Hash the identity directly so nearby runner IDs do not depend on the first
+	# sample produced by an engine-version-specific random number generator.
+	var lane_hash: int = hash("npc_lane_%d" % random_seed)
+	var lane_magnitude: float = 0.35 + float(posmod(lane_hash, 6501)) / 10000.0
+	var lane_side: float = -1.0 if posmod(random_seed, 2) == 0 else 1.0
+	_lane_seed = lane_magnitude * lane_side
 	_apply_agent_profile()
 
 
@@ -224,7 +227,11 @@ func _build_active_target(position: Vector3) -> Vector3:
 		_navigation_half_width
 	)
 	var preferred_lane: float = _lane_seed * _navigation_half_width * _profile.checkpoint_lane_spread
-	var carried_offset: float = lerpf(lateral_offset, preferred_lane, 0.22)
+	# Lane preference should fan a crowd out gradually. Limit each lookahead
+	# target's lateral correction so a runner already using the playable width
+	# keeps forward progress instead of steering sharply toward its seeded lane.
+	var max_lane_adjustment: float = _profile.route_lookahead_distance * 0.15
+	var carried_offset: float = move_toward(lateral_offset, preferred_lane, max_lane_adjustment)
 	var lookahead: Vector3 = _route.get_target_point(_profile.route_lookahead_distance)
 	return lookahead + route_side * carried_offset
 
