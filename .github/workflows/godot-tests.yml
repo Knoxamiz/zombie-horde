@@ -22,7 +22,7 @@ on:
           - certification
 
 env:
-  GODOT_VERSION: "4.4"
+  GODOT_VERSION: "4.7.1"
   GODOT_DISABLE_LEAK_CHECKS: "1"
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
     name: smoke tier
     runs-on: ubuntu-24.04
     container:
-      image: barichello/godot-ci:4.4
+      image: barichello/godot-ci:4.7.1
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -48,7 +48,7 @@ jobs:
     name: core tier
     runs-on: ubuntu-24.04
     container:
-      image: barichello/godot-ci:4.4
+      image: barichello/godot-ci:4.7.1
     timeout-minutes: 30
     needs: smoke
     if: >-
@@ -71,7 +71,7 @@ jobs:
     name: ${{ github.event.inputs.tier }} tier (manual)
     runs-on: ubuntu-24.04
     container:
-      image: barichello/godot-ci:4.4
+      image: barichello/godot-ci:4.7.1
     timeout-minutes: 45
     if: >-
       github.event_name == 'workflow_dispatch'

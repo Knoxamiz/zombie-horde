@@ -1,6 +1,6 @@
 # Godot development stack
 
-How this project uses Godot 4.4 natively for human + AI development.
+How this project uses Godot 4.7.1 natively for human + AI development.
 
 ## Philosophy
 

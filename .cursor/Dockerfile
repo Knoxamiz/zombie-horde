@@ -1,9 +1,9 @@
-# Optional base image for Cursor Cloud Agents (Godot 4.4 headless tests).
+# Optional base image for Cursor Cloud Agents (Godot 4.7.1 headless tests).
 # Referenced only if you switch environment.json to use "build.dockerfile".
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV GODOT_VERSION=4.4-stable
+ENV GODOT_VERSION=4.7.1-stable
 ENV GODOT_ARCH=linux.x86_64
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

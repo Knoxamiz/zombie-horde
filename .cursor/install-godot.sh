@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Idempotent Godot 4.4 install for Cursor Cloud Agents and local dev scripts.
+# Idempotent Godot 4.7.1 install for Cursor Cloud Agents and local dev scripts.
 set -euo pipefail
 
-GODOT_VERSION="${GODOT_VERSION:-4.4-stable}"
+GODOT_VERSION="${GODOT_VERSION:-4.7.1-stable}"
 GODOT_ARCH="${GODOT_ARCH:-linux.x86_64}"
 GODOT_DIR="${HOME}/.local/share/godot"
 GODOT_BIN="${GODOT_DIR}/Godot_v${GODOT_VERSION}_${GODOT_ARCH}"

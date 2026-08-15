@@ -4,7 +4,7 @@ This file is the **first stop** for Cursor Cloud Agents, Codex, and local AI ass
 
 ## Project
 
-- **Engine:** Godot 4.4 (`project.godot`)
+- **Engine:** Godot 4.7.1 (`project.godot`)
 - **Game:** Zombie Horde — 3D horde race with Twitch joins, round lifecycle, signature maps
 - **Main scene:** `res://scenes/main_menu/main_menu.tscn` → race in `res://scenes/main/main_game.tscn`
 

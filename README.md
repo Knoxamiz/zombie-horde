@@ -28,7 +28,7 @@ bash scripts/debug/run_tests.sh smoke
 
 1. Use this folder: `C:\dev\zombie-horde`
    - Do **not** open `C:\dev\gameday` unless that is your active clone.
-2. Launch Godot 4.4 (`Godot_v4.4-stable_win64.exe`).
+2. Launch Godot 4.7.1 (`Godot_v4.7.1-stable_win64.exe`).
 3. Click **Import** (or **Edit a project**) and select `C:\dev\zombie-horde\project.godot`.
 4. Wait for the first import to finish.
 

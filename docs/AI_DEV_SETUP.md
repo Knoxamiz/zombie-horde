@@ -15,7 +15,7 @@ How this repo is configured for human + AI collaborative game development.
 
 ### Local (Windows)
 
-1. Godot 4.4 — open `project.godot`
+1. Godot 4.7.1 — open `project.godot`
 2. Read [AI_DEVELOPMENT_GUARDRAILS.md](AI_DEVELOPMENT_GUARDRAILS.md)
 3. Before commits: `godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke`
 
@@ -36,7 +36,7 @@ See [BUG_REPORT_WORKFLOW.md](BUG_REPORT_WORKFLOW.md).
 | [AGENTS.md](../AGENTS.md) | Primary AI playbook (cloud + local) |
 | [CURRENT_FOCUS.md](../CURRENT_FOCUS.md) | Living session brief — update when starting work |
 | [.cursor/environment.json](../.cursor/environment.json) | Cloud agent Godot install + import + snapshot |
-| [.cursor/install-godot.sh](../.cursor/install-godot.sh) | Idempotent Godot 4.4 download |
+| [.cursor/install-godot.sh](../.cursor/install-godot.sh) | Idempotent Godot 4.7.1 download |
 | [.env.godot](../.env.godot) | Godot version pin |
 | [scripts/debug/run_godot.sh](../scripts/debug/run_godot.sh) | Unified headless CLI (import/snapshot/test) |
 | [scripts/debug/run_tests.sh](../scripts/debug/run_tests.sh) | Test wrapper script |
