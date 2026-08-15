@@ -1295,7 +1295,7 @@ func _add_bridge_box(
 	mesh_instance.mesh = mesh
 	mesh_instance.position = position
 	mesh_instance.material_override = material
-	parent.add_child(mesh_instance)
+	parent.add_child(mesh_instance, true)
 	return mesh_instance
 
 

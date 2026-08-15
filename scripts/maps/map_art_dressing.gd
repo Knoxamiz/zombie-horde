@@ -599,7 +599,7 @@ func _add_dog(position: Vector3, yaw: float, shepherd: bool) -> void:
 	dog.position = position
 	dog.rotation.y = yaw
 	dog.scale = Vector3.ONE * (0.9 if shepherd else 1.15)
-	add_child(dog)
+	add_child(dog, true)
 
 
 func _add_scene_prop(node_name: String, scene: PackedScene, position: Vector3, yaw_degrees: float, scale_factor: float) -> void:
@@ -610,7 +610,7 @@ func _add_scene_prop(node_name: String, scene: PackedScene, position: Vector3, y
 	prop.position = position
 	prop.rotation_degrees.y = yaw_degrees
 	prop.scale = Vector3.ONE * scale_factor
-	add_child(prop)
+	add_child(prop, true)
 
 
 func _add_box(node_name: String, size: Vector3, position: Vector3, yaw: float, material_key: String) -> void:
@@ -622,7 +622,7 @@ func _add_box(node_name: String, size: Vector3, position: Vector3, yaw: float, m
 	mesh_instance.scale = size
 	mesh_instance.material_override = _get_material(material_key)
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mesh_instance)
+	add_child(mesh_instance, true)
 
 
 func _add_pitched_box(
@@ -640,7 +640,7 @@ func _add_pitched_box(
 	mesh_instance.scale = size
 	mesh_instance.material_override = _get_material(material_key)
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mesh_instance)
+	add_child(mesh_instance, true)
 
 
 func _add_cylinder(node_name: String, radius: float, height: float, position: Vector3, material_key: String) -> void:
@@ -651,7 +651,7 @@ func _add_cylinder(node_name: String, radius: float, height: float, position: Ve
 	mesh_instance.scale = Vector3(radius * 2.0, height, radius * 2.0)
 	mesh_instance.material_override = _get_material(material_key)
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mesh_instance)
+	add_child(mesh_instance, true)
 
 
 func _add_sphere(node_name: String, radius: float, position: Vector3, material_key: String) -> void:
@@ -662,7 +662,7 @@ func _add_sphere(node_name: String, radius: float, position: Vector3, material_k
 	mesh_instance.scale = Vector3.ONE * radius * 2.0
 	mesh_instance.material_override = _get_material(material_key)
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(mesh_instance)
+	add_child(mesh_instance, true)
 
 
 static func _get_box_mesh() -> BoxMesh:
