@@ -267,17 +267,24 @@ static func _spiral_descent() -> Dictionary:
 		{"shape": "ramp", "z0": 32.0, "z1": 48.0, "start_y": 4.0, "height_delta": -4.0, "width": road_width},
 		{"shape": "deck", "z0": 48.0, "z1": 96.0, "top_y": 0.0, "width": road_width},
 	]
-	var shoulder_surface_pieces: Array[Dictionary] = []
+	var desert_surface_pieces: Array[Dictionary] = []
+	var desert_tiers: Array[Dictionary] = [
+		{"center_x": 9.575, "width": 7.15, "surface_drop": 1.0},
+		{"center_x": 20.5, "width": 17.0, "surface_drop": 2.15},
+		{"center_x": 43.0, "width": 28.0, "surface_drop": 4.25},
+	]
 	for raw_spec in surface_pieces:
-		for side_value in [-1.0, 1.0]:
-			var shoulder_spec: Dictionary = raw_spec.duplicate(true)
-			shoulder_spec["x"] = float(side_value) * 9.575
-			shoulder_spec["width"] = 7.15
-			if str(shoulder_spec.get("shape", "deck")) == "ramp":
-				shoulder_spec["start_y"] = float(shoulder_spec.get("start_y", 0.0)) - 1.0
-			else:
-				shoulder_spec["top_y"] = float(shoulder_spec.get("top_y", 0.0)) - 1.0
-			shoulder_surface_pieces.append(shoulder_spec)
+		for tier in desert_tiers:
+			for side_value in [-1.0, 1.0]:
+				var desert_spec: Dictionary = raw_spec.duplicate(true)
+				desert_spec["x"] = float(side_value) * float(tier["center_x"])
+				desert_spec["width"] = float(tier["width"])
+				var surface_drop: float = float(tier["surface_drop"])
+				if str(desert_spec.get("shape", "deck")) == "ramp":
+					desert_spec["start_y"] = float(desert_spec.get("start_y", 0.0)) - surface_drop
+				else:
+					desert_spec["top_y"] = float(desert_spec.get("top_y", 0.0)) - surface_drop
+				desert_surface_pieces.append(desert_spec)
 	return {
 		"style": RaceMapKit.MapStyle.LONG_ROAD,
 		"seed": 9614,
@@ -296,5 +303,5 @@ static func _spiral_descent() -> Dictionary:
 		],
 		"gaps": [],
 		"surface_pieces": surface_pieces,
-		"supplemental_surface_pieces": shoulder_surface_pieces,
+		"supplemental_surface_pieces": desert_surface_pieces,
 	}
