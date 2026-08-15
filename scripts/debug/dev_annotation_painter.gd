@@ -412,7 +412,10 @@ func _get_active_camera() -> Camera3D:
 		var camera: Camera3D = _spectator_camera.get_node_or_null("Camera3D") as Camera3D
 		if camera != null:
 			return camera
-	return get_viewport().get_camera_3d()
+	var viewport: Viewport = get_viewport()
+	if viewport == null:
+		return null
+	return viewport.get_camera_3d()
 
 
 func _add_stamp(world_position: Vector3, surface_normal: Vector3) -> void:
