@@ -76,12 +76,14 @@ func _get_defender_position() -> Vector3:
 
 func _get_random_defender_position() -> Vector3:
 	if SURFACE_SPAWN_RESOLVER.has_path(config.placement_path_points):
-		return SURFACE_SPAWN_RESOLVER.random_path_position(
+		var candidate: Vector3 = SURFACE_SPAWN_RESOLVER.random_path_position(
 			_rng,
 			config.placement_path_points,
 			config.placement_half_width,
-			0.12
+			0.0
 		)
+		candidate.y = _surface_y_at_z(candidate.z, 0.12)
+		return candidate
 	var z: float = _get_random_surface_z(config.placement_min_z, config.placement_max_z)
 	return Vector3(
 		_rng.randf_range(-config.placement_half_width, config.placement_half_width),

@@ -164,12 +164,14 @@ func _get_sewer_hole_position(used_positions: Array[Vector3]) -> Vector3:
 
 func _get_random_mine_position() -> Vector3:
 	if SURFACE_SPAWN_RESOLVER.has_path(hazard_config.placement_path_points):
-		return SURFACE_SPAWN_RESOLVER.random_path_position(
+		var candidate: Vector3 = SURFACE_SPAWN_RESOLVER.random_path_position(
 			_rng,
 			hazard_config.placement_path_points,
 			hazard_config.placement_half_width,
-			0.18
+			0.0
 		)
+		candidate.y = _surface_y_at_z(candidate.z, 0.18)
+		return candidate
 	var z: float = _get_random_surface_z(
 		hazard_config.placement_min_z,
 		hazard_config.placement_max_z
@@ -182,12 +184,14 @@ func _get_random_mine_position() -> Vector3:
 
 func _get_random_sewer_hole_position() -> Vector3:
 	if SURFACE_SPAWN_RESOLVER.has_path(hazard_config.placement_path_points):
-		return SURFACE_SPAWN_RESOLVER.random_path_position(
+		var candidate: Vector3 = SURFACE_SPAWN_RESOLVER.random_path_position(
 			_rng,
 			hazard_config.placement_path_points,
 			hazard_config.placement_half_width,
-			0.08
+			0.0
 		)
+		candidate.y = _surface_y_at_z(candidate.z, 0.08)
+		return candidate
 	var z: float = _get_random_surface_z(
 		hazard_config.placement_min_z,
 		hazard_config.placement_max_z
@@ -281,12 +285,14 @@ func _get_obstacle_slot_position(segment_index: int, lane_index: int) -> Vector3
 			-hazard_config.obstacle_half_width,
 			hazard_config.obstacle_half_width
 		)
-		return SURFACE_SPAWN_RESOLVER.point_at_path_distance(
+		var candidate: Vector3 = SURFACE_SPAWN_RESOLVER.point_at_path_distance(
 			hazard_config.placement_path_points,
 			distance,
 			lateral_offset,
-			0.45
+			0.0
 		)
+		candidate.y = _surface_y_at_z(candidate.z, 0.45)
+		return candidate
 
 	var segment_length: float = max(hazard_config.obstacle_segment_length, 0.5)
 	var segment_start: float = hazard_config.obstacle_min_z + float(segment_index) * segment_length
