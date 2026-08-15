@@ -205,9 +205,14 @@ func _update_avatar_tracking(delta: float) -> void:
 		return
 
 	var current_basis: Basis = _avatar_look_root.global_transform.basis
+	var current_scale: Vector3 = current_basis.get_scale()
 	_avatar_look_root.look_at(target_position, Vector3.UP)
 	var target_transform: Transform3D = _avatar_look_root.global_transform
-	target_transform.basis = current_basis.slerp(target_transform.basis, clamp(delta * avatar_turn_speed, 0.0, 1.0))
+	var turn_weight: float = clampf(delta * avatar_turn_speed, 0.0, 1.0)
+	target_transform.basis = current_basis.orthonormalized().slerp(
+		target_transform.basis.orthonormalized(),
+		turn_weight
+	).scaled(current_scale)
 	_avatar_look_root.global_transform = target_transform
 
 func _get_leader_zombie() -> Zombie:
