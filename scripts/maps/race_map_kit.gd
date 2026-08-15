@@ -1318,7 +1318,7 @@ func _add_beam_between(
 		(start + end) * 0.5,
 		material
 	)
-	beam.look_at(end, Vector3.UP)
+	beam.look_at_from_position(beam.position, end, Vector3.UP)
 
 
 func _make_bridge_steel_material() -> StandardMaterial3D:
