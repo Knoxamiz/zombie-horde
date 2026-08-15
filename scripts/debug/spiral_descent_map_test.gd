@@ -93,8 +93,10 @@ func _test_scene_builds_surfaces() -> void:
 	var visual_kit: Node = scene_root.get_node_or_null("CoreRoad/VisualKit")
 	if visual_kit == null:
 		_fail("Spiral Descent did not build VisualKit")
-	elif visual_kit.find_child("SpiralCoreColumn", true, false) == null:
-		_fail("Spiral Descent dressing did not build spiral core column")
+	elif visual_kit.get_node_or_null("DesertHighwayContext") == null:
+		_fail("Spiral Descent did not build its desert highway context")
+	elif visual_kit.find_child("SpiralCoreColumn", true, false) != null:
+		_fail("Spiral Descent must not build the retired spiral core column")
 
 	scene_root.queue_free()
 
