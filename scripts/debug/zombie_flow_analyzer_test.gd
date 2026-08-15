@@ -191,7 +191,7 @@ func _configure_test_round(
 	main_game: Node
 ) -> void:
 	round_manager.configure_immediate_launch_for_tests()
-		map_controller.human_defender_config.defender_count = 0
+	map_controller.human_defender_config.defender_count = 0
 	if map_controller.hazard_config != null:
 		map_controller.hazard_config.mine_count = 0
 		map_controller.hazard_config.sewer_hole_count = 0

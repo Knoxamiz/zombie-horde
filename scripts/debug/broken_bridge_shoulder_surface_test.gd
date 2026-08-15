@@ -9,7 +9,7 @@ const SURFACE_SCRIPT := preload("res://scripts/maps/map_surface_piece.gd")
 const PASS := 0
 const FAIL := 1
 const SHOULDER_X: float = 6.0
-const SHOULDER_SAMPLE_ZS: PackedFloat32Array = PackedFloat32Array([-62.0, -44.0, -4.0, 36.0, 62.0])
+const SHOULDER_SAMPLE_ZS: Array[float] = [-62.0, -44.0, -4.0, 36.0, 62.0]
 
 var _failures: PackedStringArray = PackedStringArray()
 

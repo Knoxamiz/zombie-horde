@@ -5,12 +5,12 @@ extends SceneTree
 ## This test boots the live City Highway scene and proves a runner advances.
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
-const MAP_IDS := PackedStringArray([
+const MAP_IDS: Array[String] = [
 	"quarantine_boulevard",
 	"broken_bridge_pass",
 	"spiral_descent",
 	"true_spiral_ramp",
-])
+]
 const RUNNER_COUNT := 24
 
 var _failures: PackedStringArray = PackedStringArray()

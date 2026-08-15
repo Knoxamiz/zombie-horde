@@ -63,9 +63,11 @@ func _test_map_camera_limits(map_id: String, expected_region_count: int) -> void
 		var garage_min: Vector3 = limits.get_enclosing_bounds_min()
 		var garage_max: Vector3 = limits.get_enclosing_bounds_max()
 		var garage_start_margin: float = minf(
-			minf(garage_start_position.x - garage_min.x, garage_max.x - garage_start_position.x),
-			minf(garage_start_position.y - garage_min.y, garage_max.y - garage_start_position.y),
-			minf(garage_start_position.z - garage_min.z, garage_max.z - garage_start_position.z)
+			minf(
+				minf(garage_start_position.x - garage_min.x, garage_max.x - garage_start_position.x),
+				minf(garage_start_position.y - garage_min.y, garage_max.y - garage_start_position.y)
+			),
+			minf(garage_start_position.z - garage_min.z, garage_max.z - garage_start_position.z),
 		)
 		if garage_start_margin < 18.0:
 			_fail("true_spiral_ramp: initial free camera needs at least 18m of flight margin")

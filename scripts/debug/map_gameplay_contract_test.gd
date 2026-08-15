@@ -2,12 +2,12 @@ extends SceneTree
 
 const GAMEPLAY_CONTRACT := preload("res://scripts/maps/map_gameplay_contract.gd")
 
-const MAP_IDS := PackedStringArray([
+const MAP_IDS: Array[String] = [
 	"quarantine_boulevard",
 	"broken_bridge_pass",
 	"spiral_descent",
 	"true_spiral_ramp",
-])
+]
 
 var _failures: PackedStringArray = PackedStringArray()
 
