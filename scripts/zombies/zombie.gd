@@ -1113,7 +1113,7 @@ func _apply_collision_profile(low_profile: bool) -> void:
 
 func _set_collision_enabled(enabled: bool) -> void:
 	if _collision_shape != null:
-		_collision_shape.disabled = not enabled
+		_collision_shape.set_deferred(&"disabled", not enabled)
 
 func _set_animation_loop(animation_name: String, should_loop: bool) -> void:
 	if _active_animation_player == null:
