@@ -8,7 +8,9 @@ func _ready() -> void:
 
 func set_goal_enabled(enabled: bool) -> void:
 	goal_enabled = enabled
-	monitoring = enabled
+	# Round completion can disable the goal from inside body_entered. Physics
+	# query state cannot be changed while that signal is being flushed.
+	set_deferred("monitoring", enabled)
 
 func _on_body_entered(body: Node3D) -> void:
 	if not goal_enabled:
@@ -19,4 +21,3 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 
 	GameEventBus.instance().zombie_reached_base.emit(zombie)
-
