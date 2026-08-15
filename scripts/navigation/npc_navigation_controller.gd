@@ -199,17 +199,19 @@ func _apply_agent_profile() -> void:
 func _build_active_target(position: Vector3) -> Vector3:
 	var route_forward: Vector3 = _route.get_forward_direction()
 	var route_side := Vector3(route_forward.z, 0.0, -route_forward.x).normalized()
-	var distance_to_goal: float = Vector2(
-		position.x - _goal_position.x,
-		position.z - _goal_position.z
-	).length()
 	# A stacked course can pass directly above its finish on an earlier deck.
 	# World-space proximity alone would then make a runner abandon the authored
 	# turns and aim vertically through the structure. Route completion is the
-	# authority; the distance check only refines the final segment's target.
+	# authority. Remaining course distance also lets a wide-lane runner begin its
+	# finish handoff after crossing the final checkpoint plane, even when its
+	# lateral offset is larger than the finish rejoin distance.
+	var remaining_course_distance: float = maxf(
+		_route.get_course_length() - _route.get_course_distance(),
+		0.0
+	)
 	var approaching_finish: bool = (
 		_route.is_on_final_segment()
-		and distance_to_goal <= _profile.finish_rejoin_distance
+		and remaining_course_distance <= _profile.finish_rejoin_distance
 	)
 	if approaching_finish:
 		var finish_offset: float = _lane_seed * _navigation_half_width * _profile.finish_lane_spread

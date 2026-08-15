@@ -6,6 +6,6 @@
 script = ExtResource("1_profile")
 checkpoint_reach_radius = 3.6
 checkpoint_lane_spread = 0.72
-finish_lane_spread = 0.88
+finish_lane_spread = 0.20
 neighbor_distance = 5.5
 max_neighbors = 16
