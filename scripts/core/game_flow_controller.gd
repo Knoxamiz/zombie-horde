@@ -1,8 +1,8 @@
 class_name GameFlowController
 extends Node
 
-const AUDIO_MANAGER_SCENE: PackedScene = preload("res://scenes/audio/audio_manager.tscn")
-const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_settings_menu.tscn")
+const AUDIO_MANAGER_SCENE_PATH := "res://scenes/audio/audio_manager.tscn"
+const GAME_SETTINGS_SCENE_PATH := "res://scenes/settings/game_settings_menu.tscn"
 
 const META_COLLISION_LAYER := "_zh_saved_collision_layer"
 const META_COLLISION_MASK := "_zh_saved_collision_mask"
@@ -324,7 +324,10 @@ func _get_or_create_music_controller() -> MusicController:
 	if music_controller != null:
 		return music_controller
 
-	music_controller = AUDIO_MANAGER_SCENE.instantiate() as MusicController
+	var audio_manager_scene: PackedScene = load(AUDIO_MANAGER_SCENE_PATH) as PackedScene
+	if audio_manager_scene == null:
+		return null
+	music_controller = audio_manager_scene.instantiate() as MusicController
 	if music_controller == null:
 		return null
 
@@ -337,7 +340,10 @@ func _get_or_create_game_settings() -> GameSettingsController:
 	if game_settings != null:
 		return game_settings
 
-	game_settings = GAME_SETTINGS_SCENE.instantiate() as GameSettingsController
+	var game_settings_scene: PackedScene = load(GAME_SETTINGS_SCENE_PATH) as PackedScene
+	if game_settings_scene == null:
+		return null
+	game_settings = game_settings_scene.instantiate() as GameSettingsController
 	if game_settings == null:
 		return null
 

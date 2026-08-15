@@ -1,8 +1,8 @@
 class_name MainMenuController
 extends Control
 
-const AUDIO_MANAGER_SCENE: PackedScene = preload("res://scenes/audio/audio_manager.tscn")
-const GAME_SETTINGS_SCENE: PackedScene = preload("res://scenes/settings/game_settings_menu.tscn")
+const AUDIO_MANAGER_SCENE_PATH := "res://scenes/audio/audio_manager.tscn"
+const GAME_SETTINGS_SCENE_PATH := "res://scenes/settings/game_settings_menu.tscn"
 const MENU_ART: Texture2D = preload("res://assets/ui/main_menu/zombie_chat_horde_menu_art.png")
 
 @export_file("*.tscn") var game_scene_path: String = "res://scenes/main/main_game.tscn"
@@ -342,7 +342,10 @@ func _get_or_create_music_controller() -> MusicController:
 	if music_controller != null:
 		return music_controller
 
-	music_controller = AUDIO_MANAGER_SCENE.instantiate() as MusicController
+	var audio_manager_scene: PackedScene = load(AUDIO_MANAGER_SCENE_PATH) as PackedScene
+	if audio_manager_scene == null:
+		return null
+	music_controller = audio_manager_scene.instantiate() as MusicController
 	if music_controller == null:
 		return null
 
@@ -355,7 +358,10 @@ func _get_or_create_game_settings() -> GameSettingsController:
 	if game_settings != null:
 		return game_settings
 
-	game_settings = GAME_SETTINGS_SCENE.instantiate() as GameSettingsController
+	var game_settings_scene: PackedScene = load(GAME_SETTINGS_SCENE_PATH) as PackedScene
+	if game_settings_scene == null:
+		return null
+	game_settings = game_settings_scene.instantiate() as GameSettingsController
 	if game_settings == null:
 		return null
 
