@@ -38,7 +38,7 @@ func _on_body_entered(body: Node3D) -> void:
 func _trigger(zombie: Zombie) -> void:
 	var active_config: HazardConfig = _get_config()
 	_armed = false
-	monitoring = false
+	set_deferred(&"monitoring", false)
 	# The detonation visual is non-physical. Retire this trigger immediately so
 	# a spent mine cannot remain in the physics query space after its blast.
 	if _collision_shape != null:
@@ -115,5 +115,8 @@ func _spawn_explosion() -> void:
 	if effect == null:
 		return
 
-	get_tree().current_scene.add_child(effect)
+	var effect_parent: Node = get_tree().current_scene
+	if effect_parent == null:
+		effect_parent = get_tree().root
+	effect_parent.add_child(effect)
 	effect.global_position = global_position
