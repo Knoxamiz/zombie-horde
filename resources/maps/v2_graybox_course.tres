@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="MapV2Course" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="MapV2Course" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/maps/v2/map_v2_course.gd" id="1_course"]
 [ext_resource type="Script" path="res://scripts/maps/v2/map_v2_primitive.gd" id="2_primitive"]
@@ -37,6 +37,14 @@ origin = Vector3(0, 2, 14)
 width = 12.0
 length = 4.0
 
+[sub_resource type="Resource" id="Primitive_bridge"]
+script = ExtResource("2_primitive")
+primitive_id = "gap_crossing"
+origin = Vector3(0, 2, 14)
+width = 3.0
+length = 4.0
+visual_color = Color(0.68, 0.44, 0.18, 1)
+
 [sub_resource type="Resource" id="Primitive_finish"]
 script = ExtResource("2_primitive")
 primitive_id = "finish_deck"
@@ -48,7 +56,7 @@ visual_color = Color(0.31, 0.35, 0.42, 1)
 [resource]
 script = ExtResource("1_course")
 course_id = "v2_graybox_course"
-primitives = Array[Resource]([SubResource("Primitive_start"), SubResource("Primitive_ramp"), SubResource("Primitive_upper"), SubResource("Primitive_gap"), SubResource("Primitive_finish")])
+primitives = Array[Resource]([SubResource("Primitive_start"), SubResource("Primitive_ramp"), SubResource("Primitive_upper"), SubResource("Primitive_gap"), SubResource("Primitive_bridge"), SubResource("Primitive_finish")])
 spawn_position = Vector3(0, 0, -26)
 finish_position = Vector3(0, 2, 30)
 oob_margin = 2.0

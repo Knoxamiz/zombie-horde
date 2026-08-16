@@ -31,6 +31,11 @@ func validate() -> PackedStringArray:
 		failures.append("%s spawn_position is not on a playable surface" % course_id)
 	if not has_surface_at(finish_position.x, finish_position.z):
 		failures.append("%s finish_position is not on a playable surface" % course_id)
+	var route: PackedVector3Array = get_route_points()
+	if route.size() < 2:
+		failures.append("%s cannot derive a usable route" % course_id)
+	elif not is_route_surface_continuous(route):
+		failures.append("%s route crosses a non-playable surface" % course_id)
 	return failures
 
 
@@ -101,6 +106,50 @@ func sample_surface_position(
 	return Vector3(x, surface_height_at(x, z) + height_offset, z)
 
 
+func get_route_points(height_offset: float = 0.05) -> PackedVector3Array:
+	var route := PackedVector3Array()
+	for primitive in primitives:
+		if primitive == null or primitive.kind not in [
+			PRIMITIVE_SCRIPT.Kind.DECK,
+			PRIMITIVE_SCRIPT.Kind.RAMP,
+		]:
+			continue
+		var start := Vector3(
+			primitive.origin.x,
+			surface_height_at(primitive.origin.x, primitive.origin.z) + height_offset,
+			primitive.origin.z
+		)
+		var end := Vector3(
+			primitive.origin.x,
+			surface_height_at(
+				primitive.origin.x,
+				primitive.origin.z + primitive.length
+			) + height_offset,
+			primitive.origin.z + primitive.length
+		)
+		_append_unique_route_point(route, start)
+		_append_unique_route_point(route, end)
+	return route
+
+
+func is_route_surface_continuous(
+	route: PackedVector3Array = get_route_points(),
+	sample_spacing: float = 0.5
+) -> bool:
+	if route.size() < 2 or sample_spacing <= 0.0:
+		return false
+	for route_index in range(1, route.size()):
+		var start: Vector3 = route[route_index - 1]
+		var end: Vector3 = route[route_index]
+		var sample_count: int = maxi(1, ceili(start.distance_to(end) / sample_spacing))
+		for sample_index in range(sample_count + 1):
+			var progress: float = float(sample_index) / float(sample_count)
+			var sample: Vector3 = start.lerp(end, progress)
+			if not has_surface_at(sample.x, sample.z):
+				return false
+	return true
+
+
 func get_playable_bounds() -> AABB:
 	var minimum := Vector3(INF, INF, INF)
 	var maximum := Vector3(-INF, -INF, -INF)
@@ -144,3 +193,8 @@ func _contains_xz(primitive: Resource, x: float, z: float) -> bool:
 		and z >= primitive.origin.z
 		and z <= primitive.origin.z + primitive.length
 	)
+
+
+func _append_unique_route_point(route: PackedVector3Array, point: Vector3) -> void:
+	if route.is_empty() or not route[-1].is_equal_approx(point):
+		route.append(point)

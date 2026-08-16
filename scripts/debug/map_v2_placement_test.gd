@@ -41,7 +41,7 @@ func _run() -> void:
 		var expected_y: float = COURSE.surface_height_at(position.x, position.z) + HEIGHT_OFFSET
 		if absf(position.y - expected_y) > 0.001:
 			_fail("Placement sample %d is floating above or below its surface" % sample_index)
-		if position.z > 14.0 and position.z < 18.0:
+		if position.z > 14.0 and position.z < 18.0 and absf(position.x) > 1.5:
 			_fail("Placement sample %d landed inside the authored gap" % sample_index)
 	_finish()
 

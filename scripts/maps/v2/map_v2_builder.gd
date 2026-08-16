@@ -59,6 +59,7 @@ func build_course() -> bool:
 				_build_boundary_primitive(primitive, boundaries, playable_visuals)
 			PRIMITIVE_SCRIPT.Kind.GAP:
 				pass
+	_build_route_path(navigation)
 
 	_built = true
 	return true
@@ -76,6 +77,16 @@ func get_playable_bounds() -> AABB:
 
 func get_oob_bounds() -> AABB:
 	return course.get_oob_bounds() if course != null else AABB()
+
+
+func _build_route_path(navigation: Node3D) -> void:
+	var route := Path3D.new()
+	route.name = "SurfaceRoute"
+	var curve := Curve3D.new()
+	for route_point: Vector3 in course.get_route_points():
+		curve.add_point(route_point)
+	route.curve = curve
+	navigation.add_child(route)
 
 
 func _build_walk_primitive(

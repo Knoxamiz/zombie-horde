@@ -99,7 +99,7 @@ func _verify_surface_height(prototype: Node3D, primitive: Resource) -> void:
 
 
 func _verify_gap_has_no_surface(prototype: Node3D, primitive: Resource) -> void:
-	var sample_x: float = primitive.origin.x
+	var sample_x: float = primitive.origin.x + primitive.width * 0.25
 	var sample_z: float = primitive.origin.z + primitive.length * 0.5
 	if not _raycast_surface(prototype, sample_x, sample_z).is_empty():
 		_fail("Gap %s has an invisible collision surface" % primitive.primitive_id)
@@ -126,8 +126,11 @@ func _verify_course_queries(prototype: Node3D) -> void:
 	var ramp_mid_y: float = COURSE.surface_height_at(0.0, -9.0, -999.0)
 	if absf(ramp_mid_y - 1.0) > 0.01:
 		_fail("V2 ramp midpoint query returned %.3f instead of 1.0" % ramp_mid_y)
-	if COURSE.has_surface_at(0.0, 16.0):
-		_fail("V2 surface query reports solid ground inside the authored gap")
+	if not COURSE.has_surface_at(0.0, 16.0):
+		_fail("V2 crossing is missing its authoritative solid surface")
+	if COURSE.has_surface_at(3.0, 16.0):
+		_fail("V2 surface query reports solid ground beside the gap crossing")
+	_verify_route(prototype)
 
 	var builder = prototype
 	var playable_bounds: AABB = builder.get_playable_bounds()
@@ -139,6 +142,27 @@ func _verify_course_queries(prototype: Node3D) -> void:
 		_fail("V2 OOB width was not derived from playable bounds plus margin")
 	if absf(oob_bounds.position.z + 32.0) > 0.01 or absf(oob_bounds.end.z - 36.0) > 0.01:
 		_fail("V2 OOB length was not derived from playable bounds plus margin")
+
+
+func _verify_route(prototype: Node3D) -> void:
+	var route: Path3D = prototype.get_node_or_null(
+		"GameplayLayer/Navigation/SurfaceRoute"
+	) as Path3D
+	if route == null or route.curve == null:
+		_fail("V2 builder did not generate its authoritative surface route")
+		return
+	var expected_points: PackedVector3Array = COURSE.get_route_points()
+	if not COURSE.is_route_surface_continuous(expected_points):
+		_fail("V2 course-derived route crosses a non-playable surface")
+	if route.curve.point_count != expected_points.size():
+		_fail("V2 built route does not match the course-derived route point count")
+		return
+	for point_index in expected_points.size():
+		var point: Vector3 = route.curve.get_point_position(point_index)
+		if not point.is_equal_approx(expected_points[point_index]):
+			_fail("V2 built route point %d drifted from the course" % point_index)
+		if not COURSE.has_surface_at(point.x, point.z):
+			_fail("V2 route point %d is not grounded" % point_index)
 
 
 func _fail(message: String) -> void:
