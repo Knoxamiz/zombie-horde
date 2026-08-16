@@ -6,11 +6,13 @@ const KitMapArenaScript := preload("res://scripts/maps/kit_map_arena.gd")
 const KitMapSurfaceBuilderScript := preload("res://scripts/maps/kit_map_surface_builder.gd")
 const EXPECTED_MAP_IDS: Array[String] = [
 	"quarantine_boulevard",
+]
+const RETIRED_MAP_IDS: Array[String] = [
 	"broken_bridge_pass",
 	"spiral_descent",
 	"true_spiral_ramp",
 ]
-const EXPECTED_PLAYABLE_COUNT := 4
+const EXPECTED_PLAYABLE_COUNT := 1
 
 var _failures: PackedStringArray = PackedStringArray()
 var _main_game: Node
@@ -19,10 +21,6 @@ var _main_game: Node
 func _initialize() -> void:
 	_failures.append_array(_test_catalog_resolution())
 	_failures.append_array(_test_profile_migration())
-	_failures.append_array(_test_layout_preset_uniqueness())
-	_failures.append_array(_test_kit_elevation_presets())
-	_failures.append_array(_test_kit_route_context())
-	_failures.append_array(_test_broken_bridge_gap_crossings())
 	call_deferred("_begin_runtime_load")
 
 
@@ -62,11 +60,15 @@ func _test_catalog_resolution() -> PackedStringArray:
 	if MapCatalog.get_settings_map_id(0) != "quarantine_boulevard":
 		failures.append("Settings map id 0 mismatch")
 
-	if MapCatalog.resolve_settings_index("", 2) != 2:
-		failures.append("Settings index 2 should resolve to Straight Descent")
+	if MapCatalog.resolve_settings_index("", 2) != 0:
+		failures.append("Out-of-range settings index should resolve to City Highway")
 
-	if MapCatalog.get_settings_map_id(1) != "broken_bridge_pass":
-		failures.append("Settings index 1 should be broken_bridge_pass")
+	for retired_map_id in RETIRED_MAP_IDS:
+		var retired_entry: Dictionary = MapCatalog.get_entry_by_id(retired_map_id)
+		if retired_entry.is_empty():
+			failures.append("Retired map asset missing from catalog: %s" % retired_map_id)
+		elif MapCatalog.is_entry_playable(retired_entry):
+			failures.append("Retired map remains playable: %s" % retired_map_id)
 
 	if MapCatalog.get_playable_count() != EXPECTED_PLAYABLE_COUNT:
 		failures.append(
@@ -108,6 +110,15 @@ func _test_profile_migration() -> PackedStringArray:
 	legacy_profile.set_selected_settings_map_index(0)
 	if legacy_profile.selected_map_id != "quarantine_boulevard":
 		failures.append("set_selected_settings_map_index(0) should sync map id")
+
+	for retired_map_id in RETIRED_MAP_IDS:
+		var retired_profile: StreamerSettingsProfile = StreamerSettingsProfile.new()
+		retired_profile.selected_map_id = retired_map_id
+		retired_profile.sanitize_map_selection()
+		if retired_profile.get_selected_map_id() != "quarantine_boulevard":
+			failures.append(
+				"Retired map %s should migrate to City Highway" % retired_map_id
+			)
 
 	return failures
 
@@ -374,48 +385,6 @@ func _test_runtime_load_verify() -> PackedStringArray:
 		if "SpectatorCamera" not in camera_path:
 			failures.append("Spectator camera is not active after City Highway load: %s" % camera_path)
 
-	profile.set_selected_map_id("broken_bridge_pass")
-	loaded = map_controller.apply_profile(profile)
-	if not loaded:
-		failures.append("apply_profile returned false for Broken Bridge")
-	_assert_loaded_map_script(
-		failures,
-		map_controller,
-		"broken_bridge_pass",
-		"kit_map_arena.gd"
-	)
-
-	profile.set_selected_map_id("spiral_descent")
-	loaded = map_controller.apply_profile(profile)
-	if not loaded:
-		failures.append("apply_profile returned false for Straight Descent")
-	_assert_loaded_map_script(
-		failures,
-		map_controller,
-		"spiral_descent",
-		"kit_map_arena.gd"
-	)
-
-	var spiral_settings_index: int = MapCatalog.resolve_settings_index("true_spiral_ramp", -1)
-	profile.set_selected_settings_map_index(spiral_settings_index)
-	loaded = map_controller.apply_profile(profile)
-	if not loaded:
-		failures.append("apply_profile returned false for True Spiral Ramp")
-	_assert_loaded_map_script(
-		failures,
-		map_controller,
-		"true_spiral_ramp",
-		"spiral_ramp_arena.gd"
-	)
-	var active_definition: RaceMapDefinition = map_controller.get_active_map_definition()
-	if active_definition == null or active_definition.display_name != "Square Spiral Ramp":
-		failures.append(
-			"Expected active definition Square Spiral Ramp, got %s"
-			% (active_definition.display_name if active_definition != null else "null")
-		)
-	if not map_controller.should_use_definition_race_camera():
-		failures.append("True Spiral Ramp should use definition camera framing")
-	failures.append_array(await _test_streamer_menu_ended_map_change())
 	_main_game.queue_free()
 	return failures
 
@@ -479,10 +448,10 @@ func _test_saved_profile_boot_map() -> PackedStringArray:
 			existing_file.close()
 
 	var profile: StreamerSettingsProfile = StreamerSettingsProfile.new()
-	profile.set_selected_map_id("true_spiral_ramp")
+	profile.selected_map_id = "true_spiral_ramp"
 	var save_error: Error = profile.save_to_disk()
 	if save_error != OK:
-		failures.append("Failed to save true_spiral_ramp boot profile: %s" % save_error)
+		failures.append("Failed to save retired-map boot profile: %s" % save_error)
 		_restore_profile_save(save_path, had_existing_save, existing_save_text)
 		return failures
 
@@ -502,26 +471,26 @@ func _test_saved_profile_boot_map() -> PackedStringArray:
 	if map_controller == null:
 		failures.append("RaceMapController missing in saved-profile boot test")
 	else:
-		if map_controller.get_resolved_map_id() != "true_spiral_ramp":
+		if map_controller.get_resolved_map_id() != "quarantine_boulevard":
 			failures.append(
-				"Saved true_spiral_ramp boot resolved %s"
+				"Saved retired-map boot resolved %s instead of City Highway"
 				% map_controller.get_resolved_map_id()
 			)
 		if map_controller.did_last_load_use_fallback():
-			failures.append("Saved true_spiral_ramp boot used fallback")
+			failures.append("Saved retired-map migration used runtime fallback")
 		var road_arena: Node = main_game.get_node_or_null("World/RoadArena")
 		if road_arena == null:
-			failures.append("RoadArena missing after saved true_spiral_ramp boot")
+			failures.append("RoadArena missing after retired-map profile migration")
 		else:
 			var core_road: Node = road_arena.get_node_or_null("CoreRoad")
 			if core_road == null:
-				failures.append("Saved true_spiral_ramp boot loaded RoadArena without CoreRoad")
+				failures.append("Migrated City Highway loaded RoadArena without CoreRoad")
 			else:
 				var arena_script: Script = core_road.get_script() as Script
 				var arena_script_path: String = arena_script.resource_path if arena_script != null else ""
-				if not arena_script_path.ends_with("spiral_ramp_arena.gd"):
+				if not arena_script_path.is_empty():
 					failures.append(
-						"Saved true_spiral_ramp boot loaded wrong CoreRoad script: %s"
+						"Migrated City Highway unexpectedly loaded a scripted CoreRoad: %s"
 						% arena_script_path
 					)
 

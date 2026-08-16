@@ -58,7 +58,7 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 ### certification (~2–4 minutes)
 
 - `map_selection_test.gd`
-- `map_certification_test.gd` — default certified maps (`quarantine_boulevard`, `broken_bridge_pass`)
+- `map_certification_test.gd` — default certified production map (`quarantine_boulevard`)
 
 **When to run:** before merging map controller, map catalog, or promoting a map to playable.
 

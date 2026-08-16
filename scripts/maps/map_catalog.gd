@@ -39,8 +39,8 @@ const ENTRIES: Array[Dictionary] = [
 		"resource_path": "res://resources/maps/broken_bridge_pass.tres",
 		"scene_path": "res://scenes/maps/broken_bridge_pass.tscn",
 		"layout_preset_id": "broken_bridge_pass",
-		"enabled": true,
-		"status": STATUS_PLAYABLE,
+		"enabled": false,
+		"status": STATUS_DISABLED,
 	},
 	{
 		"id": "mine_alley",
@@ -93,16 +93,16 @@ const ENTRIES: Array[Dictionary] = [
 		"resource_path": "res://resources/maps/spiral_descent.tres",
 		"scene_path": "res://scenes/maps/spiral_descent.tscn",
 		"layout_preset_id": "spiral_descent",
-		"enabled": true,
-		"status": STATUS_PLAYABLE,
+		"enabled": false,
+		"status": STATUS_DISABLED,
 	},
 	{
 		"id": "true_spiral_ramp",
 		"display_name": "Square Spiral Ramp",
 		"resource_path": "res://resources/maps/true_spiral_ramp.tres",
 		"scene_path": "res://scenes/maps/true_spiral_ramp.tscn",
-		"enabled": true,
-		"status": STATUS_PLAYABLE,
+		"enabled": false,
+		"status": STATUS_DISABLED,
 	},
 ]
 

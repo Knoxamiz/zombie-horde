@@ -22,14 +22,14 @@ data source. The definition's packed scene is the only scene source.
 | Settings index | Map ID | Display name | Scene type |
 |---|---|---|---|
 | 0 | `quarantine_boulevard` | City Highway | Hand-authored road scene |
-| 1 | `broken_bridge_pass` | Broken Bridge | Kit map |
-| 2 | `spiral_descent` | Straight Descent | Kit map |
-| 3 | `true_spiral_ramp` | Square Spiral Ramp | Hand-authored ramp scene |
 
 Source of truth: `scripts/maps/map_catalog.gd`.
 
 Entries marked `enabled=false`, `status=disabled` are stored authoring assets.
 They do not appear in settings and the game loader refuses to instantiate them.
+
+Broken Bridge, Straight Descent, and Square Spiral Ramp are retained as disabled
+authoring references while the Map V2 pipeline is developed.
 
 ## Loading Contract
 

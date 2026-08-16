@@ -2,15 +2,21 @@
 
 ## Active Goal
 
-One authoritative map catalog and loader: every selectable map must resolve from
-the same catalog entry, definition resource, and scene path.
+Keep City Highway as the stable production baseline while a replacement Map V2
+pipeline is designed and proven independently.
 
 ## Playable Maps
 
 - `quarantine_boulevard` - City Highway
+
+## Retired Authoring Assets
+
 - `broken_bridge_pass` - Broken Bridge
 - `spiral_descent` - Straight Descent
 - `true_spiral_ramp` - Square Spiral Ramp
+
+These assets remain in the repository for reference, but are disabled and cannot
+be selected or loaded through the production map catalog.
 
 ## Evidence
 
@@ -19,7 +25,7 @@ the same catalog entry, definition resource, and scene path.
 
 ## Success Criteria
 
-- [x] Settings lists exactly the four playable maps above.
+- [x] Settings lists exactly one playable map: City Highway.
 - [x] Each selection loads its matching definition and scene.
 - [x] Failed loads report an error instead of swapping in another map.
 - [x] Smoke suite passes.
