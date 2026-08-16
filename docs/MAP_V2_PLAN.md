@@ -80,6 +80,11 @@ A V2 prototype cannot become selectable until automated tests prove:
 
 ## Delivery Sequence
 
+Current status: Phases 1 and 2 are complete. Phase 3 has automated proofs for
+surface-derived routes, grounded placement, spawn/finish markers, and OOB
+bounds. Real NPC completion and production-system placement integration remain
+before promotion work can begin.
+
 ### Phase 1 — Stable baseline
 
 - City Highway is the only production map.

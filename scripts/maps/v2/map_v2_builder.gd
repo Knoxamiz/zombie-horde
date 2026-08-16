@@ -50,6 +50,10 @@ func build_course() -> bool:
 	var dressing := Node3D.new()
 	dressing.name = "Dressing"
 	visual_layer.add_child(dressing)
+	var markers := Node3D.new()
+	markers.name = "Markers"
+	add_child(markers)
+	_build_course_markers(markers)
 
 	for primitive in course.primitives:
 		match primitive.kind:
@@ -87,6 +91,19 @@ func _build_route_path(navigation: Node3D) -> void:
 		curve.add_point(route_point)
 	route.curve = curve
 	navigation.add_child(route)
+
+
+func _build_course_markers(markers: Node3D) -> void:
+	var spawn := Marker3D.new()
+	spawn.name = "Spawn"
+	spawn.position = course.spawn_position
+	spawn.set_meta("map_v2_role", "spawn")
+	markers.add_child(spawn)
+	var finish := Marker3D.new()
+	finish.name = "Finish"
+	finish.position = course.finish_position
+	finish.set_meta("map_v2_role", "finish_marker_only")
+	markers.add_child(finish)
 
 
 func _build_walk_primitive(

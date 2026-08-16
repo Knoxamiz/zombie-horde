@@ -24,6 +24,8 @@ be selected or loaded through the production map catalog.
 
 - Runtime selection proof: `scripts/debug/map_selection_test.gd`
 - Certification proof: `scripts/debug/map_certification_test.gd`
+- V2 visual/collision/route proof: `scripts/debug/map_v2_surface_parity_test.gd`
+- V2 grounded placement proof: `scripts/debug/map_v2_placement_test.gd`
 
 ## Success Criteria
 
@@ -32,6 +34,10 @@ be selected or loaded through the production map catalog.
 - [x] Failed loads report an error instead of swapping in another map.
 - [x] Smoke suite passes.
 - [x] Certification suite passes.
+- [x] V2 visuals and layer-1 collision come from the same primitives.
+- [x] V2 spawn, finish, route, placement, and OOB bounds derive from course data.
+- [ ] A real NPC completes the V2 graybox through the authoritative finish.
+- [ ] V2 passes manual review before entering the production catalog.
 
 ## Do Not Touch
 

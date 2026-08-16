@@ -52,6 +52,7 @@ func _run() -> void:
 		)
 
 	_verify_course_queries(prototype)
+	_verify_markers(prototype)
 
 	prototype.queue_free()
 	_finish()
@@ -163,6 +164,17 @@ func _verify_route(prototype: Node3D) -> void:
 			_fail("V2 built route point %d drifted from the course" % point_index)
 		if not COURSE.has_surface_at(point.x, point.z):
 			_fail("V2 route point %d is not grounded" % point_index)
+
+
+func _verify_markers(prototype: Node3D) -> void:
+	var spawn: Marker3D = prototype.get_node_or_null("Markers/Spawn") as Marker3D
+	var finish: Marker3D = prototype.get_node_or_null("Markers/Finish") as Marker3D
+	if spawn == null or not spawn.position.is_equal_approx(COURSE.spawn_position):
+		_fail("V2 spawn marker drifted from the course spawn position")
+	if finish == null or not finish.position.is_equal_approx(COURSE.finish_position):
+		_fail("V2 finish marker drifted from the course finish position")
+	if finish != null and finish.get_meta("map_v2_role", "") != "finish_marker_only":
+		_fail("V2 finish marker does not declare its non-authoritative role")
 
 
 func _fail(message: String) -> void:
