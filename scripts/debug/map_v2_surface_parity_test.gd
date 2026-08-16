@@ -153,6 +153,10 @@ func _verify_route(prototype: Node3D) -> void:
 		_fail("V2 builder did not generate its authoritative surface route")
 		return
 	var expected_points: PackedVector3Array = COURSE.get_route_points()
+	if not expected_points[0].is_equal_approx(COURSE.spawn_position + Vector3.UP * 0.05):
+		_fail("V2 route does not begin at the authored spawn")
+	if not expected_points[-1].is_equal_approx(COURSE.finish_position + Vector3.UP * 0.05):
+		_fail("V2 route does not end at the authored finish")
 	if not COURSE.is_route_surface_continuous(expected_points):
 		_fail("V2 course-derived route crosses a non-playable surface")
 	if route.curve.point_count != expected_points.size():

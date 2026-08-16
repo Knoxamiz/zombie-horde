@@ -108,17 +108,31 @@ func sample_surface_position(
 
 func get_route_points(height_offset: float = 0.05) -> PackedVector3Array:
 	var route := PackedVector3Array()
+	var route_start := Vector3(
+		spawn_position.x,
+		surface_height_at(spawn_position.x, spawn_position.z) + height_offset,
+		spawn_position.z
+	)
+	var route_finish := Vector3(
+		finish_position.x,
+		surface_height_at(finish_position.x, finish_position.z) + height_offset,
+		finish_position.z
+	)
+	_append_unique_route_point(route, route_start)
+	var forward := Vector2(
+		route_finish.x - route_start.x,
+		route_finish.z - route_start.z
+	)
+	var route_length: float = forward.length()
+	if route_length <= 0.001:
+		return route
+	forward /= route_length
 	for primitive in primitives:
 		if primitive == null or primitive.kind not in [
 			PRIMITIVE_SCRIPT.Kind.DECK,
 			PRIMITIVE_SCRIPT.Kind.RAMP,
 		]:
 			continue
-		var start := Vector3(
-			primitive.origin.x,
-			surface_height_at(primitive.origin.x, primitive.origin.z) + height_offset,
-			primitive.origin.z
-		)
 		var end := Vector3(
 			primitive.origin.x,
 			surface_height_at(
@@ -127,8 +141,13 @@ func get_route_points(height_offset: float = 0.05) -> PackedVector3Array:
 			) + height_offset,
 			primitive.origin.z + primitive.length
 		)
-		_append_unique_route_point(route, start)
-		_append_unique_route_point(route, end)
+		var end_progress: float = Vector2(
+			end.x - route_start.x,
+			end.z - route_start.z
+		).dot(forward)
+		if end_progress > 0.001 and end_progress < route_length - 0.001:
+			_append_unique_route_point(route, end)
+	_append_unique_route_point(route, route_finish)
 	return route
 
 
