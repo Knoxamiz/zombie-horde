@@ -17,9 +17,10 @@ func _run() -> void:
 	root.add_child(prototype)
 	await physics_frame
 
-	var surfaces: Node = prototype.get_node_or_null("GameplayLayer/Surfaces")
-	var visuals: Node = prototype.get_node_or_null("VisualLayer/PlayableSurfaceVisuals")
-	if surfaces == null or visuals == null:
+	var map_root: Node3D = prototype.get_node_or_null("CoreRoad/MapRoot") as Node3D
+	var surfaces: Node = map_root.get_node_or_null("GameplayLayer/Surfaces") if map_root != null else null
+	var visuals: Node = map_root.get_node_or_null("VisualLayer/PlayableSurfaceVisuals") if map_root != null else null
+	if map_root == null or surfaces == null or visuals == null:
 		_fail("V2 prototype is missing its surface or visual container")
 		prototype.queue_free()
 		_finish()
@@ -32,13 +33,13 @@ func _run() -> void:
 				_fail("Gap %s unexpectedly created collision" % primitive.primitive_id)
 			if visuals.get_node_or_null(primitive.primitive_id) != null:
 				_fail("Gap %s unexpectedly created a playable visual" % primitive.primitive_id)
-			_verify_gap_has_no_surface(prototype, primitive)
+			_verify_gap_has_no_surface(map_root, primitive)
 			continue
 		if primitive.kind == PRIMITIVE_SCRIPT.Kind.BOUNDARY:
 			continue
 		expected_walk_count += 1
 		_verify_pair(primitive, surfaces, visuals)
-		_verify_surface_height(prototype, primitive)
+		_verify_surface_height(map_root, primitive)
 
 	if surfaces.get_child_count() != expected_walk_count:
 		_fail(
@@ -51,8 +52,14 @@ func _run() -> void:
 			% [expected_walk_count, visuals.get_child_count()]
 		)
 
-	_verify_course_queries(prototype)
-	_verify_markers(prototype)
+	_verify_course_queries(map_root)
+	_verify_markers(map_root)
+	prototype.name = "RoadArena"
+	for contract_failure in MapCertification.certify_scene_contract(
+		prototype,
+		"v2_graybox_course"
+	):
+		_fail("V2 loader scene contract: %s" % contract_failure)
 
 	prototype.queue_free()
 	_finish()

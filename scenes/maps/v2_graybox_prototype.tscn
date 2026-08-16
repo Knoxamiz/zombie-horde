@@ -4,5 +4,9 @@
 [ext_resource type="Resource" path="res://resources/maps/v2_graybox_course.tres" id="2_course"]
 
 [node name="V2GrayboxPrototype" type="Node3D"]
+
+[node name="CoreRoad" type="Node3D" parent="."]
+
+[node name="MapRoot" type="Node3D" parent="CoreRoad"]
 script = ExtResource("1_builder")
 course = ExtResource("2_course")
