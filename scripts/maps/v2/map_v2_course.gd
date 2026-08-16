@@ -5,6 +5,9 @@ const PRIMITIVE_SCRIPT := preload("res://scripts/maps/v2/map_v2_primitive.gd")
 
 @export var course_id: String = ""
 @export var primitives: Array[Resource] = []
+@export var spawn_position: Vector3 = Vector3.ZERO
+@export var finish_position: Vector3 = Vector3(0.0, 0.0, 20.0)
+@export var oob_margin: float = 2.0
 
 
 func validate() -> PackedStringArray:
@@ -22,4 +25,77 @@ func validate() -> PackedStringArray:
 		if seen_ids.has(primitive.primitive_id):
 			failures.append("duplicate primitive_id: %s" % primitive.primitive_id)
 		seen_ids[primitive.primitive_id] = true
+	if oob_margin < 0.0:
+		failures.append("%s oob_margin cannot be negative" % course_id)
+	if not has_surface_at(spawn_position.x, spawn_position.z):
+		failures.append("%s spawn_position is not on a playable surface" % course_id)
+	if not has_surface_at(finish_position.x, finish_position.z):
+		failures.append("%s finish_position is not on a playable surface" % course_id)
 	return failures
+
+
+func has_surface_at(x: float, z: float) -> bool:
+	return surface_height_at(x, z, -INF) > -INF
+
+
+func surface_height_at(x: float, z: float, fallback: float = 0.0) -> float:
+	var resolved_height: float = -INF
+	for primitive in primitives:
+		if primitive == null or primitive.kind not in [
+			PRIMITIVE_SCRIPT.Kind.DECK,
+			PRIMITIVE_SCRIPT.Kind.RAMP,
+		]:
+			continue
+		if not _contains_xz(primitive, x, z):
+			continue
+		var top_y: float = primitive.origin.y
+		if primitive.kind == PRIMITIVE_SCRIPT.Kind.RAMP:
+			var progress: float = clampf((z - primitive.origin.z) / primitive.length, 0.0, 1.0)
+			top_y += primitive.height_delta * progress
+		resolved_height = maxf(resolved_height, top_y)
+	return resolved_height if resolved_height > -INF else fallback
+
+
+func get_playable_bounds() -> AABB:
+	var minimum := Vector3(INF, INF, INF)
+	var maximum := Vector3(-INF, -INF, -INF)
+	for primitive in primitives:
+		if primitive == null or primitive.kind not in [
+			PRIMITIVE_SCRIPT.Kind.DECK,
+			PRIMITIVE_SCRIPT.Kind.RAMP,
+		]:
+			continue
+		var half_width: float = primitive.width * 0.5
+		var start_y: float = primitive.origin.y
+		var end_y: float = start_y + (
+			primitive.height_delta if primitive.kind == PRIMITIVE_SCRIPT.Kind.RAMP else 0.0
+		)
+		minimum.x = minf(minimum.x, primitive.origin.x - half_width)
+		maximum.x = maxf(maximum.x, primitive.origin.x + half_width)
+		minimum.y = minf(minimum.y, minf(start_y, end_y))
+		maximum.y = maxf(maximum.y, maxf(start_y, end_y))
+		minimum.z = minf(minimum.z, primitive.origin.z)
+		maximum.z = maxf(maximum.z, primitive.origin.z + primitive.length)
+	if minimum.x == INF:
+		return AABB()
+	return AABB(minimum, maximum - minimum)
+
+
+func get_oob_bounds() -> AABB:
+	var playable: AABB = get_playable_bounds()
+	if playable.size == Vector3.ZERO:
+		return playable
+	return AABB(
+		playable.position - Vector3(oob_margin, 0.0, oob_margin),
+		playable.size + Vector3(oob_margin * 2.0, 0.0, oob_margin * 2.0)
+	)
+
+
+func _contains_xz(primitive: Resource, x: float, z: float) -> bool:
+	var half_width: float = primitive.width * 0.5
+	return (
+		x >= primitive.origin.x - half_width
+		and x <= primitive.origin.x + half_width
+		and z >= primitive.origin.z
+		and z <= primitive.origin.z + primitive.length
+	)

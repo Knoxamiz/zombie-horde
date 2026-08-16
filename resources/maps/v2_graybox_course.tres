@@ -49,3 +49,6 @@ visual_color = Color(0.31, 0.35, 0.42, 1)
 script = ExtResource("1_course")
 course_id = "v2_graybox_course"
 primitives = Array[Resource]([SubResource("Primitive_start"), SubResource("Primitive_ramp"), SubResource("Primitive_upper"), SubResource("Primitive_gap"), SubResource("Primitive_finish")])
+spawn_position = Vector3(0, 0, -26)
+finish_position = Vector3(0, 2, 30)
+oob_margin = 2.0

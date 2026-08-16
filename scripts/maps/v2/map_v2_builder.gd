@@ -64,6 +64,20 @@ func build_course() -> bool:
 	return true
 
 
+func get_surface_height_at(x: float, z: float, fallback: float = 0.0) -> float:
+	if course == null:
+		return fallback
+	return course.surface_height_at(x, z, fallback)
+
+
+func get_playable_bounds() -> AABB:
+	return course.get_playable_bounds() if course != null else AABB()
+
+
+func get_oob_bounds() -> AABB:
+	return course.get_oob_bounds() if course != null else AABB()
+
+
 func _build_walk_primitive(
 	primitive: Resource,
 	surfaces: Node3D,

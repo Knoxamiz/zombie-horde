@@ -51,6 +51,8 @@ func _run() -> void:
 			% [expected_walk_count, visuals.get_child_count()]
 		)
 
+	_verify_course_queries(prototype)
+
 	prototype.queue_free()
 	_finish()
 
@@ -114,6 +116,29 @@ func _raycast_surface(prototype: Node3D, x: float, z: float) -> Dictionary:
 	)
 	query.collide_with_areas = false
 	return world.direct_space_state.intersect_ray(query)
+
+
+func _verify_course_queries(prototype: Node3D) -> void:
+	if not COURSE.has_surface_at(COURSE.spawn_position.x, COURSE.spawn_position.z):
+		_fail("V2 spawn is not on an authoritative course surface")
+	if not COURSE.has_surface_at(COURSE.finish_position.x, COURSE.finish_position.z):
+		_fail("V2 finish is not on an authoritative course surface")
+	var ramp_mid_y: float = COURSE.surface_height_at(0.0, -9.0, -999.0)
+	if absf(ramp_mid_y - 1.0) > 0.01:
+		_fail("V2 ramp midpoint query returned %.3f instead of 1.0" % ramp_mid_y)
+	if COURSE.has_surface_at(0.0, 16.0):
+		_fail("V2 surface query reports solid ground inside the authored gap")
+
+	var builder = prototype
+	var playable_bounds: AABB = builder.get_playable_bounds()
+	var oob_bounds: AABB = builder.get_oob_bounds()
+	var expected_playable := AABB(Vector3(-6.0, 0.0, -30.0), Vector3(12.0, 2.0, 64.0))
+	if not playable_bounds.is_equal_approx(expected_playable):
+		_fail("V2 playable bounds %s differ from expected %s" % [playable_bounds, expected_playable])
+	if absf(oob_bounds.position.x + 8.0) > 0.01 or absf(oob_bounds.end.x - 8.0) > 0.01:
+		_fail("V2 OOB width was not derived from playable bounds plus margin")
+	if absf(oob_bounds.position.z + 32.0) > 0.01 or absf(oob_bounds.end.z - 36.0) > 0.01:
+		_fail("V2 OOB length was not derived from playable bounds plus margin")
 
 
 func _fail(message: String) -> void:
