@@ -45,6 +45,15 @@ be selected or loaded through the production map catalog.
 - OOB authority: `Zombie._check_out_of_bounds`
 - Twitch, scoring, and HUD layout unless the user explicitly requests it.
 
+## Deferred Player-Test Notes
+
+These are recorded for later focused tasks and are not part of the current Map
+V2 implementation:
+
+- Race timer does not count down.
+- Race ending lacks presentation; zombies currently run into the finish wall.
+- Race UI needs a broader visual and usability update.
+
 ## Map Contract
 
 - Catalog: `scripts/maps/map_catalog.gd`
