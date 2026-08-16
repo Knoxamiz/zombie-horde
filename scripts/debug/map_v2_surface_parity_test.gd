@@ -2,6 +2,7 @@ extends SceneTree
 
 const PROTOTYPE := preload("res://scenes/maps/v2_graybox_prototype.tscn")
 const COURSE := preload("res://resources/maps/v2_graybox_course.tres")
+const RACE_DEFINITION := preload("res://resources/maps/v2_graybox_prototype.tres")
 const PRIMITIVE_SCRIPT := preload("res://scripts/maps/v2/map_v2_primitive.gd")
 const SURFACE_SCRIPT := preload("res://scripts/maps/map_surface_piece.gd")
 
@@ -54,10 +55,11 @@ func _run() -> void:
 
 	_verify_course_queries(map_root)
 	_verify_markers(map_root)
+	_verify_race_definition()
 	prototype.name = "RoadArena"
 	for contract_failure in MapCertification.certify_scene_contract(
 		prototype,
-		"v2_graybox_course"
+		"v2_graybox_prototype"
 	):
 		_fail("V2 loader scene contract: %s" % contract_failure)
 
@@ -186,6 +188,35 @@ func _verify_markers(prototype: Node3D) -> void:
 		_fail("V2 finish marker drifted from the course finish position")
 	if finish != null and finish.get_meta("map_v2_role", "") != "finish_marker_only":
 		_fail("V2 finish marker does not declare its non-authoritative role")
+
+
+func _verify_race_definition() -> void:
+	var expected_route: PackedVector3Array = COURSE.get_route_points()
+	if RACE_DEFINITION.race_path_points != expected_route:
+		_fail("V2 race definition route drifted from the authoritative course")
+	if not RACE_DEFINITION.spawn_origin.is_equal_approx(
+		COURSE.spawn_position + Vector3.UP * 0.85
+	):
+		_fail("V2 race definition spawn drifted from the authoritative course")
+	if not RACE_DEFINITION.goal_position.is_equal_approx(
+		COURSE.finish_position + Vector3.UP * 0.85
+	):
+		_fail("V2 race definition goal drifted from the authoritative course")
+	var oob_bounds: AABB = COURSE.get_oob_bounds()
+	if absf(RACE_DEFINITION.out_of_bounds_half_width - oob_bounds.end.x) > 0.01:
+		_fail("V2 race definition lateral OOB drifted from the course")
+	if absf(RACE_DEFINITION.out_of_bounds_min_z - oob_bounds.position.z) > 0.01:
+		_fail("V2 race definition minimum Z OOB drifted from the course")
+	if absf(RACE_DEFINITION.out_of_bounds_max_z - oob_bounds.end.z) > 0.01:
+		_fail("V2 race definition maximum Z OOB drifted from the course")
+	for failure in MapCertification.certify_definition(
+		RACE_DEFINITION,
+		"v2_graybox_prototype"
+	):
+		_fail("V2 race definition certification: %s" % failure)
+	var catalog_entry: Dictionary = MapCatalog.get_entry_by_id("v2_graybox_prototype")
+	if catalog_entry.is_empty() or MapCatalog.is_entry_playable(catalog_entry):
+		_fail("V2 graybox must exist in the catalog as a disabled prototype")
 
 
 func _fail(message: String) -> void:

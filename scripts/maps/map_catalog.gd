@@ -34,6 +34,14 @@ const ENTRIES: Array[Dictionary] = [
 		"status": STATUS_DISABLED,
 	},
 	{
+		"id": "v2_graybox_prototype",
+		"display_name": "V2 Graybox Prototype",
+		"resource_path": "res://resources/maps/v2_graybox_prototype.tres",
+		"scene_path": "res://scenes/maps/v2_graybox_prototype.tscn",
+		"enabled": false,
+		"status": STATUS_DISABLED,
+	},
+	{
 		"id": "broken_bridge_pass",
 		"display_name": "Broken Bridge",
 		"resource_path": "res://resources/maps/broken_bridge_pass.tres",
