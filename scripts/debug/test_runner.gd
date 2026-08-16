@@ -36,44 +36,15 @@ const CORE_TESTS: Array[Dictionary] = [
 
 const MAP_TESTS: Array[Dictionary] = [
 	{"name": "map_gameplay_contract_test", "script": "map_gameplay_contract_test.gd", "args": []},
+	{"name": "map_v2_surface_parity_test", "script": "map_v2_surface_parity_test.gd", "args": []},
 	{"name": "city_highway_collision_contract_test", "script": "city_highway_collision_contract_test.gd", "args": []},
 	{"name": "map_camera_limits_test", "script": "map_camera_limits_test.gd", "args": []},
-	{"name": "map_art_dressing_test", "script": "map_art_dressing_test.gd", "args": []},
-	{"name": "kit_map_gap_audit_test", "script": "kit_map_gap_audit_test.gd", "args": []},
-	{"name": "spiral_descent_map_test", "script": "spiral_descent_map_test.gd", "args": []},
-	{"name": "true_spiral_ramp_map_test", "script": "true_spiral_ramp_map_test.gd", "args": []},
 	{
 		"name": "dev_annotation_export_test",
 		"script": "dev_annotation_export_test.gd",
 		"args": [],
 	},
-	{
-		"name": "broken_bridge_gap_walk_test",
-		"script": "broken_bridge_gap_walk_test.gd",
-		"args": [],
-	},
-	{
-		"name": "broken_bridge_spawn_chute_test",
-		"script": "broken_bridge_spawn_chute_test.gd",
-		"args": [],
-	},
-	{
-		"name": "broken_bridge_shoulder_surface_test",
-		"script": "broken_bridge_shoulder_surface_test.gd",
-		"args": [],
-	},
-	{
-		"name": "broken_bridge_water_fall_test",
-		"script": "broken_bridge_water_fall_test.gd",
-		"args": [],
-	},
 	{"name": "map_selection_test", "script": "map_selection_test.gd", "args": []},
-	{
-		"name": "broken_bridge_pass_completion_test",
-		"script": "broken_bridge_pass_completion_test.gd",
-		"args": [],
-	},
-	{"name": "ai_map_pipeline_test", "script": "ai_map_pipeline_test.gd", "args": []},
 	{
 		"name": "multi_layer_surface_collision_test",
 		"script": "multi_layer_surface_collision_test.gd",

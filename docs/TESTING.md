@@ -45,13 +45,19 @@ godot --headless --path . -s res://scripts/debug/test_runner.gd -- --tier=smoke
 
 **Required before merge:** yes for gameplay-adjacent PRs.
 
-### map (~5–8 minutes)
+### map
 
 - `map_selection_test.gd`
+- `map_v2_surface_parity_test.gd` — proves V2 playable visuals, collision, heights, and gaps stay identical
 - `map_camera_limits_test.gd` â€” verifies each playable map supplies an explicit spectator free-camera flight space
-- `broken_bridge_real_gameplay_test.gd --zombies=5 --skip-stress`
+- `city_highway_collision_contract_test.gd` — protects the production baseline
+- `multi_layer_surface_collision_test.gd` — keeps reusable layered-surface behavior covered
 
-**When to run:** before merging map content, bridge layout, or map controller changes.
+Retired-map tests remain available as individual scripts for archaeology, but are
+not part of active merge gates and cannot load retired maps through the production
+controller.
+
+**When to run:** before merging map content, V2 geometry, or map controller changes.
 
 **Required before merge:** recommended for map PRs; not required for docs-only changes.
 

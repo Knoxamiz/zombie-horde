@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="MapV2Course" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/maps/v2/map_v2_course.gd" id="1_course"]
+[ext_resource type="Script" path="res://scripts/maps/v2/map_v2_primitive.gd" id="2_primitive"]
+
+[sub_resource type="Resource" id="Primitive_start"]
+script = ExtResource("2_primitive")
+primitive_id = "start_deck"
+origin = Vector3(0, 0, -30)
+width = 12.0
+length = 16.0
+visual_color = Color(0.31, 0.35, 0.42, 1)
+
+[sub_resource type="Resource" id="Primitive_ramp"]
+script = ExtResource("2_primitive")
+primitive_id = "rise_ramp"
+kind = 1
+origin = Vector3(0, 0, -14)
+width = 12.0
+length = 10.0
+height_delta = 2.0
+visual_color = Color(0.42, 0.46, 0.54, 1)
+
+[sub_resource type="Resource" id="Primitive_upper"]
+script = ExtResource("2_primitive")
+primitive_id = "upper_deck"
+origin = Vector3(0, 2, -4)
+width = 12.0
+length = 18.0
+visual_color = Color(0.31, 0.35, 0.42, 1)
+
+[sub_resource type="Resource" id="Primitive_gap"]
+script = ExtResource("2_primitive")
+primitive_id = "proof_gap"
+kind = 2
+origin = Vector3(0, 2, 14)
+width = 12.0
+length = 4.0
+
+[sub_resource type="Resource" id="Primitive_finish"]
+script = ExtResource("2_primitive")
+primitive_id = "finish_deck"
+origin = Vector3(0, 2, 18)
+width = 12.0
+length = 16.0
+visual_color = Color(0.31, 0.35, 0.42, 1)
+
+[resource]
+script = ExtResource("1_course")
+course_id = "v2_graybox_course"
+primitives = Array[Resource]([SubResource("Primitive_start"), SubResource("Primitive_ramp"), SubResource("Primitive_upper"), SubResource("Primitive_gap"), SubResource("Primitive_finish")])
