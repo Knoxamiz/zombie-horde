@@ -37,6 +37,7 @@ const CORE_TESTS: Array[Dictionary] = [
 const MAP_TESTS: Array[Dictionary] = [
 	{"name": "map_gameplay_contract_test", "script": "map_gameplay_contract_test.gd", "args": []},
 	{"name": "map_v2_surface_parity_test", "script": "map_v2_surface_parity_test.gd", "args": []},
+	{"name": "map_v2_placement_test", "script": "map_v2_placement_test.gd", "args": []},
 	{"name": "city_highway_collision_contract_test", "script": "city_highway_collision_contract_test.gd", "args": []},
 	{"name": "map_camera_limits_test", "script": "map_camera_limits_test.gd", "args": []},
 	{

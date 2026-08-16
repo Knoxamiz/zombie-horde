@@ -56,6 +56,51 @@ func surface_height_at(x: float, z: float, fallback: float = 0.0) -> float:
 	return resolved_height if resolved_height > -INF else fallback
 
 
+func sample_surface_position(
+	rng: RandomNumberGenerator,
+	edge_inset: float = 0.5,
+	height_offset: float = 0.0
+) -> Vector3:
+	if rng == null or edge_inset < 0.0:
+		return Vector3(INF, INF, INF)
+	var candidates: Array[Resource] = []
+	var cumulative_areas: Array[float] = []
+	var total_area: float = 0.0
+	for primitive in primitives:
+		if primitive == null or primitive.kind not in [
+			PRIMITIVE_SCRIPT.Kind.DECK,
+			PRIMITIVE_SCRIPT.Kind.RAMP,
+		]:
+			continue
+		var usable_width: float = primitive.width - edge_inset * 2.0
+		var usable_length: float = primitive.length - edge_inset * 2.0
+		if usable_width <= 0.0 or usable_length <= 0.0:
+			continue
+		total_area += usable_width * usable_length
+		candidates.append(primitive)
+		cumulative_areas.append(total_area)
+	if candidates.is_empty():
+		return Vector3(INF, INF, INF)
+
+	var selected_index: int = 0
+	var area_roll: float = rng.randf_range(0.0, total_area)
+	while selected_index < cumulative_areas.size() - 1:
+		if area_roll <= cumulative_areas[selected_index]:
+			break
+		selected_index += 1
+	var selected: Resource = candidates[selected_index]
+	var half_usable_width: float = selected.width * 0.5 - edge_inset
+	var x: float = rng.randf_range(
+		selected.origin.x - half_usable_width,
+		selected.origin.x + half_usable_width
+	)
+	var z: float = rng.randf_range(
+		selected.origin.z + edge_inset,
+		selected.origin.z + selected.length - edge_inset
+	)
+	return Vector3(x, surface_height_at(x, z) + height_offset, z)
+
+
 func get_playable_bounds() -> AABB:
 	var minimum := Vector3(INF, INF, INF)
 	var maximum := Vector3(-INF, -INF, -INF)
