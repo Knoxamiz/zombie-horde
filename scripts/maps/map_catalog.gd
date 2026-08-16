@@ -114,6 +114,8 @@ const ENTRIES: Array[Dictionary] = [
 	},
 ]
 
+static var _isolated_test_playable_ids: Dictionary = {}
+
 
 static func get_all_entries() -> Array[Dictionary]:
 	return ENTRIES.duplicate(true)
@@ -180,7 +182,22 @@ static func get_playable_count() -> int:
 
 
 static func is_entry_playable(entry: Dictionary) -> bool:
-	return not entry.is_empty() and bool(entry.get("enabled", false)) and str(entry.get("status", "")) == STATUS_PLAYABLE
+	if entry.is_empty():
+		return false
+	var map_id: String = str(entry.get("id", ""))
+	if OS.is_debug_build() and bool(_isolated_test_playable_ids.get(map_id, false)):
+		return true
+	return bool(entry.get("enabled", false)) and str(entry.get("status", "")) == STATUS_PLAYABLE
+
+
+static func set_isolated_test_playable(map_id: String, playable: bool) -> bool:
+	if not OS.is_debug_build() or get_entry_by_id(map_id).is_empty():
+		return false
+	if playable:
+		_isolated_test_playable_ids[map_id] = true
+	else:
+		_isolated_test_playable_ids.erase(map_id)
+	return true
 
 
 static func get_entry_by_id(map_id: String) -> Dictionary:

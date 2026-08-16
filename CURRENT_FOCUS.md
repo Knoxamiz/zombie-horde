@@ -36,6 +36,7 @@ be selected or loaded through the production map catalog.
 - [x] Certification suite passes.
 - [x] V2 visuals and layer-1 collision come from the same primitives.
 - [x] V2 spawn, finish, route, placement, and OOB bounds derive from course data.
+- [x] Real zombies traverse the complete V2 route to 100% progress.
 - [ ] A real NPC completes the V2 graybox through the authoritative finish.
 - [ ] V2 passes manual review before entering the production catalog.
 
@@ -52,6 +53,8 @@ V2 implementation:
 
 - Race timer does not count down.
 - Race ending lacks presentation; zombies currently run into the finish wall.
+- Automated V2 diagnosis: runners reach 100% progress at the finish, but
+  `StreamerBaseGoal` can remain `goal_enabled=true` with Area monitoring off.
 - Race UI needs a broader visual and usability update.
 
 ## Map Contract

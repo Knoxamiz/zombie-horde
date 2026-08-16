@@ -5,12 +5,6 @@ extends SceneTree
 ## This test boots the live City Highway scene and proves a runner advances.
 
 const MAIN_GAME_SCENE := "res://scenes/main/main_game.tscn"
-const MAP_IDS: Array[String] = [
-	"quarantine_boulevard",
-	"broken_bridge_pass",
-	"spiral_descent",
-	"true_spiral_ramp",
-]
 const RUNNER_COUNT := 24
 
 var _failures: PackedStringArray = PackedStringArray()
@@ -40,7 +34,8 @@ func _run() -> void:
 		return
 
 	round_manager.configure_immediate_launch_for_tests()
-	for map_id in MAP_IDS:
+	for entry in MapCatalog.get_playable_entries():
+		var map_id: String = str(entry.get("id", ""))
 		if not await _verify_map_motion(map_controller, round_manager, zombie_manager, debug_join, map_id):
 			break
 	_cleanup(game)
