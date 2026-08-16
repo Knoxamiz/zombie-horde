@@ -5,6 +5,8 @@
 Keep City Highway as the stable production baseline while a replacement Map V2
 pipeline is designed and proven independently.
 
+Design contract: [docs/MAP_V2_PLAN.md](docs/MAP_V2_PLAN.md)
+
 ## Playable Maps
 
 - `quarantine_boulevard` - City Highway
